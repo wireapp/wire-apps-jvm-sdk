@@ -1,0 +1,38 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+# Ignore IntelliJ IDEA project files
+.idea
+*.iml
+*.ipr
+*.iws
+
+# Ignore Gradle generated folder
+.kotlin
+
+# Ignore Kotlin specific files
+*.class
+*.jar
+*.war
+*.ear
+*.apk
+*.dex
+*.so
+*.o
+*.a
+*.lib
+*.hprof
+*.log
+*.swp
+*.swo
+*.tmp
+*.pid
+*.seed
+*.orig
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
