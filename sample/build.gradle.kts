@@ -1,7 +1,6 @@
 plugins {
     kotlin("jvm")
-    `java-library`
-    id("com.gradleup.shadow") version "9.0.0-beta2"
+    application
 }
 
 group = "com.wire.integrations"
@@ -12,9 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation(platform("io.insert-koin:koin-bom:4.0.1"))
-    implementation("io.insert-koin:koin-core")
-
+    implementation(project(":lib"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.1")
 }
 
@@ -29,12 +26,6 @@ tasks.named<Test>("test") {
     useJUnitPlatform()
 }
 
-tasks {
-    named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-        mergeServiceFiles()
-        archiveBaseName = "wire-jvm-sdk"
-    }
-    build {
-        dependsOn(shadowJar)
-    }
+application {
+    mainClass.set("com.wire.integrations.sample.MainKt")
 }
