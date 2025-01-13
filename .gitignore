@@ -36,3 +36,6 @@ build
 # Ignore OS generated files
 .DS_Store
 Thumbs.db
+
+# Exceptions
+!/gradle/wrapper/gradle-wrapper.jar
