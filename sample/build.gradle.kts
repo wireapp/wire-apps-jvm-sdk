@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     implementation(project(":lib"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

@@ -15,7 +15,7 @@ dependencies {
     implementation(platform("io.insert-koin:koin-bom:4.0.1"))
     implementation("io.insert-koin:koin-core")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
