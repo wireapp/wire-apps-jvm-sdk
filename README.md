@@ -32,11 +32,7 @@ dependencies {
 ```
 
 ### Maven
-
-Add the following to your `build.gradle` file:
-
 ```xml
-
 <dependency>
     <groupId>com.wire.integrations</groupId>
     <artifactId>wire-apps-jvm-sdk</artifactId>
