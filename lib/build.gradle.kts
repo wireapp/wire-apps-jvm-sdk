@@ -1,7 +1,7 @@
 plugins {
     kotlin("jvm")
     `java-library`
-    id("com.gradleup.shadow") version "9.0.0-beta2"
+    id("com.gradleup.shadow") version "9.0.0-beta4"
 }
 
 group = "com.wire.integrations"
