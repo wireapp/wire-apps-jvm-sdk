@@ -5,6 +5,7 @@ plugins {
     `java-library`
     id("com.gradleup.shadow") version "9.0.0-beta2"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
+    id("io.gitlab.arturbosch.detekt") version("1.23.7")
 }
 
 group = "com.wire.integrations"
@@ -37,6 +38,14 @@ ktlint {
         reporter(ReporterType.JSON)
         reporter(ReporterType.HTML)
     }
+}
+
+detekt {
+    toolVersion = "1.23.7"
+    config.setFrom(file("$rootDir/config/detekt/detekt.yml"))
+    baseline = file("$rootDir/config/detekt/baseline.xml")
+    parallel = true
+    buildUponDefaultConfig = true
 }
 
 tasks.named<Test>("test") {
