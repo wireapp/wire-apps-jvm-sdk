@@ -9,11 +9,12 @@ import org.koin.dsl.module
 
 class WireBotSdk {
     constructor(wireBotListener: WireBotListener) {
-        val dynamicModule = module {
-            single {
-                wireBotListener
+        val dynamicModule =
+            module {
+                single {
+                    wireBotListener
+                }
             }
-        }
         IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
         // TODO: probably trigger here the connections to Server-Sent Events and the WebSockets
     }
