@@ -39,3 +39,6 @@ Thumbs.db
 
 # Exceptions
 !/gradle/wrapper/gradle-wrapper.jar
+
+# Allow automatic IntelliJ's automatic copyright
+!.idea/copyright/**
