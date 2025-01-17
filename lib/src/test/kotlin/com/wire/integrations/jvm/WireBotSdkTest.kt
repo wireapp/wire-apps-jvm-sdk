@@ -15,12 +15,12 @@
 
 package com.wire.integrations.jvm
 
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
 class WireBotSdkTest {
     @Test
-    fun someLibraryMethodReturnsTrue() {
+    fun koinModulesLoadCorrectly() {
         val wireBotSdk =
             WireBotSdk(
                 object : WireBotListener {
@@ -29,6 +29,7 @@ class WireBotSdkTest {
                     }
                 }
             )
-        assertTrue(wireBotSdk.someLibraryMethod(), "someLibraryMethod should return 'true'")
+
+        assertNotNull(wireBotSdk.getTeamManager(), "Koin dependency injection failed")
     }
 }

@@ -16,7 +16,7 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.service.WireTeamManager
+import com.wire.integrations.jvm.service.WireApplicationManager
 import org.koin.dsl.module
 
 class WireBotSdk {
@@ -31,11 +31,7 @@ class WireBotSdk {
         // TODO: probably trigger here the connections to Server-Sent Events and the WebSockets
     }
 
-    fun getTeamManager(): WireTeamManager {
+    fun getTeamManager(): WireApplicationManager {
         return IsolatedKoinContext.koinApp.koin.get()
-    }
-
-    fun someLibraryMethod(): Boolean {
-        return true
     }
 }

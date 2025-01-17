@@ -30,4 +30,5 @@ fun main() {
     credentialsManager.getTeams().forEach {
         println("Team: ${it.id}")
     }
+    println("Backend domain: ${credentialsManager.getApplicationMetadata().domain}")
 }
