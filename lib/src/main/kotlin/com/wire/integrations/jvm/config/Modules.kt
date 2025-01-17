@@ -59,9 +59,6 @@ val sdkModule =
 
                 install(Logging) {
                     level = LogLevel.ALL
-                    filter { request ->
-                        request.url.host.contains("ktor.io")
-                    }
                     sanitizeHeader { header -> header == HttpHeaders.Authorization }
                 }
 
