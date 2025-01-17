@@ -17,6 +17,7 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     `java-library`
     id("com.gradleup.shadow") version "9.0.0-beta2"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
@@ -30,11 +31,23 @@ repositories {
     mavenCentral()
 }
 
+val ktorVersion = "3.0.3"
+
 dependencies {
     implementation(platform("io.insert-koin:koin-bom:4.0.1"))
     implementation("io.insert-koin:koin-core")
+    implementation("ch.qos.logback:logback-classic:1.5.16")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("io.ktor:ktor-client-logging:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("io.ktor:ktor-client-websockets:$ktorVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
+    testImplementation("io.insert-koin:koin-test-junit5")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

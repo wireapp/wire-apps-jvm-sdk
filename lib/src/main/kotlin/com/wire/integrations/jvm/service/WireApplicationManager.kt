@@ -16,13 +16,29 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.persistence.TeamStorage
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 
 /**
  * Allows fetching and interacting with each Team instance that invited the application.
  */
-class WireTeamManager internal constructor(private val teamStorage: TeamStorage) {
+class WireApplicationManager internal constructor(
+    private val teamStorage: TeamStorage,
+    private val httpClient: HttpClient
+) {
+    private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
+
     fun getTeams(): List<Team> {
         return teamStorage.getAll()
+    }
+
+    fun getApplicationMetadata(): ApiVersionResponse {
+        logger.info("Fetching application metadata")
+        return runBlocking { httpClient.get("https://staging-nginz-https.zinfra.io/v7/api-version").body() }
     }
 }

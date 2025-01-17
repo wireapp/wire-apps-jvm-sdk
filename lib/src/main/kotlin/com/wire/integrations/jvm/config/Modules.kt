@@ -17,11 +17,64 @@ package com.wire.integrations.jvm.config
 
 import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
-import com.wire.integrations.jvm.service.WireTeamManager
+import com.wire.integrations.jvm.service.WireApplicationManager
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.UserAgent
+import io.ktor.client.plugins.cache.HttpCache
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.sse.SSE
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.http.HttpHeaders
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 
 val sdkModule =
     module {
         single<TeamStorage> { TeamSqlLiteStorage() }
-        single { WireTeamManager(get()) }
+        single<HttpClient> {
+            HttpClient(OkHttp) {
+                expectSuccess = true
+                followRedirects = true
+
+                install(ContentNegotiation) {
+                    json(
+                        Json {
+                            prettyPrint = true
+                            isLenient = true
+                        }
+                    )
+                }
+
+                install(WebSockets) {
+                    contentConverter = KotlinxWebsocketSerializationConverter(Json)
+                }
+
+                install(SSE)
+
+                install(Logging) {
+                    level = LogLevel.ALL
+                    filter { request ->
+                        request.url.host.contains("ktor.io")
+                    }
+                    sanitizeHeader { header -> header == HttpHeaders.Authorization }
+                }
+
+                install(UserAgent) {
+                    agent = "Ktor JVM SDK client"
+                }
+
+                install(HttpCache)
+                install(HttpRequestRetry) {
+                    retryOnServerErrors(maxRetries = 3)
+                    exponentialDelay()
+                }
+            }
+        }
+        single { WireApplicationManager(get(), get()) }
     }
