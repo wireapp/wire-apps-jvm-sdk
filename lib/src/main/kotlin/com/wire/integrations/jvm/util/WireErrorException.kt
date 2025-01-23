@@ -17,7 +17,8 @@
 package com.wire.integrations.jvm.util
 
 /**
- * Interface defined for error exceptions thrown to SDK end user.
+ * Class containing all Wire Error Exceptions that are going to be thrown to the developer
+ * who uses the SDK.
  */
 sealed class WireErrorException @JvmOverloads constructor(
     message: String? = null,
