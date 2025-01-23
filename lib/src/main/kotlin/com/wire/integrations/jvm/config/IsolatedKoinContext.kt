@@ -40,7 +40,8 @@ internal object IsolatedKoinContext {
         this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_PASSWORD, value)
     }
 
-    fun getCryptographyStoragePassword() = this.koinApp.koin.getProperty<String>(CRYPTOGRAPHY_STORAGE_PASSWORD)
+    fun getCryptographyStoragePassword() =
+        this.koinApp.koin.getProperty<String>(CRYPTOGRAPHY_STORAGE_PASSWORD)
 
     /**
      * Property Constants

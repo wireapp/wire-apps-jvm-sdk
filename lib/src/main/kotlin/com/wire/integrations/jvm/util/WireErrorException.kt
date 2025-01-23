@@ -23,39 +23,50 @@ sealed class WireErrorException @JvmOverloads constructor(
     message: String? = null,
     throwable: Throwable? = null
 ) : Exception(message, throwable) {
-
     private fun effectiveMessage() = message ?: cause?.localizedMessage
 
     /**
      * Authorization Error
      */
-    class Unauthorized(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
-    class Forbidden(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
+    class Unauthorized(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+
+    class Forbidden(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Arguments / Parameter Error
      */
-    class MissingParameter(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
-    class InvalidParameter(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
+    class MissingParameter(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+
+    class InvalidParameter(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Database Error
      */
-    class DatabaseError(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
-    class EntityNotFound(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
+    class DatabaseError(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+
+    class EntityNotFound(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Client Error
      */
-    class ClientError(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
+    class ClientError(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Internal Error
      */
-    class InternalSystemError(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
+    class InternalSystemError(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Unknown Error
      */
-    class UnknownError(message: String? = null, throwable: Throwable? = null) : WireErrorException(message ?: throwable?.localizedMessage, throwable)
+    class UnknownError(message: String? = null, throwable: Throwable? = null) :
+        WireErrorException(message ?: throwable?.localizedMessage, throwable)
 }

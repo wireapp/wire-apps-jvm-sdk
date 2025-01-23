@@ -25,10 +25,8 @@ import kotlinx.serialization.json.JsonNames
 @JsonIgnoreUnknownKeys
 @Serializable
 data class AppDataResponse(
-
     @JsonNames("app_2type")
     val appType: String,
-
     @JsonNames("app_command")
     val appCommand: String
 )

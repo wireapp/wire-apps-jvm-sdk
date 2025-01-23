@@ -44,10 +44,11 @@ class WireBotSdk(
     cryptographyStoragePassword: String,
     wireBotListener: WireBotListener
 ) {
-
     init {
         if (apiHost.contains("http://") || apiHost.contains("https://")) {
-            throw WireErrorException.InvalidParameter(message = "Please remove http:// or https:// from apiHost")
+            throw WireErrorException.InvalidParameter(
+                message = "Please remove http:// or https:// from apiHost"
+            )
         }
 
         IsolatedKoinContext.setApplicationId(applicationId)

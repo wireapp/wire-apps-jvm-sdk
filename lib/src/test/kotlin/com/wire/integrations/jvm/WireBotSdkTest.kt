@@ -25,7 +25,6 @@ import java.util.UUID
 import kotlin.test.assertEquals
 
 class WireBotSdkTest {
-
     @Test
     fun koinModulesLoadCorrectly() {
         val wireBotSdk =
@@ -61,12 +60,14 @@ class WireBotSdkTest {
 
         wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/v7/app-data")).willReturn(
-                WireMock.okJson("""
+                WireMock.okJson(
+                    """
                     {
                         "app_type": "dummyAppType",
                         "app_command": "dummyAppCommand"
                     }
-                """.trimIndent())
+                    """.trimIndent()
+                )
             )
         )
 
@@ -84,13 +85,13 @@ class WireBotSdkTest {
 
         @JvmStatic
         @BeforeAll
-        fun before(): Unit {
+        fun before() {
             wireMockServer.start()
         }
 
         @JvmStatic
         @AfterAll
-        fun after(): Unit {
+        fun after() {
             wireMockServer.stop()
         }
     }

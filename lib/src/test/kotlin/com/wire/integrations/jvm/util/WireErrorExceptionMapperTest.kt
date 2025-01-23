@@ -22,7 +22,6 @@ import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 
 class WireErrorExceptionMapperTest {
-
     @Test
     fun whenAnExceptionIsThrownThenMapToWireErrorExceptionUnknownError() {
         assertThrows<WireErrorException.UnknownError> {
@@ -44,9 +43,8 @@ class WireErrorExceptionMapperTest {
     @Test
     fun whenNoExceptionIsThrownThenResultIsReturned() {
         assertDoesNotThrow {
-            val result = runWithWireErrorException {
-                "Success Message"
-            }
+            val result =
+                runWithWireErrorException { "Success Message" }
 
             assertEquals("Success Message", result)
         }

@@ -17,14 +17,14 @@
 package com.wire.integrations.jvm.util
 
 import io.ktor.client.plugins.ClientRequestException
-import kotlin.jvm.Throws
 
-fun Exception.mapToWireErrorException() = when (this) {
-    is WireErrorException -> this
-    is InterruptedException -> WireErrorException.InternalSystemError(throwable = this)
-    is ClientRequestException -> WireErrorException.ClientError(throwable = this)
-    else -> WireErrorException.UnknownError(throwable = this)
-}
+fun Exception.mapToWireErrorException() =
+    when (this) {
+        is WireErrorException -> this
+        is InterruptedException -> WireErrorException.InternalSystemError(throwable = this)
+        is ClientRequestException -> WireErrorException.ClientError(throwable = this)
+        else -> WireErrorException.UnknownError(throwable = this)
+    }
 
 @Throws(WireErrorException::class)
 internal inline fun <T> runWithWireErrorException(block: () -> T): T {
