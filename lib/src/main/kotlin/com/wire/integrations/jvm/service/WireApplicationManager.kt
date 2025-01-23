@@ -17,7 +17,10 @@ package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
+import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.persistence.TeamStorage
+import com.wire.integrations.jvm.util.WireErrorException
+import com.wire.integrations.jvm.util.runWithWireErrorException
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -39,6 +42,16 @@ class WireApplicationManager internal constructor(
 
     fun getApplicationMetadata(): ApiVersionResponse {
         logger.info("Fetching application metadata")
-        return runBlocking { httpClient.get("https://staging-nginz-https.zinfra.io/v7/api-version").body() }
+        return runWithWireErrorException {
+            runBlocking { httpClient.get("/v7/api-version").body() }
+        }
+    }
+
+    @Throws(WireErrorException::class)
+    fun fetchApplicationData(): AppDataResponse {
+        logger.info("Fetching application data")
+        return runWithWireErrorException {
+            runBlocking { httpClient.get("/v7/app-data").body() }
+        }
     }
 }

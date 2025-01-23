@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,15 +14,21 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.config
+package com.wire.integrations.jvm.model.http
 
-import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
-import com.wire.integrations.jvm.persistence.TeamStorage
-import com.wire.integrations.jvm.service.WireApplicationManager
-import org.koin.dsl.module
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonIgnoreUnknownKeys
+import kotlinx.serialization.json.JsonNames
 
-val sdkModule =
-    module {
-        single<TeamStorage> { TeamSqlLiteStorage() }
-        single { WireApplicationManager(get(), get()) }
-    }
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
+@Serializable
+data class AppDataResponse(
+
+    @JsonNames("app_2type")
+    val appType: String,
+
+    @JsonNames("app_command")
+    val appCommand: String
+)

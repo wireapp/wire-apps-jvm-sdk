@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,15 +14,23 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.config
+package com.wire.integrations.jvm.util
 
-import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
-import com.wire.integrations.jvm.persistence.TeamStorage
-import com.wire.integrations.jvm.service.WireApplicationManager
-import org.koin.dsl.module
+import io.ktor.client.plugins.ClientRequestException
+import kotlin.jvm.Throws
 
-val sdkModule =
-    module {
-        single<TeamStorage> { TeamSqlLiteStorage() }
-        single { WireApplicationManager(get(), get()) }
+fun Exception.mapToWireErrorException() = when (this) {
+    is WireErrorException -> this
+    is InterruptedException -> WireErrorException.InternalSystemError(throwable = this)
+    is ClientRequestException -> WireErrorException.ClientError(throwable = this)
+    else -> WireErrorException.UnknownError(throwable = this)
+}
+
+@Throws(WireErrorException::class)
+internal inline fun <T> runWithWireErrorException(block: () -> T): T {
+    return try {
+        block()
+    } catch (exception: Exception) {
+        throw exception.mapToWireErrorException()
     }
+}

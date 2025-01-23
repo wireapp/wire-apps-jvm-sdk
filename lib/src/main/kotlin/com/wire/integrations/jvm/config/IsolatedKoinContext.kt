@@ -16,10 +16,36 @@
 package com.wire.integrations.jvm.config
 
 import org.koin.dsl.koinApplication
+import java.util.UUID
 
 internal object IsolatedKoinContext {
     val koinApp =
         koinApplication {
             modules(sdkModule)
         }
+
+    fun setApplicationId(value: UUID) {
+        this.koinApp.koin.setProperty(APPLICATION_ID, value)
+    }
+
+    fun getApplicationId() = this.koinApp.koin.getProperty<UUID>(APPLICATION_ID)
+
+    fun setApiHost(value: String) {
+        this.koinApp.koin.setProperty(API_HOST, value)
+    }
+
+    fun getApiHost() = this.koinApp.koin.getProperty<String>(API_HOST)
+
+    fun setCryptographyStoragePassword(value: String) {
+        this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_PASSWORD, value)
+    }
+
+    fun getCryptographyStoragePassword() = this.koinApp.koin.getProperty<String>(CRYPTOGRAPHY_STORAGE_PASSWORD)
+
+    /**
+     * Property Constants
+     */
+    private const val APPLICATION_ID = "APPLICATION_ID"
+    private const val API_HOST = "API_HOST"
+    private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "CRYPTOGRAPHY_STORAGE_PASSWORD"
 }
