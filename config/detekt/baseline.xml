@@ -2,6 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>FunctionOnlyReturningConstant:WireBotSdk.kt$WireBotSdk$fun someLibraryMethod(): Boolean</ID>
+    <ID>TooGenericExceptionCaught:WireErrorExceptionMapper.kt$exception: Exception</ID>
   </CurrentIssues>
 </SmellBaseline>

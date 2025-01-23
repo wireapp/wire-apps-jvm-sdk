@@ -23,8 +23,6 @@ sealed class WireErrorException @JvmOverloads constructor(
     message: String? = null,
     throwable: Throwable? = null
 ) : Exception(message, throwable) {
-    private fun effectiveMessage() = message ?: cause?.localizedMessage
-
     /**
      * Authorization Error
      */
