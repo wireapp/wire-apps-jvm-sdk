@@ -32,8 +32,13 @@ repositories {
 }
 
 val ktorVersion = "3.0.3"
+val wireMockVersion = "3.10.0"
 
 dependencies {
+    constraints {
+        api("commons-io:commons-io:2.18.0")
+    }
+
     implementation(platform("io.insert-koin:koin-bom:4.0.1"))
     implementation("io.insert-koin:koin-core")
     implementation("ch.qos.logback:logback-classic:1.5.16")
@@ -44,10 +49,12 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
     testImplementation("io.insert-koin:koin-test-junit5")
+    testImplementation("org.wiremock:wiremock:$wireMockVersion")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

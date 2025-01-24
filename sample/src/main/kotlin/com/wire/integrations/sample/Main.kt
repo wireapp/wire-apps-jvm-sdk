@@ -17,13 +17,19 @@ package com.wire.integrations.sample
 
 import com.wire.integrations.jvm.WireBotListener
 import com.wire.integrations.jvm.WireBotSdk
+import java.util.UUID
 
 fun main() {
-    val wireBotSdk = WireBotSdk(object : WireBotListener {
-        override fun onEvent(event: String) {
-            println(event)
-        }
-    })
+    val wireBotSdk = WireBotSdk(
+        applicationId = UUID.randomUUID(),
+        apiToken = "myApiToken",
+        apiHost = "staging-nginz-https.zinfra.io",
+        cryptographyStoragePassword = "myDummyPassword",
+        object : WireBotListener {
+            override fun onEvent(event: String) {
+                println(event)
+            }
+        })
     val credentialsManager = wireBotSdk.getTeamManager()
 
     println("SDK initialized")
@@ -31,4 +37,6 @@ fun main() {
         println("Team: ${it.id}")
     }
     println("Backend domain: ${credentialsManager.getApplicationMetadata().domain}")
+
+    println("Application Data: ${credentialsManager.fetchApplicationData().appType}")
 }
