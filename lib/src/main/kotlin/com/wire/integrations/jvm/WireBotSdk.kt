@@ -42,7 +42,7 @@ class WireBotSdk(
     apiToken: String,
     apiHost: String,
     cryptographyStoragePassword: String,
-    wireBotListener: WireBotListener
+    wireBotListener: WireEventsHandler
 ) {
     init {
         if (apiHost.contains("http://") || apiHost.contains("https://")) {
@@ -71,12 +71,12 @@ class WireBotSdk(
     private fun initDynamicModules(
         apiToken: String,
         apiHost: String,
-        wireBotListener: WireBotListener
+        wireEventsHandler: WireEventsHandler
     ) {
         val dynamicModule =
             module {
                 single {
-                    wireBotListener
+                    wireEventsHandler
                 }
 
                 single<HttpClient> {

@@ -1,0 +1,19 @@
+CREATE TABLE IF NOT EXISTS team (
+  id TEXT PRIMARY KEY NOT NULL,
+  user_id TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  client_id TEXT NOT NULL,
+  access_token TEXT,
+  refresh_token TEXT NOT NULL,
+  creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS id_team_client_id ON team(client_id);
+
+selectAll:
+SELECT *
+FROM team;
+
+insert:
+INSERT INTO team(id, user_id, domain, client_id, access_token, refresh_token)
+VALUES (?, ?, ?, ?, ?, ?);

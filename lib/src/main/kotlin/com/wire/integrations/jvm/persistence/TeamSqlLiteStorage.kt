@@ -15,11 +15,35 @@
 
 package com.wire.integrations.jvm.persistence
 
+import com.wire.integrations.jvm.Database
+import com.wire.integrations.jvm.TeamQueries
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
+import java.util.UUID
 
-internal class TeamSqlLiteStorage : TeamStorage {
+internal class TeamSqlLiteStorage(db: Database) : TeamStorage {
+    private val teamQueries: TeamQueries = db.teamQueries
+
+    override fun add(team: Team) {
+        teamQueries.insert(
+            id = team.id.toString(),
+            user_id = team.userId.id.toString(),
+            domain = team.userId.domain,
+            client_id = team.clientId,
+            access_token = team.accessToken,
+            refresh_token = team.refreshToken
+        )
+    }
+
     override fun getAll(): List<Team> {
-        // Will probably need to use a SQLite database or similar"
-        return listOf(Team("team1"))
+        return teamQueries.selectAll().executeAsList().map {
+            Team(
+                id = UUID.fromString(it.id),
+                userId = QualifiedId(UUID.fromString(it.user_id), it.domain),
+                clientId = it.client_id,
+                accessToken = it.access_token,
+                refreshToken = it.refresh_token
+            )
+        }
     }
 }

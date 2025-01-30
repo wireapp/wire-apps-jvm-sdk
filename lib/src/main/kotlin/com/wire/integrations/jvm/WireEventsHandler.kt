@@ -13,23 +13,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model
+package com.wire.integrations.jvm
 
-import java.util.UUID
-
-class Team {
-    // Data classes might have issues in library development, check if secondary constructor is the best option
-    constructor(id: UUID, userId: QualifiedId, clientId: String, accessToken: String?, refreshToken: String) {
-        this.id = id
-        this.userId = userId
-        this.clientId = clientId
-        this.accessToken = accessToken
-        this.refreshToken = refreshToken
-    }
-
-    val id: UUID
-    val userId: QualifiedId
-    val clientId: String
-    val accessToken: String?
-    val refreshToken: String
+/**
+ * Interface expose by the SDK, clients can implement this interface,
+ * and pass it during SDK initialization to handle Wire events.
+ */
+interface WireEventsHandler {
+    fun onEvent(event: String)
 }

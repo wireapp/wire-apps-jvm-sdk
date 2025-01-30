@@ -15,9 +15,9 @@
 
 package com.wire.integrations.sample
 
-import com.wire.integrations.jvm.WireBotListener
 import com.wire.integrations.jvm.WireBotSdk
 import java.util.UUID
+import com.wire.integrations.jvm.WireEventsHandler
 
 fun main() {
     val wireBotSdk = WireBotSdk(
@@ -25,15 +25,15 @@ fun main() {
         apiToken = "myApiToken",
         apiHost = "staging-nginz-https.zinfra.io",
         cryptographyStoragePassword = "myDummyPassword",
-        object : WireBotListener {
+        object : WireEventsHandler {
             override fun onEvent(event: String) {
-                println(event)
+                println("Custom events handler: $event")
             }
         })
     val credentialsManager = wireBotSdk.getTeamManager()
 
     println("SDK initialized")
-    credentialsManager.getTeams().forEach {
+    credentialsManager.getStoredTeams().forEach {
         println("Team: ${it.id}")
     }
     println("Backend domain: ${credentialsManager.getApplicationMetadata().domain}")
