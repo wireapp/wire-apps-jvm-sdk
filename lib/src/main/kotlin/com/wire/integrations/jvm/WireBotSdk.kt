@@ -42,7 +42,7 @@ class WireBotSdk(
     apiToken: String,
     apiHost: String,
     cryptographyStoragePassword: String,
-    wireBotListener: WireEventsHandler
+    wireEventsHandler: WireEventsHandler
 ) {
     init {
         if (apiHost.contains("http://") || apiHost.contains("https://")) {
@@ -58,7 +58,7 @@ class WireBotSdk(
         initDynamicModules(
             apiToken = apiToken,
             apiHost = apiHost,
-            wireBotListener = wireBotListener
+            wireEventsHandler = wireEventsHandler
         )
 
         // TODO: probably trigger here the connections to Server-Sent Events and the WebSockets

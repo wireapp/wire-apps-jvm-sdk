@@ -33,8 +33,8 @@ class CryptoClient(private val team: Team, private val ciphersuite: Int) : Close
                 CoreCryptoCentral.invoke(
                     rootDir = clientDirectoryPath,
                     databaseKey =
-                        IsolatedKoinContext.koinApp.koin.getProperty("CRYPTOGRAPHY_STORAGE_PASSWORD")
-                            ?: throw IllegalArgumentException("No cryptography storage password provided"),
+                        IsolatedKoinContext.getCryptographyStoragePassword()
+                            ?: throw IllegalArgumentException("Cryptography password missing"),
                     ciphersuites = Ciphersuites(setOf(getMlsCipherSuiteName(ciphersuite)))
                 )
             proteusClient = coreCryptoCentral.proteusClient()

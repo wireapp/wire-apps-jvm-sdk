@@ -19,7 +19,13 @@ import java.util.UUID
 
 class Team {
     // Data classes might have issues in library development, check if secondary constructor is the best option
-    constructor(id: UUID, userId: QualifiedId, clientId: String, accessToken: String?, refreshToken: String) {
+    constructor(
+        id: UUID,
+        userId: QualifiedId,
+        clientId: String,
+        accessToken: String?,
+        refreshToken: String
+    ) {
         this.id = id
         this.userId = userId
         this.clientId = clientId
