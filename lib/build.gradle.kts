@@ -70,7 +70,7 @@ java {
 
 sqldelight {
     databases {
-        create("Database") {
+        create("AppsSdkDatabase") {
             packageName.set("com.wire.integrations.jvm")
         }
     }

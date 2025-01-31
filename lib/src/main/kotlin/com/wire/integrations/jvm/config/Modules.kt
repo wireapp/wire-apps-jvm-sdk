@@ -17,7 +17,7 @@ package com.wire.integrations.jvm.config
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import com.wire.integrations.jvm.Database
+import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.service.WireApplicationManager
@@ -27,9 +27,9 @@ val sdkModule =
     module {
         single<SqlDriver> {
             val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:apps.db")
-            Database.Schema.create(driver)
+            AppsSdkDatabase.Schema.create(driver)
             driver
         }
-        single<TeamStorage> { TeamSqlLiteStorage(Database(get())) }
+        single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single { WireApplicationManager(get(), get(), get()) }
     }

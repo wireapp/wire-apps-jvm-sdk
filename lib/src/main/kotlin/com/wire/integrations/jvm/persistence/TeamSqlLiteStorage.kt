@@ -15,13 +15,13 @@
 
 package com.wire.integrations.jvm.persistence
 
-import com.wire.integrations.jvm.Database
+import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.TeamQueries
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
 import java.util.UUID
 
-internal class TeamSqlLiteStorage(db: Database) : TeamStorage {
+internal class TeamSqlLiteStorage(db: AppsSdkDatabase) : TeamStorage {
     private val teamQueries: TeamQueries = db.teamQueries
 
     override fun add(team: Team) {
