@@ -24,11 +24,11 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class WireBotSdkTest {
+class WireAppSdkTest {
     @Test
     fun koinModulesLoadCorrectly() {
-        val wireBotSdk =
-            WireBotSdk(
+        val wireAppSdk =
+            WireAppSdk(
                 applicationId = APPLICATION_ID,
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
@@ -40,13 +40,13 @@ class WireBotSdkTest {
                 }
             )
 
-        assertNotNull(wireBotSdk.getTeamManager(), "Koin dependency injection failed")
+        assertNotNull(wireAppSdk.getTeamManager(), "Koin dependency injection failed")
     }
 
     @Test
     fun fetchingApplicationDataWithWireMockReturnsDummyData() {
-        val wireBotSdk =
-            WireBotSdk(
+        val wireAppSdk =
+            WireAppSdk(
                 applicationId = APPLICATION_ID,
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
@@ -71,7 +71,7 @@ class WireBotSdkTest {
             )
         )
 
-        val result = wireBotSdk.getTeamManager().fetchApplicationData()
+        val result = wireAppSdk.getTeamManager().fetchApplicationData()
         assertEquals("dummyAppType", result.appType)
     }
 

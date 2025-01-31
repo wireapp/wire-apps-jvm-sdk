@@ -8,6 +8,7 @@ import com.wire.crypto.client.PreKey
 import com.wire.crypto.client.ProteusClient
 import com.wire.crypto.client.transaction
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.exception.WireException.InvalidParameter
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
 import kotlinx.coroutines.runBlocking
@@ -34,7 +35,7 @@ class CryptoClient(private val team: Team, private val ciphersuite: Int) : Close
                     rootDir = clientDirectoryPath,
                     databaseKey =
                         IsolatedKoinContext.getCryptographyStoragePassword()
-                            ?: throw IllegalArgumentException("Cryptography password missing"),
+                            ?: throw InvalidParameter("Cryptography password missing"),
                     ciphersuites = Ciphersuites(setOf(getMlsCipherSuiteName(ciphersuite)))
                 )
             proteusClient = coreCryptoCentral.proteusClient()
@@ -68,27 +69,21 @@ class CryptoClient(private val team: Team, private val ciphersuite: Int) : Close
 
     fun mlsGetPublicKey(): ByteArray {
         return runBlocking {
-            val publicKey =
-                coreCryptoCentral.transaction {
-                    it.getPublicKey(getMlsCipherSuiteName(ciphersuite)).value
-                }
-            checkNotNull(publicKey) { "MLS client has not been initialized" }
+            coreCryptoCentral.transaction {
+                it.getPublicKey(getMlsCipherSuiteName(ciphersuite)).value
+            } ?: throw InvalidParameter("MLS client has not been initialized")
         }
     }
 
     fun mlsGenerateKeyPackages(): List<ByteArray> {
-        val keyPackages =
-            runBlocking {
-                val keyPackages =
-                    coreCryptoCentral.transaction {
-                        it.generateKeyPackages(
-                            amount = DEFAULT_KEYPACKAGES_COUNT,
-                            ciphersuite = getMlsCipherSuiteName(ciphersuite)
-                        )
-                    }
-                checkNotNull(keyPackages) { "MLS client has not been initialized" }
-            }
-        return keyPackages.map { it.value }
+        return runBlocking {
+            coreCryptoCentral.transaction {
+                it.generateKeyPackages(
+                    amount = DEFAULT_KEYPACKAGES_COUNT,
+                    ciphersuite = getMlsCipherSuiteName(ciphersuite)
+                )
+            } ?: throw InvalidParameter("MLS client has not been initialized")
+        }.map { it.value }
     }
 
     override fun close() {

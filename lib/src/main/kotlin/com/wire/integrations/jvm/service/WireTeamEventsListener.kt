@@ -55,6 +55,7 @@ internal class WireTeamEventsListener internal constructor(
                                 // Handle different event.types, decrypt if necessary
                                 // Delegate to wireEventsHandler, created by the Developer
                                 wireEventsHandler.onEvent(frame.readText())
+                                // Send back ACK event,
                             }
 
                             else -> {

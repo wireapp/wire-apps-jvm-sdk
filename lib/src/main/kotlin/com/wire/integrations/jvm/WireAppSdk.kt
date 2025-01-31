@@ -16,8 +16,8 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.service.WireApplicationManager
-import com.wire.integrations.jvm.util.WireErrorException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpRequestRetry
@@ -37,7 +37,7 @@ import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import java.util.UUID
 
-class WireBotSdk(
+class WireAppSdk(
     applicationId: UUID,
     apiToken: String,
     apiHost: String,
@@ -46,7 +46,7 @@ class WireBotSdk(
 ) {
     init {
         if (apiHost.contains("http://") || apiHost.contains("https://")) {
-            throw WireErrorException.InvalidParameter(
+            throw WireException.InvalidParameter(
                 message = "Please remove http:// or https:// from apiHost"
             )
         }
