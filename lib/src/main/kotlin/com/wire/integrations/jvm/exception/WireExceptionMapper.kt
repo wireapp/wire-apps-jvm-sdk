@@ -14,23 +14,23 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.util
+package com.wire.integrations.jvm.exception
 
 import io.ktor.client.plugins.ClientRequestException
 
-fun Exception.mapToWireErrorException() =
+fun Exception.mapToWireException() =
     when (this) {
-        is WireErrorException -> this
-        is InterruptedException -> WireErrorException.InternalSystemError(throwable = this)
-        is ClientRequestException -> WireErrorException.ClientError(throwable = this)
-        else -> WireErrorException.UnknownError(throwable = this)
+        is WireException -> this
+        is InterruptedException -> WireException.InternalSystemError(throwable = this)
+        is ClientRequestException -> WireException.ClientError(throwable = this)
+        else -> WireException.UnknownError(throwable = this)
     }
 
-@Throws(WireErrorException::class)
-internal inline fun <T> runWithWireErrorException(block: () -> T): T {
+@Throws(WireException::class)
+internal inline fun <T> runWithWireException(block: () -> T): T {
     return try {
         block()
     } catch (exception: Exception) {
-        throw exception.mapToWireErrorException()
+        throw exception.mapToWireException()
     }
 }

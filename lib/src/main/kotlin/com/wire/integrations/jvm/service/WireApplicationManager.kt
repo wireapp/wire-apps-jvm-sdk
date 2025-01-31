@@ -15,42 +15,69 @@
 
 package com.wire.integrations.jvm.service
 
+import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.cryptography.CryptoClient
+import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.persistence.TeamStorage
-import com.wire.integrations.jvm.util.WireErrorException
-import com.wire.integrations.jvm.util.runWithWireErrorException
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 /**
  * Allows fetching and interacting with each Team instance that invited the application.
  */
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
+    private val wireEventsHandler: WireEventsHandler
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
+    private val teamOpenConnections = mutableMapOf<UUID, WireTeamEventsListener>()
 
-    fun getTeams(): List<Team> {
-        return teamStorage.getAll()
+    fun getStoredTeams(): List<Team> = teamStorage.getAll()
+
+    fun getConnectedTeamsCount(): Int = teamOpenConnections.count()
+
+    /**
+     * Opens a connection fetching events for a specific Team.
+     *
+     * This function should be called when the application is started and the Team is already stored, and
+     * when a Team invite is accepted.
+     *
+     * @param team The Team to connect to.
+     */
+    fun connectToTeam(team: Team) {
+        // Create CoreCryptoCentral instance and share it
+        val cryptoClient = CryptoClient(team)
+        val openTeamConnection =
+            WireTeamEventsListener(
+                team = team,
+                httpClient = httpClient,
+                cryptoClient = cryptoClient,
+                wireEventsHandler = wireEventsHandler
+            )
+        teamOpenConnections[team.id] = openTeamConnection
+        openTeamConnection.connect()
     }
 
     fun getApplicationMetadata(): ApiVersionResponse {
         logger.info("Fetching application metadata")
-        return runWithWireErrorException {
+        return runWithWireException {
             runBlocking { httpClient.get("/v7/api-version").body() }
         }
     }
 
-    @Throws(WireErrorException::class)
+    @Throws(WireException::class)
     fun fetchApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
-        return runWithWireErrorException {
+        return runWithWireException {
             runBlocking { httpClient.get("/v7/app-data").body() }
         }
     }

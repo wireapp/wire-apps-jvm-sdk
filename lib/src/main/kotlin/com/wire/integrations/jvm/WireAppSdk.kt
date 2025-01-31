@@ -16,8 +16,8 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.service.WireApplicationManager
-import com.wire.integrations.jvm.util.WireErrorException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpRequestRetry
@@ -37,16 +37,16 @@ import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import java.util.UUID
 
-class WireBotSdk(
+class WireAppSdk(
     applicationId: UUID,
     apiToken: String,
     apiHost: String,
     cryptographyStoragePassword: String,
-    wireBotListener: WireBotListener
+    wireEventsHandler: WireEventsHandler
 ) {
     init {
         if (apiHost.contains("http://") || apiHost.contains("https://")) {
-            throw WireErrorException.InvalidParameter(
+            throw WireException.InvalidParameter(
                 message = "Please remove http:// or https:// from apiHost"
             )
         }
@@ -58,7 +58,7 @@ class WireBotSdk(
         initDynamicModules(
             apiToken = apiToken,
             apiHost = apiHost,
-            wireBotListener = wireBotListener
+            wireEventsHandler = wireEventsHandler
         )
 
         // TODO: probably trigger here the connections to Server-Sent Events and the WebSockets
@@ -71,12 +71,12 @@ class WireBotSdk(
     private fun initDynamicModules(
         apiToken: String,
         apiHost: String,
-        wireBotListener: WireBotListener
+        wireEventsHandler: WireEventsHandler
     ) {
         val dynamicModule =
             module {
                 single {
-                    wireBotListener
+                    wireEventsHandler
                 }
 
                 single<HttpClient> {

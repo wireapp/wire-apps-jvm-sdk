@@ -22,6 +22,7 @@ plugins {
     id("com.gradleup.shadow") version "9.0.0-beta6"
     id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
     id("io.gitlab.arturbosch.detekt") version("1.23.7")
+    id("app.cash.sqldelight") version "2.0.2"
 }
 
 group = "com.wire.integrations"
@@ -29,6 +30,7 @@ version = "0.0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    google()
 }
 
 val ktorVersion = "3.0.3"
@@ -50,6 +52,8 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation("com.wire:core-crypto-jvm:3.0.0")
+    implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
@@ -64,6 +68,14 @@ java {
     }
 }
 
+sqldelight {
+    databases {
+        create("AppsSdkDatabase") {
+            packageName.set("com.wire.integrations.jvm")
+        }
+    }
+}
+
 ktlint {
     verbose.set(true)
     outputToConsole.set(true)
@@ -73,6 +85,9 @@ ktlint {
         reporter(ReporterType.JSON)
         reporter(ReporterType.HTML)
     }
+    filter {
+        exclude { element -> element.file.path.contains("generated/") }
+    }
 }
 
 detekt {
@@ -81,6 +96,7 @@ detekt {
     baseline = file("$rootDir/config/detekt/baseline.xml")
     parallel = true
     buildUponDefaultConfig = true
+    source.setFrom("src/main/kotlin")
 }
 
 tasks.named<Test>("test") {

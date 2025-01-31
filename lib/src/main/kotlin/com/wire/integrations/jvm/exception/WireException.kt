@@ -14,13 +14,13 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.util
+package com.wire.integrations.jvm.exception
 
 /**
  * Class containing all Wire Error Exceptions that are going to be thrown to the developer
  * who uses the SDK.
  */
-sealed class WireErrorException @JvmOverloads constructor(
+sealed class WireException @JvmOverloads constructor(
     message: String? = null,
     throwable: Throwable? = null
 ) : Exception(message, throwable) {
@@ -28,44 +28,44 @@ sealed class WireErrorException @JvmOverloads constructor(
      * Authorization Error
      */
     class Unauthorized(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 
     class Forbidden(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Arguments / Parameter Error
      */
     class MissingParameter(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 
     class InvalidParameter(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Database Error
      */
     class DatabaseError(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 
     class EntityNotFound(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Client Error
      */
     class ClientError(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Internal Error
      */
     class InternalSystemError(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Unknown Error
      */
     class UnknownError(message: String? = null, throwable: Throwable? = null) :
-        WireErrorException(message ?: throwable?.localizedMessage, throwable)
+        WireException(message ?: throwable?.localizedMessage, throwable)
 }

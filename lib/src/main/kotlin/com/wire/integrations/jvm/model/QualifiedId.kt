@@ -13,12 +13,21 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm
+package com.wire.integrations.jvm.model
 
-/**
- * Interface expose by the SDK, clients can implement this interface,
- * and pass it during SDK initialization to handle Wire events.
- */
-interface WireBotListener {
-    fun onEvent(event: String)
+import com.wire.integrations.jvm.utils.UUIDSerializer
+import kotlinx.serialization.Serializable
+import java.util.UUID
+
+@Serializable
+class QualifiedId {
+    // Data classes might have issues in library development, check if secondary constructor is the best option
+    constructor(id: UUID, domain: String) {
+        this.id = id
+        this.domain = domain
+    }
+
+    @Serializable(with = UUIDSerializer::class)
+    val id: UUID
+    val domain: String
 }

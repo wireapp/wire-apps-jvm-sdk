@@ -2,6 +2,11 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>TooGenericExceptionCaught:WireErrorExceptionMapper.kt$exception: Exception</ID>
+      <ID>TooGenericExceptionCaught:WireExceptionMapper.kt$exception: Exception</ID>
+      <ID>MagicNumber:CryptoClient.kt$CryptoClient$3</ID>
+      <ID>MagicNumber:CryptoClient.kt$CryptoClient$4</ID>
+      <ID>MagicNumber:CryptoClient.kt$CryptoClient$5</ID>
+      <ID>MagicNumber:CryptoClient.kt$CryptoClient$6</ID>
+      <ID>MagicNumber:CryptoClient.kt$CryptoClient$7</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -14,27 +14,27 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.util
+package com.wire.integrations.jvm.exception
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertEquals
 
-class WireErrorExceptionMapperTest {
+class WireExceptionMapperTest {
     @Test
-    fun whenAnExceptionIsThrownThenMapToWireErrorExceptionUnknownError() {
-        assertThrows<WireErrorException.UnknownError> {
-            runWithWireErrorException {
+    fun whenAnExceptionIsThrownThenMapToWireExceptionUnknownError() {
+        assertThrows<WireException.UnknownError> {
+            runWithWireException {
                 throw IllegalArgumentException("error_msg1")
             }
         }
     }
 
     @Test
-    fun whenAnExceptionIsThrownThenMapToWireErrorExceptionInternalSystemError() {
-        assertThrows<WireErrorException.InternalSystemError> {
-            runWithWireErrorException {
+    fun whenAnExceptionIsThrownThenMapToWireExceptionInternalSystemError() {
+        assertThrows<WireException.InternalSystemError> {
+            runWithWireException {
                 throw InterruptedException("error_msg2")
             }
         }
@@ -44,7 +44,7 @@ class WireErrorExceptionMapperTest {
     fun whenNoExceptionIsThrownThenResultIsReturned() {
         assertDoesNotThrow {
             val result =
-                runWithWireErrorException { "Success Message" }
+                runWithWireException { "Success Message" }
 
             assertEquals("Success Message", result)
         }
