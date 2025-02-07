@@ -21,6 +21,7 @@ import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.service.WireApplicationManager
+import com.wire.integrations.jvm.service.WireTeamEventsHandler
 import org.koin.dsl.module
 
 val sdkModule =
@@ -31,5 +32,6 @@ val sdkModule =
             driver
         }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
+        single { WireTeamEventsHandler(get()) }
         single { WireApplicationManager(get(), get(), get()) }
     }

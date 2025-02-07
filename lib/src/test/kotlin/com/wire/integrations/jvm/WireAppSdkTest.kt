@@ -33,7 +33,7 @@ class WireAppSdkTest {
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-                object : WireEventsHandler {
+                object : WireEventsHandler() {
                     override fun onEvent(event: String) {
                         println(event)
                     }
@@ -51,7 +51,7 @@ class WireAppSdkTest {
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-                object : WireEventsHandler {
+                object : WireEventsHandler() {
                     override fun onEvent(event: String) {
                         println(event)
                     }

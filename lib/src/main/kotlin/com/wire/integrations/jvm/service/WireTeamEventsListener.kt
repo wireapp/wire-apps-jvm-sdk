@@ -15,13 +15,13 @@
 
 package com.wire.integrations.jvm.service
 
-import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.http.EventResponse
+import com.wire.integrations.jvm.utils.KtxSerializer
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.websocket.Frame
-import io.ktor.websocket.readText
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -35,7 +35,7 @@ internal class WireTeamEventsListener internal constructor(
     private val team: Team,
     private val httpClient: HttpClient,
     private val cryptoClient: CryptoClient,
-    private val wireEventsHandler: WireEventsHandler
+    private val wireTeamEventsHandler: WireTeamEventsHandler
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
     private lateinit var currentJob: Job
@@ -49,13 +49,24 @@ internal class WireTeamEventsListener internal constructor(
                 ) {
                     for (frame in incoming) {
                         when (frame) {
-                            is Frame.Text -> {
-                                logger.info("Received: ${frame.readText()}")
+                            is Frame.Binary -> {
+                                // assuming here the byteArray is an ASCII character set
+                                val jsonString = frame.data.decodeToString(0, frame.data.size)
+                                logger.debug("Binary frame content: '$jsonString'")
+                                val event =
+                                    KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
+
                                 // Deserialize the frame
                                 // Handle different event.types, decrypt if necessary
-                                // Delegate to wireEventsHandler, created by the Developer
-                                wireEventsHandler.onEvent(frame.readText())
-                                // Send back ACK event,
+                                // Delegate to wireTeamEventsHandler, then later
+                                // to wireEventsHandler created by the Developer
+                                wireTeamEventsHandler.handleEvents(
+                                    team = team,
+                                    event = event,
+                                    cryptoClient = cryptoClient
+                                )
+
+                                // Send back ACK event
                             }
 
                             else -> {

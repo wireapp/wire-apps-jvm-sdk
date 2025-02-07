@@ -45,3 +45,6 @@ Thumbs.db
 
 # Allow automatic IntelliJ's automatic copyright
 !.idea/copyright/**
+
+# Ignore CoreCrypto client generated files
+lib/cryptography/
