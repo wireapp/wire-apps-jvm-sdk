@@ -85,15 +85,13 @@ class WireEventsTest : KoinTest {
                 wireEventsHandler = wireEventsHandler
             )
 
-        val cryptoClient = CryptoClient(team = TEAM)
-
-        wireTeamEventsHandler.handleEvents(
-            team = TEAM,
-            event = EVENT_RESPONSE,
-            cryptoClient = cryptoClient
-        )
-
-        cryptoClient.close()
+        CryptoClient(team = TEAM).use { cryptoClient ->
+            wireTeamEventsHandler.handleEvents(
+                team = TEAM,
+                event = EVENT_RESPONSE,
+                cryptoClient = cryptoClient
+            )
+        }
     }
 
     companion object {
