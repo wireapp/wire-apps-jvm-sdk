@@ -136,7 +136,7 @@ class WireAppSdkTest : KoinTest {
                 }
             )
         wireAppSdk.start()
-        Thread.sleep(2000) // Need this because with WireMock we are actually waiting
+        Thread.sleep(5000) // Need this because with WireMock we are actually waiting
         Mockito.verify(mock, atLeast(2)).connectToTeam(any(Team::class.java))
         wireAppSdk.stop()
     }
