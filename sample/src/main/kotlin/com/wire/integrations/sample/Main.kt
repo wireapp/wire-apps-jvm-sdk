@@ -23,20 +23,23 @@ fun main() {
     val wireAppSdk = WireAppSdk(
         applicationId = UUID.randomUUID(),
         apiToken = "myApiToken",
-        apiHost = "staging-nginz-https.zinfra.io",
+        apiHost = "localhost:8080",
         cryptographyStoragePassword = "myDummyPassword",
         object : WireEventsHandler() {
             override fun onEvent(event: String) {
                 println("Custom events handler: $event")
             }
         })
+    println("Starting SDK...")
+    wireAppSdk.start() // Will keep a thread running in the background until explicitly stopped
     val credentialsManager = wireAppSdk.getTeamManager()
 
-    println("SDK initialized")
     credentialsManager.getStoredTeams().forEach {
         println("Team: ${it.id}")
     }
-    println("Backend domain: ${credentialsManager.getApplicationMetadata().domain}")
+//    println("Backend domain: ${credentialsManager.getApplicationMetadata().domain}")
 
-    println("Application Data: ${credentialsManager.fetchApplicationData().appType}")
+//    println("Application Data: ${credentialsManager.fetchApplicationData().appType}")
+
+//    wireAppSdk.stop()
 }

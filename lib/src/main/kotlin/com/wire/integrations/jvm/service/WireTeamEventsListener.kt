@@ -17,10 +17,16 @@ package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.http.AckWebSocketEvent
+import com.wire.integrations.jvm.model.http.WebSocketEvent
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.converter
+import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.util.reflect.typeInfo
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -28,9 +34,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
+import java.nio.charset.Charset
 
-// TODO Check if this class can be created via Koin factory, with httpClient and wireEventsHandler as parameters,
-//  with the Team being passed by WireApplicationManager
 internal class WireTeamEventsListener internal constructor(
     private val team: Team,
     private val httpClient: HttpClient,
@@ -44,6 +49,8 @@ internal class WireTeamEventsListener internal constructor(
     fun connect(): Job {
         currentJob =
             GlobalScope.launch(Dispatchers.IO) {
+                // TODO Change endpoint to /events once v8 is released, replace host with IsolatedContext.WebSocketHost
+
                 httpClient.webSocket(
                     path = "/await?access_token=${team.accessToken}&client=${team.clientId}"
                 ) {
@@ -67,6 +74,7 @@ internal class WireTeamEventsListener internal constructor(
                                 )
 
                                 // Send back ACK event
+                                sendSerialized(AckWebSocketEvent(event.deliveryTag))
                             }
 
                             else -> {

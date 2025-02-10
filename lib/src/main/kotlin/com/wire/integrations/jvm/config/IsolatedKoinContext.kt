@@ -16,12 +16,14 @@
 package com.wire.integrations.jvm.config
 
 import org.koin.dsl.koinApplication
+import org.koin.fileProperties
 import java.util.UUID
 
 internal object IsolatedKoinContext {
     val koinApp =
         koinApplication {
             modules(sdkModule)
+            fileProperties("/koin.properties")
         }
 
     fun setApplicationId(value: UUID) {
@@ -35,6 +37,12 @@ internal object IsolatedKoinContext {
     }
 
     fun getApiHost() = this.koinApp.koin.getProperty<String>(API_HOST)
+
+    fun getWebSocketHost() =
+        getApiHost()
+            ?.replace("https://", "wss://")
+            ?.replace("http://", "ws://")
+            ?.replace("-https", "-ssl")
 
     fun setCryptographyStoragePassword(value: String) {
         this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_PASSWORD, value)

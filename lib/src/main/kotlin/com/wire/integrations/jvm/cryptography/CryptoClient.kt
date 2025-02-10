@@ -1,27 +1,25 @@
 package com.wire.integrations.jvm.cryptography
 
-import com.wire.crypto.client.Ciphersuite
-import com.wire.crypto.client.Ciphersuites
-import com.wire.crypto.client.ClientId
-import com.wire.crypto.client.CoreCryptoCentral
-import com.wire.crypto.client.PreKey
-import com.wire.crypto.client.ProteusClient
-import com.wire.crypto.client.transaction
+import com.wire.crypto.Ciphersuite
+import com.wire.crypto.Ciphersuites
+import com.wire.crypto.ClientId
+import com.wire.crypto.CoreCrypto
+import com.wire.crypto.PreKey
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.WireException.InvalidParameter
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
 import kotlinx.coroutines.runBlocking
-import java.io.Closeable
+import java.io.File
 
-class CryptoClient(private val team: Team, private val ciphersuite: Int) : Closeable {
-    private var coreCryptoCentral: CoreCryptoCentral
-    private var proteusClient: ProteusClient
+class CryptoClient(private val team: Team, private val ciphersuite: Int) : AutoCloseable {
+    private var coreCrypto: CoreCrypto
 
     private companion object {
         private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
         private const val DEFAULT_PREKEYS_COUNT = 100
         private const val DEFAULT_KEYPACKAGES_COUNT = 100u
+        private const val KEYSTORE_NAME = "keystore"
     }
 
     internal constructor(team: Team) : this(team, DEFAULT_CIPHERSUITE_IDENTIFIER)
@@ -29,18 +27,19 @@ class CryptoClient(private val team: Team, private val ciphersuite: Int) : Close
     init {
         runBlocking {
             val clientDirectoryPath = getDirectoryPath(team.clientId)
+            val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
 
-            coreCryptoCentral =
-                CoreCryptoCentral.invoke(
-                    rootDir = clientDirectoryPath,
-                    databaseKey =
-                        IsolatedKoinContext.getCryptographyStoragePassword()
-                            ?: throw InvalidParameter("Cryptography password missing"),
-                    ciphersuites = Ciphersuites(setOf(getMlsCipherSuiteName(ciphersuite)))
-                )
-            proteusClient = coreCryptoCentral.proteusClient()
+            File(clientDirectoryPath).mkdirs()
 
-            coreCryptoCentral.transaction {
+            coreCrypto = CoreCrypto.invoke(
+                keystore = keystorePath,
+                databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
+                    ?: throw InvalidParameter("Cryptography password missing")
+            )
+
+            coreCrypto.transaction { it.proteusInit() }
+
+            coreCrypto.transaction {
                 it.mlsInit(
                     ClientId(getCoreCryptoId(team.userId, team.clientId)),
                     Ciphersuites(setOf(getMlsCipherSuiteName(ciphersuite)))
@@ -60,34 +59,38 @@ class CryptoClient(private val team: Team, private val ciphersuite: Int) : Close
     private fun getDirectoryPath(clientId: String): String = "cryptography/$clientId"
 
     fun proteusGeneratePrekeys(): ArrayList<PreKey> {
-        return runBlocking { proteusClient.newPreKeys(0, DEFAULT_PREKEYS_COUNT) }
+        return runBlocking {
+            coreCrypto.transaction { it.proteusNewPreKeys(0, DEFAULT_PREKEYS_COUNT) }
+        }
     }
 
     fun proteusGenerateLastPrekey(): PreKey {
-        return runBlocking { proteusClient.newLastPreKey() }
+        return runBlocking {
+            coreCrypto.transaction { it.proteusNewLastPreKey() }
+        }
     }
 
     fun mlsGetPublicKey(): ByteArray {
         return runBlocking {
-            coreCryptoCentral.transaction {
+            coreCrypto.transaction {
                 it.getPublicKey(getMlsCipherSuiteName(ciphersuite)).value
-            } ?: throw InvalidParameter("MLS client has not been initialized")
+            }
         }
     }
 
     fun mlsGenerateKeyPackages(): List<ByteArray> {
         return runBlocking {
-            coreCryptoCentral.transaction {
+            coreCrypto.transaction {
                 it.generateKeyPackages(
                     amount = DEFAULT_KEYPACKAGES_COUNT,
                     ciphersuite = getMlsCipherSuiteName(ciphersuite)
                 )
-            } ?: throw InvalidParameter("MLS client has not been initialized")
+            }
         }.map { it.value }
     }
 
     override fun close() {
-        runBlocking { coreCryptoCentral.close() }
+        runBlocking { coreCrypto.close() }
     }
 
     private fun getMlsCipherSuiteName(code: Int): Ciphersuite {

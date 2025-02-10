@@ -17,9 +17,8 @@ package com.wire.integrations.jvm
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import org.junit.jupiter.api.AfterAll
+import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -39,25 +38,18 @@ class WireAppSdkTest {
                     }
                 }
             )
-
         assertNotNull(wireAppSdk.getTeamManager(), "Koin dependency injection failed")
     }
 
     @Test
     fun fetchingApplicationDataWithWireMockReturnsDummyData() {
-        val wireAppSdk =
-            WireAppSdk(
-                applicationId = APPLICATION_ID,
-                apiToken = API_TOKEN,
-                apiHost = API_HOST,
-                cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-                object : WireEventsHandler() {
-                    override fun onEvent(event: String) {
-                        println(event)
-                    }
-                }
+        val wireMockServer = WireMockServer(8080)
+        wireMockServer.start()
+        wireMockServer.stubFor(
+            WireMock.get(WireMock.urlMatching("/apps/teams/await")).willReturn(
+                okForContentType("text/event-stream", getRandomEventStream())
             )
-
+        )
         wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/v7/app-data")).willReturn(
                 WireMock.okJson(
@@ -70,9 +62,68 @@ class WireAppSdkTest {
                 )
             )
         )
+        wireMockServer.stubFor(
+            WireMock.get(WireMock.urlMatching("/v7/api-version")).willReturn(
+                WireMock.okJson(
+                    """
+                    {
+                        "development": [8],
+                        "domain": "host.com",
+                        "federation": true,
+                        "supported": [1,2,3,4,5,6,7]
+                    }
+                    """.trimIndent()
+                )
+            )
+        )
 
+        val wireAppSdk =
+            WireAppSdk(
+                applicationId = APPLICATION_ID,
+                apiToken = API_TOKEN,
+                apiHost = API_HOST,
+                cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
+                object : WireEventsHandler() {
+                    override fun onEvent(event: String) {
+                        println(event)
+                    }
+                }
+            )
         val result = wireAppSdk.getTeamManager().fetchApplicationData()
         assertEquals("dummyAppType", result.appType)
+        val appMetadata = wireAppSdk.getTeamManager().getApplicationMetadata()
+        assertEquals("host.com", appMetadata.domain)
+
+        wireMockServer.stop()
+    }
+
+    @Test
+    fun fetchingSseEvents() {
+        val wireMockServer = WireMockServer(8080)
+        wireMockServer.start()
+        wireMockServer.stubFor(
+            WireMock.get(WireMock.urlMatching("/apps/teams/await")).willReturn(
+                okForContentType("text/event-stream", getRandomEventStream())
+            )
+        )
+
+        val wireAppSdk =
+            WireAppSdk(
+                applicationId = APPLICATION_ID,
+                apiToken = API_TOKEN,
+                apiHost = API_HOST,
+                cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
+                object : WireEventsHandler() {
+                    override fun onEvent(event: String) {
+                        println(event)
+                    }
+                }
+            )
+        wireAppSdk.start()
+        Thread.sleep(2000)
+        wireAppSdk.stop()
+
+        wireMockServer.stop()
     }
 
     companion object {
@@ -81,18 +132,33 @@ class WireAppSdkTest {
         private const val API_HOST = "localhost:8080"
         private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "dummyPassword"
 
-        private val wireMockServer = WireMockServer(8080)
+        private fun getRandomEventStream() =
+            """
+            id:10
+            event:random
+            data:{"teamId":"${UUID.randomUUID()}"}
+    
+            id:11
+            event:random
+            data:{"teamId":"${UUID.randomUUID()}"}
+    
+            id:12
+            event:random
+            data:{"teamId":"${UUID.randomUUID()}"}
+            """.trimIndent()
 
-        @JvmStatic
-        @BeforeAll
-        fun before() {
-            wireMockServer.start()
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun after() {
-            wireMockServer.stop()
-        }
+//        private val wireMockServer = WireMockServer(8080)
+//
+//        @JvmStatic
+//        @BeforeAll
+//        fun before() {
+//            wireMockServer.start()
+//        }
+//
+//        @JvmStatic
+//        @AfterAll
+//        fun after() {
+//            wireMockServer.stop()
+//        }
     }
 }

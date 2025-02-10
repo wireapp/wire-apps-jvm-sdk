@@ -22,16 +22,18 @@ import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.service.EventsRouter
 import com.wire.integrations.jvm.service.WireApplicationManager
+import com.wire.integrations.jvm.service.WireTeamRegistrator
 import org.koin.dsl.module
 
 val sdkModule =
     module {
         single<SqlDriver> {
-            val driver: SqlDriver = JdbcSqliteDriver("jdbc:sqlite:apps.db")
+            val driver: SqlDriver = JdbcSqliteDriver(getProperty("database-jdbc-url"))
             AppsSdkDatabase.Schema.create(driver)
             driver
         }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single { EventsRouter(get()) }
         single { WireApplicationManager(get(), get(), get()) }
+        single { WireTeamRegistrator(get(), get(), get()) }
     }

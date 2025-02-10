@@ -18,8 +18,9 @@ package com.wire.integrations.jvm
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.service.WireApplicationManager
+import com.wire.integrations.jvm.service.WireTeamRegistrator
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.cache.HttpCache
@@ -35,7 +36,10 @@ import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
+import org.slf4j.LoggerFactory
 import java.util.UUID
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 class WireAppSdk(
     applicationId: UUID,
@@ -44,6 +48,10 @@ class WireAppSdk(
     cryptographyStoragePassword: String,
     wireEventsHandler: WireEventsHandler
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
+    private val running = AtomicBoolean(false)
+    private var executor = Executors.newSingleThreadExecutor()
+
     init {
         if (apiHost.contains("http://") || apiHost.contains("https://")) {
             throw WireException.InvalidParameter(
@@ -60,12 +68,6 @@ class WireAppSdk(
             apiHost = apiHost,
             wireEventsHandler = wireEventsHandler
         )
-
-        // TODO: probably trigger here the connections to Server-Sent Events and the WebSockets
-    }
-
-    fun getTeamManager(): WireApplicationManager {
-        return IsolatedKoinContext.koinApp.koin.get()
     }
 
     private fun initDynamicModules(
@@ -80,7 +82,7 @@ class WireAppSdk(
                 }
 
                 single<HttpClient> {
-                    HttpClient(OkHttp) {
+                    HttpClient(CIO) {
                         expectSuccess = true
                         followRedirects = true
 
@@ -89,6 +91,7 @@ class WireAppSdk(
                                 Json {
                                     prettyPrint = true
                                     isLenient = true
+                                    encodeDefaults = true
                                 }
                             )
                         }
@@ -116,12 +119,61 @@ class WireAppSdk(
 
                         defaultRequest {
                             header("Authorization", "Bearer $apiToken")
-                            url.host = apiHost
+                            if (apiHost.contains(":")) {
+                                url.host = apiHost.split(":")[0]
+                                url.port = apiHost.split(":")[1].toInt()
+                            } else {
+                                url.host = apiHost
+                            }
                         }
                     }
                 }
             }
 
         IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
+    }
+
+    @Synchronized
+    fun start() {
+        if (running.get()) {
+            logger.info("Wire Apps SDK is already running")
+            return
+        }
+        running.set(true)
+        executor = Executors.newSingleThreadExecutor()
+        executor.submit { listenToTeamInvites() }
+    }
+
+    private fun listenToTeamInvites() {
+        val teamRegistrator = IsolatedKoinContext.koinApp.koin.get<WireTeamRegistrator>()
+        try {
+            teamRegistrator.connect() // Blocks thread
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+
+        // TODO: probably trigger here the connections to the WebSockets for existing teams
+    }
+
+//    fun close() {
+//        logger.info("Wire Apps SDK shutting down...")
+//        IsolatedKoinContext.koinApp.close()
+//    }
+
+    @Synchronized
+    fun stop() {
+        if (!running.get()) {
+            logger.info("Wire Apps SDK is not running")
+            return
+        }
+        running.set(false)
+        logger.info("Wire Apps SDK shutting down...")
+        executor.shutdownNow()
+    }
+
+    fun isRunning(): Boolean = running.get()
+
+    fun getTeamManager(): WireApplicationManager {
+        return IsolatedKoinContext.koinApp.koin.get()
     }
 }
