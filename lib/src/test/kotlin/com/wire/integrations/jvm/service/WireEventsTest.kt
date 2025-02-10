@@ -24,6 +24,7 @@ import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.utils.KtxSerializer
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
@@ -33,6 +34,7 @@ import org.koin.test.get
 import org.koin.test.junit5.KoinTestExtension
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class WireEventsTest : KoinTest {
     private val wireEventsHandler =
@@ -57,7 +59,7 @@ class WireEventsTest : KoinTest {
             modules(
                 module {
                     single<WireEventsHandler> { wireEventsHandler }
-                    single<WireTeamEventsHandler> { WireTeamEventsHandler(get()) }
+                    single<EventsRouter> { EventsRouter(get()) }
                 }
             )
         }
@@ -74,7 +76,7 @@ class WireEventsTest : KoinTest {
     @Test
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
         val wireEventsHandler = get<WireEventsHandler>()
-        val wireTeamEventsHandler = get<WireTeamEventsHandler>()
+        val eventsRouter = get<EventsRouter>()
 
         val wireSdkApp =
             WireAppSdk(
@@ -86,12 +88,22 @@ class WireEventsTest : KoinTest {
             )
 
         CryptoClient(team = TEAM).use { cryptoClient ->
-            wireTeamEventsHandler.handleEvents(
+            eventsRouter.routeEvents(
                 team = TEAM,
                 event = EVENT_RESPONSE,
                 cryptoClient = cryptoClient
             )
         }
+    }
+
+    @Test
+    fun whenDeserializingConversationCreateEventThenItShouldMapCorrectlyToNewConversationDTO() {
+        val event =
+            KtxSerializer.json.decodeFromString<EventResponse>(
+                DUMMY_CONVERSATION_CREATE_EVENT_RESPONSE
+            )
+
+        assertIs<EventContentDTO.Conversation.NewConversationDTO>(event.payload?.first())
     }
 
     companion object {
@@ -138,5 +150,29 @@ class WireEventsTest : KoinTest {
                     ),
                 transient = true
             )
+        private const val DUMMY_CONVERSATION_CREATE_EVENT_RESPONSE =
+            """{
+                  "id": "4c2c48f6-84af-11ef-8001-860acb7b851a",
+                  "payload": [
+                    {
+                      "conversation": "9bb5fc3f-a5fb-4783-ae88-00a07a39732d",
+                      "data": {
+                        "dummyField": "dummy_field_1"
+                      },
+                      "from": "95d52e20-8428-4619-9a81-dbc2298a3f28",
+                      "qualified_conversation": {
+                        "domain": "anta.wire.link",
+                        "id": "9bb5fc3f-a5fb-4783-ae88-00a07a39732d"
+                      },
+                      "qualified_from": {
+                        "domain": "anta.wire.link",
+                        "id": "95d52e20-8428-4619-9a81-dbc2298a3f28"
+                      },
+                      "time": "2024-10-07T13:23:10.386Z",
+                      "type": "conversation.create"
+                    }
+                  ]
+                }
+            """
     }
 }

@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory
  * during SDK initialization to handle Wire events.
  */
 abstract class WireEventsHandler {
-    private val logger = LoggerFactory.getLogger("WireEventsHandler")
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     open fun onEvent(event: String) {
         logger.info("Received event: onEvent")

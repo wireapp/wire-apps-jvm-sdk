@@ -23,12 +23,12 @@ import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import org.slf4j.LoggerFactory
 
-internal class WireTeamEventsHandler internal constructor(
+internal class EventsRouter internal constructor(
     private val wireEventsHandler: WireEventsHandler
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
 
-    fun handleEvents(
+    fun routeEvents(
         team: Team,
         event: EventResponse,
         cryptoClient: CryptoClient
@@ -53,7 +53,7 @@ internal class WireTeamEventsHandler internal constructor(
                     // wireEventsHandler.onNewMLSMessage(eventContentDTO)
                     wireEventsHandler.onNewMLSMessage(eventContentDTO.time.toString())
                 }
-                else -> {
+                is EventContentDTO.Unknown -> {
                     // do nothing and log received event as its unknown?
                 }
             }

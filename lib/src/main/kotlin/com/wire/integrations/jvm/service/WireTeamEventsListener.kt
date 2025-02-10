@@ -35,7 +35,7 @@ internal class WireTeamEventsListener internal constructor(
     private val team: Team,
     private val httpClient: HttpClient,
     private val cryptoClient: CryptoClient,
-    private val wireTeamEventsHandler: WireTeamEventsHandler
+    private val eventsRouter: EventsRouter
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
     private lateinit var currentJob: Job
@@ -60,7 +60,7 @@ internal class WireTeamEventsListener internal constructor(
                                 // Handle different event.types, decrypt if necessary
                                 // Delegate to wireTeamEventsHandler, then later
                                 // to wireEventsHandler created by the Developer
-                                wireTeamEventsHandler.handleEvents(
+                                eventsRouter.routeEvents(
                                     team = team,
                                     event = event,
                                     cryptoClient = cryptoClient

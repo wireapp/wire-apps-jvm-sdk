@@ -35,8 +35,7 @@ import java.util.UUID
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val httpClient: HttpClient,
-    // private val wireEventsHandler: WireEventsHandler
-    private val wireTeamEventsHandler: WireTeamEventsHandler
+    private val eventsRouter: EventsRouter
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
     private val teamOpenConnections = mutableMapOf<UUID, WireTeamEventsListener>()
@@ -61,7 +60,7 @@ class WireApplicationManager internal constructor(
                 team = team,
                 httpClient = httpClient,
                 cryptoClient = cryptoClient,
-                wireTeamEventsHandler = wireTeamEventsHandler
+                eventsRouter = eventsRouter
             )
         teamOpenConnections[team.id] = openTeamConnection
         openTeamConnection.connect()
