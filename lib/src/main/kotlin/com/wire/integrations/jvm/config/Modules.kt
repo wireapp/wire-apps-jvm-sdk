@@ -20,6 +20,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
+import com.wire.integrations.jvm.service.EventsRouter
 import com.wire.integrations.jvm.service.WireApplicationManager
 import org.koin.dsl.module
 
@@ -31,5 +32,6 @@ val sdkModule =
             driver
         }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
+        single { EventsRouter(get()) }
         single { WireApplicationManager(get(), get(), get()) }
     }

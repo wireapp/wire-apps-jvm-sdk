@@ -15,10 +15,28 @@
 
 package com.wire.integrations.jvm
 
+import org.slf4j.LoggerFactory
+
 /**
- * Interface expose by the SDK, clients can implement this interface,
- * and pass it during SDK initialization to handle Wire events.
+ * Abstract class exposed by the SDK, clients can override the methods in this class and pass it
+ * during SDK initialization to handle Wire events.
  */
-interface WireEventsHandler {
-    fun onEvent(event: String)
+abstract class WireEventsHandler {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
+    open fun onEvent(event: String) {
+        logger.info("Received event: onEvent")
+    }
+
+    open fun onNewConversation(value: String) {
+        logger.info("Received event: onNewConversation")
+    }
+
+    open fun onNewMessage(value: String) {
+        logger.info("Received event: onNewMessage")
+    }
+
+    open fun onNewMLSMessage(value: String) {
+        logger.info("Received event: onNewMLSMessage")
+    }
 }

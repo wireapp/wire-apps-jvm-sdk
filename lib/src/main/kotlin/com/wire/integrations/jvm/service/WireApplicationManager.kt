@@ -15,7 +15,6 @@
 
 package com.wire.integrations.jvm.service
 
-import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.exception.runWithWireException
@@ -36,7 +35,7 @@ import java.util.UUID
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val httpClient: HttpClient,
-    private val wireEventsHandler: WireEventsHandler
+    private val eventsRouter: EventsRouter
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
     private val teamOpenConnections = mutableMapOf<UUID, WireTeamEventsListener>()
@@ -61,7 +60,7 @@ class WireApplicationManager internal constructor(
                 team = team,
                 httpClient = httpClient,
                 cryptoClient = cryptoClient,
-                wireEventsHandler = wireEventsHandler
+                eventsRouter = eventsRouter
             )
         teamOpenConnections[team.id] = openTeamConnection
         openTeamConnection.connect()

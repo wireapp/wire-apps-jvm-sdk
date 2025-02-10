@@ -25,7 +25,7 @@ fun main() {
         apiToken = "myApiToken",
         apiHost = "staging-nginz-https.zinfra.io",
         cryptographyStoragePassword = "myDummyPassword",
-        object : WireEventsHandler {
+        object : WireEventsHandler() {
             override fun onEvent(event: String) {
                 println("Custom events handler: $event")
             }
