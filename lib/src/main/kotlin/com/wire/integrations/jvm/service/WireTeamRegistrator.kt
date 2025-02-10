@@ -43,7 +43,7 @@ internal class WireTeamRegistrator internal constructor(
     fun connect() {
         runBlocking {
             logger.info("Connecting to the SSE endpoint, waiting for new team invites")
-            httpClient.sse(path = "/apps/teams/await") {
+            httpClient.sse(host = "localhost", port = 8086, path = "/apps/teams/await") {
                 while (true) {
                     incoming.collect { event ->
                         logger.info("Event from server: $event")

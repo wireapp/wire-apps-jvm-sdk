@@ -18,12 +18,36 @@ package com.wire.integrations.jvm
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
+import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.service.WireApplicationManager
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
+import org.koin.core.Koin
+import org.koin.test.KoinTest
+import org.koin.test.junit5.mock.MockProviderExtension
+import org.koin.test.mock.declareMock
+import org.mockito.Mockito
+import org.mockito.Mockito.atLeast
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class WireAppSdkTest {
+class WireAppSdkTest : KoinTest {
+    // Override the Koin instance as we use an isolated context
+    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
+
+    @JvmField
+    @RegisterExtension
+    val mockProvider = MockProviderExtension.create { clazz ->
+        Mockito.mock(clazz.java)
+    }
+
+    // Mockito matcher, tweaked to work in Kotlin non-nullable types
+    private fun <T> any(type: Class<T>): T = Mockito.any<T>(type)
+
     @Test
     fun koinModulesLoadCorrectly() {
         val wireAppSdk =
@@ -43,13 +67,6 @@ class WireAppSdkTest {
 
     @Test
     fun fetchingApplicationDataWithWireMockReturnsDummyData() {
-        val wireMockServer = WireMockServer(8080)
-        wireMockServer.start()
-        wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/apps/teams/await")).willReturn(
-                okForContentType("text/event-stream", getRandomEventStream())
-            )
-        )
         wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/v7/app-data")).willReturn(
                 WireMock.okJson(
@@ -93,14 +110,13 @@ class WireAppSdkTest {
         assertEquals("dummyAppType", result.appType)
         val appMetadata = wireAppSdk.getTeamManager().getApplicationMetadata()
         assertEquals("host.com", appMetadata.domain)
-
-        wireMockServer.stop()
     }
 
     @Test
     fun fetchingSseEvents() {
-        val wireMockServer = WireMockServer(8080)
-        wireMockServer.start()
+        // Override the WireApplicationManager from WireAppSdk with a mock
+        val mock = declareMock<WireApplicationManager>()
+
         wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/apps/teams/await")).willReturn(
                 okForContentType("text/event-stream", getRandomEventStream())
@@ -120,16 +136,15 @@ class WireAppSdkTest {
                 }
             )
         wireAppSdk.start()
-        Thread.sleep(2000)
+        Thread.sleep(2000) // Need this because with WireMock we are actually waiting
+        Mockito.verify(mock, atLeast(2)).connectToTeam(any(Team::class.java))
         wireAppSdk.stop()
-
-        wireMockServer.stop()
     }
 
     companion object {
         private val APPLICATION_ID = UUID.randomUUID()
         private const val API_TOKEN = "dummyToken"
-        private const val API_HOST = "localhost:8080"
+        private const val API_HOST = "localhost:8086"
         private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "dummyPassword"
 
         private fun getRandomEventStream() =
@@ -147,18 +162,18 @@ class WireAppSdkTest {
             data:{"teamId":"${UUID.randomUUID()}"}
             """.trimIndent()
 
-//        private val wireMockServer = WireMockServer(8080)
-//
-//        @JvmStatic
-//        @BeforeAll
-//        fun before() {
-//            wireMockServer.start()
-//        }
-//
-//        @JvmStatic
-//        @AfterAll
-//        fun after() {
-//            wireMockServer.stop()
-//        }
+        private val wireMockServer = WireMockServer(8086)
+
+        @JvmStatic
+        @BeforeAll
+        fun before() {
+            wireMockServer.start()
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun after() {
+            wireMockServer.stop()
+        }
     }
 }

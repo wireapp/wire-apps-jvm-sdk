@@ -17,16 +17,10 @@ package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.model.Team
-import com.wire.integrations.jvm.model.http.AckWebSocketEvent
-import com.wire.integrations.jvm.model.http.WebSocketEvent
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import io.ktor.client.plugins.websocket.converter
-import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.client.plugins.websocket.webSocket
-import io.ktor.util.reflect.typeInfo
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +28,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
-import java.nio.charset.Charset
 
 internal class WireTeamEventsListener internal constructor(
     private val team: Team,
@@ -49,24 +42,23 @@ internal class WireTeamEventsListener internal constructor(
     fun connect(): Job {
         currentJob =
             GlobalScope.launch(Dispatchers.IO) {
-                // TODO Change endpoint to /events once v8 is released, replace host with IsolatedContext.WebSocketHost
+                // TODO Change endpoint to /events once v8 is released, replace host with
+                //  IsolatedContext.WebSocketHost and send back ACK event
 
                 httpClient.webSocket(
+                    host = "localhost",
+                    port = 8086,
                     path = "/await?access_token=${team.accessToken}&client=${team.clientId}"
                 ) {
                     for (frame in incoming) {
                         when (frame) {
                             is Frame.Binary -> {
-                                // assuming here the byteArray is an ASCII character set
+                                // Assuming byteArray is an UTF-8 character set
                                 val jsonString = frame.data.decodeToString(0, frame.data.size)
-                                logger.debug("Binary frame content: '$jsonString'")
+                                logger.info("Binary frame content: '$jsonString'")
                                 val event =
                                     KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
 
-                                // Deserialize the frame
-                                // Handle different event.types, decrypt if necessary
-                                // Delegate to wireTeamEventsHandler, then later
-                                // to wireEventsHandler created by the Developer
                                 eventsRouter.routeEvents(
                                     team = team,
                                     event = event,
@@ -74,7 +66,6 @@ internal class WireTeamEventsListener internal constructor(
                                 )
 
                                 // Send back ACK event
-                                sendSerialized(AckWebSocketEvent(event.deliveryTag))
                             }
 
                             else -> {

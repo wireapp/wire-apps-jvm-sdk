@@ -155,11 +155,6 @@ class WireAppSdk(
         // TODO: probably trigger here the connections to the WebSockets for existing teams
     }
 
-//    fun close() {
-//        logger.info("Wire Apps SDK shutting down...")
-//        IsolatedKoinContext.koinApp.close()
-//    }
-
     @Synchronized
     fun stop() {
         if (!running.get()) {

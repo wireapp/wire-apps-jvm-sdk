@@ -37,24 +37,19 @@ internal class EventsRouter internal constructor(
         event.payload?.forEach { eventContentDTO ->
             when (eventContentDTO) {
                 is EventContentDTO.Conversation.NewConversationDTO -> {
-                    // do something extra?
-                    // wireEventsHandler.onNewConversation(eventContentDTO)
+                    // Check if there are enough Proteus keys or start MLS join procedure
                     wireEventsHandler.onNewConversation(eventContentDTO.time.toString())
                 }
                 is EventContentDTO.Conversation.NewMessageDTO -> {
-                    // decrypt with received cryptoClient
-                    // do something extra?
-                    // wireEventsHandler.onNewMessage(eventContentDTO)
+                    // Decrypt Proteus with received cryptoClient
                     wireEventsHandler.onNewMessage(eventContentDTO.time.toString())
                 }
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
-                    // decrypt with received cryptoClient
-                    // do something extra?
-                    // wireEventsHandler.onNewMLSMessage(eventContentDTO)
+                    // Decrypt MLS with received cryptoClient
                     wireEventsHandler.onNewMLSMessage(eventContentDTO.time.toString())
                 }
                 is EventContentDTO.Unknown -> {
-                    // do nothing and log received event as its unknown?
+                    logger.warn("Unknown event type: {}", eventContentDTO)
                 }
             }
         }
