@@ -53,7 +53,6 @@ class WireApplicationManager internal constructor(
      * @param team The Team to connect to.
      */
     fun connectToTeam(team: Team) {
-        // Create CoreCryptoCentral instance and share it
         val cryptoClient = CryptoClient(team)
         val openTeamConnection =
             WireTeamEventsListener(

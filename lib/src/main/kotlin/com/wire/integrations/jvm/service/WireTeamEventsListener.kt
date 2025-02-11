@@ -29,8 +29,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
-// TODO Check if this class can be created via Koin factory, with httpClient and wireEventsHandler as parameters,
-//  with the Team being passed by WireApplicationManager
 internal class WireTeamEventsListener internal constructor(
     private val team: Team,
     private val httpClient: HttpClient,
@@ -44,22 +42,23 @@ internal class WireTeamEventsListener internal constructor(
     fun connect(): Job {
         currentJob =
             GlobalScope.launch(Dispatchers.IO) {
+                // TODO Change endpoint to /events once v8 is released, replace host with
+                //  IsolatedContext.WebSocketHost and send back ACK event
+
                 httpClient.webSocket(
+                    host = "localhost",
+                    port = 8086,
                     path = "/await?access_token=${team.accessToken}&client=${team.clientId}"
                 ) {
                     for (frame in incoming) {
                         when (frame) {
                             is Frame.Binary -> {
-                                // assuming here the byteArray is an ASCII character set
+                                // Assuming byteArray is an UTF-8 character set
                                 val jsonString = frame.data.decodeToString(0, frame.data.size)
-                                logger.debug("Binary frame content: '$jsonString'")
+                                logger.info("Binary frame content: '$jsonString'")
                                 val event =
                                     KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
 
-                                // Deserialize the frame
-                                // Handle different event.types, decrypt if necessary
-                                // Delegate to wireTeamEventsHandler, then later
-                                // to wireEventsHandler created by the Developer
                                 eventsRouter.routeEvents(
                                     team = team,
                                     event = event,

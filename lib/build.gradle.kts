@@ -46,23 +46,23 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.5.16")
     implementation("net.logstash.logback:logstash-logback-encoder:8.0")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
-    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-logging:$ktorVersion")
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
-    implementation("com.wire:core-crypto-jvm:3.0.0")
+    implementation("com.wire:core-crypto-jvm:4.0.1")
     implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
     testImplementation("io.insert-koin:koin-test-junit5")
     testImplementation("org.wiremock:wiremock:$wireMockVersion")
+    testImplementation("org.mockito:mockito-core:5.15.2")
 }
 
-// Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)

@@ -15,13 +15,18 @@
 
 package com.wire.integrations.jvm.service
 
+import com.wire.crypto.CoreCryptoException
 import com.wire.integrations.jvm.cryptography.CryptoClient
+import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.http.TeamServerSentEvent
 import com.wire.integrations.jvm.persistence.TeamStorage
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.sse.sse
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
@@ -35,15 +40,18 @@ internal class WireTeamRegistrator internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
 
-    init {
+    fun connect() {
         runBlocking {
-            httpClient.sse(path = "/apps/teams/await") {
+            logger.info("Connecting to the SSE endpoint, waiting for new team invites")
+            httpClient.sse(host = "localhost", port = 8086, path = "/apps/teams/await") {
                 while (true) {
                     incoming.collect { event ->
-                        logger.info("Event from server:")
-                        logger.info(event.toString())
+                        logger.info("Event from server: $event")
+                        val eventData = event.data
+                            ?: throw WireException.ClientError("No data in team invite event")
+                        val obj = Json.decodeFromString<TeamServerSentEvent>(eventData)
 
-                        newTeamInvite(UUID.fromString(event.data))
+                        newTeamInvite(UUID.fromString(obj.teamId))
                     }
                 }
             }
@@ -51,16 +59,28 @@ internal class WireTeamRegistrator internal constructor(
     }
 
     private fun newTeamInvite(teamId: UUID) {
-        val newTeam: Team = confirmTeamInvite(teamId)
-        teamStorage.add(newTeam) // Can be done async ?
-        // Init Proteus + MLS (keys, keyPackages) and upload them to the Backend
-        initCryptoMaterial(newTeam)
-        wireApplicationManager.connectToTeam(newTeam)
+        try {
+            val newTeam: Team = confirmTeamInvite(teamId)
+            teamStorage.add(newTeam) // Can be done async ?
+
+            initCryptoMaterial(newTeam)
+            wireApplicationManager.connectToTeam(newTeam)
+        } catch (e: ResponseException) {
+            logger.error("Error fetching events from the backend", e)
+        } catch (e: CoreCryptoException) {
+            logger.error("Error while creating crypto material", e)
+        }
     }
 
     private fun confirmTeamInvite(teamId: UUID): Team {
         // TODO Make a call with Ktor client applicationId + teamId -> userId, clientId, JWT + refreshToken
-        return Team(teamId, QualifiedId(UUID.randomUUID(), ""), "", "", "")
+        return Team(
+            id = teamId,
+            userId = QualifiedId(UUID.randomUUID(), "wire.com"),
+            clientId = UUID.randomUUID().toString(),
+            accessToken = UUID.randomUUID().toString(),
+            refreshToken = UUID.randomUUID().toString()
+        )
     }
 
     private fun initCryptoMaterial(team: Team) {

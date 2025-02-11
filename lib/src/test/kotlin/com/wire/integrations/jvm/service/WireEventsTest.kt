@@ -109,7 +109,7 @@ class WireEventsTest : KoinTest {
     companion object {
         private val APPLICATION_ID = UUID.randomUUID()
         private const val API_TOKEN = "dummyToken"
-        private const val API_HOST = "localhost:8080"
+        private const val API_HOST = "localhost:8086"
         private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "dummyPassword"
         private val EXPECTED_NEW_CONVERSATION_VALUE = Instant.DISTANT_FUTURE
         private val EXPECTED_NEW_MESSAGE_VALUE = Instant.DISTANT_PAST
