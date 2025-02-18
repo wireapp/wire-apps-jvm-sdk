@@ -33,7 +33,7 @@ repositories {
     google()
 }
 
-val ktorVersion = "3.0.3"
+val ktorVersion = "3.1.0"
 val wireMockVersion = "3.12.0"
 
 dependencies {
