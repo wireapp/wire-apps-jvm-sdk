@@ -18,6 +18,8 @@ package com.wire.integrations.jvm.config
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.integrations.jvm.AppsSdkDatabase
+import com.wire.integrations.jvm.client.BackendClient
+import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.service.EventsRouter
@@ -34,6 +36,7 @@ val sdkModule =
         }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single { EventsRouter(get()) }
-        single { WireApplicationManager(get(), get(), get()) }
-        single { WireTeamRegistrator(get(), get(), get()) }
+        single<BackendClient> { BackendClientDemo(get()) }
+        single { WireApplicationManager(get(), get(), get(), get()) }
+        single { WireTeamRegistrator(get(), get(), get(), get()) }
     }

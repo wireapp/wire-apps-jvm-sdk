@@ -16,6 +16,8 @@
 
 package com.wire.integrations.jvm.model.http
 
+import com.wire.integrations.jvm.model.CryptoProtocol
+import com.wire.integrations.jvm.model.MlsStatus
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -24,6 +26,33 @@ import kotlinx.serialization.json.JsonIgnoreUnknownKeys
 @OptIn(ExperimentalSerializationApi::class)
 @JsonIgnoreUnknownKeys
 @Serializable
-data class TeamServerSentEvent(
-    @SerialName("teamId") val teamId: String
+data class FeaturesResponse(
+    @SerialName("mls")
+    val mlsFeatureResponse: MlsFeatureResponse
+) {
+    fun isMlsEnabled(): Boolean = mlsFeatureResponse.status == MlsStatus.ENABLED
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
+@Serializable
+data class MlsFeatureResponse(
+    @SerialName("config")
+    val mlsFeatureConfigResponse: MlsFeatureConfigResponse,
+    @SerialName("status")
+    val status: MlsStatus
+)
+
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
+@Serializable
+data class MlsFeatureConfigResponse(
+    @SerialName("allowedCipherSuites")
+    var allowedCipherSuites: List<Int>,
+    @SerialName("defaultCipherSuite")
+    var defaultCipherSuite: Int,
+    @SerialName("defaultProtocol")
+    var defaultProtocol: CryptoProtocol,
+    @SerialName("supportedProtocols")
+    var supportedProtocols: List<CryptoProtocol>
 )

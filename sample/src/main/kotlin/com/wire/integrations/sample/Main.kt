@@ -30,14 +30,14 @@ fun main() {
                 println("Custom events handler: $event")
             }
         })
-    println("Starting SDK...")
+    println("Starting Wire Apps SDK...")
     wireAppSdk.start() // Will keep a thread running in the background until explicitly stopped
     val credentialsManager = wireAppSdk.getTeamManager()
 
     credentialsManager.getStoredTeams().forEach {
         println("Team: ${it.id}")
     }
-    println("Backend domain: ${credentialsManager.getApplicationMetadata().domain}")
+    println("Wire backend domain: ${credentialsManager.getApplicationMetadata().domain}")
 
     // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C
 }

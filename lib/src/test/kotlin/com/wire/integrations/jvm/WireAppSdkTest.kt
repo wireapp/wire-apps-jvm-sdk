@@ -17,6 +17,7 @@ package com.wire.integrations.jvm
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.okForContentType
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.Team
@@ -122,7 +123,48 @@ class WireAppSdkTest : KoinTest {
                 okForContentType("text/event-stream", getRandomEventStream())
             )
         )
+        wireMockServer.stubFor(
+            WireMock.post(WireMock.urlMatching("/v7/clients")).willReturn(
+                WireMock.okJson(
+                    """
+                    {
+                        "id": "dummyClientId"
+                    }
+                    """.trimIndent()
+                )
+            )
+        )
+        wireMockServer.stubFor(
+            WireMock.get(WireMock.urlMatching("/v7/feature-configs")).willReturn(
+                WireMock.okJson(
+                    """
+                    {
+                        "mls": {
+                            "config": {
+                                "allowedCipherSuites": [1],
+                                "defaultCipherSuite": 1,
+                                "defaultProtocol": "mls",
+                                "supportedProtocols": ["mls", "proteus"]
+                            },
+                            "status": "enabled"
+                        }
+                    }
+                    """.trimIndent()
+                )
+            )
+        )
+        wireMockServer.stubFor(
+            WireMock.put(WireMock.urlPathTemplate("/v7/clients/{clientId}")).willReturn(
+                ok()
+            )
+        )
+        wireMockServer.stubFor(
+            WireMock.post(
+                WireMock.urlPathTemplate("/v7/mlskey-packages/self/{clientId}")
+            ).willReturn(ok())
+        )
 
+        // Wiremock for mls and proteus api calls !!!
         val wireAppSdk =
             WireAppSdk(
                 applicationId = APPLICATION_ID,

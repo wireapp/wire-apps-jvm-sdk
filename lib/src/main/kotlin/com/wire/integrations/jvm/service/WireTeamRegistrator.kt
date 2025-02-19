@@ -16,6 +16,7 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.crypto.CoreCryptoException
+import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.QualifiedId
@@ -36,9 +37,10 @@ import java.util.UUID
 internal class WireTeamRegistrator internal constructor(
     private val teamStorage: TeamStorage,
     private val httpClient: HttpClient,
+    private val backendClient: BackendClient,
     private val wireApplicationManager: WireApplicationManager
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun connect() {
         runBlocking {
@@ -60,10 +62,10 @@ internal class WireTeamRegistrator internal constructor(
 
     private fun newTeamInvite(teamId: UUID) {
         try {
-            val newTeam: Team = confirmTeamInvite(teamId)
+            val userId: QualifiedId = backendClient.confirmTeam(teamId).userId
+            val newTeam: Team = createTeamWithCryptoMaterial(teamId, userId)
             teamStorage.add(newTeam) // Can be done async ?
 
-            initCryptoMaterial(newTeam)
             wireApplicationManager.connectToTeam(newTeam)
         } catch (e: ResponseException) {
             logger.error("Error fetching events from the backend", e)
@@ -72,29 +74,25 @@ internal class WireTeamRegistrator internal constructor(
         }
     }
 
-    private fun confirmTeamInvite(teamId: UUID): Team {
-        // TODO Make a call with Ktor client applicationId + teamId -> userId, clientId, JWT + refreshToken
-        return Team(
-            id = teamId,
-            userId = QualifiedId(UUID.randomUUID(), "wire.com"),
-            clientId = UUID.randomUUID().toString(),
-            accessToken = UUID.randomUUID().toString(),
-            refreshToken = UUID.randomUUID().toString()
-        )
-    }
+    private fun createTeamWithCryptoMaterial(
+        teamId: UUID,
+        userId: QualifiedId
+    ): Team {
+        return runBlocking {
+            val prekeys = CryptoClient.generateFirstPrekeys(teamId)
+            val clientId = backendClient.registerClientWithProteus(
+                teamId = teamId,
+                prekeys = prekeys.keys,
+                lastPreKey = prekeys.lastKey
+            )
+            val team = Team(teamId, userId, clientId)
 
-    private fun initCryptoMaterial(team: Team) {
-        runBlocking {
-            // TODO get cryptosuite from the backend via api.getFeatureConfig().mlsConfig
-            CryptoClient(team).use {
-                it.mlsGetPublicKey()
-                it.mlsGenerateKeyPackages()
-                it.proteusGeneratePrekeys()
-                it.proteusGenerateLastPrekey()
-
-                // PUT /clients/{clientId} for MLS public key, prekeys and lastprekey
-                // POST mls/key-packages for MLS key packages
+            val mlsFeature = backendClient.getApplicationFeatures(teamId).mlsFeatureResponse
+            CryptoClient(team, mlsFeature.mlsFeatureConfigResponse.defaultCipherSuite).use {
+                backendClient.updateClientWithMlsPublicKey(teamId, clientId, it.mlsGetPublicKey())
+                backendClient.uploadMlsKeyPackages(teamId, clientId, it.mlsGenerateKeyPackages())
             }
+            team
         }
     }
 }

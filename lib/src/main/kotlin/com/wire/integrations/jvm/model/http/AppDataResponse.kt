@@ -17,16 +17,16 @@
 package com.wire.integrations.jvm.model.http
 
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonIgnoreUnknownKeys
-import kotlinx.serialization.json.JsonNames
 
 @OptIn(ExperimentalSerializationApi::class)
 @JsonIgnoreUnknownKeys
 @Serializable
 data class AppDataResponse(
-    @JsonNames("app_type")
+    @SerialName("app_type")
     val appType: String,
-    @JsonNames("app_command")
+    @SerialName("app_command")
     val appCommand: String
 )

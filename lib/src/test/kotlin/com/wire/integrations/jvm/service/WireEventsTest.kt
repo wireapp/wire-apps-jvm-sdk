@@ -89,7 +89,6 @@ class WireEventsTest : KoinTest {
 
         CryptoClient(team = TEAM).use { cryptoClient ->
             eventsRouter.routeEvents(
-                team = TEAM,
                 event = EVENT_RESPONSE,
                 cryptoClient = cryptoClient
             )
@@ -132,9 +131,7 @@ class WireEventsTest : KoinTest {
                         id = UUID.randomUUID(),
                         domain = "wire.com"
                     ),
-                clientId = "client_id_1234",
-                accessToken = "abcd",
-                refreshToken = "1234"
+                clientId = "client_id_1234"
             )
         private val EVENT_RESPONSE =
             EventResponse(

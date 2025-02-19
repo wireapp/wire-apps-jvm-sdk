@@ -29,9 +29,7 @@ internal class TeamSqlLiteStorage(db: AppsSdkDatabase) : TeamStorage {
             id = team.id.toString(),
             user_id = team.userId.id.toString(),
             domain = team.userId.domain,
-            client_id = team.clientId,
-            access_token = team.accessToken,
-            refresh_token = team.refreshToken
+            client_id = team.clientId
         )
     }
 
@@ -40,9 +38,7 @@ internal class TeamSqlLiteStorage(db: AppsSdkDatabase) : TeamStorage {
             Team(
                 id = UUID.fromString(it.id),
                 userId = QualifiedId(UUID.fromString(it.user_id), it.domain),
-                clientId = it.client_id,
-                accessToken = it.access_token,
-                refreshToken = it.refresh_token
+                clientId = it.client_id
             )
         }
     }
