@@ -54,6 +54,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
     implementation("com.wire:core-crypto-jvm:4.1.0")
+    implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
     implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
@@ -102,6 +103,10 @@ detekt {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
+    systemProperty(
+        "jna.debug_load",
+        "true"
+    )
 }
 
 tasks {
