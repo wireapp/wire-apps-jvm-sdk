@@ -17,6 +17,9 @@
 package com.wire.integrations.jvm.exception
 
 import io.ktor.client.plugins.ClientRequestException
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("ExceptionMapper")
 
 fun Exception.mapToWireException() =
     when (this) {
@@ -31,6 +34,7 @@ internal inline fun <T> runWithWireException(block: () -> T): T {
     return try {
         block()
     } catch (exception: Exception) {
+        logger.warn("Error occurred", exception)
         throw exception.mapToWireException()
     }
 }

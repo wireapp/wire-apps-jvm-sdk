@@ -103,10 +103,6 @@ detekt {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
-    systemProperty(
-        "jna.debug_load",
-        "true"
-    )
 }
 
 tasks {

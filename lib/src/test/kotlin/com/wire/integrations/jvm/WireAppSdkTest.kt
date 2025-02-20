@@ -135,6 +135,17 @@ class WireAppSdkTest : KoinTest {
             )
         )
         wireMockServer.stubFor(
+            WireMock.post(WireMock.urlMatching("/v7/login")).willReturn(
+                WireMock.okJson(
+                    """
+                    {
+                        "access_token": "demoAccessToken"
+                    }
+                    """.trimIndent()
+                )
+            )
+        )
+        wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/v7/feature-configs")).willReturn(
                 WireMock.okJson(
                     """
@@ -160,7 +171,7 @@ class WireAppSdkTest : KoinTest {
         )
         wireMockServer.stubFor(
             WireMock.post(
-                WireMock.urlPathTemplate("/v7/mlskey-packages/self/{clientId}")
+                WireMock.urlPathTemplate("/v7/mls/key-packages/self/{clientId}")
             ).willReturn(ok())
         )
 

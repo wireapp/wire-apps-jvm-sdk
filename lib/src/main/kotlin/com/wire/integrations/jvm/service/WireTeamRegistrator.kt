@@ -71,6 +71,8 @@ internal class WireTeamRegistrator internal constructor(
             logger.error("Error fetching events from the backend", e)
         } catch (e: CoreCryptoException) {
             logger.error("Error while creating crypto material", e)
+        } catch (e: WireException) {
+            logger.error("Internal error", e)
         }
     }
 
@@ -79,18 +81,21 @@ internal class WireTeamRegistrator internal constructor(
         userId: QualifiedId
     ): Team {
         return runBlocking {
+            logger.info("Registering client with Proteus for team $teamId")
             val prekeys = CryptoClient.generateFirstPrekeys(teamId)
             val clientId = backendClient.registerClientWithProteus(
                 teamId = teamId,
                 prekeys = prekeys.keys,
                 lastPreKey = prekeys.lastKey
             )
+            logger.info("Client registered team $teamId with clientId $clientId")
             val team = Team(teamId, userId, clientId)
 
             val mlsFeature = backendClient.getApplicationFeatures(teamId).mlsFeatureResponse
             CryptoClient(team, mlsFeature.mlsFeatureConfigResponse.defaultCipherSuite).use {
                 backendClient.updateClientWithMlsPublicKey(teamId, clientId, it.mlsGetPublicKey())
                 backendClient.uploadMlsKeyPackages(teamId, clientId, it.mlsGenerateKeyPackages())
+                logger.info("MLS client for $clientId fully initialized")
             }
             team
         }

@@ -38,8 +38,9 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.setCookie
+import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -75,10 +76,10 @@ internal class BackendClientDemo internal constructor(
         logger.info("Fetching application enabled features")
         return runWithWireException {
             runBlocking {
-                val tokens = loginUser()
+                val token = loginUser()
                 httpClient.get("/$API_VERSION/feature-configs") {
                     headers {
-                        append(HttpHeaders.Authorization, "Bearer ${tokens.first}")
+                        append(HttpHeaders.Authorization, "Bearer $token")
                     }
                 }.body()
             }
@@ -94,13 +95,12 @@ internal class BackendClientDemo internal constructor(
      * Login DEMO user in the backend, get access_token for further requests.
      * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
      */
-    private suspend fun loginUser(): Pair<String, String> {
+    private suspend fun loginUser(): String {
         val loginResponse: HttpResponse = httpClient.post("/$API_VERSION/login") {
             setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
+            contentType(ContentType.Application.Json)
         }
-        val accessToken: String = loginResponse.body<LoginResponse>().accessToken
-        val refreshToken = loginResponse.setCookie().first().value
-        return Pair(accessToken, refreshToken)
+        return loginResponse.body<LoginResponse>().accessToken
     }
 
     override fun registerClientWithProteus(
@@ -110,10 +110,10 @@ internal class BackendClientDemo internal constructor(
     ): ClientId {
         return runWithWireException {
             runBlocking {
-                val tokens = loginUser()
+                val token = loginUser()
                 val clientAddResponse: HttpResponse = httpClient.post("/$API_VERSION/clients") {
                     headers {
-                        append(HttpHeaders.Authorization, "Bearer ${tokens.first}")
+                        append(HttpHeaders.Authorization, "Bearer $token")
                     }
                     setBody(
                         ClientAddRequest(
@@ -122,6 +122,7 @@ internal class BackendClientDemo internal constructor(
                             prekeys = prekeys
                         )
                     )
+                    contentType(ContentType.Application.Json)
                 }
                 clientAddResponse.bodyAsText().let { logger.info(it) }
                 val clientId: String = clientAddResponse.body<ClientAddResponse>().id
@@ -138,18 +139,19 @@ internal class BackendClientDemo internal constructor(
     ) {
         return runWithWireException {
             runBlocking {
-                val tokens = loginUser()
+                val token = loginUser()
                 val mlsPublicKeys =
                     MlsPublicKeys(ed25519 = Base64.getEncoder().encodeToString(mlsPublicKey))
                 httpClient.put("/$API_VERSION/clients/$clientId") {
                     headers {
-                        append(HttpHeaders.Authorization, "Bearer ${tokens.first}")
+                        append(HttpHeaders.Authorization, "Bearer $token")
                     }
                     setBody(
                         ClientUpdateRequest(
                             mlsPublicKeys = mlsPublicKeys
                         )
                     )
+                    contentType(ContentType.Application.Json)
                 }
                 logger.info("Updated client with mls info for team: $teamId")
             }
@@ -162,14 +164,15 @@ internal class BackendClientDemo internal constructor(
         mlsKeyPackages: List<ByteArray>
     ) = runWithWireException {
         runBlocking {
-            val tokens = loginUser()
+            val token = loginUser()
             val mlsKeyPackageRequest =
                 MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
             httpClient.post("/$API_VERSION/mls/key-packages/self/$clientId") {
                 headers {
-                    append(HttpHeaders.Authorization, "Bearer ${tokens.first}")
+                    append(HttpHeaders.Authorization, "Bearer $token")
                 }
                 setBody(mlsKeyPackageRequest)
+                contentType(ContentType.Application.Json)
             }
             logger.info("Updated client with mls key packages for team: $teamId")
         }
