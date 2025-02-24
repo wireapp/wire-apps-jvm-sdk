@@ -21,6 +21,7 @@ import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.TeamServerSentEvent
 import com.wire.integrations.jvm.persistence.TeamStorage
 import io.ktor.client.HttpClient
@@ -29,7 +30,6 @@ import io.ktor.client.plugins.sse.sse
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
-import java.util.UUID
 
 /**
  * Listens for SSE about new Team invites and sets up the webSocket for the team.
@@ -48,19 +48,19 @@ internal class WireTeamRegistrator internal constructor(
             httpClient.sse(host = "localhost", port = 8086, path = "/apps/teams/await") {
                 while (true) {
                     incoming.collect { event ->
-                        logger.info("Event from server: $event")
+                        logger.debug("Event from server: $event")
                         val eventData = event.data
                             ?: throw WireException.ClientError("No data in team invite event")
                         val obj = Json.decodeFromString<TeamServerSentEvent>(eventData)
 
-                        newTeamInvite(UUID.fromString(obj.teamId))
+                        newTeamInvite(TeamId(obj.teamId))
                     }
                 }
             }
         }
     }
 
-    private fun newTeamInvite(teamId: UUID) {
+    private fun newTeamInvite(teamId: TeamId) {
         try {
             val userId: QualifiedId = backendClient.confirmTeam(teamId).userId
             val newTeam: Team = createTeamWithCryptoMaterial(teamId, userId)
@@ -77,7 +77,7 @@ internal class WireTeamRegistrator internal constructor(
     }
 
     private fun createTeamWithCryptoMaterial(
-        teamId: UUID,
+        teamId: TeamId,
         userId: QualifiedId
     ): Team {
         return runBlocking {

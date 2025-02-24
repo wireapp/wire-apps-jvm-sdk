@@ -20,6 +20,7 @@ import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.ClientId
 import com.wire.integrations.jvm.model.ProteusPreKey
 import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.ClientAddRequest
@@ -58,6 +59,10 @@ internal class BackendClientDemo internal constructor(
 ) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    // Simple cache of the Backend features, as the MLS values we care about
+    // will be the same for all teams, so we can make the API call only once.
+    private var cachedFeatures: FeaturesResponse? = null
+
     override fun getBackendVersion(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
         return runWithWireException {
@@ -72,21 +77,21 @@ internal class BackendClientDemo internal constructor(
         }
     }
 
-    override fun getApplicationFeatures(teamId: UUID): FeaturesResponse {
+    override fun getApplicationFeatures(teamId: TeamId): FeaturesResponse {
         logger.info("Fetching application enabled features")
-        return runWithWireException {
+        return cachedFeatures ?: runWithWireException {
             runBlocking {
                 val token = loginUser()
                 httpClient.get("/$API_VERSION/feature-configs") {
                     headers {
                         append(HttpHeaders.Authorization, "Bearer $token")
                     }
-                }.body()
+                }.body<FeaturesResponse>().also { cachedFeatures = it }
             }
         }
     }
 
-    override fun confirmTeam(teamId: UUID): ConfirmTeamResponse {
+    override fun confirmTeam(teamId: TeamId): ConfirmTeamResponse {
         logger.info("Confirming team invite")
         return ConfirmTeamResponse(QualifiedId(DEMO_USER_ID, DEMO_DOMAIN))
     }
@@ -104,7 +109,7 @@ internal class BackendClientDemo internal constructor(
     }
 
     override fun registerClientWithProteus(
-        teamId: UUID,
+        teamId: TeamId,
         prekeys: List<ProteusPreKey>,
         lastPreKey: ProteusPreKey
     ): ClientId {
@@ -127,13 +132,13 @@ internal class BackendClientDemo internal constructor(
                 clientAddResponse.bodyAsText().let { logger.info(it) }
                 val clientId: String = clientAddResponse.body<ClientAddResponse>().id
                 logger.info("Registered new client with id $clientId for team: $teamId")
-                clientId
+                ClientId(clientId)
             }
         }
     }
 
     override fun updateClientWithMlsPublicKey(
-        teamId: UUID,
+        teamId: TeamId,
         clientId: ClientId,
         mlsPublicKey: ByteArray
     ) {
@@ -142,7 +147,7 @@ internal class BackendClientDemo internal constructor(
                 val token = loginUser()
                 val mlsPublicKeys =
                     MlsPublicKeys(ed25519 = Base64.getEncoder().encodeToString(mlsPublicKey))
-                httpClient.put("/$API_VERSION/clients/$clientId") {
+                httpClient.put("/$API_VERSION/clients/${clientId.value}") {
                     headers {
                         append(HttpHeaders.Authorization, "Bearer $token")
                     }
@@ -159,7 +164,7 @@ internal class BackendClientDemo internal constructor(
     }
 
     override fun uploadMlsKeyPackages(
-        teamId: UUID,
+        teamId: TeamId,
         clientId: ClientId,
         mlsKeyPackages: List<ByteArray>
     ) = runWithWireException {
@@ -167,7 +172,7 @@ internal class BackendClientDemo internal constructor(
             val token = loginUser()
             val mlsKeyPackageRequest =
                 MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
-            httpClient.post("/$API_VERSION/mls/key-packages/self/$clientId") {
+            httpClient.post("/$API_VERSION/mls/key-packages/self/${clientId.value}") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }

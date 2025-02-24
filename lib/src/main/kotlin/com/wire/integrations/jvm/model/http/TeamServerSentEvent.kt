@@ -16,14 +16,18 @@
 
 package com.wire.integrations.jvm.model.http
 
+import com.wire.integrations.jvm.utils.UUIDSerializer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonIgnoreUnknownKeys
+import java.util.UUID
 
 @OptIn(ExperimentalSerializationApi::class)
 @JsonIgnoreUnknownKeys
 @Serializable
 data class TeamServerSentEvent(
-    @SerialName("teamId") val teamId: String
+    @Serializable(with = UUIDSerializer::class)
+    @SerialName("teamId")
+    val teamId: UUID
 )

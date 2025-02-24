@@ -19,8 +19,10 @@ package com.wire.integrations.jvm.service
 import com.wire.integrations.jvm.WireAppSdk
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.cryptography.CryptoClient
+import com.wire.integrations.jvm.model.ClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
@@ -78,14 +80,13 @@ class WireEventsTest : KoinTest {
         val wireEventsHandler = get<WireEventsHandler>()
         val eventsRouter = get<EventsRouter>()
 
-        val wireSdkApp =
-            WireAppSdk(
-                applicationId = APPLICATION_ID,
-                apiToken = API_TOKEN,
-                apiHost = API_HOST,
-                cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-                wireEventsHandler = wireEventsHandler
-            )
+        WireAppSdk(
+            applicationId = APPLICATION_ID,
+            apiToken = API_TOKEN,
+            apiHost = API_HOST,
+            cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
+            wireEventsHandler = wireEventsHandler
+        )
 
         CryptoClient(team = TEAM).use { cryptoClient ->
             eventsRouter.routeEvents(
@@ -125,13 +126,13 @@ class WireEventsTest : KoinTest {
             )
         private val TEAM =
             Team(
-                id = UUID.randomUUID(),
+                id = TeamId(UUID.randomUUID()),
                 userId =
                     QualifiedId(
                         id = UUID.randomUUID(),
                         domain = "wire.com"
                     ),
-                clientId = "client_id_1234"
+                clientId = ClientId("client_id_1234")
             )
         private val EVENT_RESPONSE =
             EventResponse(

@@ -10,10 +10,10 @@ import com.wire.integrations.jvm.model.ProteusInitKeys
 import com.wire.integrations.jvm.model.ProteusPreKey
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.toProteusPreKey
 import kotlinx.coroutines.runBlocking
 import java.io.File
-import java.util.UUID
 
 internal class CryptoClient : AutoCloseable {
     val team: Team
@@ -30,7 +30,7 @@ internal class CryptoClient : AutoCloseable {
             coreCrypto.transaction {
                 it.proteusInit()
                 it.mlsInit(
-                    ClientId(getCoreCryptoId(team.userId, team.clientId)),
+                    ClientId(getCoreCryptoId(team.userId, team.clientId.value)),
                     Ciphersuites(setOf(ciphersuite))
                 )
             }
@@ -48,7 +48,7 @@ internal class CryptoClient : AutoCloseable {
          * To register a client on the backend and to obtain a clientId, Proteus keys are needed
          * so this function creates the minimal config to get prekeys and closes it
          */
-        fun generateFirstPrekeys(teamId: UUID): ProteusInitKeys {
+        fun generateFirstPrekeys(teamId: TeamId): ProteusInitKeys {
             return runBlocking {
                 val tmpCoreCrypto = coreCryptoInit(teamId)
                 val initKeys = tmpCoreCrypto.transaction { context ->
@@ -65,8 +65,8 @@ internal class CryptoClient : AutoCloseable {
             }
         }
 
-        private suspend fun coreCryptoInit(teamId: UUID): CoreCrypto {
-            val clientDirectoryPath = "cryptography/$teamId"
+        private suspend fun coreCryptoInit(teamId: TeamId): CoreCrypto {
+            val clientDirectoryPath = "cryptography/${teamId.value}"
             val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
 
             File(clientDirectoryPath).mkdirs()

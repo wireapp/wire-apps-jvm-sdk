@@ -19,11 +19,11 @@ import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.persistence.TeamStorage
 import io.ktor.client.HttpClient
-import java.util.UUID
 import kotlin.collections.set
 
 /**
@@ -36,7 +36,7 @@ class WireApplicationManager internal constructor(
     private val eventsRouter: EventsRouter
 ) {
     // TODO this can become instead a Map of CryptoClient instances
-    private val teamOpenConnections = mutableMapOf<UUID, WireTeamEventsListener>()
+    private val teamOpenConnections = mutableMapOf<TeamId, WireTeamEventsListener>()
 
     fun getStoredTeams(): List<Team> = teamStorage.getAll()
 

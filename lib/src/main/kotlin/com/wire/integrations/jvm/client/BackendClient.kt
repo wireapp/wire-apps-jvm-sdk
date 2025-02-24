@@ -18,35 +18,35 @@ package com.wire.integrations.jvm.client
 
 import com.wire.integrations.jvm.model.ClientId
 import com.wire.integrations.jvm.model.ProteusPreKey
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.ConfirmTeamResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
-import java.util.UUID
 
 interface BackendClient {
     fun getBackendVersion(): ApiVersionResponse
 
     fun getApplicationData(): AppDataResponse
 
-    fun getApplicationFeatures(teamId: UUID): FeaturesResponse
+    fun getApplicationFeatures(teamId: TeamId): FeaturesResponse
 
-    fun confirmTeam(teamId: UUID): ConfirmTeamResponse
+    fun confirmTeam(teamId: TeamId): ConfirmTeamResponse
 
     fun registerClientWithProteus(
-        teamId: UUID,
+        teamId: TeamId,
         prekeys: List<ProteusPreKey>,
         lastPreKey: ProteusPreKey
     ): ClientId
 
     fun updateClientWithMlsPublicKey(
-        teamId: UUID,
+        teamId: TeamId,
         clientId: ClientId,
         mlsPublicKey: ByteArray
     )
 
     fun uploadMlsKeyPackages(
-        teamId: UUID,
+        teamId: TeamId,
         clientId: ClientId,
         mlsKeyPackages: List<ByteArray>
     )

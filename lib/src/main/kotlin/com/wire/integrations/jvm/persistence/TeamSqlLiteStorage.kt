@@ -17,8 +17,10 @@ package com.wire.integrations.jvm.persistence
 
 import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.TeamQueries
+import com.wire.integrations.jvm.model.ClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.TeamId
 import java.util.UUID
 
 internal class TeamSqlLiteStorage(db: AppsSdkDatabase) : TeamStorage {
@@ -26,19 +28,19 @@ internal class TeamSqlLiteStorage(db: AppsSdkDatabase) : TeamStorage {
 
     override fun add(team: Team) {
         teamQueries.insert(
-            id = team.id.toString(),
+            id = team.id.value.toString(),
             user_id = team.userId.id.toString(),
             domain = team.userId.domain,
-            client_id = team.clientId
+            client_id = team.clientId.value
         )
     }
 
     override fun getAll(): List<Team> {
         return teamQueries.selectAll().executeAsList().map {
             Team(
-                id = UUID.fromString(it.id),
+                id = TeamId(UUID.fromString(it.id)),
                 userId = QualifiedId(UUID.fromString(it.user_id), it.domain),
-                clientId = it.client_id
+                clientId = ClientId(it.client_id)
             )
         }
     }

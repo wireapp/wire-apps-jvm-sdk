@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -15,20 +16,10 @@
 
 package com.wire.integrations.jvm.model
 
-import com.wire.integrations.jvm.utils.UUIDSerializer
 import com.wire.integrations.jvm.utils.obfuscateId
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import java.util.UUID
 
-@JvmRecord
-@Serializable
-data class QualifiedId(
-    @SerialName("id")
-    @Serializable(with = UUIDSerializer::class)
-    val id: UUID,
-    @SerialName("domain")
-    val domain: String
-) {
-    override fun toString(): String = "${id.obfuscateId()}@$domain"
+@JvmInline
+value class TeamId(val value: UUID) {
+    override fun toString(): String = value.obfuscateId()
 }
