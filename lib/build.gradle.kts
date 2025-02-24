@@ -57,7 +57,7 @@ dependencies {
     implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
     implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.0")
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
     testImplementation("io.insert-koin:koin-test-junit5")
     testImplementation("org.wiremock:wiremock:$wireMockVersion")
