@@ -16,7 +16,6 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.cryptography.CryptoClient
-import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
 import io.ktor.client.HttpClient
@@ -30,12 +29,11 @@ import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
 internal class WireTeamEventsListener internal constructor(
-    private val team: Team,
     private val httpClient: HttpClient,
     private val cryptoClient: CryptoClient,
     private val eventsRouter: EventsRouter
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private lateinit var currentJob: Job
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -48,7 +46,7 @@ internal class WireTeamEventsListener internal constructor(
                 httpClient.webSocket(
                     host = "localhost",
                     port = 8086,
-                    path = "/await?access_token=${team.accessToken}&client=${team.clientId}"
+                    path = "/await?client=${cryptoClient.team.clientId}"
                 ) {
                     for (frame in incoming) {
                         when (frame) {
@@ -60,7 +58,6 @@ internal class WireTeamEventsListener internal constructor(
                                     KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
 
                                 eventsRouter.routeEvents(
-                                    team = team,
                                     event = event,
                                     cryptoClient = cryptoClient
                                 )

@@ -4,51 +4,80 @@ import com.wire.crypto.Ciphersuite
 import com.wire.crypto.Ciphersuites
 import com.wire.crypto.ClientId
 import com.wire.crypto.CoreCrypto
-import com.wire.crypto.PreKey
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.WireException.InvalidParameter
+import com.wire.integrations.jvm.model.ProteusInitKeys
+import com.wire.integrations.jvm.model.ProteusPreKey
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.toProteusPreKey
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.util.UUID
 
-class CryptoClient(private val team: Team, private val ciphersuite: Int) : AutoCloseable {
+internal class CryptoClient : AutoCloseable {
+    val team: Team
+    private val ciphersuite: Ciphersuite
     private var coreCrypto: CoreCrypto
 
-    private companion object {
-        private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
-        private const val DEFAULT_PREKEYS_COUNT = 100
-        private const val DEFAULT_KEYPACKAGES_COUNT = 100u
-        private const val KEYSTORE_NAME = "keystore"
-    }
+    constructor(team: Team) : this(team, DEFAULT_CIPHERSUITE_IDENTIFIER)
 
-    internal constructor(team: Team) : this(team, DEFAULT_CIPHERSUITE_IDENTIFIER)
-
-    init {
+    constructor(team: Team, ciphersuiteCode: Int) {
+        this.team = team
+        this.ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
         runBlocking {
-            val clientDirectoryPath = getDirectoryPath(team.clientId)
-            val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
-
-            File(clientDirectoryPath).mkdirs()
-
-            coreCrypto = CoreCrypto.invoke(
-                keystore = keystorePath,
-                databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
-                    ?: throw InvalidParameter("Cryptography password missing")
-            )
-
-            coreCrypto.transaction { it.proteusInit() }
-
+            coreCrypto = coreCryptoInit(team.id)
             coreCrypto.transaction {
+                it.proteusInit()
                 it.mlsInit(
                     ClientId(getCoreCryptoId(team.userId, team.clientId)),
-                    Ciphersuites(setOf(getMlsCipherSuiteName(ciphersuite)))
+                    Ciphersuites(setOf(ciphersuite))
                 )
             }
         }
     }
 
-    fun getId(): String = team.clientId
+    companion object {
+        private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
+        private const val DEFAULT_PREKEYS_COUNT = 100
+        private const val DEFAULT_KEYPACKAGES_COUNT = 100u
+        private const val KEYSTORE_NAME = "keystore"
+
+        /**
+         * Helper function to use core-crypto before having a fully functioning client.
+         * To register a client on the backend and to obtain a clientId, Proteus keys are needed
+         * so this function creates the minimal config to get prekeys and closes it
+         */
+        fun generateFirstPrekeys(teamId: UUID): ProteusInitKeys {
+            return runBlocking {
+                val tmpCoreCrypto = coreCryptoInit(teamId)
+                val initKeys = tmpCoreCrypto.transaction { context ->
+                    context.proteusInit()
+                    val prekeys = context.proteusNewPreKeys(0, DEFAULT_PREKEYS_COUNT)
+                    val lastPrekey = context.proteusNewLastPreKey()
+                    ProteusInitKeys(
+                        prekeys.map { it.toProteusPreKey() },
+                        lastPrekey.toProteusPreKey()
+                    )
+                }
+                tmpCoreCrypto.close()
+                initKeys
+            }
+        }
+
+        private suspend fun coreCryptoInit(teamId: UUID): CoreCrypto {
+            val clientDirectoryPath = "cryptography/$teamId"
+            val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
+
+            File(clientDirectoryPath).mkdirs()
+
+            return CoreCrypto.invoke(
+                keystore = keystorePath,
+                databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
+                    ?: throw InvalidParameter("Cryptography password missing")
+            )
+        }
+    }
 
     // Fully qualified id for the client, allowing to push key packages to the backend
     private fun getCoreCryptoId(
@@ -56,24 +85,25 @@ class CryptoClient(private val team: Team, private val ciphersuite: Int) : AutoC
         clientId: String
     ): String = "${userId.id}:$clientId@${userId.domain}"
 
-    private fun getDirectoryPath(clientId: String): String = "cryptography/$clientId"
-
-    fun proteusGeneratePrekeys(): ArrayList<PreKey> {
+    fun proteusGeneratePrekeys(): List<ProteusPreKey> {
         return runBlocking {
-            coreCrypto.transaction { it.proteusNewPreKeys(0, DEFAULT_PREKEYS_COUNT) }
+            coreCrypto.transaction { context ->
+                context.proteusNewPreKeys(0, DEFAULT_PREKEYS_COUNT)
+                    .map { it.toProteusPreKey() }
+            }
         }
     }
 
-    fun proteusGenerateLastPrekey(): PreKey {
+    fun proteusGenerateLastPrekey(): ProteusPreKey {
         return runBlocking {
-            coreCrypto.transaction { it.proteusNewLastPreKey() }
+            coreCrypto.transaction { it.proteusNewLastPreKey().toProteusPreKey() }
         }
     }
 
     fun mlsGetPublicKey(): ByteArray {
         return runBlocking {
             coreCrypto.transaction {
-                it.getPublicKey(getMlsCipherSuiteName(ciphersuite)).value
+                it.getPublicKey(ciphersuite = ciphersuite).value
             }
         }
     }
@@ -83,7 +113,7 @@ class CryptoClient(private val team: Team, private val ciphersuite: Int) : AutoC
             coreCrypto.transaction {
                 it.generateKeyPackages(
                     amount = DEFAULT_KEYPACKAGES_COUNT,
-                    ciphersuite = getMlsCipherSuiteName(ciphersuite)
+                    ciphersuite = ciphersuite
                 )
             }
         }.map { it.value }

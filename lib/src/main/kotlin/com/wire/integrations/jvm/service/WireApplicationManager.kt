@@ -15,19 +15,16 @@
 
 package com.wire.integrations.jvm.service
 
+import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
-import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.persistence.TeamStorage
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
 import java.util.UUID
+import kotlin.collections.set
 
 /**
  * Allows fetching and interacting with each Team instance that invited the application.
@@ -35,9 +32,10 @@ import java.util.UUID
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val httpClient: HttpClient,
+    private val backendClient: BackendClient,
     private val eventsRouter: EventsRouter
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
+    // TODO this can become instead a Map of CryptoClient instances
     private val teamOpenConnections = mutableMapOf<UUID, WireTeamEventsListener>()
 
     fun getStoredTeams(): List<Team> = teamStorage.getAll()
@@ -53,10 +51,10 @@ class WireApplicationManager internal constructor(
      * @param team The Team to connect to.
      */
     fun connectToTeam(team: Team) {
+        // TODO store the Cypersuite in SQLite when any team creates a client
         val cryptoClient = CryptoClient(team)
         val openTeamConnection =
             WireTeamEventsListener(
-                team = team,
                 httpClient = httpClient,
                 cryptoClient = cryptoClient,
                 eventsRouter = eventsRouter
@@ -65,18 +63,8 @@ class WireApplicationManager internal constructor(
         openTeamConnection.connect()
     }
 
-    fun getApplicationMetadata(): ApiVersionResponse {
-        logger.info("Fetching application metadata")
-        return runWithWireException {
-            runBlocking { httpClient.get("/v7/api-version").body() }
-        }
-    }
+    fun getApplicationMetadata(): ApiVersionResponse = backendClient.getBackendVersion()
 
     @Throws(WireException::class)
-    fun fetchApplicationData(): AppDataResponse {
-        logger.info("Fetching application data")
-        return runWithWireException {
-            runBlocking { httpClient.get("/v7/app-data").body() }
-        }
-    }
+    fun fetchApplicationData(): AppDataResponse = backendClient.getApplicationData()
 }

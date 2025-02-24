@@ -20,9 +20,13 @@ import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.message.MessageEventData
 import kotlinx.datetime.Instant
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonIgnoreUnknownKeys
 
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
 @Serializable
 data class EventResponse(
     @Serializable
@@ -31,10 +35,16 @@ data class EventResponse(
     @SerialName("transient") val transient: Boolean = false
 )
 
+@OptIn(ExperimentalSerializationApi::class)
+@JsonIgnoreUnknownKeys
 @Serializable
 sealed class EventContentDTO {
+    @OptIn(ExperimentalSerializationApi::class)
+    @JsonIgnoreUnknownKeys
     @Serializable
     sealed class Conversation : EventContentDTO() {
+        @OptIn(ExperimentalSerializationApi::class)
+        @JsonIgnoreUnknownKeys
         @Serializable
         @SerialName("conversation.create")
         data class NewConversationDTO(
@@ -44,6 +54,8 @@ sealed class EventContentDTO {
             @SerialName("data") val data: ConversationResponse
         ) : Conversation()
 
+        @OptIn(ExperimentalSerializationApi::class)
+        @JsonIgnoreUnknownKeys
         @Serializable
         @SerialName("conversation.otr-message-add")
         data class NewMessageDTO(
@@ -53,6 +65,8 @@ sealed class EventContentDTO {
             @SerialName("data") val data: MessageEventData
         ) : Conversation()
 
+        @OptIn(ExperimentalSerializationApi::class)
+        @JsonIgnoreUnknownKeys
         @Serializable
         @SerialName("conversation.mls-message-add")
         data class NewMLSMessageDTO(
@@ -64,6 +78,8 @@ sealed class EventContentDTO {
         ) : Conversation()
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
+    @JsonIgnoreUnknownKeys
     @Serializable
     @SerialName("unknown")
     data class Unknown(val type: String) : EventContentDTO()

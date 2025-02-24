@@ -18,7 +18,6 @@ package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.cryptography.CryptoClient
-import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import org.slf4j.LoggerFactory
@@ -26,14 +25,13 @@ import org.slf4j.LoggerFactory
 internal class EventsRouter internal constructor(
     private val wireEventsHandler: WireEventsHandler
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun routeEvents(
-        team: Team,
         event: EventResponse,
         cryptoClient: CryptoClient
     ) {
-        logger.debug("Team: {} | cryptoClient: {}", team.id, cryptoClient.getId())
+        logger.debug("Team: {} | client: {}", cryptoClient.team.id, cryptoClient.team.clientId)
         event.payload?.forEach { eventContentDTO ->
             when (eventContentDTO) {
                 is EventContentDTO.Conversation.NewConversationDTO -> {

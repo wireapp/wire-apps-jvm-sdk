@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,25 +14,13 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model
+package com.wire.integrations.jvm.model.http
 
-import com.wire.integrations.jvm.utils.UUIDSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.util.UUID
 
 @Serializable
-class QualifiedId {
-    // Data classes might have issues in library development, check if secondary constructor is the best option
-    constructor(id: UUID, domain: String) {
-        this.id = id
-        this.domain = domain
-    }
-
-    @SerialName("id")
-    @Serializable(with = UUIDSerializer::class)
-    val id: UUID
-
-    @SerialName("domain")
-    val domain: String
-}
+data class MlsKeyPackageRequest(
+    @SerialName("key_packages")
+    val keyPackages: List<String>
+)

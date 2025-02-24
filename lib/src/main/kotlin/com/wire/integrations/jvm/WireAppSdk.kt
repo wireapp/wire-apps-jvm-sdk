@@ -19,6 +19,8 @@ import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamRegistrator
+import com.wire.integrations.jvm.utils.mls
+import com.wire.integrations.jvm.utils.xprotobuf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
@@ -48,7 +50,7 @@ class WireAppSdk(
     cryptographyStoragePassword: String,
     wireEventsHandler: WireEventsHandler
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java.canonicalName)
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private val running = AtomicBoolean(false)
     private var executor = Executors.newSingleThreadExecutor()
 
@@ -94,10 +96,13 @@ class WireAppSdk(
                                     encodeDefaults = true
                                 }
                             )
+                            mls()
+                            xprotobuf()
                         }
 
                         install(WebSockets) {
                             contentConverter = KotlinxWebsocketSerializationConverter(Json)
+                            pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
                         }
 
                         install(SSE)
@@ -152,7 +157,8 @@ class WireAppSdk(
             Thread.currentThread().interrupt()
         }
 
-        // TODO: probably trigger here the connections to the WebSockets for existing teams
+        // TODO: probably trigger here the connections to the WebSocket for existing teams
+        //   and prepare the Proteus/MLS clients
     }
 
     @Synchronized
@@ -170,5 +176,9 @@ class WireAppSdk(
 
     fun getTeamManager(): WireApplicationManager {
         return IsolatedKoinContext.koinApp.koin.get()
+    }
+
+    companion object {
+        internal const val WEBSOCKET_PING_INTERVAL_MILLIS = 20_000L
     }
 }

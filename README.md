@@ -48,4 +48,5 @@ dependencies {
 
 ## Troubleshooting
 
-No issues known.
+If you have started using the SDK targeting one Wire environment,
+and later you want to switch to another, you may need to move/delete the `apps.db` directory
