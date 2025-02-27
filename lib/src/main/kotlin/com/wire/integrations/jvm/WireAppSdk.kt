@@ -18,7 +18,7 @@ package com.wire.integrations.jvm
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.service.WireApplicationManager
-import com.wire.integrations.jvm.service.WireTeamRegistrator
+import com.wire.integrations.jvm.service.WireTeamEventsListener
 import com.wire.integrations.jvm.utils.mls
 import com.wire.integrations.jvm.utils.xprotobuf
 import io.ktor.client.HttpClient
@@ -70,6 +70,43 @@ class WireAppSdk(
             apiHost = apiHost,
             wireEventsHandler = wireEventsHandler
         )
+    }
+
+    @Synchronized
+    fun start() {
+        if (running.get()) {
+            logger.info("Wire Apps SDK is already running")
+            return
+        }
+        running.set(true)
+        executor = Executors.newSingleThreadExecutor()
+        executor.submit { listenToWebSocketEvents() }
+    }
+
+    private fun listenToWebSocketEvents() {
+        val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
+        try {
+            eventsListener.connect() // Blocks thread
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+    }
+
+    @Synchronized
+    fun stop() {
+        if (!running.get()) {
+            logger.info("Wire Apps SDK is not running")
+            return
+        }
+        running.set(false)
+        logger.info("Wire Apps SDK shutting down...")
+        executor.shutdownNow()
+    }
+
+    fun isRunning(): Boolean = running.get()
+
+    fun getTeamManager(): WireApplicationManager {
+        return IsolatedKoinContext.koinApp.koin.get()
     }
 
     private fun initDynamicModules(
@@ -136,46 +173,6 @@ class WireAppSdk(
             }
 
         IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
-    }
-
-    @Synchronized
-    fun start() {
-        if (running.get()) {
-            logger.info("Wire Apps SDK is already running")
-            return
-        }
-        running.set(true)
-        executor = Executors.newSingleThreadExecutor()
-        executor.submit { listenToTeamInvites() }
-    }
-
-    private fun listenToTeamInvites() {
-        val teamRegistrator = IsolatedKoinContext.koinApp.koin.get<WireTeamRegistrator>()
-        try {
-            teamRegistrator.connect() // Blocks thread
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-        }
-
-        // TODO: probably trigger here the connections to the WebSocket for existing teams
-        //   and prepare the Proteus/MLS clients
-    }
-
-    @Synchronized
-    fun stop() {
-        if (!running.get()) {
-            logger.info("Wire Apps SDK is not running")
-            return
-        }
-        running.set(false)
-        logger.info("Wire Apps SDK shutting down...")
-        executor.shutdownNow()
-    }
-
-    fun isRunning(): Boolean = running.get()
-
-    fun getTeamManager(): WireApplicationManager {
-        return IsolatedKoinContext.koinApp.koin.get()
     }
 
     companion object {

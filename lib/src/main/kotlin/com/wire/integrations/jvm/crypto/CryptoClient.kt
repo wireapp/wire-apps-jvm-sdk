@@ -1,4 +1,4 @@
-package com.wire.integrations.jvm.cryptography
+package com.wire.integrations.jvm.crypto
 
 import com.wire.crypto.Ciphersuite
 import com.wire.crypto.Ciphersuites
