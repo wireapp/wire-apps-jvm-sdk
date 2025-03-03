@@ -39,5 +39,5 @@ fun main() {
     }
     println("Wire backend domain: ${credentialsManager.getApplicationMetadata().domain}")
 
-    // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C
+    // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

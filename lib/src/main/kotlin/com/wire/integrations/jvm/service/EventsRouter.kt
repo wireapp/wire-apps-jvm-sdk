@@ -52,12 +52,12 @@ internal class EventsRouter internal constructor(
                 }
                 is EventContentDTO.Conversation.NewProteusMessageDTO -> {
                     // Decrypt Proteus with cryptoClient from teamClients
-                    // TODO are the TeamId or UserId present in the event?
+                    // TODO get Proteus clientId from event.convId -> user -> team in SqlLite
                     wireEventsHandler.onNewMessage(eventContentDTO.time.toString())
                 }
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
                     // Decrypt MLS with cryptoClient from teamClients
-                    // TODO are the TeamId or UserId present in the event?
+                    // TODO get MLS clientId from event.convId -> user -> team in SqlLite, and groupId from conv table
                     wireEventsHandler.onNewMLSMessage(eventContentDTO.time.toString())
                 }
                 is EventContentDTO.Unknown -> {
@@ -101,9 +101,17 @@ internal class EventsRouter internal constructor(
             logger.info("Client registered team $teamId with clientId $clientId")
             val team = Team(teamId, userId, clientId)
 
-            CryptoClient(team, mlsCipherSuiteCode).use {
-                backendClient.updateClientWithMlsPublicKey(teamId, clientId, it.mlsGetPublicKey())
-                backendClient.uploadMlsKeyPackages(teamId, clientId, it.mlsGenerateKeyPackages())
+            CryptoClient(team, mlsCipherSuiteCode).use { client ->
+                backendClient.updateClientWithMlsPublicKey(
+                    teamId = teamId,
+                    clientId = clientId,
+                    mlsPublicKey = client.mlsGetPublicKey()
+                )
+                backendClient.uploadMlsKeyPackages(
+                    teamId = teamId,
+                    clientId = clientId,
+                    mlsKeyPackages = client.mlsGenerateKeyPackages().map { it.value }
+                )
                 logger.info("MLS client for $clientId fully initialized")
             }
             team

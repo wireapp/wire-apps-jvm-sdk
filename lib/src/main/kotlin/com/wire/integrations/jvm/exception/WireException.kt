@@ -64,6 +64,12 @@ sealed class WireException @JvmOverloads constructor(
         WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
+     * Cryptographic Error
+     */
+    class CryptographicSystemError(message: String? = null, throwable: Throwable? = null) :
+        WireException(message ?: throwable?.localizedMessage, throwable)
+
+    /**
      * Unknown Error
      */
     class UnknownError(message: String? = null, throwable: Throwable? = null) :
