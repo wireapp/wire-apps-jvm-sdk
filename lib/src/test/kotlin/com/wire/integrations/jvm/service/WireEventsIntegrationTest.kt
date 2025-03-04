@@ -62,6 +62,7 @@ class WireEventsIntegrationTest : KoinTest {
                     """
                     {
                         "access_token": "demoAccessToken"
+                        "expires_in" : 3600
                     }
                     """.trimIndent()
                 )

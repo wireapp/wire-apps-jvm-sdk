@@ -17,6 +17,7 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.crypto.CoreCryptoException
+import com.wire.crypto.MlsTransport
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CryptoClient
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
     private val backendClient: BackendClient,
+    private val mlsTransport: MlsTransport,
     private val wireEventsHandler: WireEventsHandler
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -74,8 +76,6 @@ internal class EventsRouter internal constructor(
                 .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
             val newTeam: Team = createTeamWithCryptoMaterial(teamId, userId, mlsDefaultCiphersuite)
             teamStorage.add(newTeam) // Can be done async ?
-
-            openCryptoClient(newTeam, mlsDefaultCiphersuite)
         } catch (e: ResponseException) {
             logger.error("Error fetching events from the backend", e)
         } catch (e: CoreCryptoException) {
@@ -94,57 +94,42 @@ internal class EventsRouter internal constructor(
             logger.info("Registering client with Proteus for team $teamId")
             val prekeys = CryptoClient.generateFirstPrekeys(teamId)
             val clientId = backendClient.registerClientWithProteus(
-                teamId = teamId,
                 prekeys = prekeys.keys,
                 lastPreKey = prekeys.lastKey
             )
             logger.info("Client registered team $teamId with clientId $clientId")
             val team = Team(teamId, userId, clientId)
 
-            CryptoClient(team, mlsCipherSuiteCode).use { client ->
-                backendClient.updateClientWithMlsPublicKey(
-                    teamId = teamId,
-                    clientId = clientId,
-                    mlsPublicKey = client.mlsGetPublicKey()
-                )
-                backendClient.uploadMlsKeyPackages(
-                    teamId = teamId,
-                    clientId = clientId,
-                    mlsKeyPackages = client.mlsGenerateKeyPackages().map { it.value }
-                )
-                logger.info("MLS client for $clientId fully initialized")
-            }
+            val teamCryptoClient = CryptoClient(team, mlsCipherSuiteCode, mlsTransport)
+            teamClients[team.id] = teamCryptoClient
+
+            backendClient.updateClientWithMlsPublicKey(
+                clientId = clientId,
+                mlsPublicKey = teamCryptoClient.mlsGetPublicKey()
+            )
+            backendClient.uploadMlsKeyPackages(
+                clientId = clientId,
+                mlsKeyPackages = teamCryptoClient.mlsGenerateKeyPackages().map { it.value }
+            )
+            logger.info("MLS client for $clientId fully initialized")
+
             team
         }
     }
 
     /**
-     * Get all teams previously saved in the local database, open a CryptoClient for each of them.
+     * Get all teams previously saved in the local database, open a CryptoClient for each of them,
+     * keep them open and store them in a Map.
+     *
+     * This function should be called when the application is started.
      */
     fun openCurrentTeamClients() {
         teamStorage.getAll().forEach { team ->
-            openCryptoClient(
-                team = team,
-                mlsCipherSuiteCode = backendClient.getApplicationFeatures(team.id)
-                    .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
-            )
-        }
-    }
+            val mlsCipherSuiteCode = backendClient.getApplicationFeatures(team.id)
+                .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
 
-    /**
-     * Opens a CryptoClient for a specific Team, then keeps them in a Map.
-     *
-     * This function should be called when the application is started and the Team is already stored, and
-     * when a Team invite is accepted.
-     *
-     * @param team The Team opening the client.
-     * @param mlsCipherSuiteCode The MLS ciphersuite enabled on the backend
-     */
-    private fun openCryptoClient(
-        team: Team,
-        mlsCipherSuiteCode: Int
-    ) {
-        val cryptoClient = CryptoClient(team, mlsCipherSuiteCode)
-        teamClients[team.id] = cryptoClient
+            val cryptoClient = CryptoClient(team, mlsCipherSuiteCode, mlsTransport)
+            teamClients[team.id] = cryptoClient
+        }
     }
 }

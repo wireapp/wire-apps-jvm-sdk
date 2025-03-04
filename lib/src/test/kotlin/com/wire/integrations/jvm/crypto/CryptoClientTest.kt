@@ -32,14 +32,19 @@ import kotlin.test.assertTrue
 class CryptoClientTest : KoinTest {
     override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
 
+    private val testMlsTransport = MlsTransportLastWelcome()
+
     @Test
     fun whenCryptoStoragePasswordIsSet_thenClientWorks() {
+        val team = Team(
+            id = TeamId(value = UUID.randomUUID()),
+            userId = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString()),
+            clientId = ClientId(UUID.randomUUID().toString())
+        )
+
         val cryptoClient = CryptoClient(
-            Team(
-                id = TeamId(value = UUID.randomUUID()),
-                userId = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString()),
-                clientId = ClientId(UUID.randomUUID().toString())
-            )
+            team = team,
+            mlsTransport = testMlsTransport
         )
         assertNotNull(cryptoClient.mlsGetPublicKey())
         val keyPackages = cryptoClient.mlsGenerateKeyPackages(10u)
@@ -54,11 +59,19 @@ class CryptoClientTest : KoinTest {
             clientId = ClientId(UUID.randomUUID().toString())
         )
 
-        val cryptoClient = CryptoClient(team)
+        val cryptoClient = CryptoClient(
+            team = team,
+            mlsTransport = testMlsTransport
+        )
         cryptoClient.close()
 
         IsolatedKoinContext.setCryptographyStoragePassword("apple🍎")
-        assertThrows<com.wire.crypto.uniffi.CoreCryptoException.Mls> { CryptoClient(team) }
+        assertThrows<com.wire.crypto.uniffi.CoreCryptoException.Mls> {
+            CryptoClient(
+                team = team,
+                mlsTransport = testMlsTransport
+            )
+        }
     }
 
     @Test
@@ -74,7 +87,10 @@ class CryptoClientTest : KoinTest {
         val groupInfo = GroupInfo(inputStream.readAllBytes())
 
         // Create a new client and join the conversation
-        val mlsClient = CryptoClient(team)
+        val mlsClient = CryptoClient(
+            team = team,
+            mlsTransport = testMlsTransport
+        )
         val groupIdGenerated: MLSGroupId = mlsClient.createJoinMlsConversationRequest(groupInfo)
         assertTrue { mlsClient.mlsConversationExists(groupIdGenerated) }
 
@@ -98,8 +114,6 @@ class CryptoClientTest : KoinTest {
 
     @Test
     fun testMlsClientsEncryptAndDecrypt() {
-        val testMlsTransport = MlsTransportLastWelcome()
-
         // Create two clients, Bob and Alice
         val teamForBob = Team(
             id = TeamId(value = UUID.randomUUID()),

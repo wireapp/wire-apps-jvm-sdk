@@ -17,13 +17,11 @@
 package com.wire.integrations.jvm.utils
 
 import com.wire.integrations.jvm.model.http.EventContentDTO
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.plus
 import kotlinx.serialization.modules.polymorphic
 
-@OptIn(ExperimentalSerializationApi::class)
 object KtxSerializer {
     val json =
         Json {

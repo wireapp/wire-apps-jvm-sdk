@@ -31,6 +31,9 @@ import io.ktor.client.request.post
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
+/**
+ * Backend client implementation targeting the Wire APIs specific to Applications
+ */
 internal class BackendClientImpl internal constructor(
     private val httpClient: HttpClient
 ) : BackendClient {
@@ -69,7 +72,6 @@ internal class BackendClientImpl internal constructor(
     }
 
     override fun registerClientWithProteus(
-        teamId: TeamId,
         prekeys: List<ProteusPreKey>,
         lastPreKey: ProteusPreKey
     ): ClientId {
@@ -77,7 +79,6 @@ internal class BackendClientImpl internal constructor(
     }
 
     override fun updateClientWithMlsPublicKey(
-        teamId: TeamId,
         clientId: ClientId,
         mlsPublicKey: ByteArray
     ) {
@@ -85,10 +86,17 @@ internal class BackendClientImpl internal constructor(
     }
 
     override fun uploadMlsKeyPackages(
-        teamId: TeamId,
         clientId: ClientId,
         mlsKeyPackages: List<ByteArray>
     ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun uploadCommitBundle(commitBundle: ByteArray) {
+        TODO("Not yet implemented")
+    }
+
+    override fun sendMlsMessage(mlsMessage: ByteArray) {
         TODO("Not yet implemented")
     }
 

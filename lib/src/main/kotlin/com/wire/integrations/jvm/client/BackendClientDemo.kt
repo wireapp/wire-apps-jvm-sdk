@@ -30,6 +30,7 @@ import com.wire.integrations.jvm.model.http.ConfirmTeamResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsKeyPackageRequest
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -62,6 +63,7 @@ internal class BackendClientDemo internal constructor(
     // Simple cache of the Backend features, as the MLS values we care about
     // will be the same for all teams, so we can make the API call only once.
     private var cachedFeatures: FeaturesResponse? = null
+    private var cachedAccessToken: String? = null
 
     override fun getBackendVersion(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
@@ -101,15 +103,13 @@ internal class BackendClientDemo internal constructor(
      * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
      */
     private suspend fun loginUser(): String {
-        val loginResponse: HttpResponse = httpClient.post("/$API_VERSION/login") {
+        return cachedAccessToken ?: httpClient.post("/$API_VERSION/login") {
             setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
             contentType(ContentType.Application.Json)
-        }
-        return loginResponse.body<LoginResponse>().accessToken
+        }.body<LoginResponse>().accessToken.also { cachedAccessToken = it }
     }
 
     override fun registerClientWithProteus(
-        teamId: TeamId,
         prekeys: List<ProteusPreKey>,
         lastPreKey: ProteusPreKey
     ): ClientId {
@@ -131,14 +131,13 @@ internal class BackendClientDemo internal constructor(
                 }
                 clientAddResponse.bodyAsText().let { logger.info(it) }
                 val clientId: String = clientAddResponse.body<ClientAddResponse>().id
-                logger.info("Registered new client with id $clientId for team: $teamId")
+                logger.info("Registered new client with id $clientId")
                 ClientId(clientId)
             }
         }
     }
 
     override fun updateClientWithMlsPublicKey(
-        teamId: TeamId,
         clientId: ClientId,
         mlsPublicKey: ByteArray
     ) {
@@ -158,13 +157,12 @@ internal class BackendClientDemo internal constructor(
                     )
                     contentType(ContentType.Application.Json)
                 }
-                logger.info("Updated client with mls info for team: $teamId")
+                logger.info("Updated client with mls info for client: $clientId")
             }
         }
     }
 
     override fun uploadMlsKeyPackages(
-        teamId: TeamId,
         clientId: ClientId,
         mlsKeyPackages: List<ByteArray>
     ) = runWithWireException {
@@ -179,9 +177,37 @@ internal class BackendClientDemo internal constructor(
                 setBody(mlsKeyPackageRequest)
                 contentType(ContentType.Application.Json)
             }
-            logger.info("Updated client with mls key packages for team: $teamId")
+            logger.info("Updated client with mls key packages for client: $clientId")
         }
     }
+
+    override fun uploadCommitBundle(commitBundle: ByteArray): Unit =
+        runWithWireException {
+            runBlocking {
+                val token = loginUser()
+                httpClient.post("/$API_VERSION/mls/commit-bundles") {
+                    headers {
+                        append(HttpHeaders.Authorization, "Bearer $token")
+                    }
+                    setBody(commitBundle)
+                    contentType(Mls)
+                }
+            }
+        }
+
+    override fun sendMlsMessage(mlsMessage: ByteArray): Unit =
+        runWithWireException {
+            runBlocking {
+                val token = loginUser()
+                httpClient.post("/$API_VERSION/mls/messages") {
+                    headers {
+                        append(HttpHeaders.Authorization, "Bearer $token")
+                    }
+                    setBody(mlsMessage)
+                    contentType(Mls)
+                }
+            }
+        }
 
     companion object {
         private const val API_VERSION = "v7"
@@ -202,5 +228,7 @@ data class LoginRequest(
 @Serializable
 data class LoginResponse(
     @SerialName("access_token")
-    val accessToken: String
+    val accessToken: String,
+    @SerialName("expires_in")
+    val expiresIn: Int
 )

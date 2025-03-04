@@ -34,20 +34,21 @@ interface BackendClient {
     fun confirmTeam(teamId: TeamId): ConfirmTeamResponse
 
     fun registerClientWithProteus(
-        teamId: TeamId,
         prekeys: List<ProteusPreKey>,
         lastPreKey: ProteusPreKey
     ): ClientId
 
     fun updateClientWithMlsPublicKey(
-        teamId: TeamId,
         clientId: ClientId,
         mlsPublicKey: ByteArray
     )
 
     fun uploadMlsKeyPackages(
-        teamId: TeamId,
         clientId: ClientId,
         mlsKeyPackages: List<ByteArray>
     )
+
+    fun uploadCommitBundle(commitBundle: ByteArray)
+
+    fun sendMlsMessage(mlsMessage: ByteArray)
 }

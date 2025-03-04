@@ -19,6 +19,7 @@ import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
+import com.wire.integrations.jvm.utils.KtxSerializer
 import com.wire.integrations.jvm.utils.mls
 import com.wire.integrations.jvm.utils.xprotobuf
 import io.ktor.client.HttpClient
@@ -32,8 +33,6 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -63,10 +62,10 @@ class WireAppSdk(
 
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
+        IsolatedKoinContext.setApiToken(apiToken)
         IsolatedKoinContext.setCryptographyStoragePassword(cryptographyStoragePassword)
 
         initDynamicModules(
-            apiToken = apiToken,
             apiHost = apiHost,
             wireEventsHandler = wireEventsHandler
         )
@@ -110,7 +109,6 @@ class WireAppSdk(
     }
 
     private fun initDynamicModules(
-        apiToken: String,
         apiHost: String,
         wireEventsHandler: WireEventsHandler
     ) {
@@ -126,13 +124,7 @@ class WireAppSdk(
                         followRedirects = true
 
                         install(ContentNegotiation) {
-                            json(
-                                Json {
-                                    prettyPrint = true
-                                    isLenient = true
-                                    encodeDefaults = true
-                                }
-                            )
+                            json(KtxSerializer.json)
                             mls()
                             xprotobuf()
                         }
@@ -146,7 +138,7 @@ class WireAppSdk(
 
                         install(Logging) {
                             level = LogLevel.ALL
-                            sanitizeHeader { header -> header == HttpHeaders.Authorization }
+//                            sanitizeHeader { header -> header == HttpHeaders.Authorization }
                         }
 
                         install(UserAgent) {
@@ -160,7 +152,6 @@ class WireAppSdk(
                         }
 
                         defaultRequest {
-                            header("Authorization", "Bearer $apiToken")
                             if (apiHost.contains(":")) {
                                 url.host = apiHost.split(":")[0]
                                 url.port = apiHost.split(":")[1].toInt()

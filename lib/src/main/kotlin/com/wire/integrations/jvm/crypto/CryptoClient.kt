@@ -11,8 +11,6 @@ import com.wire.crypto.MlsMessage
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.PlaintextMessage
 import com.wire.crypto.Welcome
-import com.wire.crypto.uniffi.CommitBundle
-import com.wire.crypto.uniffi.MlsTransportResponse
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.exception.WireException.InvalidParameter
@@ -34,7 +32,7 @@ internal class CryptoClient : AutoCloseable {
     constructor(
         team: Team,
         ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER,
-        mlsTransport: MlsTransport = MLS_TRANSPORT
+        mlsTransport: MlsTransport
     ) {
         this.team = team
         this.ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
@@ -56,7 +54,6 @@ internal class CryptoClient : AutoCloseable {
         private const val DEFAULT_PREKEYS_COUNT = 100
         private const val DEFAULT_KEYPACKAGE_COUNT = 100u
         private const val KEYSTORE_NAME = "keystore"
-        private val MLS_TRANSPORT = MlsTransportImpl()
 
         /**
          * Helper function to use core-crypto before having a fully functioning client.
@@ -238,17 +235,6 @@ internal class CryptoClient : AutoCloseable {
             6 -> Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448
             7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
             else -> Ciphersuite.DEFAULT
-        }
-    }
-
-    // TODO implement MlsTransport, calling POST /mls/commit-bundles with Ktor
-    class MlsTransportImpl : MlsTransport {
-        override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
-            return MlsTransportResponse.Success
-        }
-
-        override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse {
-            return MlsTransportResponse.Success
         }
     }
 }
