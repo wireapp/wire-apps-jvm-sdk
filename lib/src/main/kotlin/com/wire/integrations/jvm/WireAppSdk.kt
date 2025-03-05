@@ -16,7 +16,6 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
 import com.wire.integrations.jvm.utils.KtxSerializer
@@ -54,12 +53,6 @@ class WireAppSdk(
     private var executor = Executors.newSingleThreadExecutor()
 
     init {
-        if (apiHost.contains("http://") || apiHost.contains("https://")) {
-            throw WireException.InvalidParameter(
-                message = "Please remove http:// or https:// from apiHost"
-            )
-        }
-
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
         IsolatedKoinContext.setApiToken(apiToken)
@@ -152,12 +145,7 @@ class WireAppSdk(
                         }
 
                         defaultRequest {
-                            if (apiHost.contains(":")) {
-                                url.host = apiHost.split(":")[0]
-                                url.port = apiHost.split(":")[1].toInt()
-                            } else {
-                                url.host = apiHost
-                            }
+                            url(apiHost)
                         }
                     }
                 }

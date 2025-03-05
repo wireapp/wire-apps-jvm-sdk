@@ -145,7 +145,9 @@ internal class BackendClientDemo internal constructor(
             runBlocking {
                 val token = loginUser()
                 val mlsPublicKeys =
-                    MlsPublicKeys(ed25519 = Base64.getEncoder().encodeToString(mlsPublicKey))
+                    MlsPublicKeys(
+                        ecdsaSecp256r1Sha256 = Base64.getEncoder().encodeToString(mlsPublicKey)
+                    )
                 httpClient.put("/$API_VERSION/clients/${clientId.value}") {
                     headers {
                         append(HttpHeaders.Authorization, "Bearer $token")

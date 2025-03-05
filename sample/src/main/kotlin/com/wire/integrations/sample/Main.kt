@@ -23,7 +23,7 @@ fun main() {
     val wireAppSdk = WireAppSdk(
         applicationId = UUID.randomUUID(),
         apiToken = "myApiToken",
-        apiHost = "staging-nginz-https.zinfra.io",
+        apiHost = "https://staging-nginz-https.zinfra.io",
         cryptographyStoragePassword = "myDummyPassword",
         object : WireEventsHandler() {
             override fun onEvent(event: String) {
