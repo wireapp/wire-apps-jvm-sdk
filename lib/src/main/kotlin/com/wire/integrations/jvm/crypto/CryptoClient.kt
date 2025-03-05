@@ -19,6 +19,7 @@ import com.wire.integrations.jvm.model.ProteusPreKey
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.toProteusPreKey
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -139,10 +140,34 @@ internal class CryptoClient : AutoCloseable {
             ?: throw WireException.CryptographicSystemError("Decryption failed")
     }
 
-    fun mlsGetPublicKey(): ByteArray {
-        return runBlocking {
+    fun mlsGetPublicKey(): MlsPublicKeys {
+        val key = runBlocking {
             coreCrypto.transaction {
                 it.getPublicKey(ciphersuite = ciphersuite).value
+            }
+        }
+        val encodedKey = Base64.getEncoder().encodeToString(key)
+        return when (ciphersuite) {
+            Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256 -> {
+                MlsPublicKeys(ecdsaSecp256r1Sha256 = encodedKey)
+            }
+
+            Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384 -> {
+                MlsPublicKeys(ecdsaSecp384r1Sha384 = encodedKey)
+            }
+
+            Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521 -> {
+                MlsPublicKeys(ecdsaSecp521r1Sha512 = encodedKey)
+            }
+
+            Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519,
+            Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519 -> {
+                MlsPublicKeys(ed25519 = encodedKey)
+            }
+
+            Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448,
+            Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448 -> {
+                throw WireException.CryptographicSystemError("Unsupported ciphersuite")
             }
         }
     }

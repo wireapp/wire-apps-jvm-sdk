@@ -26,6 +26,7 @@ import java.util.Base64
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -142,7 +143,7 @@ class CryptoClientTest : KoinTest {
         val keyPackages: List<MLSKeyPackage> = aliceClient.mlsGenerateKeyPackages(1u)
         assertFalse { aliceClient.mlsConversationExists(groupId) }
 
-        assertFalse { bobClient.mlsGetPublicKey().contentEquals(aliceClient.mlsGetPublicKey()) }
+        assertNotEquals(bobClient.mlsGetPublicKey(), aliceClient.mlsGetPublicKey())
         bobClient.addMemberToMlsConversation(groupId, keyPackages)
 
         // Alice accepts joining the conversation

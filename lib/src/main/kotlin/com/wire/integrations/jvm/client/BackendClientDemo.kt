@@ -139,24 +139,16 @@ internal class BackendClientDemo internal constructor(
 
     override fun updateClientWithMlsPublicKey(
         clientId: ClientId,
-        mlsPublicKey: ByteArray
+        mlsPublicKeys: MlsPublicKeys
     ) {
         return runWithWireException {
             runBlocking {
                 val token = loginUser()
-                val mlsPublicKeys =
-                    MlsPublicKeys(
-                        ecdsaSecp256r1Sha256 = Base64.getEncoder().encodeToString(mlsPublicKey)
-                    )
                 httpClient.put("/$API_VERSION/clients/${clientId.value}") {
                     headers {
                         append(HttpHeaders.Authorization, "Bearer $token")
                     }
-                    setBody(
-                        ClientUpdateRequest(
-                            mlsPublicKeys = mlsPublicKeys
-                        )
-                    )
+                    setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
                     contentType(ContentType.Application.Json)
                 }
                 logger.info("Updated client with mls info for client: $clientId")

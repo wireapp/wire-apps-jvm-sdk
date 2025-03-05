@@ -118,7 +118,7 @@ class WireEventsIntegrationTest : KoinTest {
             event = NEW_CONVERSATION_EVENT
         )
 
-        assertTrue { eventsRouter.teamClients.size == 1 }
+        assertTrue { eventsRouter.getCurrentClients().size == 1 }
     }
 
     companion object {

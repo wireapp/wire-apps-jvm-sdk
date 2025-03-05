@@ -23,6 +23,7 @@ import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.ConfirmTeamResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
+import com.wire.integrations.jvm.model.http.MlsPublicKeys
 
 interface BackendClient {
     fun getBackendVersion(): ApiVersionResponse
@@ -40,7 +41,7 @@ interface BackendClient {
 
     fun updateClientWithMlsPublicKey(
         clientId: ClientId,
-        mlsPublicKey: ByteArray
+        mlsPublicKeys: MlsPublicKeys
     )
 
     fun uploadMlsKeyPackages(

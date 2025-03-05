@@ -24,6 +24,7 @@ import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.ConfirmTeamResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
+import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -80,7 +81,7 @@ internal class BackendClientImpl internal constructor(
 
     override fun updateClientWithMlsPublicKey(
         clientId: ClientId,
-        mlsPublicKey: ByteArray
+        mlsPublicKeys: MlsPublicKeys
     ) {
         TODO("Not yet implemented")
     }

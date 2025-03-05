@@ -31,6 +31,7 @@ import com.wire.integrations.jvm.persistence.TeamStorage
 import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
@@ -39,9 +40,11 @@ internal class EventsRouter internal constructor(
     private val wireEventsHandler: WireEventsHandler
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    val teamClients = mutableMapOf<TeamId, CryptoClient>()
+    private val teamClients = ConcurrentHashMap<TeamId, CryptoClient>()
 
-    fun routeEvents(event: EventResponse) {
+    fun getCurrentClients(): Map<TeamId, CryptoClient> = teamClients.toMap()
+
+    internal fun routeEvents(event: EventResponse) {
         event.payload?.forEach { eventContentDTO ->
             when (eventContentDTO) {
                 is EventContentDTO.TeamInvite -> {
@@ -105,7 +108,7 @@ internal class EventsRouter internal constructor(
 
             backendClient.updateClientWithMlsPublicKey(
                 clientId = clientId,
-                mlsPublicKey = teamCryptoClient.mlsGetPublicKey()
+                mlsPublicKeys = teamCryptoClient.mlsGetPublicKey()
             )
             backendClient.uploadMlsKeyPackages(
                 clientId = clientId,
