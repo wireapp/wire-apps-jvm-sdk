@@ -16,9 +16,9 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.service.WireApplicationManager
-import com.wire.integrations.jvm.service.WireTeamRegistrator
+import com.wire.integrations.jvm.service.WireTeamEventsListener
+import com.wire.integrations.jvm.utils.KtxSerializer
 import com.wire.integrations.jvm.utils.mls
 import com.wire.integrations.jvm.utils.xprotobuf
 import io.ktor.client.HttpClient
@@ -32,8 +32,6 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -55,87 +53,15 @@ class WireAppSdk(
     private var executor = Executors.newSingleThreadExecutor()
 
     init {
-        if (apiHost.contains("http://") || apiHost.contains("https://")) {
-            throw WireException.InvalidParameter(
-                message = "Please remove http:// or https:// from apiHost"
-            )
-        }
-
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
+        IsolatedKoinContext.setApiToken(apiToken)
         IsolatedKoinContext.setCryptographyStoragePassword(cryptographyStoragePassword)
 
         initDynamicModules(
-            apiToken = apiToken,
             apiHost = apiHost,
             wireEventsHandler = wireEventsHandler
         )
-    }
-
-    private fun initDynamicModules(
-        apiToken: String,
-        apiHost: String,
-        wireEventsHandler: WireEventsHandler
-    ) {
-        val dynamicModule =
-            module {
-                single {
-                    wireEventsHandler
-                }
-
-                single<HttpClient> {
-                    HttpClient(CIO) {
-                        expectSuccess = true
-                        followRedirects = true
-
-                        install(ContentNegotiation) {
-                            json(
-                                Json {
-                                    prettyPrint = true
-                                    isLenient = true
-                                    encodeDefaults = true
-                                }
-                            )
-                            mls()
-                            xprotobuf()
-                        }
-
-                        install(WebSockets) {
-                            contentConverter = KotlinxWebsocketSerializationConverter(Json)
-                            pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
-                        }
-
-                        install(SSE)
-
-                        install(Logging) {
-                            level = LogLevel.ALL
-                            sanitizeHeader { header -> header == HttpHeaders.Authorization }
-                        }
-
-                        install(UserAgent) {
-                            agent = "Ktor JVM SDK client"
-                        }
-
-                        install(HttpCache)
-                        install(HttpRequestRetry) {
-                            retryOnServerErrors(maxRetries = 3)
-                            exponentialDelay()
-                        }
-
-                        defaultRequest {
-                            header("Authorization", "Bearer $apiToken")
-                            if (apiHost.contains(":")) {
-                                url.host = apiHost.split(":")[0]
-                                url.port = apiHost.split(":")[1].toInt()
-                            } else {
-                                url.host = apiHost
-                            }
-                        }
-                    }
-                }
-            }
-
-        IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
     }
 
     @Synchronized
@@ -146,19 +72,16 @@ class WireAppSdk(
         }
         running.set(true)
         executor = Executors.newSingleThreadExecutor()
-        executor.submit { listenToTeamInvites() }
+        executor.submit { listenToWebSocketEvents() }
     }
 
-    private fun listenToTeamInvites() {
-        val teamRegistrator = IsolatedKoinContext.koinApp.koin.get<WireTeamRegistrator>()
+    private fun listenToWebSocketEvents() {
+        val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
         try {
-            teamRegistrator.connect() // Blocks thread
+            eventsListener.connect() // Blocks thread
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
         }
-
-        // TODO: probably trigger here the connections to the WebSocket for existing teams
-        //   and prepare the Proteus/MLS clients
     }
 
     @Synchronized
@@ -176,6 +99,59 @@ class WireAppSdk(
 
     fun getTeamManager(): WireApplicationManager {
         return IsolatedKoinContext.koinApp.koin.get()
+    }
+
+    private fun initDynamicModules(
+        apiHost: String,
+        wireEventsHandler: WireEventsHandler
+    ) {
+        val dynamicModule =
+            module {
+                single {
+                    wireEventsHandler
+                }
+
+                single<HttpClient> {
+                    HttpClient(CIO) {
+                        expectSuccess = true
+                        followRedirects = true
+
+                        install(ContentNegotiation) {
+                            json(KtxSerializer.json)
+                            mls()
+                            xprotobuf()
+                        }
+
+                        install(WebSockets) {
+                            contentConverter = KotlinxWebsocketSerializationConverter(Json)
+                            pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
+                        }
+
+                        install(SSE)
+
+                        install(Logging) {
+                            level = LogLevel.ALL
+//                            sanitizeHeader { header -> header == HttpHeaders.Authorization }
+                        }
+
+                        install(UserAgent) {
+                            agent = "Ktor JVM SDK client"
+                        }
+
+                        install(HttpCache)
+                        install(HttpRequestRetry) {
+                            retryOnServerErrors(maxRetries = 3)
+                            exponentialDelay()
+                        }
+
+                        defaultRequest {
+                            url(apiHost)
+                        }
+                    }
+                }
+            }
+
+        IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
     }
 
     companion object {

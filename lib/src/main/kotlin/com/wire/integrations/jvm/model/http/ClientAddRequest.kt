@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ClientAddRequest(
     val type: String = "permanent",
-    val capabilities: List<String> = listOf("consumable-notifications"),
+//    val capabilities: List<String> = listOf("consumable-notifications"),
     // Only required clients other thant the first one
     val password: String?,
     val lastkey: ProteusPreKey,

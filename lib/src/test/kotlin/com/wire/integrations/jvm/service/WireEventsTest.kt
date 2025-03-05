@@ -16,11 +16,12 @@
 
 package com.wire.integrations.jvm.service
 
-import com.wire.integrations.jvm.WireAppSdk
 import com.wire.integrations.jvm.WireEventsHandler
-import com.wire.integrations.jvm.cryptography.CryptoClient
+import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.model.ClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
@@ -28,6 +29,7 @@ import com.wire.integrations.jvm.utils.KtxSerializer
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.koin.core.Koin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.get
@@ -37,6 +39,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 class WireEventsTest : KoinTest {
+    // Override the Koin instance as we use an isolated context
+    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
+
     private val wireEventsHandler =
         object : WireEventsHandler() {
             override fun onNewConversation(value: String) {
@@ -59,7 +64,7 @@ class WireEventsTest : KoinTest {
             modules(
                 module {
                     single<WireEventsHandler> { wireEventsHandler }
-                    single<EventsRouter> { EventsRouter(get()) }
+                    single<EventsRouter> { EventsRouter(get(), get(), get(), get()) }
                 }
             )
         }
@@ -74,28 +79,6 @@ class WireEventsTest : KoinTest {
     }
 
     @Test
-    fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
-        val wireEventsHandler = get<WireEventsHandler>()
-        val eventsRouter = get<EventsRouter>()
-
-        val wireSdkApp =
-            WireAppSdk(
-                applicationId = APPLICATION_ID,
-                apiToken = API_TOKEN,
-                apiHost = API_HOST,
-                cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-                wireEventsHandler = wireEventsHandler
-            )
-
-        CryptoClient(team = TEAM).use { cryptoClient ->
-            eventsRouter.routeEvents(
-                event = EVENT_RESPONSE,
-                cryptoClient = cryptoClient
-            )
-        }
-    }
-
-    @Test
     fun whenDeserializingConversationCreateEventThenItShouldMapCorrectlyToNewConversationDTO() {
         val event =
             KtxSerializer.json.decodeFromString<EventResponse>(
@@ -106,10 +89,6 @@ class WireEventsTest : KoinTest {
     }
 
     companion object {
-        private val APPLICATION_ID = UUID.randomUUID()
-        private const val API_TOKEN = "dummyToken"
-        private const val API_HOST = "localhost:8086"
-        private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "dummyPassword"
         private val EXPECTED_NEW_CONVERSATION_VALUE = Instant.DISTANT_FUTURE
         private val EXPECTED_NEW_MESSAGE_VALUE = Instant.DISTANT_PAST
         private val EXPECTED_NEW_MLS_MESSAGE_VALUE = Instant.DISTANT_PAST
@@ -125,13 +104,13 @@ class WireEventsTest : KoinTest {
             )
         private val TEAM =
             Team(
-                id = UUID.randomUUID(),
+                id = TeamId(UUID.randomUUID()),
                 userId =
                     QualifiedId(
                         id = UUID.randomUUID(),
                         domain = "wire.com"
                     ),
-                clientId = "client_id_1234"
+                clientId = ClientId("client_id_1234")
             )
         private val EVENT_RESPONSE =
             EventResponse(

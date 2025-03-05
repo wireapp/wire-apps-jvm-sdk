@@ -23,7 +23,7 @@ fun main() {
     val wireAppSdk = WireAppSdk(
         applicationId = UUID.randomUUID(),
         apiToken = "myApiToken",
-        apiHost = "staging-nginz-https.zinfra.io",
+        apiHost = "https://staging-nginz-https.zinfra.io",
         cryptographyStoragePassword = "myDummyPassword",
         object : WireEventsHandler() {
             override fun onEvent(event: String) {
@@ -39,5 +39,5 @@ fun main() {
     }
     println("Wire backend domain: ${credentialsManager.getApplicationMetadata().domain}")
 
-    // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C
+    // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

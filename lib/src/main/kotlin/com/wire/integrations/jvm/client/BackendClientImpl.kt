@@ -19,18 +19,22 @@ package com.wire.integrations.jvm.client
 import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.ClientId
 import com.wire.integrations.jvm.model.ProteusPreKey
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.ConfirmTeamResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
+import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import java.util.UUID
 
+/**
+ * Backend client implementation targeting the Wire APIs specific to Applications
+ */
 internal class BackendClientImpl internal constructor(
     private val httpClient: HttpClient
 ) : BackendClient {
@@ -50,26 +54,25 @@ internal class BackendClientImpl internal constructor(
         }
     }
 
-    override fun getApplicationFeatures(teamId: UUID): FeaturesResponse {
+    override fun getApplicationFeatures(teamId: TeamId): FeaturesResponse {
         logger.info("Fetching application enabled features")
         return runWithWireException {
             runBlocking {
-                httpClient.get("/$API_VERSION/apps/teams/$teamId/feature-configs").body()
+                httpClient.get("/$API_VERSION/apps/teams/${teamId.value}/feature-configs").body()
             }
         }
     }
 
-    override fun confirmTeam(teamId: UUID): ConfirmTeamResponse {
+    override fun confirmTeam(teamId: TeamId): ConfirmTeamResponse {
         logger.info("Confirming team invite")
         return runWithWireException {
             runBlocking {
-                httpClient.post("/$API_VERSION/apps/teams/$teamId/confirm").body()
+                httpClient.post("/$API_VERSION/apps/teams/${teamId.value}/confirm").body()
             }
         }
     }
 
     override fun registerClientWithProteus(
-        teamId: UUID,
         prekeys: List<ProteusPreKey>,
         lastPreKey: ProteusPreKey
     ): ClientId {
@@ -77,18 +80,24 @@ internal class BackendClientImpl internal constructor(
     }
 
     override fun updateClientWithMlsPublicKey(
-        teamId: UUID,
         clientId: ClientId,
-        mlsPublicKey: ByteArray
+        mlsPublicKeys: MlsPublicKeys
     ) {
         TODO("Not yet implemented")
     }
 
     override fun uploadMlsKeyPackages(
-        teamId: UUID,
         clientId: ClientId,
         mlsKeyPackages: List<ByteArray>
     ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun uploadCommitBundle(commitBundle: ByteArray) {
+        TODO("Not yet implemented")
+    }
+
+    override fun sendMlsMessage(mlsMessage: ByteArray) {
         TODO("Not yet implemented")
     }
 

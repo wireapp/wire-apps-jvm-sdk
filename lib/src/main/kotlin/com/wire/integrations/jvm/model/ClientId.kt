@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,33 +14,11 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-plugins {
-    kotlin("jvm")
-    application
-}
+package com.wire.integrations.jvm.model
 
-group = "com.wire.integrations"
-version = "0.0.1-SNAPSHOT"
+import com.wire.integrations.jvm.utils.obfuscateClientId
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation(project(":lib"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.0")
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-tasks.named<Test>("test") {
-    useJUnitPlatform()
-}
-
-application {
-    mainClass.set("com.wire.integrations.sample.MainKt")
+@JvmInline
+value class ClientId(val value: String) {
+    override fun toString(): String = value.obfuscateClientId()
 }

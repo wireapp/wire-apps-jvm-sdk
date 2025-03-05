@@ -38,11 +38,11 @@ internal object IsolatedKoinContext {
 
     fun getApiHost() = this.koinApp.koin.getProperty<String>(API_HOST)
 
-    fun getWebSocketHost() =
-        getApiHost()
-            ?.replace("https://", "wss://")
-            ?.replace("http://", "ws://")
-            ?.replace("-https", "-ssl")
+    fun setApiToken(value: String) {
+        this.koinApp.koin.setProperty(API_TOKEN, value)
+    }
+
+    fun getApiToken() = this.koinApp.koin.getProperty<String>(API_TOKEN)
 
     fun setCryptographyStoragePassword(value: String) {
         this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_PASSWORD, value)
@@ -56,5 +56,6 @@ internal object IsolatedKoinContext {
      */
     private const val APPLICATION_ID = "APPLICATION_ID"
     private const val API_HOST = "API_HOST"
+    private const val API_TOKEN = "API_HOST"
     private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "CRYPTOGRAPHY_STORAGE_PASSWORD"
 }

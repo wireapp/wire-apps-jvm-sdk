@@ -18,13 +18,9 @@ package com.wire.integrations.jvm.model.http
 
 import com.wire.integrations.jvm.model.CryptoProtocol
 import com.wire.integrations.jvm.model.MlsStatus
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonIgnoreUnknownKeys
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonIgnoreUnknownKeys
 @Serializable
 data class FeaturesResponse(
     @SerialName("mls")
@@ -33,8 +29,6 @@ data class FeaturesResponse(
     fun isMlsEnabled(): Boolean = mlsFeatureResponse.status == MlsStatus.ENABLED
 }
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonIgnoreUnknownKeys
 @Serializable
 data class MlsFeatureResponse(
     @SerialName("config")
@@ -43,8 +37,6 @@ data class MlsFeatureResponse(
     val status: MlsStatus
 )
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonIgnoreUnknownKeys
 @Serializable
 data class MlsFeatureConfigResponse(
     @SerialName("allowedCipherSuites")

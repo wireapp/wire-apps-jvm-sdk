@@ -16,22 +16,19 @@
 package com.wire.integrations.jvm.model
 
 import com.wire.integrations.jvm.utils.UUIDSerializer
+import com.wire.integrations.jvm.utils.obfuscateId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
+@JvmRecord
 @Serializable
-class QualifiedId {
-    // Data classes might have issues in library development, check if secondary constructor is the best option
-    constructor(id: UUID, domain: String) {
-        this.id = id
-        this.domain = domain
-    }
-
+data class QualifiedId(
     @SerialName("id")
     @Serializable(with = UUIDSerializer::class)
-    val id: UUID
-
+    val id: UUID,
     @SerialName("domain")
     val domain: String
+) {
+    override fun toString(): String = "${id.obfuscateId()}@$domain"
 }

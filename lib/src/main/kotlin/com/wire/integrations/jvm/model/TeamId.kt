@@ -14,16 +14,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model.http
+package com.wire.integrations.jvm.model
 
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonIgnoreUnknownKeys
+import com.wire.integrations.jvm.utils.obfuscateId
+import java.util.UUID
 
-@OptIn(ExperimentalSerializationApi::class)
-@JsonIgnoreUnknownKeys
-@Serializable
-data class TeamServerSentEvent(
-    @SerialName("teamId") val teamId: String
-)
+@JvmInline
+value class TeamId(val value: UUID) {
+    override fun toString(): String = value.obfuscateId()
+}

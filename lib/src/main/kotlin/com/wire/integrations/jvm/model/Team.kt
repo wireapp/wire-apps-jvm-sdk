@@ -15,40 +15,9 @@
 
 package com.wire.integrations.jvm.model
 
-import java.util.UUID
-
-typealias ClientId = String
-
-class Team {
-    // Data classes might have issues in library development, check if secondary constructor is the best option
-    constructor(
-        id: UUID,
-        userId: QualifiedId,
-        clientId: ClientId
-    ) {
-        this.id = id
-        this.userId = userId
-        this.clientId = clientId
-    }
-
-    val id: UUID
-    val userId: QualifiedId
+@JvmRecord
+data class Team(
+    val id: TeamId,
+    val userId: QualifiedId,
     val clientId: ClientId
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Team) return false
-
-        if (id != other.id) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return id.hashCode()
-    }
-
-    override fun toString(): String {
-        return "Team(id=$id, userId=$userId, clientId='$clientId')"
-    }
-}
+)

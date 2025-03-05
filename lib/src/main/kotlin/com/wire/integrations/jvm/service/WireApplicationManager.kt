@@ -16,52 +16,20 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
-import com.wire.integrations.jvm.cryptography.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.persistence.TeamStorage
-import io.ktor.client.HttpClient
-import java.util.UUID
-import kotlin.collections.set
 
 /**
- * Allows fetching and interacting with each Team instance that invited the application.
+ * Allows fetching and interacting with each Team instance invited to the Application.
  */
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
-    private val httpClient: HttpClient,
-    private val backendClient: BackendClient,
-    private val eventsRouter: EventsRouter
+    private val backendClient: BackendClient
 ) {
-    // TODO this can become instead a Map of CryptoClient instances
-    private val teamOpenConnections = mutableMapOf<UUID, WireTeamEventsListener>()
-
     fun getStoredTeams(): List<Team> = teamStorage.getAll()
-
-    fun getConnectedTeamsCount(): Int = teamOpenConnections.count()
-
-    /**
-     * Opens a connection fetching events for a specific Team.
-     *
-     * This function should be called when the application is started and the Team is already stored, and
-     * when a Team invite is accepted.
-     *
-     * @param team The Team to connect to.
-     */
-    fun connectToTeam(team: Team) {
-        // TODO store the Cypersuite in SQLite when any team creates a client
-        val cryptoClient = CryptoClient(team)
-        val openTeamConnection =
-            WireTeamEventsListener(
-                httpClient = httpClient,
-                cryptoClient = cryptoClient,
-                eventsRouter = eventsRouter
-            )
-        teamOpenConnections[team.id] = openTeamConnection
-        openTeamConnection.connect()
-    }
 
     fun getApplicationMetadata(): ApiVersionResponse = backendClient.getBackendVersion()
 
