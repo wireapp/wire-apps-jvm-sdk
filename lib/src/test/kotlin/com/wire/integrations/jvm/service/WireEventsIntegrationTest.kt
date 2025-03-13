@@ -22,13 +22,11 @@ import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.wire.integrations.jvm.WireAppSdk
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.model.ClientId
 import com.wire.integrations.jvm.model.QualifiedId
-import com.wire.integrations.jvm.model.Team
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
-import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.persistence.TeamStorage
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -45,6 +43,19 @@ class WireEventsIntegrationTest : KoinTest {
 
     @Test
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
+        wireMockServer.stubFor(
+            WireMock.get(WireMock.urlMatching("/v7/apps")).willReturn(
+                WireMock.okJson(
+                    """
+                    {
+                        "client_id": "dummyClientId",
+                        "app_type": "dummyAppType",
+                        "app_command": "dummyAppCommand"
+                    }
+                    """.trimIndent()
+                )
+            )
+        )
         wireMockServer.stubFor(
             WireMock.post(WireMock.urlMatching("/v7/clients")).willReturn(
                 WireMock.okJson(
@@ -111,14 +122,19 @@ class WireEventsIntegrationTest : KoinTest {
         )
 
         val eventsRouter = get<EventsRouter>()
-        eventsRouter.routeEvents(
-            event = NEW_TEAM_INVITE_EVENT
+        val listener = get<WireTeamEventsListener>()
+        val client = listener.getOrInitCryptoClient()
+        eventsRouter.route(
+            event = NEW_TEAM_INVITE_EVENT,
+            cryptoClient = client
         )
-        eventsRouter.routeEvents(
-            event = NEW_CONVERSATION_EVENT
+        eventsRouter.route(
+            event = NEW_CONVERSATION_EVENT,
+            cryptoClient = client
         )
 
-        assertTrue { eventsRouter.getCurrentClients().size == 1 }
+        val teamStorage = get<TeamStorage>()
+        assertTrue { teamStorage.getAll().size == 1 }
     }
 
     companion object {
@@ -137,23 +153,15 @@ class WireEventsIntegrationTest : KoinTest {
                 id = UUID.randomUUID(),
                 domain = "wire.com"
             )
-        private val TEAM =
-            Team(
-                id = TeamId(UUID.randomUUID()),
-                userId =
-                    QualifiedId(
-                        id = UUID.randomUUID(),
-                        domain = "wire.com"
-                    ),
-                clientId = ClientId(UUID.randomUUID().toString())
-            )
+        private val TEAM_ID = TeamId(UUID.randomUUID())
+
         private val NEW_TEAM_INVITE_EVENT =
             EventResponse(
                 id = "event_id1",
                 payload =
                     listOf(
                         EventContentDTO.TeamInvite(
-                            teamId = TEAM.id.value
+                            teamId = TEAM_ID.value
                         )
                     ),
                 transient = true
@@ -166,8 +174,7 @@ class WireEventsIntegrationTest : KoinTest {
                         EventContentDTO.Conversation.NewConversationDTO(
                             qualifiedConversation = CONVERSATION_ID,
                             qualifiedFrom = USER_ID,
-                            time = EXPECTED_NEW_CONVERSATION_VALUE,
-                            data = ConversationResponse(dummyField = "dummyString")
+                            time = EXPECTED_NEW_CONVERSATION_VALUE
                         )
                     ),
                 transient = true

@@ -16,40 +16,41 @@
 
 package com.wire.integrations.jvm.client
 
-import com.wire.integrations.jvm.model.ClientId
-import com.wire.integrations.jvm.model.ProteusPreKey
+import com.wire.integrations.jvm.model.AppClientId
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
-import com.wire.integrations.jvm.model.http.ConfirmTeamResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import io.ktor.websocket.Frame
+import kotlinx.coroutines.channels.ReceiveChannel
 
 interface BackendClient {
+    suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit)
+
     fun getBackendVersion(): ApiVersionResponse
 
     fun getApplicationData(): AppDataResponse
 
-    fun getApplicationFeatures(teamId: TeamId): FeaturesResponse
+    fun getApplicationFeatures(): FeaturesResponse
 
-    fun confirmTeam(teamId: TeamId): ConfirmTeamResponse
-
-    fun registerClientWithProteus(
-        prekeys: List<ProteusPreKey>,
-        lastPreKey: ProteusPreKey
-    ): ClientId
+    fun confirmTeam(teamId: TeamId)
 
     fun updateClientWithMlsPublicKey(
-        clientId: ClientId,
+        appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     )
 
     fun uploadMlsKeyPackages(
-        clientId: ClientId,
+        appClientId: AppClientId,
         mlsKeyPackages: List<ByteArray>
     )
 
     fun uploadCommitBundle(commitBundle: ByteArray)
 
-    fun sendMlsMessage(mlsMessage: ByteArray)
+    fun sendMessage(mlsMessage: ByteArray)
+
+    fun getConversation(conversationId: QualifiedId): ConversationResponse
 }

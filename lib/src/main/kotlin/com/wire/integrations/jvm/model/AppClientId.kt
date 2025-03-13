@@ -14,13 +14,13 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model.http
+package com.wire.integrations.jvm.model
 
-import com.wire.integrations.jvm.model.QualifiedId
-import kotlinx.serialization.SerialName
+import com.wire.integrations.jvm.utils.obfuscateClientId
 import kotlinx.serialization.Serializable
 
+@JvmInline
 @Serializable
-data class ConfirmTeamResponse(
-    @SerialName("qualified_user_id") val userId: QualifiedId
-)
+value class AppClientId(val value: String) {
+    override fun toString(): String = value.obfuscateClientId()
+}

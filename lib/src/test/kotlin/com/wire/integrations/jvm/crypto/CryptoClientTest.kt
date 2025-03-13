@@ -5,16 +5,10 @@ import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
-import com.wire.crypto.MlsTransport
-import com.wire.crypto.Welcome
 import com.wire.crypto.toGroupId
-import com.wire.crypto.uniffi.CommitBundle
-import com.wire.crypto.uniffi.MlsTransportResponse
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.model.ClientId
-import com.wire.integrations.jvm.model.QualifiedId
-import com.wire.integrations.jvm.model.Team
-import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.AppClientId
+import com.wire.integrations.jvm.utils.MlsTransportLastWelcome
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -37,14 +31,8 @@ class CryptoClientTest : KoinTest {
 
     @Test
     fun whenCryptoStoragePasswordIsSet_thenClientWorks() {
-        val team = Team(
-            id = TeamId(value = UUID.randomUUID()),
-            userId = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString()),
-            clientId = ClientId(UUID.randomUUID().toString())
-        )
-
         val cryptoClient = CryptoClient(
-            team = team,
+            clientId = AppClientId("app:${UUID.randomUUID()}"),
             mlsTransport = testMlsTransport
         )
         assertNotNull(cryptoClient.mlsGetPublicKey())
@@ -54,14 +42,9 @@ class CryptoClientTest : KoinTest {
 
     @Test
     fun testMlsClientFailOnDifferentPassword() {
-        val team = Team(
-            id = TeamId(value = UUID.randomUUID()),
-            userId = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString()),
-            clientId = ClientId(UUID.randomUUID().toString())
-        )
-
+        val clientId = AppClientId("app:${UUID.randomUUID()}")
         val cryptoClient = CryptoClient(
-            team = team,
+            clientId = clientId,
             mlsTransport = testMlsTransport
         )
         cryptoClient.close()
@@ -69,7 +52,7 @@ class CryptoClientTest : KoinTest {
         IsolatedKoinContext.setCryptographyStoragePassword("apple🍎")
         assertThrows<com.wire.crypto.uniffi.CoreCryptoException.Mls> {
             CryptoClient(
-                team = team,
+                clientId = clientId,
                 mlsTransport = testMlsTransport
             )
         }
@@ -77,19 +60,13 @@ class CryptoClientTest : KoinTest {
 
     @Test
     fun testMlsClientCreateConversationAndEncryptMls() {
-        val team = Team(
-            id = TeamId(value = UUID.randomUUID()),
-            userId = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString()),
-            clientId = ClientId(UUID.randomUUID().toString())
-        )
-
         // GroupInfo of a real conversation, stored in a binary test file
         val inputStream: InputStream = FileInputStream("src/test/resources/groupInfo.bin")
         val groupInfo = GroupInfo(inputStream.readAllBytes())
 
         // Create a new client and join the conversation
         val mlsClient = CryptoClient(
-            team = team,
+            clientId = AppClientId(UUID.randomUUID().toString()),
             mlsTransport = testMlsTransport
         )
         val groupIdGenerated: MLSGroupId = mlsClient.createJoinMlsConversationRequest(groupInfo)
@@ -116,23 +93,13 @@ class CryptoClientTest : KoinTest {
     @Test
     fun testMlsClientsEncryptAndDecrypt() {
         // Create two clients, Bob and Alice
-        val teamForBob = Team(
-            id = TeamId(value = UUID.randomUUID()),
-            userId = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString()),
-            clientId = ClientId("bob_" + UUID.randomUUID())
-        )
         val bobClient = CryptoClient(
-            team = teamForBob,
+            clientId = AppClientId("bob_" + UUID.randomUUID()),
             mlsTransport = testMlsTransport
         )
 
-        val teamForAlice = Team(
-            id = TeamId(value = UUID.randomUUID()),
-            userId = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString()),
-            clientId = ClientId("alice_" + UUID.randomUUID())
-        )
         val aliceClient = CryptoClient(
-            team = teamForAlice,
+            clientId = AppClientId("alice_" + UUID.randomUUID()),
             mlsTransport = testMlsTransport
         )
 
@@ -180,27 +147,4 @@ class CryptoClientTest : KoinTest {
             IsolatedKoinContext.setCryptographyStoragePassword("banana🍌")
         }
     }
-}
-
-/**
- * A simple implementation of [MlsTransport] that stores the last welcome message,
- * only for testing purposes. In a real scenario, the welcome message would come from the backend.
- */
-class MlsTransportLastWelcome : MlsTransport {
-    private var groupWelcomeMap: Welcome? = null
-
-    override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
-        commitBundle.welcome?.let {
-            groupWelcomeMap = Welcome(it)
-        }
-
-        return MlsTransportResponse.Success
-    }
-
-    override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse {
-        return MlsTransportResponse.Success
-    }
-
-    fun getLastWelcome(): Welcome =
-        groupWelcomeMap ?: throw IllegalArgumentException("No welcome for group")
 }

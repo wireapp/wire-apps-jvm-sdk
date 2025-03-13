@@ -16,19 +16,25 @@
 
 package com.wire.integrations.jvm.client
 
+import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.runWithWireException
-import com.wire.integrations.jvm.model.ClientId
-import com.wire.integrations.jvm.model.ProteusPreKey
+import com.wire.integrations.jvm.model.AppClientId
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
-import com.wire.integrations.jvm.model.http.ConfirmTeamResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.http.HttpHeaders
+import io.ktor.websocket.Frame
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
@@ -40,6 +46,19 @@ internal class BackendClientImpl internal constructor(
 ) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    override suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit) {
+        logger.info("Connecting to the webSocket, waiting for events")
+
+        httpClient.webSocket(
+            path = "/await",
+            request = {
+                header(HttpHeaders.Authorization, "Bearer ${IsolatedKoinContext.getApiToken()}")
+            }
+        ) {
+            handleFrames(incoming)
+        }
+    }
+
     override fun getBackendVersion(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
         return runWithWireException {
@@ -50,44 +69,37 @@ internal class BackendClientImpl internal constructor(
     override fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
         return runWithWireException {
-            runBlocking { httpClient.get("/$API_VERSION/app-data").body() }
+            runBlocking { httpClient.get("/$API_VERSION/apps").body() }
         }
     }
 
-    override fun getApplicationFeatures(teamId: TeamId): FeaturesResponse {
+    override fun getApplicationFeatures(): FeaturesResponse {
         logger.info("Fetching application enabled features")
         return runWithWireException {
             runBlocking {
-                httpClient.get("/$API_VERSION/apps/teams/${teamId.value}/feature-configs").body()
+                httpClient.get("/$API_VERSION/apps/feature-configs").body()
             }
         }
     }
 
-    override fun confirmTeam(teamId: TeamId): ConfirmTeamResponse {
+    override fun confirmTeam(teamId: TeamId) {
         logger.info("Confirming team invite")
-        return runWithWireException {
+        runWithWireException {
             runBlocking {
-                httpClient.post("/$API_VERSION/apps/teams/${teamId.value}/confirm").body()
+                httpClient.post("/$API_VERSION/apps/teams/${teamId.value}/confirm")
             }
         }
-    }
-
-    override fun registerClientWithProteus(
-        prekeys: List<ProteusPreKey>,
-        lastPreKey: ProteusPreKey
-    ): ClientId {
-        TODO("Not yet implemented")
     }
 
     override fun updateClientWithMlsPublicKey(
-        clientId: ClientId,
+        appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
         TODO("Not yet implemented")
     }
 
     override fun uploadMlsKeyPackages(
-        clientId: ClientId,
+        appClientId: AppClientId,
         mlsKeyPackages: List<ByteArray>
     ) {
         TODO("Not yet implemented")
@@ -97,7 +109,11 @@ internal class BackendClientImpl internal constructor(
         TODO("Not yet implemented")
     }
 
-    override fun sendMlsMessage(mlsMessage: ByteArray) {
+    override fun sendMessage(mlsMessage: ByteArray) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getConversation(conversationId: QualifiedId): ConversationResponse {
         TODO("Not yet implemented")
     }
 

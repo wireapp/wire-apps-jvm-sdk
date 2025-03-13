@@ -1,7 +1,6 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
- *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -14,6 +13,22 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model
+package com.wire.integrations.jvm.persistence
 
-data class ProteusInitKeys(val keys: List<ProteusPreKey>, val lastKey: ProteusPreKey)
+import com.wire.integrations.jvm.model.AppClientId
+import com.wire.integrations.jvm.model.AppData
+
+interface AppStorage {
+    fun save(
+        key: String,
+        value: String
+    )
+
+    fun getAll(): List<AppData>
+
+    fun getById(key: String): AppData
+
+    fun getClientId(): AppClientId?
+
+    fun saveClientId(clientId: String)
+}

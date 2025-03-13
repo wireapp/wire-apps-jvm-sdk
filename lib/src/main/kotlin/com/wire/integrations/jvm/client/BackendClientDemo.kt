@@ -16,44 +16,47 @@
 
 package com.wire.integrations.jvm.client
 
+import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.runWithWireException
-import com.wire.integrations.jvm.model.ClientId
-import com.wire.integrations.jvm.model.ProteusPreKey
+import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
-import com.wire.integrations.jvm.model.http.ClientAddRequest
-import com.wire.integrations.jvm.model.http.ClientAddResponse
 import com.wire.integrations.jvm.model.http.ClientUpdateRequest
-import com.wire.integrations.jvm.model.http.ConfirmTeamResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsKeyPackageRequest
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
+import io.ktor.http.encodedPath
+import io.ktor.websocket.Frame
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 import java.util.Base64
-import java.util.UUID
 
 /**
  * Backend client implementation for test/demo purposes
- * Useful for testing the SDK without the Backend having new Application API implemented,
- * instead using the standard Client API
+ * Useful for testing the SDK without the Backend having new Application API implemented.
+ *
+ * Real http calls are made, they target 2 hosts:
+ * - localhost:8086 - reaching the local Demo events producer
+ * - some Wire Backend evn - emulate Apps API calls by using the Client API with a DEMO user
  */
 internal class BackendClientDemo internal constructor(
     private val httpClient: HttpClient
@@ -65,6 +68,21 @@ internal class BackendClientDemo internal constructor(
     private var cachedFeatures: FeaturesResponse? = null
     private var cachedAccessToken: String? = null
 
+    override suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit) {
+        logger.info("Connecting to the webSocket, waiting for events")
+
+        httpClient.webSocket(
+            host = DEMO_HOST,
+            port = DEMO_PORT,
+            path = "/await",
+            request = {
+                header(HttpHeaders.Authorization, "Bearer ${IsolatedKoinContext.getApiToken()}")
+            }
+        ) {
+            handleFrames(incoming)
+        }
+    }
+
     override fun getBackendVersion(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
         return runWithWireException {
@@ -75,11 +93,19 @@ internal class BackendClientDemo internal constructor(
     override fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
         return runWithWireException {
-            runBlocking { httpClient.get("/$API_VERSION/app-data").body() }
+            runBlocking {
+                httpClient.get {
+                    url {
+                        host = DEMO_HOST
+                        port = DEMO_PORT
+                        encodedPath = "/$API_VERSION/apps"
+                    }
+                }.body()
+            }
         }
     }
 
-    override fun getApplicationFeatures(teamId: TeamId): FeaturesResponse {
+    override fun getApplicationFeatures(): FeaturesResponse {
         logger.info("Fetching application enabled features")
         return cachedFeatures ?: runWithWireException {
             runBlocking {
@@ -93,9 +119,8 @@ internal class BackendClientDemo internal constructor(
         }
     }
 
-    override fun confirmTeam(teamId: TeamId): ConfirmTeamResponse {
+    override fun confirmTeam(teamId: TeamId) {
         logger.info("Confirming team invite")
-        return ConfirmTeamResponse(QualifiedId(DEMO_USER_ID, DEMO_DOMAIN))
     }
 
     /**
@@ -109,69 +134,41 @@ internal class BackendClientDemo internal constructor(
         }.body<LoginResponse>().accessToken.also { cachedAccessToken = it }
     }
 
-    override fun registerClientWithProteus(
-        prekeys: List<ProteusPreKey>,
-        lastPreKey: ProteusPreKey
-    ): ClientId {
-        return runWithWireException {
-            runBlocking {
-                val token = loginUser()
-                val clientAddResponse: HttpResponse = httpClient.post("/$API_VERSION/clients") {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
-                    }
-                    setBody(
-                        ClientAddRequest(
-                            password = DEMO_USER_PASSWORD,
-                            lastkey = lastPreKey,
-                            prekeys = prekeys
-                        )
-                    )
-                    contentType(ContentType.Application.Json)
-                }
-                clientAddResponse.bodyAsText().let { logger.info(it) }
-                val clientId: String = clientAddResponse.body<ClientAddResponse>().id
-                logger.info("Registered new client with id $clientId")
-                ClientId(clientId)
-            }
-        }
-    }
-
     override fun updateClientWithMlsPublicKey(
-        clientId: ClientId,
+        appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
         return runWithWireException {
             runBlocking {
                 val token = loginUser()
-                httpClient.put("/$API_VERSION/clients/${clientId.value}") {
+                httpClient.put("/$API_VERSION/clients/${appClientId.value}") {
                     headers {
                         append(HttpHeaders.Authorization, "Bearer $token")
                     }
                     setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
                     contentType(ContentType.Application.Json)
                 }
-                logger.info("Updated client with mls info for client: $clientId")
+                logger.info("Updated client with mls info for client: $appClientId")
             }
         }
     }
 
     override fun uploadMlsKeyPackages(
-        clientId: ClientId,
+        appClientId: AppClientId,
         mlsKeyPackages: List<ByteArray>
     ) = runWithWireException {
         runBlocking {
             val token = loginUser()
             val mlsKeyPackageRequest =
                 MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
-            httpClient.post("/$API_VERSION/mls/key-packages/self/${clientId.value}") {
+            httpClient.post("/$API_VERSION/mls/key-packages/self/${appClientId.value}") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
                 setBody(mlsKeyPackageRequest)
                 contentType(ContentType.Application.Json)
             }
-            logger.info("Updated client with mls key packages for client: $clientId")
+            logger.info("Updated client with mls key packages for client: $appClientId")
         }
     }
 
@@ -189,7 +186,7 @@ internal class BackendClientDemo internal constructor(
             }
         }
 
-    override fun sendMlsMessage(mlsMessage: ByteArray): Unit =
+    override fun sendMessage(mlsMessage: ByteArray): Unit =
         runWithWireException {
             runBlocking {
                 val token = loginUser()
@@ -203,13 +200,29 @@ internal class BackendClientDemo internal constructor(
             }
         }
 
+    override fun getConversation(conversationId: QualifiedId): ConversationResponse {
+        logger.info("Fetching conversation: $conversationId")
+        return runWithWireException {
+            runBlocking {
+                val token = loginUser()
+                httpClient.get(
+                    "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}"
+                ) {
+                    headers {
+                        append(HttpHeaders.Authorization, "Bearer $token")
+                    }
+                }.body<ConversationResponse>()
+            }
+        }
+    }
+
     companion object {
         private const val API_VERSION = "v7"
 
-        private val DEMO_USER_ID = UUID.fromString("853eaec4-7b01-4800-85c7-642c4e426e69")
         private const val DEMO_USER_EMAIL = "smoketester+rowe105480@wire.com"
         private const val DEMO_USER_PASSWORD = "Aqa123456!"
-        private const val DEMO_DOMAIN = "staging.zinfra.io"
+        private const val DEMO_HOST = "localhost"
+        private const val DEMO_PORT = 8086
     }
 }
 

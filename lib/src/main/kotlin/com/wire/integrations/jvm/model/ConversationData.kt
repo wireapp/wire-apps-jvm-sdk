@@ -13,20 +13,13 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.persistence
+package com.wire.integrations.jvm.model
 
-import com.wire.integrations.jvm.AppsSdkDatabase
-import com.wire.integrations.jvm.TeamQueries
-import com.wire.integrations.jvm.model.TeamId
-import java.util.UUID
+import com.wire.crypto.MLSGroupId
 
-internal class TeamSqlLiteStorage(db: AppsSdkDatabase) : TeamStorage {
-    private val teamQueries: TeamQueries = db.teamQueries
-
-    override fun save(teamId: TeamId) = teamQueries.insert(teamId.value.toString())
-
-    override fun getAll(): List<TeamId> =
-        teamQueries.selectAll().executeAsList().map { teamMapper(it) }
-
-    private fun teamMapper(team: com.wire.integrations.jvm.Team) = TeamId(UUID.fromString(team.id))
-}
+@JvmRecord
+data class ConversationData(
+    val id: QualifiedId,
+    val teamId: TeamId,
+    val mlsGroupId: MLSGroupId?
+)

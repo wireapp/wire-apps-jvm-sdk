@@ -8,6 +8,9 @@
       <ID>MagicNumber:CryptoClient.kt$CryptoClient$6</ID>
       <ID>MagicNumber:CryptoClient.kt$CryptoClient$7</ID>
       <ID>TooGenericExceptionCaught:WireExceptionMapper.kt$exception: Exception</ID>
+      <ID>TooGenericExceptionCaught:WireTeamEventsListener.kt$WireTeamEventsListener$e: Exception
+      </ID>
+      <ID>TooManyFunctions:BackendClientDemo.kt$BackendClientDemo : BackendClient</ID>
       <ID>TooManyFunctions:CryptoClient.kt$CryptoClient : AutoCloseable</ID>
   </CurrentIssues>
 </SmellBaseline>

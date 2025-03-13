@@ -21,6 +21,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AppDataResponse(
+    @SerialName("client_id")
+    val clientId: String,
     @SerialName("app_type")
     val appType: String,
     @SerialName("app_command")

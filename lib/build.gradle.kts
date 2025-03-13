@@ -56,6 +56,7 @@ dependencies {
     implementation("com.wire:core-crypto-jvm:4.1.0")
     implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
     implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
+    implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.0.2")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
@@ -74,6 +75,7 @@ sqldelight {
     databases {
         create("AppsSdkDatabase") {
             packageName.set("com.wire.integrations.jvm")
+            dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.0.2")
         }
     }
 }

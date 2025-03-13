@@ -15,41 +15,37 @@
 
 package com.wire.integrations.jvm.service
 
-import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.crypto.MlsTransport
+import com.wire.integrations.jvm.client.BackendClient
+import com.wire.integrations.jvm.crypto.CryptoClient
+import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.http.EventResponse
+import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.utils.KtxSerializer
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.websocket.webSocket
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
 /**
  * Opens the webSocket receiving events from all registered teams.
+ *
+ * Initializes the [CryptoClient] used for any message, if it's not already initialized.
  */
 internal class WireTeamEventsListener internal constructor(
-    private val httpClient: HttpClient,
+    private val appStorage: AppStorage,
+    private val backendClient: BackendClient,
+    private val mlsTransport: MlsTransport,
     private val eventsRouter: EventsRouter
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun connect() {
         runBlocking {
-            eventsRouter.openCurrentTeamClients()
+            val cryptoClient = getOrInitCryptoClient()
 
-            logger.info("Connecting to the webSocket, waiting team events and new team invites")
             // TODO Change endpoint to /events and add consumable-notifications client
             //  capability once v8 is released
-            httpClient.webSocket(
-                host = "localhost",
-                port = 8086,
-                path = "/await",
-                request = {
-                    header(HttpHeaders.Authorization, "Bearer ${IsolatedKoinContext.getApiToken()}")
-                }
-            ) {
+            backendClient.connectWebSocket { incoming ->
                 for (frame in incoming) {
                     when (frame) {
                         is Frame.Binary -> {
@@ -59,11 +55,12 @@ internal class WireTeamEventsListener internal constructor(
                             val event =
                                 KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
 
-                            eventsRouter.routeEvents(
-                                event = event
-                            )
-
-                            // Send back ACK event
+                            try {
+                                eventsRouter.route(event, cryptoClient)
+                                // Send back ACK event
+                            } catch (e: Exception) {
+                                logger.error("Error processing event: $event", e)
+                            }
                         }
 
                         else -> {
@@ -72,6 +69,39 @@ internal class WireTeamEventsListener internal constructor(
                     }
                 }
             }
+        }
+    }
+
+    fun getOrInitCryptoClient(): CryptoClient {
+        val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
+            .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
+        val storedClientId = appStorage.getClientId()
+
+        return if (storedClientId != null) {
+            logger.info("App has a client already, loading it")
+            CryptoClient(
+                clientId = AppClientId(storedClientId.value),
+                ciphersuiteCode = mlsCipherSuiteCode,
+                mlsTransport = mlsTransport
+            )
+        } else {
+            logger.info("App does not have a client yet, initializing it")
+            val appData = backendClient.getApplicationData()
+            val clientId = AppClientId(appData.clientId)
+
+            val cryptoClient = CryptoClient(clientId, mlsCipherSuiteCode, mlsTransport)
+            backendClient.updateClientWithMlsPublicKey(
+                appClientId = clientId,
+                mlsPublicKeys = cryptoClient.mlsGetPublicKey()
+            )
+            backendClient.uploadMlsKeyPackages(
+                appClientId = clientId,
+                mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
+            )
+            logger.info("MLS client for $clientId fully initialized")
+
+            appStorage.saveClientId(clientId.value)
+            cryptoClient
         }
     }
 }

@@ -17,22 +17,23 @@ package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.exception.WireException
-import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.persistence.TeamStorage
 
 /**
- * Allows fetching and interacting with each Team instance invited to the Application.
+ * Allows fetching common data and interacting with each Team instance invited to the Application.
  */
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val backendClient: BackendClient
 ) {
-    fun getStoredTeams(): List<Team> = teamStorage.getAll()
+    fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
+    @Throws(WireException::class)
     fun getApplicationMetadata(): ApiVersionResponse = backendClient.getBackendVersion()
 
     @Throws(WireException::class)
-    fun fetchApplicationData(): AppDataResponse = backendClient.getApplicationData()
+    fun getApplicationData(): AppDataResponse = backendClient.getApplicationData()
 }

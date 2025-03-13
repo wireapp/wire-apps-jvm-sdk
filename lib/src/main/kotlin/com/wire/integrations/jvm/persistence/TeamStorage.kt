@@ -15,10 +15,10 @@
 
 package com.wire.integrations.jvm.persistence
 
-import com.wire.integrations.jvm.model.Team
+import com.wire.integrations.jvm.model.TeamId
 
 interface TeamStorage {
-    fun add(team: Team)
+    fun save(teamId: TeamId)
 
-    fun getAll(): List<Team>
+    fun getAll(): List<TeamId>
 }
