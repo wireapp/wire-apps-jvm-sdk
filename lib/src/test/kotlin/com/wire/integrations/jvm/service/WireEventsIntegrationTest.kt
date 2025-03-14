@@ -99,13 +99,13 @@ class WireEventsIntegrationTest : KoinTest {
             )
         )
         wireMockServer.stubFor(
-            WireMock.put(WireMock.urlPathTemplate("/v7/clients/{clientId}")).willReturn(
+            WireMock.put(WireMock.urlPathTemplate("/v7/clients/{appClientId}")).willReturn(
                 ok()
             )
         )
         wireMockServer.stubFor(
             WireMock.post(
-                WireMock.urlPathTemplate("/v7/mls/key-packages/self/{clientId}")
+                WireMock.urlPathTemplate("/v7/mls/key-packages/self/{appClientId}")
             ).willReturn(ok())
         )
 

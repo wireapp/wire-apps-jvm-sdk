@@ -30,5 +30,5 @@ interface AppStorage {
 
     fun getClientId(): AppClientId?
 
-    fun saveClientId(clientId: String)
+    fun saveClientId(appClientId: String)
 }

@@ -21,18 +21,18 @@ import java.io.File
 import java.util.Base64
 
 internal class CryptoClient : AutoCloseable {
-    private val clientId: AppClientId
+    private val appClientId: AppClientId
     private val ciphersuite: Ciphersuite
     private var coreCrypto: CoreCrypto
 
     constructor(
-        clientId: AppClientId,
+        appClientId: AppClientId,
         ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER,
         mlsTransport: MlsTransport
     ) {
-        this.clientId = clientId
+        this.appClientId = appClientId
         this.ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
-        val clientDirectoryPath = "cryptography/${clientId.value}"
+        val clientDirectoryPath = "cryptography/${appClientId.value}"
         val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
 
         File(clientDirectoryPath).mkdirs()
@@ -53,8 +53,8 @@ internal class CryptoClient : AutoCloseable {
         }
     }
 
-    // App specific clientId: app@domain:UUIDv4
-    private fun getCoreCryptoId(): String = clientId.value
+    // App specific appClientId: app@domain:UUIDv4
+    private fun getCoreCryptoId(): String = appClientId.value
 
     fun encryptMls(
         mlsGroupId: MLSGroupId,

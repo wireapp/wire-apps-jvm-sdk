@@ -46,7 +46,7 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     override fun getClientId(): AppClientId? =
         runCatching { AppClientId(getById(CLIENT_ID).value) }.getOrNull()
 
-    override fun saveClientId(clientId: String) = save(CLIENT_ID, clientId)
+    override fun saveClientId(appClientId: String) = save(CLIENT_ID, appClientId)
 
     private fun appMapper(app: App) =
         AppData(

@@ -78,7 +78,7 @@ internal class EventsRouter internal constructor(
                         conversationStorage.getById(eventContentDTO.qualifiedConversation)
                     if (conversation.mlsGroupId == null) {
                         logger.error(
-                            "Missing group ID for conversation {},no mls-welcome received yet",
+                            "Missing group ID for conversation {}, no mls-welcome received yet",
                             conversation.id
                         )
                         throw WireException.EntityNotFound()

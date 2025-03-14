@@ -80,27 +80,27 @@ internal class WireTeamEventsListener internal constructor(
         return if (storedClientId != null) {
             logger.info("App has a client already, loading it")
             CryptoClient(
-                clientId = AppClientId(storedClientId.value),
+                appClientId = AppClientId(storedClientId.value),
                 ciphersuiteCode = mlsCipherSuiteCode,
                 mlsTransport = mlsTransport
             )
         } else {
             logger.info("App does not have a client yet, initializing it")
             val appData = backendClient.getApplicationData()
-            val clientId = AppClientId(appData.clientId)
+            val appClientId = AppClientId(appData.appClientId)
 
-            val cryptoClient = CryptoClient(clientId, mlsCipherSuiteCode, mlsTransport)
+            val cryptoClient = CryptoClient(appClientId, mlsCipherSuiteCode, mlsTransport)
             backendClient.updateClientWithMlsPublicKey(
-                appClientId = clientId,
+                appClientId = appClientId,
                 mlsPublicKeys = cryptoClient.mlsGetPublicKey()
             )
             backendClient.uploadMlsKeyPackages(
-                appClientId = clientId,
+                appClientId = appClientId,
                 mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
             )
-            logger.info("MLS client for $clientId fully initialized")
+            logger.info("MLS client for $appClientId fully initialized")
 
-            appStorage.saveClientId(clientId.value)
+            appStorage.saveClientId(appClientId.value)
             cryptoClient
         }
     }
