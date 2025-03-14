@@ -16,10 +16,17 @@
 
 package com.wire.integrations.jvm.model.http.conversation
 
+import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.utils.UUIDSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
-// TODO: add rest of the fields and move to proper class file
 @Serializable
 data class ConversationResponse(
-    val dummyField: String
+    @SerialName("qualified_id")
+    val id: QualifiedId,
+    @Serializable(with = UUIDSerializer::class)
+    @SerialName("team")
+    val teamId: UUID
 )

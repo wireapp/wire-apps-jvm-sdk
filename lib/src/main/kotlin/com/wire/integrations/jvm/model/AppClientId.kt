@@ -17,8 +17,10 @@
 package com.wire.integrations.jvm.model
 
 import com.wire.integrations.jvm.utils.obfuscateClientId
+import kotlinx.serialization.Serializable
 
 @JvmInline
-value class ClientId(val value: String) {
+@Serializable
+value class AppClientId(val value: String) {
     override fun toString(): String = value.obfuscateClientId()
 }

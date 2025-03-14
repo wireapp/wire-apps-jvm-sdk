@@ -22,6 +22,10 @@ import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.MlsTransportImpl
+import com.wire.integrations.jvm.persistence.AppSqlLiteStorage
+import com.wire.integrations.jvm.persistence.AppStorage
+import com.wire.integrations.jvm.persistence.ConversationSqlLiteStorage
+import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.service.EventsRouter
@@ -37,9 +41,11 @@ val sdkModule =
             driver
         }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
-        single { EventsRouter(get(), get(), get(), get()) }
+        single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
+        single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
         single<BackendClient> { BackendClientDemo(get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single { WireApplicationManager(get(), get()) }
-        single { WireTeamEventsListener(get(), get()) }
+        single { EventsRouter(get(), get(), get(), get()) }
+        single { WireTeamEventsListener(get(), get(), get(), get()) }
     }

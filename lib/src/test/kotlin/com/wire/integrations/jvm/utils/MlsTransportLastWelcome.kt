@@ -14,34 +14,32 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.crypto
+package com.wire.integrations.jvm.utils
 
 import com.wire.crypto.MlsTransport
+import com.wire.crypto.Welcome
 import com.wire.crypto.uniffi.CommitBundle
 import com.wire.crypto.uniffi.MlsTransportResponse
-import com.wire.integrations.jvm.client.BackendClient
 
-internal class MlsTransportImpl(
-    private val backendClient: BackendClient
-) : MlsTransport {
+/**
+ * A simple implementation of [MlsTransport] that stores the last welcome message,
+ * only for testing purposes. In a real scenario, the welcome message would come from the backend.
+ */
+class MlsTransportLastWelcome : MlsTransport {
+    private var groupWelcomeMap: Welcome? = null
+
     override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
-        backendClient.uploadCommitBundle(parseBundleIntoSingleByteArray(commitBundle))
+        commitBundle.welcome?.let {
+            groupWelcomeMap = Welcome(it)
+        }
+
         return MlsTransportResponse.Success
     }
 
     override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse {
-        backendClient.sendMessage(mlsMessage)
         return MlsTransportResponse.Success
     }
 
-    /**
-     * Return the CommitBundle data as a single byte array, in a specific order.
-     * The order is: commit, groupInfo, welcome (optional).
-     * The created bundle will be pushed in this format to the backend when joining a conversation.
-     *
-     * @param bundle the CommitBundle to parse
-     */
-    private fun parseBundleIntoSingleByteArray(bundle: CommitBundle): ByteArray {
-        return bundle.commit + bundle.groupInfo.payload + (bundle.welcome ?: ByteArray(0))
-    }
+    fun getLastWelcome(): Welcome =
+        groupWelcomeMap ?: throw IllegalArgumentException("No welcome for group")
 }

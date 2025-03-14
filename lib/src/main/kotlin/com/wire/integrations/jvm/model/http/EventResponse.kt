@@ -17,8 +17,7 @@
 package com.wire.integrations.jvm.model.http
 
 import com.wire.integrations.jvm.model.QualifiedId
-import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
-import com.wire.integrations.jvm.model.http.message.MessageEventData
+import com.wire.integrations.jvm.model.http.conversation.MemberJoinEventData
 import com.wire.integrations.jvm.utils.UUIDSerializer
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
@@ -50,17 +49,7 @@ sealed class EventContentDTO {
         data class NewConversationDTO(
             @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
             @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("time") val time: Instant,
-            @SerialName("data") val data: ConversationResponse
-        ) : Conversation()
-
-        @Serializable
-        @SerialName("conversation.otr-message-add")
-        data class NewProteusMessageDTO(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
-            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("time") val time: Instant,
-            @SerialName("data") val data: MessageEventData
+            @SerialName("time") val time: Instant
         ) : Conversation()
 
         @Serializable
@@ -71,6 +60,24 @@ sealed class EventContentDTO {
             @SerialName("time") val time: Instant,
             @SerialName("data") val message: String,
             @SerialName("subconv") val subconversation: String?
+        ) : Conversation()
+
+        @Serializable
+        @SerialName("conversation.member-join")
+        data class MemberJoin(
+            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
+            @SerialName("time") val time: Instant,
+            @SerialName("data") val data: MemberJoinEventData
+        ) : Conversation()
+
+        @Serializable
+        @SerialName("conversation.mls-welcome")
+        data class MlsWelcome(
+            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
+            @SerialName("time") val time: Instant,
+            @SerialName("data") val data: String
         ) : Conversation()
     }
 

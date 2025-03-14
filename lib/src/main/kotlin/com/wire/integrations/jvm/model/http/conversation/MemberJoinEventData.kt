@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,11 +14,18 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model
+package com.wire.integrations.jvm.model.http.conversation
 
-@JvmRecord
-data class Team(
-    val id: TeamId,
-    val userId: QualifiedId,
-    val clientId: ClientId
+import com.wire.integrations.jvm.model.QualifiedId
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class MemberJoinEventData(
+    @SerialName("users") val users: List<UsersEventData>
+)
+
+@Serializable
+data class UsersEventData(
+    @SerialName("qualified_id") val userId: QualifiedId
 )

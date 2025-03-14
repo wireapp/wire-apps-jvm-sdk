@@ -32,11 +32,11 @@ abstract class WireEventsHandler {
         logger.info("Received event: onNewConversation")
     }
 
-    open fun onNewMessage(value: String) {
-        logger.info("Received event: onNewMessage")
-    }
-
     open fun onNewMLSMessage(value: String) {
         logger.info("Received event: onNewMLSMessage")
+    }
+
+    open fun onMemberJoin(value: String) {
+        logger.info("Received event: onMemberJoin")
     }
 }

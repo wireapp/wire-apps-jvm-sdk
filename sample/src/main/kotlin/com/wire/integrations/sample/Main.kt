@@ -35,7 +35,7 @@ fun main() {
     val credentialsManager = wireAppSdk.getTeamManager()
 
     credentialsManager.getStoredTeams().forEach {
-        println("Team: ${it.id}")
+        println("Team: $it")
     }
     println("Wire backend domain: ${credentialsManager.getApplicationMetadata().domain}")
 
