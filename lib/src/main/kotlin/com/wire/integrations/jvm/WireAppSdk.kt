@@ -20,6 +20,9 @@ import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
 import com.wire.integrations.jvm.utils.KtxSerializer
 import com.wire.integrations.jvm.utils.mls
+import com.wire.integrations.jvm.utils.network.AppsHttpCustomLogger
+import com.wire.integrations.jvm.utils.network.AppsKtorCustomLogging
+import com.wire.integrations.jvm.utils.network.DisableLogging
 import com.wire.integrations.jvm.utils.xprotobuf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -30,11 +33,16 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.observer.ResponseHandler
+import io.ktor.client.plugins.observer.ResponseObserver
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.statement.content
 import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.InternalAPI
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
@@ -102,6 +110,7 @@ class WireAppSdk(
         return IsolatedKoinContext.koinApp.koin.get()
     }
 
+    @OptIn(InternalAPI::class)
     private fun initDynamicModules(
         apiHost: String,
         wireEventsHandler: WireEventsHandler
@@ -130,9 +139,29 @@ class WireAppSdk(
 
                         install(SSE)
 
-                        install(Logging) {
+                        install(AppsKtorCustomLogging) {
                             level = LogLevel.ALL
-                            sanitizeHeader { header -> header == HttpHeaders.Authorization }
+                            appsLogger = LoggerFactory.getLogger(this::class.java)
+                        }
+
+                        val observer: ResponseHandler = observer@{
+                            if (it.call.attributes.contains(DisableLogging)) {
+                                return@observer
+                            }
+
+                            val logger = it.call.attributes[AppsHttpCustomLogger]
+                            try {
+                                logger.logResponseBody(it.contentType(), it.content)
+                            } catch (_: Throwable) {
+                            } finally {
+                                logger.closeResponseLog()
+                            }
+                        }
+
+                        install(ResponseObserver) {
+                            onResponse { response ->
+                                observer(response)
+                            }
                         }
 
                         install(UserAgent) {

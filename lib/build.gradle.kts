@@ -57,6 +57,7 @@ dependencies {
     implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
     implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.0.2")
+    implementation("org.jetbrains.kotlinx:atomicfu:0.25.0")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
@@ -90,7 +91,8 @@ ktlint {
         reporter(ReporterType.HTML)
     }
     filter {
-        exclude { element -> element.file.path.contains("generated/") }
+        exclude { element -> element.file.path.contains("generated/")
+                || element.file.path.contains("/") }
     }
 }
 

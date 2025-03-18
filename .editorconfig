@@ -20,9 +20,10 @@ ij_wrap_on_typing = false
 [{*.yml,*.yaml}]
 indent_size = 2
 
-[{*.kt,*.kts}]
+[*.{kt,kts}]
 ktlint_standard_annotation = disabled
 ij_kotlin_allow_trailing_comma = false
 ij_kotlin_allow_trailing_comma_on_call_site = false
 ktlint_standard_multiline-expression-wrapping = disabled
 ktlint_standard_string-template-indent = disabled
+ktlint_function_naming_ignore_when_annotated_with = None

@@ -22,7 +22,9 @@ import java.util.UUID
 
 private const val START_INDEX = 0
 private const val END_INDEX_ID = 7
+private const val END_INDEX_DOMAIN = 3
 private const val END_INDEX_CLIENT_ID = 3
+private const val END_INDEX_URL_PATH = 3
 
 fun UUID.obfuscateId(): String {
     return this.toString().obfuscateId(END_INDEX_ID)
@@ -36,5 +38,21 @@ fun String.obfuscateClientId(): String {
     return obfuscateId(END_INDEX_CLIENT_ID)
 }
 
+fun String.obfuscateDomain(): String {
+    return if (this.length >= END_INDEX_DOMAIN) {
+        this.substring(START_INDEX, END_INDEX_DOMAIN) + "***"
+    } else {
+        this
+    }
+}
+
 private fun String.obfuscateId(lastChar: Int): String =
     if (this.length < END_INDEX_ID) this else this.substring(START_INDEX, lastChar) + "***"
+
+fun String.obfuscateUrlPath(): String {
+    return if (this.length >= END_INDEX_URL_PATH) {
+        this.substring(START_INDEX, END_INDEX_URL_PATH) + "***"
+    } else {
+        this
+    }
+}

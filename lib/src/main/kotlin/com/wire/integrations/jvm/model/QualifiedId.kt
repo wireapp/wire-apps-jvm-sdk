@@ -16,6 +16,7 @@
 package com.wire.integrations.jvm.model
 
 import com.wire.integrations.jvm.utils.UUIDSerializer
+import com.wire.integrations.jvm.utils.obfuscateDomain
 import com.wire.integrations.jvm.utils.obfuscateId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -30,5 +31,10 @@ data class QualifiedId(
     @SerialName("domain")
     val domain: String
 ) {
-    override fun toString(): String = "${id.obfuscateId()}@$domain"
+    override fun toString(): String =
+        if (domain.isEmpty()) {
+            id.obfuscateId()
+        } else {
+            "${id.obfuscateId()}@${domain.obfuscateDomain()}"
+        }
 }

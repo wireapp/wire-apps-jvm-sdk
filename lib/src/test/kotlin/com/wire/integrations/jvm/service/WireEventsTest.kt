@@ -17,47 +17,22 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.WireEventsHandler
-import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
-import org.koin.core.Koin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.get
-import org.koin.test.junit5.KoinTestExtension
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 
 class WireEventsTest : KoinTest {
-    // Override the Koin instance as we use an isolated context
-    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
-
-    private val wireEventsHandler =
-        object : WireEventsHandler() {
-            override fun onNewConversation(value: String) {
-                assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
-            }
-
-            override fun onNewMLSMessage(value: String) {
-                assertEquals(EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(), value)
-            }
-        }
-
-    @JvmField
-    @RegisterExtension
-    val koinTestExtension =
-        KoinTestExtension.create {
-            modules(
-                module {
-                    single<WireEventsHandler> { wireEventsHandler }
-                    single<EventsRouter> { EventsRouter(get(), get(), get(), get()) }
-                }
-            )
-        }
 
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingItsMethodsSucceeds() {
@@ -103,5 +78,34 @@ class WireEventsTest : KoinTest {
                   ]
                 }
             """
+
+        @JvmStatic
+        @AfterAll
+        fun teardown() {
+            stopKoin()
+        }
+
+        @JvmStatic
+        @BeforeAll
+        fun setup() {
+            val wireEventsHandler =
+                object : WireEventsHandler() {
+                    override fun onNewConversation(value: String) {
+                        assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
+                    }
+
+                    override fun onNewMLSMessage(value: String) {
+                        assertEquals(EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(), value)
+                    }
+                }
+
+            startKoin {
+                modules(
+                    module {
+                        single<WireEventsHandler> { wireEventsHandler }
+                    }
+                )
+            }
+        }
     }
 }
