@@ -16,6 +16,7 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.logging.LoggingConfiguration
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
 import com.wire.integrations.jvm.utils.KtxSerializer
@@ -28,19 +29,18 @@ import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.UUID
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
-import java.util.UUID
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
+import org.zalando.logbook.client.LogbookClient
+import org.zalando.logbook.common.ExperimentalLogbookKtorApi
 
 class WireAppSdk(
     applicationId: UUID,
@@ -102,6 +102,7 @@ class WireAppSdk(
         return IsolatedKoinContext.koinApp.koin.get()
     }
 
+    @OptIn(ExperimentalLogbookKtorApi::class)
     private fun initDynamicModules(
         apiHost: String,
         wireEventsHandler: WireEventsHandler
@@ -117,6 +118,10 @@ class WireAppSdk(
                         expectSuccess = true
                         followRedirects = true
 
+                        install(LogbookClient) {
+                            logbook = LoggingConfiguration.logbook
+                        }
+
                         install(ContentNegotiation) {
                             json(KtxSerializer.json)
                             mls()
@@ -129,11 +134,6 @@ class WireAppSdk(
                         }
 
                         install(SSE)
-
-                        install(Logging) {
-                            level = LogLevel.ALL
-                            sanitizeHeader { header -> header == HttpHeaders.Authorization }
-                        }
 
                         install(UserAgent) {
                             agent = "Ktor JVM SDK client"
