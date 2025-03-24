@@ -41,7 +41,7 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
         )
     }
 
-    override fun saveWithMlsGroupId(
+    override fun saveOnlyMlsGroupId(
         conversationId: QualifiedId,
         mlsGroupId: MLSGroupId
     ) {
@@ -49,6 +49,17 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             id = conversationId.id.toString(),
             domain = conversationId.domain,
             mls_group_id = Base64.getEncoder().encodeToString(mlsGroupId.value)
+        )
+    }
+
+    override fun saveOnlyTeamId(
+        conversationId: QualifiedId,
+        teamId: TeamId
+    ) {
+        conversationQueries.insertWithTeamId(
+            id = conversationId.id.toString(),
+            domain = conversationId.domain,
+            team_id = teamId.value.toString()
         )
     }
 

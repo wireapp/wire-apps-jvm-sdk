@@ -61,6 +61,16 @@ internal class EventsRouter internal constructor(
 
                 is EventContentDTO.Conversation.MemberJoin -> {
                     logger.info("Joining event from: ${event.qualifiedConversation}")
+                    val conversation =
+                        backendClient.getConversation(event.qualifiedConversation)
+
+                    // 1:1 conversations don't have a teamId
+                    if (conversation.teamId != null) {
+                        conversationStorage.saveOnlyTeamId(
+                            conversationId = conversation.id,
+                            teamId = TeamId(conversation.teamId)
+                        )
+                    }
                     wireEventsHandler.onMemberJoin(event.time.toString())
                 }
 
@@ -70,7 +80,7 @@ internal class EventsRouter internal constructor(
                     val groupId = fetchGroupIdFromWelcome(cryptoClient, welcome, event)
 
                     // Saves the groupId in the local database, used later to decrypt messages
-                    conversationStorage.saveWithMlsGroupId(
+                    conversationStorage.saveOnlyMlsGroupId(
                         conversationId = event.qualifiedConversation,
                         mlsGroupId = groupId
                     )

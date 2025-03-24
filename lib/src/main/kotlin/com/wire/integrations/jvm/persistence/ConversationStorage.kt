@@ -36,9 +36,20 @@ interface ConversationStorage {
      *
      * This function is called when a mls-welcome event is received.
      */
-    fun saveWithMlsGroupId(
+    fun saveOnlyMlsGroupId(
         conversationId: QualifiedId,
         mlsGroupId: MLSGroupId
+    )
+
+    /**
+     * Conversations can be created partially via 2 different events, member-join and mls-welcome.
+     * Only when both events are received, the conversation is considered fully created for MLS.
+     *
+     * This function is called when a member-join event is received.
+     */
+    fun saveOnlyTeamId(
+        conversationId: QualifiedId,
+        teamId: TeamId
     )
 
     fun getAll(): List<ConversationData>
