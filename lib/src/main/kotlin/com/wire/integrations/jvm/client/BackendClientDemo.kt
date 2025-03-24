@@ -236,7 +236,7 @@ internal class BackendClientDemo internal constructor(
                 val token = loginUser()
                 httpClient.get(
                     "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
-                            "/groupinfo"
+                        "/groupinfo"
                 ) {
                     headers {
                         append(HttpHeaders.Authorization, "Bearer $token")
