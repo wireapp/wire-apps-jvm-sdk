@@ -2,14 +2,16 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>MagicNumber:CryptoClient.kt$CryptoClient$3</ID>
-    <ID>MagicNumber:CryptoClient.kt$CryptoClient$4</ID>
-    <ID>MagicNumber:CryptoClient.kt$CryptoClient$5</ID>
-    <ID>MagicNumber:CryptoClient.kt$CryptoClient$6</ID>
-    <ID>MagicNumber:CryptoClient.kt$CryptoClient$7</ID>
+      <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient$3</ID>
+      <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient$4</ID>
+      <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient$5</ID>
+      <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient$6</ID>
+      <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient$7</ID>
     <ID>TooGenericExceptionCaught:WireExceptionMapper.kt$exception: Exception</ID>
     <ID>TooGenericExceptionCaught:WireTeamEventsListener.kt$WireTeamEventsListener$e: Exception</ID>
+      <ID>TooManyFunctions:BackendClient.kt$BackendClient</ID>
     <ID>TooManyFunctions:BackendClientDemo.kt$BackendClientDemo : BackendClient</ID>
-    <ID>TooManyFunctions:CryptoClient.kt$CryptoClient : AutoCloseable</ID>
+      <ID>TooManyFunctions:BackendClientImpl.kt$BackendClientImpl : BackendClient</ID>
+      <ID>TooManyFunctions:CoreCryptoClient.kt$CoreCryptoClient : CryptoClient</ID>
   </CurrentIssues>
 </SmellBaseline>

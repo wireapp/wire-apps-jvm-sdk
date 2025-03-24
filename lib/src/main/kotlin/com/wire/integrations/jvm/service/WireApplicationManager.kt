@@ -17,9 +17,11 @@ package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.model.ConversationData
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
+import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 
 /**
@@ -27,9 +29,12 @@ import com.wire.integrations.jvm.persistence.TeamStorage
  */
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
+    private val conversationStorage: ConversationStorage,
     private val backendClient: BackendClient
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
+
+    fun getStoredConversations(): List<ConversationData> = conversationStorage.getAll()
 
     @Throws(WireException::class)
     fun getApplicationMetadata(): ApiVersionResponse = backendClient.getBackendVersion()

@@ -17,14 +17,12 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.WireEventsHandler
-import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import org.koin.core.Koin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.get
@@ -33,9 +31,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 class WireEventsTest : KoinTest {
-    // Override the Koin instance as we use an isolated context
-    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
-
     private val wireEventsHandler =
         object : WireEventsHandler() {
             override fun onNewConversation(value: String) {

@@ -49,20 +49,7 @@ class WireAppSdkTest : KoinTest {
     }
 
     @Test
-    fun fetchingApplicationDataWithWireMockReturnsDummyData() {
-        wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/v7/apps")).willReturn(
-                WireMock.okJson(
-                    """
-                    {
-                        "client_id": "dummyClientId",
-                        "app_type": "dummyAppType",
-                        "app_command": "dummyAppCommand"
-                    }
-                    """.trimIndent()
-                )
-            )
-        )
+    fun fetchingApiVersionWithWireMockReturnsDummyData() {
         wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/v7/api-version")).willReturn(
                 WireMock.okJson(
@@ -90,8 +77,6 @@ class WireAppSdkTest : KoinTest {
                     }
                 }
             )
-        val result = wireAppSdk.getTeamManager().getApplicationData()
-        assertEquals("dummyAppType", result.appType)
         val appMetadata = wireAppSdk.getTeamManager().getApplicationMetadata()
         assertEquals("host.com", appMetadata.domain)
     }

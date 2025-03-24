@@ -24,14 +24,14 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class CryptoClientTest : KoinTest {
+class CoreCryptoClientTest : KoinTest {
     override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
 
     private val testMlsTransport = MlsTransportLastWelcome()
 
     @Test
     fun whenCryptoStoragePasswordIsSet_thenClientWorks() {
-        val cryptoClient = CryptoClient(
+        val cryptoClient = CoreCryptoClient(
             appClientId = AppClientId("app:${UUID.randomUUID()}"),
             mlsTransport = testMlsTransport
         )
@@ -43,7 +43,7 @@ class CryptoClientTest : KoinTest {
     @Test
     fun testMlsClientFailOnDifferentPassword() {
         val appClientId = AppClientId("app:${UUID.randomUUID()}")
-        val cryptoClient = CryptoClient(
+        val cryptoClient = CoreCryptoClient(
             appClientId = appClientId,
             mlsTransport = testMlsTransport
         )
@@ -51,7 +51,7 @@ class CryptoClientTest : KoinTest {
 
         IsolatedKoinContext.setCryptographyStoragePassword("apple🍎")
         assertThrows<com.wire.crypto.uniffi.CoreCryptoException.Mls> {
-            CryptoClient(
+            CoreCryptoClient(
                 appClientId = appClientId,
                 mlsTransport = testMlsTransport
             )
@@ -65,7 +65,7 @@ class CryptoClientTest : KoinTest {
         val groupInfo = GroupInfo(inputStream.readAllBytes())
 
         // Create a new client and join the conversation
-        val mlsClient = CryptoClient(
+        val mlsClient = CoreCryptoClient(
             appClientId = AppClientId(UUID.randomUUID().toString()),
             mlsTransport = testMlsTransport
         )
@@ -93,12 +93,12 @@ class CryptoClientTest : KoinTest {
     @Test
     fun testMlsClientsEncryptAndDecrypt() {
         // Create two clients, Bob and Alice
-        val bobClient = CryptoClient(
+        val bobClient = CoreCryptoClient(
             appClientId = AppClientId("bob_" + UUID.randomUUID()),
             mlsTransport = testMlsTransport
         )
 
-        val aliceClient = CryptoClient(
+        val aliceClient = CoreCryptoClient(
             appClientId = AppClientId("alice_" + UUID.randomUUID()),
             mlsTransport = testMlsTransport
         )

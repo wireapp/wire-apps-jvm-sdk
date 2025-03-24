@@ -28,5 +28,7 @@ data class ConversationResponse(
     val id: QualifiedId,
     @Serializable(with = UUIDSerializer::class)
     @SerialName("team")
-    val teamId: UUID
+    val teamId: UUID?,
+    @SerialName("group_id")
+    val groupId: String
 )

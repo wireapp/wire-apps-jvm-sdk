@@ -28,14 +28,16 @@ import java.util.UUID
 internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationStorage {
     private val conversationQueries: ConversationQueries = db.conversationQueries
 
-    override fun saveWithTeam(
+    override fun save(
         conversationId: QualifiedId,
-        teamId: TeamId
+        mlsGroupId: MLSGroupId,
+        teamId: TeamId?
     ) {
-        conversationQueries.insertWithTeam(
+        conversationQueries.insert(
             id = conversationId.id.toString(),
             domain = conversationId.domain,
-            team_id = teamId.value.toString()
+            mls_group_id = Base64.getEncoder().encodeToString(mlsGroupId.value),
+            team_id = teamId?.value.toString()
         )
     }
 
@@ -53,15 +55,18 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
     override fun getAll(): List<ConversationData> =
         conversationQueries.selectAll().executeAsList().map { conversationMapper(it) }
 
-    override fun getById(conversationId: QualifiedId): ConversationData =
-        conversationQueries
-            .selectByIdAndDomain(conversationId.id.toString(), conversationId.domain)
-            .executeAsOne().let { conversationMapper(it) }
+    override fun getById(conversationId: QualifiedId): ConversationData? {
+        return runCatching {
+            conversationQueries
+                .selectByIdAndDomain(conversationId.id.toString(), conversationId.domain)
+                .executeAsOne().let { conversationMapper(it) }
+        }.getOrNull()
+    }
 
     private fun conversationMapper(conv: Conversation) =
         ConversationData(
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),
-            teamId = TeamId(UUID.fromString(conv.team_id)),
+            teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
             mlsGroupId = conv.mls_group_id?.let { MLSGroupId(Base64.getDecoder().decode(it)) }
         )
 }

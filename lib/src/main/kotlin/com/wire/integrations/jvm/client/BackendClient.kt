@@ -53,4 +53,6 @@ interface BackendClient {
     fun sendMessage(mlsMessage: ByteArray)
 
     fun getConversation(conversationId: QualifiedId): ConversationResponse
+
+    fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray
 }

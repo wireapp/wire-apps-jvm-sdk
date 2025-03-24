@@ -52,3 +52,5 @@ Thumbs.db
 
 # Ignore CoreCrypto client generated files
 lib/cryptography/
+
+**/demo.properties

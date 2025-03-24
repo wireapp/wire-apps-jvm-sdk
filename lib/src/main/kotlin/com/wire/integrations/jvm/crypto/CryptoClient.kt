@@ -1,214 +1,58 @@
+/*
+ * Wire
+ * Copyright (C) 2025 Wire Swiss GmbH
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see http://www.gnu.org/licenses/.
+ */
+
 package com.wire.integrations.jvm.crypto
 
-import com.wire.crypto.Ciphersuite
-import com.wire.crypto.Ciphersuites
-import com.wire.crypto.ClientId
-import com.wire.crypto.CoreCrypto
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
-import com.wire.crypto.MlsMessage
-import com.wire.crypto.MlsTransport
-import com.wire.crypto.PlaintextMessage
 import com.wire.crypto.Welcome
-import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.exception.WireException
-import com.wire.integrations.jvm.exception.WireException.InvalidParameter
-import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
-import kotlinx.coroutines.runBlocking
-import java.io.File
-import java.util.Base64
 
-internal class CryptoClient : AutoCloseable {
-    private val appClientId: AppClientId
-    private val ciphersuite: Ciphersuite
-    private var coreCrypto: CoreCrypto
-
-    constructor(
-        appClientId: AppClientId,
-        ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER,
-        mlsTransport: MlsTransport
-    ) {
-        this.appClientId = appClientId
-        this.ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
-        val clientDirectoryPath = "cryptography/${appClientId.value}"
-        val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
-
-        File(clientDirectoryPath).mkdirs()
-        runBlocking {
-            coreCrypto = CoreCrypto.invoke(
-                keystore = keystorePath,
-                databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
-                    ?: throw InvalidParameter("Cryptography password missing")
-            )
-            coreCrypto.transaction {
-                it.proteusInit()
-                it.mlsInit(
-                    ClientId(getCoreCryptoId()),
-                    Ciphersuites(setOf(ciphersuite))
-                )
-            }
-            coreCrypto.provideTransport(mlsTransport)
-        }
-    }
-
-    // App specific appClientId: app@domain:UUIDv4
-    private fun getCoreCryptoId(): String = appClientId.value
-
+internal interface CryptoClient : AutoCloseable {
     fun encryptMls(
         mlsGroupId: MLSGroupId,
         plainMessage: ByteArray
-    ): ByteArray {
-        val encryptedMessage = runBlocking {
-            coreCrypto.transaction { it.encryptMessage(mlsGroupId, PlaintextMessage(plainMessage)) }
-        }
-        return encryptedMessage.value
-    }
+    ): ByteArray
 
     fun decryptMls(
         mlsGroupId: MLSGroupId,
         encryptedMessage: String
-    ): ByteArray {
-        val encryptedMessageBytes: ByteArray = Base64.getDecoder().decode(encryptedMessage)
-        val decryptedMessage = runBlocking {
-            coreCrypto.transaction {
-                it.decryptMessage(
-                    id = mlsGroupId,
-                    message = MlsMessage(encryptedMessageBytes)
-                )
-            }
-        }
-        return decryptedMessage.message
-            ?: throw WireException.CryptographicSystemError("Decryption failed")
-    }
+    ): ByteArray
 
-    fun mlsGetPublicKey(): MlsPublicKeys {
-        val key = runBlocking {
-            coreCrypto.transaction {
-                it.getPublicKey(ciphersuite = ciphersuite).value
-            }
-        }
-        val encodedKey = Base64.getEncoder().encodeToString(key)
-        return when (ciphersuite) {
-            Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256 -> {
-                MlsPublicKeys(ecdsaSecp256r1Sha256 = encodedKey)
-            }
+    fun mlsGetPublicKey(): MlsPublicKeys
 
-            Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384 -> {
-                MlsPublicKeys(ecdsaSecp384r1Sha384 = encodedKey)
-            }
+    fun mlsGenerateKeyPackages(packageCount: UInt = DEFAULT_KEYPACKAGE_COUNT): List<MLSKeyPackage>
 
-            Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521 -> {
-                MlsPublicKeys(ecdsaSecp521r1Sha512 = encodedKey)
-            }
+    fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean
 
-            Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519,
-            Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519 -> {
-                MlsPublicKeys(ed25519 = encodedKey)
-            }
+    fun createJoinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId
 
-            Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448,
-            Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448 -> {
-                throw WireException.CryptographicSystemError("Unsupported ciphersuite")
-            }
-        }
-    }
+    fun createConversation(groupId: MLSGroupId)
 
-    fun mlsGenerateKeyPackages(packageCount: UInt = DEFAULT_KEYPACKAGE_COUNT): List<MLSKeyPackage> {
-        return runBlocking {
-            coreCrypto.transaction {
-                it.generateKeyPackages(
-                    amount = packageCount,
-                    ciphersuite = ciphersuite
-                )
-            }
-        }
-    }
-
-    fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean {
-        return runBlocking {
-            coreCrypto.transaction { it.conversationExists(mlsGroupId) }
-        }
-    }
-
-    /**
-     * Create a request to join an MLS conversation.
-     * Needs to be followed by a call to markMlsConversationAsJoined() to complete the process.
-     */
-    fun createJoinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId {
-        return runBlocking {
-            coreCrypto.transaction { it.joinByExternalCommit(groupInfo).id }
-        }
-    }
-
-    /**
-     * Create an MLS conversation, adding the client as the first member.
-     */
-    fun createConversation(groupId: MLSGroupId) {
-        return runBlocking {
-            coreCrypto.transaction {
-                it.createConversation(
-                    id = groupId,
-                    ciphersuite = ciphersuite
-                )
-            }
-        }
-    }
-
-    /**
-     * Alternative way to add a member to an MLS conversation.
-     * Instead of creating a join request accepted by the new client,
-     * this method directly adds a member to a conversation.
-     */
     fun addMemberToMlsConversation(
         mlsGroupId: MLSGroupId,
         keyPackages: List<MLSKeyPackage>
-    ) {
-        runBlocking {
-            coreCrypto.transaction {
-                it.addMember(mlsGroupId, keyPackages)
-            }
-        }
-    }
+    )
 
-    /**
-     * Process an MLS welcome message, adding this client to a conversation, and return the groupId.
-     */
-    fun processWelcomeMessage(welcome: Welcome): MLSGroupId {
-        val welcomeBundle = runBlocking {
-            coreCrypto.transaction { it.processWelcomeMessage(welcome) }
-        }
-        return welcomeBundle.id
-    }
+    fun processWelcomeMessage(welcome: Welcome): MLSGroupId
 
-    fun validKeyPackageCount(): Long {
-        val packageCount = runBlocking {
-            coreCrypto.transaction { it.validKeyPackageCount(ciphersuite) }
-        }
-        return packageCount.toLong()
-    }
-
-    override fun close() {
-        runBlocking { coreCrypto.close() }
-    }
-
-    private fun getMlsCipherSuiteName(code: Int): Ciphersuite {
-        return when (code) {
-            DEFAULT_CIPHERSUITE_IDENTIFIER -> Ciphersuite.DEFAULT
-            2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
-            3 -> Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519
-            4 -> Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448
-            5 -> Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521
-            6 -> Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448
-            7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
-            else -> Ciphersuite.DEFAULT
-        }
-    }
+    fun validKeyPackageCount(): Long
 
     companion object {
-        private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
-        private const val DEFAULT_KEYPACKAGE_COUNT = 100u
-        private const val KEYSTORE_NAME = "keystore"
+        const val DEFAULT_KEYPACKAGE_COUNT = 100u
     }
 }

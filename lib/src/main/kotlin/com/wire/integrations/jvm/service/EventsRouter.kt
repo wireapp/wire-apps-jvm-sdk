@@ -16,6 +16,10 @@
 
 package com.wire.integrations.jvm.service
 
+import com.wire.crypto.CoreCryptoException
+import com.wire.crypto.GroupInfo
+import com.wire.crypto.MLSGroupId
+import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.client.BackendClient
@@ -39,62 +43,109 @@ internal class EventsRouter internal constructor(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     internal fun route(
-        event: EventResponse,
+        eventResponse: EventResponse,
         cryptoClient: CryptoClient
     ) {
-        event.payload?.forEach { eventContentDTO ->
-            when (eventContentDTO) {
+        eventResponse.payload?.forEach { event ->
+            when (event) {
                 is EventContentDTO.TeamInvite -> {
-                    logger.debug("Team invite: ${eventContentDTO.teamId}")
-                    newTeamInvite(TeamId(eventContentDTO.teamId))
+                    val teamId = TeamId(event.teamId)
+                    logger.info("Team invite from: $teamId")
+                    newTeamInvite(teamId)
                 }
                 is EventContentDTO.Conversation.NewConversationDTO -> {
                     // Given that the conversation has been created by the App itself beforehand
                     // it is safe to assume that the conversation is already in the local database
-                    wireEventsHandler.onNewConversation(eventContentDTO.time.toString())
+                    wireEventsHandler.onNewConversation(event.time.toString())
                 }
 
                 is EventContentDTO.Conversation.MemberJoin -> {
-                    val conversation =
-                        backendClient.getConversation(eventContentDTO.qualifiedConversation)
-                    conversationStorage.saveWithTeam(
-                        conversationId = conversation.id,
-                        teamId = TeamId(conversation.teamId)
-                    )
-                    wireEventsHandler.onMemberJoin(eventContentDTO.time.toString())
+                    logger.info("Joining event from: ${event.qualifiedConversation}")
+                    wireEventsHandler.onMemberJoin(event.time.toString())
                 }
 
                 is EventContentDTO.Conversation.MlsWelcome -> {
-                    val welcome = Welcome(Base64.getDecoder().decode(eventContentDTO.data))
-                    val groupId = cryptoClient.processWelcomeMessage(welcome)
+                    logger.info("MLS welcome from: ${event.qualifiedConversation}")
+                    val welcome = Welcome(Base64.getDecoder().decode(event.data))
+                    val groupId = fetchGroupIdFromWelcome(cryptoClient, welcome, event)
 
+                    // Saves the groupId in the local database, used later to decrypt messages
                     conversationStorage.saveWithMlsGroupId(
-                        conversationId = eventContentDTO.qualifiedConversation,
+                        conversationId = event.qualifiedConversation,
                         mlsGroupId = groupId
                     )
                 }
+
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
-                    val conversation =
-                        conversationStorage.getById(eventContentDTO.qualifiedConversation)
-                    if (conversation.mlsGroupId == null) {
-                        logger.error(
-                            "Missing group ID for conversation {}, no mls-welcome received yet",
-                            conversation.id
-                        )
-                        throw WireException.EntityNotFound()
-                    }
+                    val groupId = fetchGroupIdFromConversation(event)
 
                     val message = cryptoClient.decryptMls(
-                        conversation.mlsGroupId,
-                        eventContentDTO.message
+                        mlsGroupId = groupId,
+                        encryptedMessage = event.message
                     )
                     // TODO Add mapping to Protobuf (com.waz.model)
-                    wireEventsHandler.onNewMLSMessage(message.toString())
+                    wireEventsHandler.onNewMLSMessage(String(message))
                 }
+
                 is EventContentDTO.Unknown -> {
-                    logger.warn("Unknown event type: {}", eventContentDTO)
+                    logger.warn("Unknown event type: {}", event)
                 }
             }
+        }
+    }
+
+    /**
+     * Processes the MLS welcome package and returns the group ID.
+     * Orphan welcomes are recovered by sending a join request to the Backend,
+     * which still returns the groupId after accepting the proposal.
+     */
+    private fun fetchGroupIdFromWelcome(
+        cryptoClient: CryptoClient,
+        welcome: Welcome,
+        event: EventContentDTO.Conversation.MlsWelcome
+    ): MLSGroupId {
+        return try {
+            cryptoClient.processWelcomeMessage(welcome)
+        } catch (ex: CoreCryptoException.Mls) {
+            if (ex.exception is MlsException.OrphanWelcome) {
+                logger.info("Cannot process welcome, ask to join the conversation")
+                val groupInfo =
+                    backendClient.getConversationGroupInfo(event.qualifiedConversation)
+                cryptoClient.createJoinMlsConversationRequest(GroupInfo(groupInfo))
+            } else {
+                logger.error("Cannot process welcome", ex)
+                throw WireException.CryptographicSystemError("Cannot process welcome")
+            }
+        }
+    }
+
+    /**
+     * Fetches the group ID of the conversation in the local database.
+     * If missing, tries to recover it by fetching the conversation from the Backend.
+     */
+    private fun fetchGroupIdFromConversation(
+        event: EventContentDTO.Conversation.NewMLSMessageDTO
+    ): MLSGroupId {
+        val storedConversation =
+            conversationStorage.getById(event.qualifiedConversation)
+        return if (storedConversation?.mlsGroupId != null) {
+            storedConversation.mlsGroupId
+        } else {
+            logger.error(
+                "Missing group ID for conversation {}, no mls-welcome received yet",
+                storedConversation?.id
+            )
+            val conversation =
+                backendClient.getConversation(event.qualifiedConversation)
+            val groupId = MLSGroupId(Base64.getDecoder().decode(conversation.groupId))
+
+            conversationStorage.save(
+                conversationId = conversation.id,
+                // 1:1 conversations don't have a teamId
+                teamId = conversation.teamId?.let { TeamId(it) },
+                mlsGroupId = groupId
+            )
+            groupId
         }
     }
 
