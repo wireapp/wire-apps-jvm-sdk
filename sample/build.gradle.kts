@@ -27,7 +27,7 @@ repositories {
 
 dependencies {
     implementation(project(":lib"))
-    testImplementation("org.junit.jupiter:junit-jupiter:5.12.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.1")
 }
 
 java {
