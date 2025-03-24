@@ -23,7 +23,7 @@ fun main() {
     val wireAppSdk = WireAppSdk(
         applicationId = UUID.randomUUID(),
         apiToken = "myApiToken",
-        apiHost = "https://staging-nginz-https.zinfra.io",
+        apiHost = "https://nginz-https.chala.wire.link",
         cryptographyStoragePassword = "myDummyPassword",
         object : WireEventsHandler() {
             override fun onEvent(event: String) {
@@ -36,6 +36,9 @@ fun main() {
 
     credentialsManager.getStoredTeams().forEach {
         println("Team: $it")
+    }
+    credentialsManager.getStoredConversations().forEach {
+        println("Conversation: $it")
     }
     println("Wire backend domain: ${credentialsManager.getApplicationMetadata().domain}")
 

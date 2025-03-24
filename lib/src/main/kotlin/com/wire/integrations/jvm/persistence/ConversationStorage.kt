@@ -22,14 +22,12 @@ import com.wire.integrations.jvm.model.TeamId
 
 interface ConversationStorage {
     /**
-     * Conversations can be created partially via 2 different events, member-join and mls-welcome.
-     * Only when both events are received, the conversation is considered fully created for MLS.
-     *
-     * This function is called when a member-join event is received.
+     * Save a conversation with its teamId and mlsGroupId.
      */
-    fun saveWithTeam(
+    fun save(
         conversationId: QualifiedId,
-        teamId: TeamId
+        mlsGroupId: MLSGroupId,
+        teamId: TeamId?
     )
 
     /**
@@ -38,9 +36,20 @@ interface ConversationStorage {
      *
      * This function is called when a mls-welcome event is received.
      */
-    fun saveWithMlsGroupId(
+    fun saveOnlyMlsGroupId(
         conversationId: QualifiedId,
         mlsGroupId: MLSGroupId
+    )
+
+    /**
+     * Conversations can be created partially via 2 different events, member-join and mls-welcome.
+     * Only when both events are received, the conversation is considered fully created for MLS.
+     *
+     * This function is called when a member-join event is received.
+     */
+    fun saveOnlyTeamId(
+        conversationId: QualifiedId,
+        teamId: TeamId
     )
 
     fun getAll(): List<ConversationData>
@@ -49,5 +58,5 @@ interface ConversationStorage {
      * Get conversation by its ID. To be able to send messages to a conversation,
      * it must be fully created, meaning both the teamId and mlsGroupId must be present.
      */
-    fun getById(conversationId: QualifiedId): ConversationData
+    fun getById(conversationId: QualifiedId): ConversationData?
 }

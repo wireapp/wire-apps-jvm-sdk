@@ -79,6 +79,7 @@ class WireAppSdk(
     private fun listenToWebSocketEvents() {
         val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
         try {
+            logger.info("Start listening to WebSocket events...")
             eventsListener.connect() // Blocks thread
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()

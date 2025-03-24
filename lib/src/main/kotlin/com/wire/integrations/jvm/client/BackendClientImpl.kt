@@ -50,7 +50,7 @@ internal class BackendClientImpl internal constructor(
         logger.info("Connecting to the webSocket, waiting for events")
 
         httpClient.webSocket(
-            path = "/await",
+            path = "/apps/events",
             request = {
                 header(HttpHeaders.Authorization, "Bearer ${IsolatedKoinContext.getApiToken()}")
             }
@@ -114,6 +114,10 @@ internal class BackendClientImpl internal constructor(
     }
 
     override fun getConversation(conversationId: QualifiedId): ConversationResponse {
+        TODO("Not yet implemented")
+    }
+
+    override fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
         TODO("Not yet implemented")
     }
 

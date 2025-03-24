@@ -45,7 +45,7 @@ val sdkModule =
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
         single<BackendClient> { BackendClientDemo(get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
-        single { WireApplicationManager(get(), get()) }
+        single { WireApplicationManager(get(), get(), get()) }
         single { EventsRouter(get(), get(), get(), get()) }
         single { WireTeamEventsListener(get(), get(), get(), get()) }
     }

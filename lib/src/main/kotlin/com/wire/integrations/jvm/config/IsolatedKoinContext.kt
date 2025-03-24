@@ -56,6 +56,6 @@ internal object IsolatedKoinContext {
      */
     private const val APPLICATION_ID = "APPLICATION_ID"
     private const val API_HOST = "API_HOST"
-    private const val API_TOKEN = "API_HOST"
+    private const val API_TOKEN = "API_TOKEN"
     private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "CRYPTOGRAPHY_STORAGE_PASSWORD"
 }

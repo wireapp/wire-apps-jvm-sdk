@@ -31,9 +31,10 @@ import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.websocket.wss
+import io.ktor.client.request.accept
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.put
@@ -41,7 +42,6 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
-import io.ktor.http.encodedPath
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
@@ -49,6 +49,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 import java.util.Base64
+import java.util.Properties
+import java.util.UUID
 
 /**
  * Backend client implementation for test/demo purposes
@@ -71,13 +73,11 @@ internal class BackendClientDemo internal constructor(
     override suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit) {
         logger.info("Connecting to the webSocket, waiting for events")
 
-        httpClient.webSocket(
-            host = DEMO_HOST,
-            port = DEMO_PORT,
-            path = "/await",
-            request = {
-                header(HttpHeaders.Authorization, "Bearer ${IsolatedKoinContext.getApiToken()}")
-            }
+        val token = loginUser()
+        httpClient.wss(
+            host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
+                ?.replace("-https", "-ssl"),
+            path = "/await?access_token=$token"
         ) {
             handleFrames(incoming)
         }
@@ -92,17 +92,11 @@ internal class BackendClientDemo internal constructor(
 
     override fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
-        return runWithWireException {
-            runBlocking {
-                httpClient.get {
-                    url {
-                        host = DEMO_HOST
-                        port = DEMO_PORT
-                        encodedPath = "/$API_VERSION/apps"
-                    }
-                }.body()
-            }
-        }
+        return AppDataResponse(
+            appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
+            appType = "FULL",
+            appCommand = "demo"
+        )
     }
 
     override fun getApplicationFeatures(): FeaturesResponse {
@@ -141,12 +135,16 @@ internal class BackendClientDemo internal constructor(
         return runWithWireException {
             runBlocking {
                 val token = loginUser()
-                httpClient.put("/$API_VERSION/clients/${appClientId.value}") {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
+                try {
+                    httpClient.put("/$API_VERSION/clients/$DEMO_USER_CLIENT") {
+                        headers {
+                            append(HttpHeaders.Authorization, "Bearer $token")
+                        }
+                        setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
+                        contentType(ContentType.Application.Json)
                     }
-                    setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
-                    contentType(ContentType.Application.Json)
+                } catch (ex: ClientRequestException) {
+                    logger.info("MLS public key already set for DEMO user: $appClientId", ex)
                 }
                 logger.info("Updated client with mls info for client: $appClientId")
             }
@@ -161,12 +159,16 @@ internal class BackendClientDemo internal constructor(
             val token = loginUser()
             val mlsKeyPackageRequest =
                 MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
-            httpClient.post("/$API_VERSION/mls/key-packages/self/${appClientId.value}") {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
+            try {
+                httpClient.post("/$API_VERSION/mls/key-packages/self/$DEMO_USER_CLIENT") {
+                    headers {
+                        append(HttpHeaders.Authorization, "Bearer $token")
+                    }
+                    setBody(mlsKeyPackageRequest)
+                    contentType(ContentType.Application.Json)
                 }
-                setBody(mlsKeyPackageRequest)
-                contentType(ContentType.Application.Json)
+            } catch (ex: ClientRequestException) {
+                logger.info("MLS public key already set for DEMO user: $appClientId", ex)
             }
             logger.info("Updated client with mls key packages for client: $appClientId")
         }
@@ -216,13 +218,59 @@ internal class BackendClientDemo internal constructor(
         }
     }
 
+    override fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
+        logger.info("Fetching conversation groupInfo: $conversationId")
+        return runWithWireException {
+            runBlocking {
+                val token = loginUser()
+                httpClient.get(
+                    "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+                        "/groupinfo"
+                ) {
+                    headers {
+                        append(HttpHeaders.Authorization, "Bearer $token")
+                    }
+                    accept(Mls)
+                }.body<ByteArray>()
+            }
+        }
+    }
+
     companion object {
         private const val API_VERSION = "v7"
 
-        private const val DEMO_USER_EMAIL = "smoketester+rowe105480@wire.com"
-        private const val DEMO_USER_PASSWORD = "Aqa123456!"
-        private const val DEMO_HOST = "localhost"
-        private const val DEMO_PORT = 8086
+        private val DEMO_USER_EMAIL by lazy {
+            DemoProperties.properties.getProperty(
+                "demo.user.email",
+                "integrations-admin@wire.com"
+            )
+        }
+        private val DEMO_USER_ID by lazy {
+            UUID.fromString(
+                DemoProperties.properties.getProperty(
+                    "demo.user.id",
+                    "ee159b66-fd70-4739-9bae-23c96a02cb09"
+                )
+            )
+        }
+        private val DEMO_USER_PASSWORD by lazy {
+            DemoProperties.properties.getProperty(
+                "demo.user.password",
+                "Aqa123456!"
+            )
+        }
+        private val DEMO_USER_CLIENT by lazy {
+            DemoProperties.properties.getProperty(
+                "demo.user.client",
+                "d3507119febf62db"
+            )
+        }
+        private val DEMO_ENVIRONMENT by lazy {
+            DemoProperties.properties.getProperty(
+                "demo.environment",
+                "chala.wire.link"
+            )
+        }
     }
 }
 
@@ -234,8 +282,19 @@ data class LoginRequest(
 
 @Serializable
 data class LoginResponse(
-    @SerialName("access_token")
-    val accessToken: String,
-    @SerialName("expires_in")
-    val expiresIn: Int
+    @SerialName("access_token") val accessToken: String,
+    @SerialName("expires_in") val expiresIn: Int
 )
+
+/**
+ * Loads demo properties from 'demo.properties' file in the project root (git ignored)
+ * If the file is missing, default values are used.
+ */
+internal object DemoProperties {
+    internal val properties = Properties()
+
+    init {
+        DemoProperties::class.java.getResourceAsStream("/demo.properties")
+            ?.use { properties.load(it) }
+    }
+}

@@ -16,12 +16,17 @@ SELECT *
 FROM conversation
 WHERE id = ? AND domain = ?;
 
-insertWithTeam:
-INSERT INTO conversation(id, domain, team_id)
-VALUES (?, ?, ?)
-ON CONFLICT(id, domain) DO UPDATE SET team_id=excluded.team_id;
+insert:
+INSERT INTO conversation(id, domain, team_id, mls_group_id)
+VALUES (?, ?, ?, ?)
+ON CONFLICT(id, domain) DO UPDATE SET team_id=excluded.team_id, mls_group_id=excluded.mls_group_id;
 
 insertWithMlsGroupId:
 INSERT INTO conversation(id, domain, mls_group_id)
 VALUES (?, ?, ?)
 ON CONFLICT(id, domain) DO UPDATE SET mls_group_id=excluded.mls_group_id;
+
+insertWithTeamId:
+INSERT INTO conversation(id, domain, team_id)
+VALUES (?, ?, ?)
+ON CONFLICT(id, domain) DO UPDATE SET team_id=excluded.team_id;
