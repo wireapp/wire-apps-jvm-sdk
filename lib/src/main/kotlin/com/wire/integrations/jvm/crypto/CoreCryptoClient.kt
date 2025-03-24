@@ -21,6 +21,7 @@ import java.io.File
 import java.util.Base64
 
 internal class CoreCryptoClient : CryptoClient {
+    // App specific appClientId: app@domain:UUIDv4
     private val appClientId: AppClientId
     private val ciphersuite: Ciphersuite
     private var coreCrypto: CoreCrypto
@@ -43,18 +44,14 @@ internal class CoreCryptoClient : CryptoClient {
                     ?: throw InvalidParameter("Cryptography password missing")
             )
             coreCrypto.transaction {
-                it.proteusInit()
                 it.mlsInit(
-                    ClientId(getCoreCryptoId()),
+                    ClientId(appClientId.value),
                     Ciphersuites(setOf(ciphersuite))
                 )
             }
             coreCrypto.provideTransport(mlsTransport)
         }
     }
-
-    // App specific appClientId: app@domain:UUIDv4
-    private fun getCoreCryptoId(): String = appClientId.value
 
     override fun encryptMls(
         mlsGroupId: MLSGroupId,
@@ -132,19 +129,12 @@ internal class CoreCryptoClient : CryptoClient {
         }
     }
 
-    /**
-     * Create a request to join an MLS conversation.
-     * Needs to be followed by a call to markMlsConversationAsJoined() to complete the process.
-     */
     override fun createJoinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId {
         return runBlocking {
             coreCrypto.transaction { it.joinByExternalCommit(groupInfo).id }
         }
     }
 
-    /**
-     * Create an MLS conversation, adding the client as the first member.
-     */
     override fun createConversation(groupId: MLSGroupId) {
         return runBlocking {
             coreCrypto.transaction {
@@ -156,11 +146,6 @@ internal class CoreCryptoClient : CryptoClient {
         }
     }
 
-    /**
-     * Alternative way to add a member to an MLS conversation.
-     * Instead of creating a join request accepted by the new client,
-     * this method directly adds a member to a conversation.
-     */
     override fun addMemberToMlsConversation(
         mlsGroupId: MLSGroupId,
         keyPackages: List<MLSKeyPackage>
@@ -172,9 +157,6 @@ internal class CoreCryptoClient : CryptoClient {
         }
     }
 
-    /**
-     * Process an MLS welcome message, adding this client to a conversation, and return the groupId.
-     */
     override fun processWelcomeMessage(welcome: Welcome): MLSGroupId {
         val welcomeBundle = runBlocking {
             coreCrypto.transaction { it.processWelcomeMessage(welcome) }

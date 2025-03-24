@@ -39,15 +39,30 @@ internal interface CryptoClient : AutoCloseable {
 
     fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean
 
+    /**
+     * Create a request to join an MLS conversation.
+     * Needs to be followed by a call to markMlsConversationAsJoined() to complete the process.
+     */
     fun createJoinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId
 
+    /**
+     * Create an MLS conversation, adding the client as the first member.
+     */
     fun createConversation(groupId: MLSGroupId)
 
+    /**
+     * Alternative way to add a member to an MLS conversation.
+     * Instead of creating a join request accepted by the new client,
+     * this method directly adds a member to a conversation.
+     */
     fun addMemberToMlsConversation(
         mlsGroupId: MLSGroupId,
         keyPackages: List<MLSKeyPackage>
     )
 
+    /**
+     * Process an MLS welcome message, adding this client to a conversation, and return the groupId.
+     */
     fun processWelcomeMessage(welcome: Welcome): MLSGroupId
 
     fun validKeyPackageCount(): Long

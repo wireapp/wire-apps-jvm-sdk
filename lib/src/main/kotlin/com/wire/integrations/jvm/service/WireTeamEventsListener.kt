@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory
 /**
  * Opens the webSocket receiving events from all registered teams.
  *
- * Initializes the [CoreCryptoClient] used for any message, if it's not already initialized.
+ * Initializes the [CoreCryptoClient] used for any message on the first startup.
  */
 internal class WireTeamEventsListener internal constructor(
     private val appStorage: AppStorage,
@@ -84,7 +84,7 @@ internal class WireTeamEventsListener internal constructor(
     }
 
     /**
-     * Initialized the [CoreCryptoClient] if it's not already initialized.
+     * Initialize the [CoreCryptoClient] if it's not already initialized.
      * Uploads the MLS public keys and key packages to the backend.
      *
      * The following times the SDK is started, the client will be loaded from the storage.

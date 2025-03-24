@@ -73,17 +73,6 @@ internal class BackendClientDemo internal constructor(
     override suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit) {
         logger.info("Connecting to the webSocket, waiting for events")
 
-//        httpClient.webSocket(
-//            host = "localhost",
-//            port = 8086,
-//            path = "/await",
-//            request = {
-//                header(HttpHeaders.Authorization, "Bearer ${IsolatedKoinContext.getApiToken()}")
-//            }
-//        ) {
-//            handleFrames(incoming)
-//        }
-
         val token = loginUser()
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
