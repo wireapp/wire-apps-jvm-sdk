@@ -22,6 +22,7 @@ import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.MlsTransportImpl
+import com.wire.integrations.jvm.logging.LoggingConfiguration
 import com.wire.integrations.jvm.persistence.AppSqlLiteStorage
 import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.persistence.ConversationSqlLiteStorage
@@ -31,7 +32,26 @@ import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.service.EventsRouter
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
+import com.wire.integrations.jvm.utils.KtxSerializer
+import com.wire.integrations.jvm.utils.mls
+import com.wire.integrations.jvm.utils.xprotobuf
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.UserAgent
+import io.ktor.client.plugins.cache.HttpCache
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.sse.SSE
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
 import org.koin.dsl.module
+import org.zalando.logbook.client.LogbookClient
+import org.zalando.logbook.common.ExperimentalLogbookKtorApi
+
+private const val WEBSOCKET_PING_INTERVAL_MILLIS = 20_000L
 
 val sdkModule =
     module {
@@ -48,4 +68,48 @@ val sdkModule =
         single { WireApplicationManager(get(), get(), get()) }
         single { EventsRouter(get(), get(), get(), get()) }
         single { WireTeamEventsListener(get(), get(), get(), get()) }
+        single<HttpClient> {
+            createHttpClient(IsolatedKoinContext.getApiHost())
+        }
     }
+
+@OptIn(ExperimentalLogbookKtorApi::class)
+private fun createHttpClient(apiHost: String?): HttpClient {
+    return HttpClient(CIO) {
+        expectSuccess = true
+        followRedirects = true
+
+        install(LogbookClient) {
+            logbook = LoggingConfiguration.logbook
+        }
+
+        install(ContentNegotiation) {
+            json(KtxSerializer.json)
+            mls()
+            xprotobuf()
+        }
+
+        install(WebSockets) {
+            contentConverter = KotlinxWebsocketSerializationConverter(Json)
+            pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
+        }
+
+        install(SSE)
+
+        install(UserAgent) {
+            agent = "Ktor JVM SDK client"
+        }
+
+        install(HttpCache)
+        install(HttpRequestRetry) {
+            retryOnServerErrors(maxRetries = 3)
+            exponentialDelay()
+        }
+
+        apiHost?.let {
+            defaultRequest {
+                url(apiHost)
+            }
+        }
+    }
+}

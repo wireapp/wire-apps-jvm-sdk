@@ -30,29 +30,29 @@ import kotlinx.coroutines.channels.ReceiveChannel
 interface BackendClient {
     suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit)
 
-    fun getBackendVersion(): ApiVersionResponse
+    suspend fun getBackendVersion(): ApiVersionResponse
 
-    fun getApplicationData(): AppDataResponse
+    suspend fun getApplicationData(): AppDataResponse
 
-    fun getApplicationFeatures(): FeaturesResponse
+    suspend fun getApplicationFeatures(): FeaturesResponse
 
-    fun confirmTeam(teamId: TeamId)
+    suspend fun confirmTeam(teamId: TeamId)
 
-    fun updateClientWithMlsPublicKey(
+    suspend fun updateClientWithMlsPublicKey(
         appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     )
 
-    fun uploadMlsKeyPackages(
+    suspend fun uploadMlsKeyPackages(
         appClientId: AppClientId,
         mlsKeyPackages: List<ByteArray>
     )
 
-    fun uploadCommitBundle(commitBundle: ByteArray)
+    suspend fun uploadCommitBundle(commitBundle: ByteArray)
 
-    fun sendMessage(mlsMessage: ByteArray)
+    suspend fun sendMessage(mlsMessage: ByteArray)
 
-    fun getConversation(conversationId: QualifiedId): ConversationResponse
+    suspend fun getConversation(conversationId: QualifiedId): ConversationResponse
 
-    fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray
+    suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray
 }

@@ -42,7 +42,7 @@ internal class EventsRouter internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    internal fun route(
+    internal suspend fun route(
         eventResponse: EventResponse,
         cryptoClient: CryptoClient
     ) {
@@ -109,7 +109,7 @@ internal class EventsRouter internal constructor(
      * Orphan welcomes are recovered by sending a join request to the Backend,
      * which still returns the groupId after accepting the proposal.
      */
-    private fun fetchGroupIdFromWelcome(
+    private suspend fun fetchGroupIdFromWelcome(
         cryptoClient: CryptoClient,
         welcome: Welcome,
         event: EventContentDTO.Conversation.MlsWelcome
@@ -121,7 +121,7 @@ internal class EventsRouter internal constructor(
                 logger.info("Cannot process welcome, ask to join the conversation")
                 val groupInfo =
                     backendClient.getConversationGroupInfo(event.qualifiedConversation)
-                cryptoClient.createJoinMlsConversationRequest(GroupInfo(groupInfo))
+                cryptoClient.joinMlsConversationRequest(GroupInfo(groupInfo))
             } else {
                 logger.error("Cannot process welcome", ex)
                 throw WireException.CryptographicSystemError("Cannot process welcome")
@@ -133,7 +133,7 @@ internal class EventsRouter internal constructor(
      * Fetches the group ID of the conversation in the local database.
      * If missing, tries to recover it by fetching the conversation from the Backend.
      */
-    private fun fetchGroupIdFromConversation(
+    private suspend fun fetchGroupIdFromConversation(
         event: EventContentDTO.Conversation.NewMLSMessageDTO
     ): MLSGroupId {
         val storedConversation =
@@ -159,7 +159,7 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private fun newTeamInvite(teamId: TeamId) {
+    private suspend fun newTeamInvite(teamId: TeamId) {
         try {
             backendClient.confirmTeam(teamId)
             teamStorage.save(teamId) // Can be done async ?

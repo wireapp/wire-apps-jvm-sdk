@@ -35,7 +35,6 @@ import io.ktor.client.request.post
 import io.ktor.http.HttpHeaders
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
 /**
@@ -59,65 +58,61 @@ internal class BackendClientImpl internal constructor(
         }
     }
 
-    override fun getBackendVersion(): ApiVersionResponse {
+    override suspend fun getBackendVersion(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
         return runWithWireException {
-            runBlocking { httpClient.get("/$API_VERSION/api-version").body() }
+            httpClient.get("/$API_VERSION/api-version").body()
         }
     }
 
-    override fun getApplicationData(): AppDataResponse {
+    override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
         return runWithWireException {
-            runBlocking { httpClient.get("/$API_VERSION/apps").body() }
+            httpClient.get("/$API_VERSION/apps").body()
         }
     }
 
-    override fun getApplicationFeatures(): FeaturesResponse {
+    override suspend fun getApplicationFeatures(): FeaturesResponse {
         logger.info("Fetching application enabled features")
         return runWithWireException {
-            runBlocking {
-                httpClient.get("/$API_VERSION/apps/feature-configs").body()
-            }
+            httpClient.get("/$API_VERSION/apps/feature-configs").body()
         }
     }
 
-    override fun confirmTeam(teamId: TeamId) {
+    override suspend fun confirmTeam(teamId: TeamId) {
         logger.info("Confirming team invite")
         runWithWireException {
-            runBlocking {
-                httpClient.post("/$API_VERSION/apps/teams/${teamId.value}/confirm")
-            }
+            httpClient.post("/$API_VERSION/apps/teams/${teamId.value}/confirm")
         }
     }
 
-    override fun updateClientWithMlsPublicKey(
+    override suspend fun updateClientWithMlsPublicKey(
         appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
         TODO("Not yet implemented")
     }
 
-    override fun uploadMlsKeyPackages(
+    override suspend fun uploadMlsKeyPackages(
         appClientId: AppClientId,
         mlsKeyPackages: List<ByteArray>
     ) {
         TODO("Not yet implemented")
     }
 
-    override fun uploadCommitBundle(commitBundle: ByteArray) {
+    override suspend fun uploadCommitBundle(commitBundle: ByteArray) {
         TODO("Not yet implemented")
     }
 
-    override fun sendMessage(mlsMessage: ByteArray) {
+    override suspend fun sendMessage(mlsMessage: ByteArray) {
         TODO("Not yet implemented")
     }
 
-    override fun getConversation(conversationId: QualifiedId): ConversationResponse {
+    override suspend fun getConversation(conversationId: QualifiedId): ConversationResponse {
         TODO("Not yet implemented")
     }
 
-    override fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
+    override suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
         TODO("Not yet implemented")
     }
 

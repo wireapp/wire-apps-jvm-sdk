@@ -23,39 +23,41 @@ import com.wire.crypto.Welcome
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 
 internal interface CryptoClient : AutoCloseable {
-    fun encryptMls(
+    suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
         plainMessage: ByteArray
     ): ByteArray
 
-    fun decryptMls(
+    suspend fun decryptMls(
         mlsGroupId: MLSGroupId,
         encryptedMessage: String
     ): ByteArray
 
-    fun mlsGetPublicKey(): MlsPublicKeys
+    suspend fun mlsGetPublicKey(): MlsPublicKeys
 
-    fun mlsGenerateKeyPackages(packageCount: UInt = DEFAULT_KEYPACKAGE_COUNT): List<MLSKeyPackage>
+    suspend fun mlsGenerateKeyPackages(
+        packageCount: UInt = DEFAULT_KEYPACKAGE_COUNT
+    ): List<MLSKeyPackage>
 
-    fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean
+    suspend fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean
 
     /**
      * Create a request to join an MLS conversation.
      * Needs to be followed by a call to markMlsConversationAsJoined() to complete the process.
      */
-    fun createJoinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId
+    suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId
 
     /**
      * Create an MLS conversation, adding the client as the first member.
      */
-    fun createConversation(groupId: MLSGroupId)
+    suspend fun createConversation(groupId: MLSGroupId)
 
     /**
      * Alternative way to add a member to an MLS conversation.
      * Instead of creating a join request accepted by the new client,
      * this method directly adds a member to a conversation.
      */
-    fun addMemberToMlsConversation(
+    suspend fun addMemberToMlsConversation(
         mlsGroupId: MLSGroupId,
         keyPackages: List<MLSKeyPackage>
     )
@@ -63,9 +65,9 @@ internal interface CryptoClient : AutoCloseable {
     /**
      * Process an MLS welcome message, adding this client to a conversation, and return the groupId.
      */
-    fun processWelcomeMessage(welcome: Welcome): MLSGroupId
+    suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId
 
-    fun validKeyPackageCount(): Long
+    suspend fun validKeyPackageCount(): Long
 
     companion object {
         const val DEFAULT_KEYPACKAGE_COUNT = 100u
