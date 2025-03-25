@@ -36,7 +36,7 @@ internal object IsolatedKoinContext {
         this.koinApp.koin.setProperty(API_HOST, value)
     }
 
-    fun getApiHost() = this.koinApp.koin.getProperty<String>(API_HOST)
+    fun getApiHost(): String? = this.koinApp.koin.getProperty<String>(API_HOST)
 
     fun setApiToken(value: String) {
         this.koinApp.koin.setProperty(API_TOKEN, value)

@@ -23,9 +23,12 @@ import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
+import kotlinx.coroutines.runBlocking
 
 /**
  * Allows fetching common data and interacting with each Team instance invited to the Application.
+ * Some functions are provided as blocking methods for Java interoperability or
+ * as suspending methods for Kotlin consumers.
  */
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
@@ -36,9 +39,38 @@ class WireApplicationManager internal constructor(
 
     fun getStoredConversations(): List<ConversationData> = conversationStorage.getAll()
 
+    /**
+     * Get API configuration from the connected Wire backend.
+     * Blocking method for Java interoperability
+     */
     @Throws(WireException::class)
-    fun getApplicationMetadata(): ApiVersionResponse = backendClient.getBackendVersion()
+    fun getApplicationMetadata(): ApiVersionResponse =
+        runBlocking {
+            getApplicationMetadataSuspending()
+        }
 
+    /**
+     * Get API configuration from the connected Wire backend.
+     * Suspending method for Kotlin consumers
+     */
     @Throws(WireException::class)
-    fun getApplicationData(): AppDataResponse = backendClient.getApplicationData()
+    suspend fun getApplicationMetadataSuspending(): ApiVersionResponse =
+        backendClient.getBackendVersion()
+
+    /**
+     * Get the basic Wire Application data from the connected Wire backend.
+     * Blocking method for Java interoperability
+     */
+    @Throws(WireException::class)
+    fun getApplicationData(): AppDataResponse =
+        runBlocking {
+            getApplicationDataSuspending()
+        }
+
+    /**
+     * Get the basic Wire Application data from the connected Wire backend.
+     * Suspending method for Kotlin consumers
+     */
+    @Throws(WireException::class)
+    suspend fun getApplicationDataSuspending(): AppDataResponse = backendClient.getApplicationData()
 }

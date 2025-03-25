@@ -32,6 +32,7 @@ import com.wire.integrations.jvm.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.cookies.get
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
@@ -42,9 +43,9 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
+import io.ktor.http.setCookie
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
@@ -83,14 +84,14 @@ internal class BackendClientDemo internal constructor(
         }
     }
 
-    override fun getBackendVersion(): ApiVersionResponse {
+    override suspend fun getBackendVersion(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
         return runWithWireException {
-            runBlocking { httpClient.get("/$API_VERSION/api-version").body() }
+            httpClient.get("/$API_VERSION/api-version").body()
         }
     }
 
-    override fun getApplicationData(): AppDataResponse {
+    override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
         return AppDataResponse(
             appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
@@ -99,140 +100,141 @@ internal class BackendClientDemo internal constructor(
         )
     }
 
-    override fun getApplicationFeatures(): FeaturesResponse {
+    override suspend fun getApplicationFeatures(): FeaturesResponse {
         logger.info("Fetching application enabled features")
         return cachedFeatures ?: runWithWireException {
-            runBlocking {
-                val token = loginUser()
-                httpClient.get("/$API_VERSION/feature-configs") {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
-                    }
-                }.body<FeaturesResponse>().also { cachedFeatures = it }
-            }
+            val token = loginUser()
+            httpClient.get("/$API_VERSION/feature-configs") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }.body<FeaturesResponse>().also { cachedFeatures = it }
         }
     }
 
-    override fun confirmTeam(teamId: TeamId) {
+    override suspend fun confirmTeam(teamId: TeamId) {
         logger.info("Confirming team invite")
     }
 
     /**
      * Login DEMO user in the backend, get access_token for further requests.
+     * After the login, the token is immediately refreshed by calling /access,
+     * because the new one is tied to client and has more permissions.
      * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
      */
     private suspend fun loginUser(): String {
-        return cachedAccessToken ?: httpClient.post("/$API_VERSION/login") {
+        if (cachedAccessToken != null) return cachedAccessToken as String
+
+        val loginResponse = httpClient.post("/$API_VERSION/login") {
             setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
             contentType(ContentType.Application.Json)
-        }.body<LoginResponse>().accessToken.also { cachedAccessToken = it }
+        }
+        val zuidCookie = loginResponse.setCookie()["zuid"]
+
+        val accessResponse =
+            httpClient.post("/$API_VERSION/access?client_id=$DEMO_USER_CLIENT") {
+                headers {
+                    append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
+                }
+                accept(ContentType.Application.Json)
+            }.body<LoginResponse>()
+        cachedAccessToken = accessResponse.accessToken
+        return accessResponse.accessToken
     }
 
-    override fun updateClientWithMlsPublicKey(
+    override suspend fun updateClientWithMlsPublicKey(
         appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
         return runWithWireException {
-            runBlocking {
-                val token = loginUser()
-                try {
-                    httpClient.put("/$API_VERSION/clients/$DEMO_USER_CLIENT") {
-                        headers {
-                            append(HttpHeaders.Authorization, "Bearer $token")
-                        }
-                        setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
-                        contentType(ContentType.Application.Json)
-                    }
-                } catch (ex: ClientRequestException) {
-                    logger.info("MLS public key already set for DEMO user: $appClientId", ex)
-                }
-                logger.info("Updated client with mls info for client: $appClientId")
-            }
-        }
-    }
-
-    override fun uploadMlsKeyPackages(
-        appClientId: AppClientId,
-        mlsKeyPackages: List<ByteArray>
-    ) = runWithWireException {
-        runBlocking {
             val token = loginUser()
-            val mlsKeyPackageRequest =
-                MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
             try {
-                httpClient.post("/$API_VERSION/mls/key-packages/self/$DEMO_USER_CLIENT") {
+                httpClient.put("/$API_VERSION/clients/$DEMO_USER_CLIENT") {
                     headers {
                         append(HttpHeaders.Authorization, "Bearer $token")
                     }
-                    setBody(mlsKeyPackageRequest)
+                    setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
                     contentType(ContentType.Application.Json)
                 }
             } catch (ex: ClientRequestException) {
                 logger.info("MLS public key already set for DEMO user: $appClientId", ex)
             }
-            logger.info("Updated client with mls key packages for client: $appClientId")
+            logger.info("Updated client with mls info for client: $appClientId")
         }
     }
 
-    override fun uploadCommitBundle(commitBundle: ByteArray): Unit =
-        runWithWireException {
-            runBlocking {
-                val token = loginUser()
-                httpClient.post("/$API_VERSION/mls/commit-bundles") {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
-                    }
-                    setBody(commitBundle)
-                    contentType(Mls)
+    override suspend fun uploadMlsKeyPackages(
+        appClientId: AppClientId,
+        mlsKeyPackages: List<ByteArray>
+    ) = runWithWireException {
+        val token = loginUser()
+        val mlsKeyPackageRequest =
+            MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
+        try {
+            httpClient.post("/$API_VERSION/mls/key-packages/self/$DEMO_USER_CLIENT") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
                 }
+                setBody(mlsKeyPackageRequest)
+                contentType(ContentType.Application.Json)
+            }
+        } catch (ex: ClientRequestException) {
+            logger.info("MLS public key already set for DEMO user: $appClientId", ex)
+        }
+        logger.info("Updated client with mls key packages for client: $appClientId")
+    }
+
+    override suspend fun uploadCommitBundle(commitBundle: ByteArray): Unit =
+        runWithWireException {
+            val token = loginUser()
+            httpClient.post("/$API_VERSION/mls/commit-bundles") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+                setBody(commitBundle)
+                contentType(Mls)
             }
         }
 
-    override fun sendMessage(mlsMessage: ByteArray): Unit =
+    override suspend fun sendMessage(mlsMessage: ByteArray): Unit =
         runWithWireException {
-            runBlocking {
-                val token = loginUser()
-                httpClient.post("/$API_VERSION/mls/messages") {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
-                    }
-                    setBody(mlsMessage)
-                    contentType(Mls)
+            val token = loginUser()
+            httpClient.post("/$API_VERSION/mls/messages") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
                 }
+                setBody(mlsMessage)
+                contentType(Mls)
             }
         }
 
-    override fun getConversation(conversationId: QualifiedId): ConversationResponse {
+    override suspend fun getConversation(conversationId: QualifiedId): ConversationResponse {
         logger.info("Fetching conversation: $conversationId")
         return runWithWireException {
-            runBlocking {
-                val token = loginUser()
-                httpClient.get(
-                    "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}"
-                ) {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
-                    }
-                }.body<ConversationResponse>()
-            }
+            val token = loginUser()
+            httpClient.get(
+                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}"
+            ) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }.body<ConversationResponse>()
         }
     }
 
-    override fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
+    override suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
         logger.info("Fetching conversation groupInfo: $conversationId")
         return runWithWireException {
-            runBlocking {
-                val token = loginUser()
-                httpClient.get(
-                    "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
-                        "/groupinfo"
-                ) {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
-                    }
-                    accept(Mls)
-                }.body<ByteArray>()
-            }
+            val token = loginUser()
+            httpClient.get(
+                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+                    "/groupinfo"
+            ) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+                accept(Mls)
+            }.body<ByteArray>()
         }
     }
 

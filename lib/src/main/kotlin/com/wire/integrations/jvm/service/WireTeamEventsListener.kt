@@ -24,7 +24,6 @@ import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.utils.KtxSerializer
 import io.ktor.websocket.Frame
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 
 /**
@@ -44,42 +43,40 @@ internal class WireTeamEventsListener internal constructor(
      * Keeps the connection open and listens for incoming events, provides deserialization and
      * basic error handling. Delegates event handling to [EventsRouter].
      */
-    fun connect() {
-        runBlocking {
-            try {
-                val cryptoClient = getOrInitCryptoClient()
+    suspend fun connect() {
+        try {
+            val cryptoClient = getOrInitCryptoClient()
 
-                // TODO Change endpoint to /events and add consumable-notifications client
-                //  capability once v8 is released
-                backendClient.connectWebSocket { incoming ->
-                    for (frame in incoming) {
-                        when (frame) {
-                            is Frame.Binary -> {
-                                // Assuming byteArray is a UTF-8 character set
-                                val jsonString = frame.data.decodeToString(0, frame.data.size)
-                                logger.debug("Binary frame content: '$jsonString'")
-                                val event =
-                                    KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
+            // TODO Change endpoint to /events and add consumable-notifications client
+            //  capability once v8 is released
+            backendClient.connectWebSocket { incoming ->
+                for (frame in incoming) {
+                    when (frame) {
+                        is Frame.Binary -> {
+                            // Assuming byteArray is a UTF-8 character set
+                            val jsonString = frame.data.decodeToString(0, frame.data.size)
+                            logger.debug("Binary frame content: '$jsonString'")
+                            val event =
+                                KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
 
-                                try {
-                                    eventsRouter.route(event, cryptoClient)
-                                    // Send back ACK event
-                                } catch (e: Exception) {
-                                    logger.error("Error processing event: $event", e)
-                                }
+                            try {
+                                eventsRouter.route(event, cryptoClient)
+                                // Send back ACK event
+                            } catch (e: Exception) {
+                                logger.error("Error processing event: $event", e)
                             }
+                        }
 
-                            else -> {
-                                logger.error("Received unsupported frame type: $frame")
-                            }
+                        else -> {
+                            logger.error("Received unsupported frame type: $frame")
                         }
                     }
                 }
-            } catch (e: Exception) {
-                val error = e.message ?: "Error connecting to WebSocket or establishing MLS client"
-                logger.error(error, e)
-                throw InterruptedException(error)
             }
+        } catch (e: Exception) {
+            val error = e.message ?: "Error connecting to WebSocket or establishing MLS client"
+            logger.error(error, e)
+            throw InterruptedException(error)
         }
     }
 
@@ -89,14 +86,14 @@ internal class WireTeamEventsListener internal constructor(
      *
      * The following times the SDK is started, the client will be loaded from the storage.
      */
-    fun getOrInitCryptoClient(): CryptoClient {
+    suspend fun getOrInitCryptoClient(): CryptoClient {
         val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
             .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
         val storedClientId = appStorage.getClientId()
 
         return if (storedClientId != null) {
             logger.info("App has a client already, loading it")
-            CoreCryptoClient(
+            CoreCryptoClient.create(
                 appClientId = AppClientId(storedClientId.value),
                 ciphersuiteCode = mlsCipherSuiteCode,
                 mlsTransport = mlsTransport
@@ -106,7 +103,11 @@ internal class WireTeamEventsListener internal constructor(
             val appData = backendClient.getApplicationData()
             val appClientId = AppClientId(appData.appClientId)
 
-            val cryptoClient = CoreCryptoClient(appClientId, mlsCipherSuiteCode, mlsTransport)
+            val cryptoClient = CoreCryptoClient.create(
+                appClientId = appClientId,
+                ciphersuiteCode = mlsCipherSuiteCode,
+                mlsTransport = mlsTransport
+            )
             backendClient.updateClientWithMlsPublicKey(
                 appClientId = appClientId,
                 mlsPublicKeys = cryptoClient.mlsGetPublicKey()

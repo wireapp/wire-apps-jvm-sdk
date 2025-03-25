@@ -16,31 +16,15 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.logging.LoggingConfiguration
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
-import com.wire.integrations.jvm.utils.KtxSerializer
-import com.wire.integrations.jvm.utils.mls
-import com.wire.integrations.jvm.utils.xprotobuf
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.HttpRequestRetry
-import io.ktor.client.plugins.UserAgent
-import io.ktor.client.plugins.cache.HttpCache
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.sse.SSE
-import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
-import io.ktor.serialization.kotlinx.json.json
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.UUID
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
-import org.zalando.logbook.client.LogbookClient
-import org.zalando.logbook.common.ExperimentalLogbookKtorApi
+import java.util.UUID
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 class WireAppSdk(
     applicationId: UUID,
@@ -59,10 +43,7 @@ class WireAppSdk(
         IsolatedKoinContext.setApiToken(apiToken)
         IsolatedKoinContext.setCryptographyStoragePassword(cryptographyStoragePassword)
 
-        initDynamicModules(
-            apiHost = apiHost,
-            wireEventsHandler = wireEventsHandler
-        )
+        initDynamicModules(wireEventsHandler)
     }
 
     @Synchronized
@@ -72,17 +53,12 @@ class WireAppSdk(
             return
         }
         running.set(true)
-        executor = Executors.newSingleThreadExecutor()
-        executor.submit { listenToWebSocketEvents() }
-    }
-
-    private fun listenToWebSocketEvents() {
-        val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
-        try {
+        executor.submit {
+            val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
             logger.info("Start listening to WebSocket events...")
-            eventsListener.connect() // Blocks thread
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
+            runBlocking(Dispatchers.IO) {
+                eventsListener.connect()
+            }
         }
     }
 
@@ -92,9 +68,9 @@ class WireAppSdk(
             logger.info("Wire Apps SDK is not running")
             return
         }
-        running.set(false)
-        logger.info("Wire Apps SDK shutting down...")
+        logger.info("Wire Apps SDK shutting down")
         executor.shutdownNow()
+        running.set(false)
     }
 
     fun isRunning(): Boolean = running.get()
@@ -103,60 +79,13 @@ class WireAppSdk(
         return IsolatedKoinContext.koinApp.koin.get()
     }
 
-    @OptIn(ExperimentalLogbookKtorApi::class)
-    private fun initDynamicModules(
-        apiHost: String,
-        wireEventsHandler: WireEventsHandler
-    ) {
-        val dynamicModule =
-            module {
-                single {
-                    wireEventsHandler
-                }
-
-                single<HttpClient> {
-                    HttpClient(CIO) {
-                        expectSuccess = true
-                        followRedirects = true
-
-                        install(LogbookClient) {
-                            logbook = LoggingConfiguration.logbook
-                        }
-
-                        install(ContentNegotiation) {
-                            json(KtxSerializer.json)
-                            mls()
-                            xprotobuf()
-                        }
-
-                        install(WebSockets) {
-                            contentConverter = KotlinxWebsocketSerializationConverter(Json)
-                            pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
-                        }
-
-                        install(SSE)
-
-                        install(UserAgent) {
-                            agent = "Ktor JVM SDK client"
-                        }
-
-                        install(HttpCache)
-                        install(HttpRequestRetry) {
-                            retryOnServerErrors(maxRetries = 3)
-                            exponentialDelay()
-                        }
-
-                        defaultRequest {
-                            url(apiHost)
-                        }
-                    }
-                }
+    private fun initDynamicModules(wireEventsHandler: WireEventsHandler) {
+        val dynamicModule = module {
+            single {
+                wireEventsHandler
             }
+        }
 
         IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
-    }
-
-    companion object {
-        internal const val WEBSOCKET_PING_INTERVAL_MILLIS = 20_000L
     }
 }

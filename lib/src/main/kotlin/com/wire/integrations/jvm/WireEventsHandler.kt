@@ -33,7 +33,7 @@ abstract class WireEventsHandler {
     }
 
     open fun onNewMLSMessage(value: String) {
-        logger.info("Received event: onNewMLSMessage")
+        logger.info("Received event: onNewMLSMessage - message content: $value")
     }
 
     open fun onMemberJoin(value: String) {

@@ -19,6 +19,8 @@ package com.wire.integrations.jvm.service
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.ok
+import com.github.tomakehurst.wiremock.http.HttpHeader
+import com.github.tomakehurst.wiremock.http.HttpHeaders
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
@@ -35,6 +37,7 @@ import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -54,28 +57,30 @@ class WireEventsIntegrationTest : KoinTest {
 
     @Test
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
-        setupWireMockStubs()
-        val eventsHandler = object : WireEventsHandler() {
-            override fun onEvent(event: String) {
-                println(event)
+        runBlocking {
+            setupWireMockStubs()
+            val eventsHandler = object : WireEventsHandler() {
+                override fun onEvent(event: String) {
+                    println(event)
+                }
             }
+            setupSdk(eventsHandler)
+
+            val eventsRouter = get<EventsRouter>()
+            val listener = get<WireTeamEventsListener>()
+            val client = listener.getOrInitCryptoClient()
+            eventsRouter.route(
+                eventResponse = NEW_TEAM_INVITE_EVENT,
+                cryptoClient = client
+            )
+            eventsRouter.route(
+                eventResponse = NEW_CONVERSATION_EVENT,
+                cryptoClient = client
+            )
+
+            val teamStorage = get<TeamStorage>()
+            assertTrue { teamStorage.getAll().size == 1 }
         }
-        setupSdk(eventsHandler)
-
-        val eventsRouter = get<EventsRouter>()
-        val listener = get<WireTeamEventsListener>()
-        val client = listener.getOrInitCryptoClient()
-        eventsRouter.route(
-            eventResponse = NEW_TEAM_INVITE_EVENT,
-            cryptoClient = client
-        )
-        eventsRouter.route(
-            eventResponse = NEW_CONVERSATION_EVENT,
-            cryptoClient = client
-        )
-
-        val teamStorage = get<TeamStorage>()
-        assertTrue { teamStorage.getAll().size == 1 }
     }
 
     @Test
@@ -115,71 +120,18 @@ class WireEventsIntegrationTest : KoinTest {
         // Create SDK with our custom handler
         setupSdk(customHandler)
 
-        // Replace the real crypto client with a mock one for MLS decryption
-        val mockCryptoClient = object : CryptoClient {
-            override fun decryptMls(
-                mlsGroupId: MLSGroupId,
-                encryptedMessage: String
-            ): ByteArray = mockDecryptedMessage.toByteArray()
-
-            // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
-            override fun processWelcomeMessage(welcome: Welcome): MLSGroupId {
-                throw MlsException.OrphanWelcome()
-            }
-
-            // Mock joining the conversation, assume the backend accepts the invitation
-            override fun createJoinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId =
-                MLS_GROUP_ID
-
-            override fun encryptMls(
-                mlsGroupId: MLSGroupId,
-                plainMessage: ByteArray
-            ): ByteArray {
-                TODO("Not yet implemented")
-            }
-
-            override fun mlsGetPublicKey(): MlsPublicKeys {
-                TODO("Not yet implemented")
-            }
-
-            override fun mlsGenerateKeyPackages(packageCount: UInt): List<MLSKeyPackage> {
-                TODO("Not yet implemented")
-            }
-
-            override fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean {
-                TODO("Not yet implemented")
-            }
-
-            override fun validKeyPackageCount(): Long {
-                TODO("Not yet implemented")
-            }
-
-            override fun close() {
-                TODO("Not yet implemented")
-            }
-
-            override fun createConversation(groupId: MLSGroupId) {
-                TODO("Not yet implemented")
-            }
-
-            override fun addMemberToMlsConversation(
-                mlsGroupId: MLSGroupId,
-                keyPackages: List<MLSKeyPackage>
-            ) {
-                TODO("Not yet implemented")
-            }
-        }
-
         // Execute
         val conversationStorage = get<ConversationStorage>()
         val conversationPrevious = conversationStorage.getById(CONVERSATION_ID)
         assertNull(conversationPrevious)
 
         val eventsRouter = get<EventsRouter>()
-        eventsRouter.route(
-            eventResponse = NEW_MLS_MESSAGE_EVENT,
-            cryptoClient = mockCryptoClient
-        )
+        runBlocking {
+            eventsRouter.route(
+                eventResponse = NEW_MLS_MESSAGE_EVENT,
+                cryptoClient = mockCryptoClient(mockDecryptedMessage)
+            )
+        }
 
         // Verify
         assertEquals(mockDecryptedMessage, capturedMessage)
@@ -198,6 +150,62 @@ class WireEventsIntegrationTest : KoinTest {
             eventsHandler
         )
     }
+
+    // Replace the real crypto client with a mock one for MLS decryption
+    private fun mockCryptoClient(mockDecryptedMessage: String) =
+        object : CryptoClient {
+            override suspend fun decryptMls(
+                mlsGroupId: MLSGroupId,
+                encryptedMessage: String
+            ): ByteArray = mockDecryptedMessage.toByteArray()
+
+            // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
+            override suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId {
+                throw MlsException.OrphanWelcome()
+            }
+
+            // Mock joining the conversation, assume the backend accepts the invitation
+            override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId =
+                MLS_GROUP_ID
+
+            override suspend fun encryptMls(
+                mlsGroupId: MLSGroupId,
+                plainMessage: ByteArray
+            ): ByteArray {
+                TODO("Not yet implemented")
+            }
+
+            override suspend fun mlsGetPublicKey(): MlsPublicKeys {
+                TODO("Not yet implemented")
+            }
+
+            override suspend fun mlsGenerateKeyPackages(packageCount: UInt): List<MLSKeyPackage> {
+                TODO("Not yet implemented")
+            }
+
+            override suspend fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean {
+                TODO("Not yet implemented")
+            }
+
+            override suspend fun validKeyPackageCount(): Long {
+                TODO("Not yet implemented")
+            }
+
+            override fun close() {
+                TODO("Not yet implemented")
+            }
+
+            override suspend fun createConversation(groupId: MLSGroupId) {
+                TODO("Not yet implemented")
+            }
+
+            override suspend fun addMemberToMlsConversation(
+                mlsGroupId: MLSGroupId,
+                keyPackages: List<MLSKeyPackage>
+            ) {
+                TODO("Not yet implemented")
+            }
+        }
 
     private fun setupWireMockStubs() {
         wireMockServer.stubFor(
@@ -233,8 +241,21 @@ class WireEventsIntegrationTest : KoinTest {
                         "expires_in" : 3600
                     }
                     """.trimIndent()
-                )
+                ).withHeaders(HttpHeaders(HttpHeader("set-cookie", "zuid=demoCookie")))
             )
+        )
+        wireMockServer.stubFor(
+            WireMock.post(WireMock.urlPathEqualTo("/v7/access"))
+                .withQueryParam("client_id", WireMock.matching(".*")).willReturn(
+                    WireMock.okJson(
+                        """
+                        {
+                            "access_token": "demoAccessToken",
+                            "expires_in" : 3600
+                        }
+                        """.trimIndent()
+                    )
+                )
         )
         wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/v7/feature-configs")).willReturn(
