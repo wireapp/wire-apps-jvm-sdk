@@ -13,7 +13,19 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.google.protobuf:protobuf-gradle-plugin:0.9.4")
+    }
+}
+
 plugins {
     kotlin("jvm") version "2.1.10" apply false
     kotlin("plugin.serialization") version "2.1.10" apply false
+    id("com.google.protobuf") version "0.9.4" apply false
 }

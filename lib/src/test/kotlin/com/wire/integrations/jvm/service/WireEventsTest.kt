@@ -17,6 +17,7 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
@@ -37,8 +38,11 @@ class WireEventsTest : KoinTest {
                 assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
             }
 
-            override fun onNewMLSMessage(value: String) {
-                assertEquals(EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(), value)
+            override fun onNewMLSMessage(wireMessage: WireMessage) {
+                assertEquals(
+                    EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
+                    (wireMessage as WireMessage.Text).text
+                )
             }
         }
 
@@ -49,7 +53,7 @@ class WireEventsTest : KoinTest {
             modules(
                 module {
                     single<WireEventsHandler> { wireEventsHandler }
-                    single<EventsRouter> { EventsRouter(get(), get(), get(), get()) }
+                    single<EventsRouter> { EventsRouter(get(), get(), get(), get(), get()) }
                 }
             )
         }
@@ -59,7 +63,11 @@ class WireEventsTest : KoinTest {
         val wireEvents = get<WireEventsHandler>()
 
         wireEvents.onNewConversation(EXPECTED_NEW_CONVERSATION_VALUE.toString())
-        wireEvents.onNewMLSMessage(EXPECTED_NEW_MLS_MESSAGE_VALUE.toString())
+        wireEvents.onNewMLSMessage(
+            WireMessage.Text(
+                text = EXPECTED_NEW_MLS_MESSAGE_VALUE.toString()
+            )
+        )
     }
 
     @Test
