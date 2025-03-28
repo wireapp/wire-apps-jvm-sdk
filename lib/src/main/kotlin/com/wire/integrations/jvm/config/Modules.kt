@@ -70,7 +70,7 @@ val sdkModule =
         single { WireApplicationManager(get(), get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get()) }
         single { WireTeamEventsListener(get(), get(), get(), get()) }
-        single<ProtobufProcessor> { ProtobufProcessorImpl(get()) }
+        single<ProtobufProcessor> { ProtobufProcessorImpl() }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost())
         }

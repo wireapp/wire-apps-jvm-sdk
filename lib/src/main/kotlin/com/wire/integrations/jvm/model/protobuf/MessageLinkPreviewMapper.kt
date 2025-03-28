@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +14,19 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-plugins {
-    kotlin("jvm") version "2.1.10" apply false
-    kotlin("plugin.serialization") version "2.1.10" apply false
+package com.wire.integrations.jvm.model.protobuf
+
+import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.protobuf.messages.Messages
+
+object MessageLinkPreviewMapper {
+    fun fromProtobuf(linkPreview: Messages.LinkPreview): WireMessage.Text.LinkPreview =
+        WireMessage.Text.LinkPreview(
+            summary = linkPreview.summary,
+            title = linkPreview.title,
+            url = linkPreview.url,
+            urlOffset = linkPreview.urlOffset,
+            size = if (linkPreview.hasImage()) linkPreview.image.original.size else 0,
+            mimeType = if (linkPreview.hasImage()) linkPreview.image.original.mimeType else null
+        )
 }

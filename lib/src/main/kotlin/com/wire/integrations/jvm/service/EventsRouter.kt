@@ -98,9 +98,11 @@ internal class EventsRouter internal constructor(
                     )
 
                     val genericMessage = GenericMessage.parseFrom(message)
-                    protobufProcessor.processGenericMessage(
+                    val wireMessage = protobufProcessor.processGenericMessage(
                         genericMessage = genericMessage
                     )
+
+                    wireEventsHandler.onNewMLSMessage(wireMessage = wireMessage)
                 }
 
                 is EventContentDTO.Unknown -> {

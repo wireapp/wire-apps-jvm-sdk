@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +14,14 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-plugins {
-    kotlin("jvm") version "2.1.10" apply false
-    kotlin("plugin.serialization") version "2.1.10" apply false
-}
+package com.wire.integrations.jvm.utils
+
+import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.protobuf.messages.Messages
+import java.util.UUID
+
+fun Messages.QualifiedUserId.toModel(): QualifiedId =
+    QualifiedId(
+        id = UUID.fromString(this.id),
+        domain = this.domain
+    )

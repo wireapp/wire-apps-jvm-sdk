@@ -24,20 +24,26 @@ sealed interface WireMessage {
         val text: String? = null,
         val quotedMessageId: UUID? = null,
         val quotedMessageSha256: ByteArray? = null,
-        val mentions: ArrayList<Mention> = ArrayList<Mention>()
+        val mentions: List<Mention> = emptyList(),
+        val linkPreviews: List<LinkPreview> = emptyList()
     ) : WireMessage {
-        fun addMention(
-            userId: QualifiedId?,
-            offset: Int,
-            len: Int
-        ) {
-            val mention = Mention()
-            mention.userId = userId
-            mention.offset = offset
-            mention.length = len
+        @JvmRecord
+        data class Mention(
+            val userId: QualifiedId? = null,
+            val offset: Int = 0,
+            val length: Int = 0
+        )
 
-            mentions.add(mention)
-        }
+        @JvmRecord
+        data class LinkPreview(
+            val summary: String? = null,
+            val title: String? = null,
+            val url: String? = null,
+            val urlOffset: Int = 0,
+            val mimeType: String? = null,
+            val name: String? = null,
+            val size: Long = 0
+        )
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -47,36 +53,27 @@ sealed interface WireMessage {
 
             if (text != other.text) return false
             if (quotedMessageId != other.quotedMessageId) return false
-            if (!quotedMessageSha256.contentEquals(other.quotedMessageSha256)) return false
+            if (quotedMessageSha256 != null) {
+                if (other.quotedMessageSha256 == null) return false
+                if (!quotedMessageSha256.contentEquals(other.quotedMessageSha256)) return false
+            } else if (other.quotedMessageSha256 != null) {
+                return false
+            }
             if (mentions != other.mentions) return false
+            if (linkPreviews != other.linkPreviews) return false
 
             return true
         }
 
         override fun hashCode(): Int {
-            var result = text.hashCode()
+            var result = text?.hashCode() ?: 0
             result = 31 * result + (quotedMessageId?.hashCode() ?: 0)
-            result = 31 * result + quotedMessageSha256.contentHashCode()
+            result = 31 * result + (quotedMessageSha256?.contentHashCode() ?: 0)
             result = 31 * result + mentions.hashCode()
+            result = 31 * result + linkPreviews.hashCode()
             return result
-        }
-
-        class Mention {
-            var userId: QualifiedId? = null
-            var offset: Int = 0
-            var length: Int = 0
         }
     }
 
-    @JvmRecord
-    data class LinkPreview(
-        val summary: String? = null,
-        val title: String? = null,
-        val url: String? = null,
-        val text: String? = null,
-        val urlOffset: Int = 0,
-        val mimeType: String? = null,
-        val name: String? = null,
-        val size: Long = 0
-    ) : WireMessage
+    data object Unknown : WireMessage
 }

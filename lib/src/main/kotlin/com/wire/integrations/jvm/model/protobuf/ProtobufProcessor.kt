@@ -15,71 +15,37 @@
  */
 
 package com.wire.integrations.jvm.model.protobuf
-import com.wire.integrations.jvm.WireEventsHandler
-import com.wire.integrations.jvm.model.QualifiedId
+
 import com.wire.integrations.jvm.model.WireMessage
-import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
 
 internal interface ProtobufProcessor {
-    fun processGenericMessage(genericMessage: GenericMessage)
+    fun processGenericMessage(genericMessage: GenericMessage): WireMessage
 }
 
-internal class ProtobufProcessorImpl(
-    private val wireEventsHandler: WireEventsHandler
-) : ProtobufProcessor {
-    override fun processGenericMessage(genericMessage: GenericMessage) {
+internal class ProtobufProcessorImpl : ProtobufProcessor {
+    override fun processGenericMessage(genericMessage: GenericMessage): WireMessage {
         if (genericMessage.hasText()) {
             val text = genericMessage.text
 
-            if (text.linkPreviewList.isNotEmpty()) {
-                handleLinkPreview(text = text)
-            }
-
-            if (text.hasContent()) {
-                val message = fromText(text = text)
-                wireEventsHandler.onNewMLSMessage(
-                    wireMessage = message
-                )
-            }
-        }
-    }
-
-    private fun fromText(text: Messages.Text): WireMessage {
-        val wireMessage = WireMessage.Text(
-            text = text.content,
-            quotedMessageId =
-                if (text.hasQuote()) UUID.fromString(text.quote.quotedMessageId) else null
-        )
-
-        for (mention in text.mentionsList) {
-            val userMentionedId = QualifiedId(
-                UUID.fromString(mention.qualifiedUserId.getId()),
-                mention.qualifiedUserId.getDomain()
+            return WireMessage.Text(
+                text = text.content,
+                quotedMessageId =
+                    if (text.hasQuote()) UUID.fromString(text.quote.quotedMessageId) else null,
+                linkPreviews = text
+                    .linkPreviewList
+                    .mapNotNull {
+                        MessageLinkPreviewMapper.fromProtobuf(it)
+                    },
+                mentions = text
+                    .mentionsList
+                    .mapNotNull {
+                        MessageMentionMapper.fromProtobuf(it)
+                    }
             )
-            wireMessage.addMention(userMentionedId, mention.start, mention.length)
         }
-        return wireMessage
-    }
 
-    private fun handleLinkPreview(text: Messages.Text) {
-        text.linkPreviewList.forEach { link ->
-            if (text.hasContent()) {
-                val linkPreview = WireMessage.LinkPreview(
-                    summary = link.summary,
-                    title = link.title,
-                    url = link.url,
-                    urlOffset = link.urlOffset,
-                    size = if (link.hasImage()) link.image.original.size else 0,
-                    mimeType = if (link.hasImage()) link.image.original.mimeType else null,
-                    text = text.content
-                )
-
-                wireEventsHandler.onNewMLSMessage(
-                    wireMessage = linkPreview
-                )
-            }
-        }
+        return WireMessage.Unknown
     }
 }
