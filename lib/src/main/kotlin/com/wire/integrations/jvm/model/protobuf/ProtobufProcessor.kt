@@ -20,12 +20,8 @@ import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
 
-internal interface ProtobufProcessor {
-    fun processGenericMessage(genericMessage: GenericMessage): WireMessage
-}
-
-internal class ProtobufProcessorImpl : ProtobufProcessor {
-    override fun processGenericMessage(genericMessage: GenericMessage): WireMessage {
+object ProtobufProcessor {
+    fun processGenericMessage(genericMessage: GenericMessage): WireMessage {
         if (genericMessage.hasText()) {
             val text = genericMessage.text
 

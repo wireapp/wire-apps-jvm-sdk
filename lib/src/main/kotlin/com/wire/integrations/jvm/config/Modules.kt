@@ -23,8 +23,6 @@ import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.MlsTransportImpl
 import com.wire.integrations.jvm.logging.LoggingConfiguration
-import com.wire.integrations.jvm.model.protobuf.ProtobufProcessor
-import com.wire.integrations.jvm.model.protobuf.ProtobufProcessorImpl
 import com.wire.integrations.jvm.persistence.AppSqlLiteStorage
 import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.persistence.ConversationSqlLiteStorage
@@ -70,7 +68,6 @@ val sdkModule =
         single { WireApplicationManager(get(), get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get()) }
         single { WireTeamEventsListener(get(), get(), get(), get()) }
-        single<ProtobufProcessor> { ProtobufProcessorImpl() }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost())
         }

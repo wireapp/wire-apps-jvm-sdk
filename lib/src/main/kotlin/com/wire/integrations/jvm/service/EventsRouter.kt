@@ -40,8 +40,7 @@ internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationStorage: ConversationStorage,
     private val backendClient: BackendClient,
-    private val wireEventsHandler: WireEventsHandler,
-    private val protobufProcessor: ProtobufProcessor
+    private val wireEventsHandler: WireEventsHandler
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -98,7 +97,7 @@ internal class EventsRouter internal constructor(
                     )
 
                     val genericMessage = GenericMessage.parseFrom(message)
-                    val wireMessage = protobufProcessor.processGenericMessage(
+                    val wireMessage = ProtobufProcessor.processGenericMessage(
                         genericMessage = genericMessage
                     )
 
