@@ -15,6 +15,7 @@
 
 package com.wire.integrations.jvm
 
+import com.wire.integrations.jvm.model.WireMessage
 import org.slf4j.LoggerFactory
 
 /**
@@ -32,8 +33,8 @@ abstract class WireEventsHandler {
         logger.info("Received event: onNewConversation")
     }
 
-    open fun onNewMLSMessage(value: String) {
-        logger.info("Received event: onNewMLSMessage - message content: $value")
+    open fun onNewMLSMessage(wireMessage: WireMessage) {
+        logger.info("Received event: onNewMLSMessage - message content: $wireMessage")
     }
 
     open fun onMemberJoin(value: String) {

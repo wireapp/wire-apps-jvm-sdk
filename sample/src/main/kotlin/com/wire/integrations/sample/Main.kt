@@ -17,6 +17,7 @@ package com.wire.integrations.sample
 
 import com.wire.integrations.jvm.WireAppSdk
 import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.model.WireMessage
 import java.util.UUID
 
 fun main() {
@@ -28,6 +29,10 @@ fun main() {
         object : WireEventsHandler() {
             override fun onEvent(event: String) {
                 println("Custom events handler: $event")
+            }
+
+            override fun onNewMLSMessage(wireMessage: WireMessage) {
+                println("Received MLS Message : $wireMessage")
             }
         })
     println("Starting Wire Apps SDK...")

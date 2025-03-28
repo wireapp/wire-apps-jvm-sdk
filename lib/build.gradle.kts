@@ -23,14 +23,15 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
     id("io.gitlab.arturbosch.detekt") version("1.23.7")
     id("app.cash.sqldelight") version "2.0.2"
+    id("com.google.protobuf") version "0.9.4"
 }
 
 group = "com.wire.integrations"
 version = "0.0.1-SNAPSHOT"
 
 repositories {
-    mavenCentral()
     google()
+    mavenCentral()
 }
 
 val ktorVersion = "3.1.0"
@@ -60,6 +61,8 @@ dependencies {
     implementation("org.zalando:logbook-core:3.11.0")
     implementation("org.zalando:logbook-ktor-client:3.11.0")
     implementation("org.zalando:logbook-json:3.11.0")
+    implementation("com.google.protobuf:protobuf-kotlin:4.30.0")
+    implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.4")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
@@ -93,7 +96,9 @@ ktlint {
         reporter(ReporterType.HTML)
     }
     filter {
-        exclude { element -> element.file.path.contains("generated/") }
+        exclude { element ->
+            element.file.path.contains("generated/")
+        }
     }
 }
 
@@ -104,6 +109,13 @@ detekt {
     parallel = true
     buildUponDefaultConfig = true
     source.setFrom("src/main/kotlin")
+}
+
+protobuf {
+    generatedFilesBaseDir = "$projectDir/generated"
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.24.0"
+    }
 }
 
 tasks.named<Test>("test") {

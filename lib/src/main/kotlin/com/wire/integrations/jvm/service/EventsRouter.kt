@@ -28,8 +28,10 @@ import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
+import com.wire.integrations.jvm.model.protobuf.ProtobufProcessor
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
+import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.ktor.client.plugins.ResponseException
 import org.slf4j.LoggerFactory
 import java.util.Base64
@@ -93,8 +95,13 @@ internal class EventsRouter internal constructor(
                         mlsGroupId = groupId,
                         encryptedMessage = event.message
                     )
-                    // TODO Add mapping to Protobuf (com.waz.model)
-                    wireEventsHandler.onNewMLSMessage(String(message))
+
+                    val genericMessage = GenericMessage.parseFrom(message)
+                    val wireMessage = ProtobufProcessor.processGenericMessage(
+                        genericMessage = genericMessage
+                    )
+
+                    wireEventsHandler.onNewMLSMessage(wireMessage = wireMessage)
                 }
 
                 is EventContentDTO.Unknown -> {

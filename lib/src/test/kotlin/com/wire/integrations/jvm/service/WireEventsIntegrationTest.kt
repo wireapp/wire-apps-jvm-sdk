@@ -18,25 +18,26 @@ package com.wire.integrations.jvm.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.ok
-import com.github.tomakehurst.wiremock.http.HttpHeader
-import com.github.tomakehurst.wiremock.http.HttpHeaders
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
-import com.wire.integrations.jvm.WireAppSdk
+import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
+import com.wire.integrations.protobuf.messages.Messages
+import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
@@ -58,13 +59,13 @@ class WireEventsIntegrationTest : KoinTest {
     @Test
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
         runBlocking {
-            setupWireMockStubs()
+            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
             val eventsHandler = object : WireEventsHandler() {
                 override fun onEvent(event: String) {
                     println(event)
                 }
             }
-            setupSdk(eventsHandler)
+            TestUtils.setupSdk(eventsHandler)
 
             val eventsRouter = get<EventsRouter>()
             val listener = get<WireTeamEventsListener>()
@@ -86,7 +87,7 @@ class WireEventsIntegrationTest : KoinTest {
     @Test
     fun givenNewMLSMessageEventWhenRouterProcessesItThenMessageIsDecryptedAndHandled() {
         // Setup
-        setupWireMockStubs()
+        TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
 
         // Mock MLSMessage decryption result
         val mockDecryptedMessage = "Decrypted message content"
@@ -110,15 +111,15 @@ class WireEventsIntegrationTest : KoinTest {
         )
 
         // Custom event handler to capture the event
-        var capturedMessage: String? = null
+        var capturedMessage: WireMessage? = null
         val customHandler = object : WireEventsHandler() {
-            override fun onNewMLSMessage(value: String) {
-                capturedMessage = value
+            override fun onNewMLSMessage(wireMessage: WireMessage) {
+                capturedMessage = wireMessage
             }
         }
 
         // Create SDK with our custom handler
-        setupSdk(customHandler)
+        TestUtils.setupSdk(customHandler)
 
         // Execute
         val conversationStorage = get<ConversationStorage>()
@@ -127,28 +128,31 @@ class WireEventsIntegrationTest : KoinTest {
 
         val eventsRouter = get<EventsRouter>()
         runBlocking {
+            val textMessage = GenericMessage
+                .newBuilder()
+                .setMessageId(UUID.randomUUID().toString())
+                .setText(
+                    Messages.Text.newBuilder()
+                        .setContent(mockDecryptedMessage)
+                        .build()
+                )
+                .build()
+            val stream = ByteArrayOutputStream()
+            textMessage.writeTo(stream)
+            val textMessageSerialized = stream.toByteArray()
+
             eventsRouter.route(
                 eventResponse = NEW_MLS_MESSAGE_EVENT,
-                cryptoClient = mockCryptoClient(mockDecryptedMessage)
+                cryptoClient = mockCryptoClient(String(textMessageSerialized))
             )
         }
 
         // Verify
-        assertEquals(mockDecryptedMessage, capturedMessage)
+        assertEquals(mockDecryptedMessage, (capturedMessage as WireMessage.Text).text)
 
         val conversation = conversationStorage.getById(CONVERSATION_ID)
         assertEquals(conversation?.id, CONVERSATION_ID)
         assertEquals(conversation?.teamId, TEAM_ID)
-    }
-
-    private fun setupSdk(eventsHandler: WireEventsHandler) {
-        WireAppSdk(
-            applicationId = APPLICATION_ID,
-            apiToken = API_TOKEN,
-            apiHost = API_HOST,
-            cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-            eventsHandler
-        )
     }
 
     // Replace the real crypto client with a mock one for MLS decryption
@@ -207,92 +211,7 @@ class WireEventsIntegrationTest : KoinTest {
             }
         }
 
-    private fun setupWireMockStubs() {
-        wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/v7/apps")).willReturn(
-                WireMock.okJson(
-                    """
-                    {
-                        "client_id": "dummyClientId",
-                        "app_type": "dummyAppType",
-                        "app_command": "dummyAppCommand"
-                    }
-                    """.trimIndent()
-                )
-            )
-        )
-        wireMockServer.stubFor(
-            WireMock.post(WireMock.urlMatching("/v7/clients")).willReturn(
-                WireMock.okJson(
-                    """
-                    {
-                        "id": "dummyClientId"
-                    }
-                    """.trimIndent()
-                )
-            )
-        )
-        wireMockServer.stubFor(
-            WireMock.post(WireMock.urlMatching("/v7/login")).willReturn(
-                WireMock.okJson(
-                    """
-                    {
-                        "access_token": "demoAccessToken",
-                        "expires_in" : 3600
-                    }
-                    """.trimIndent()
-                ).withHeaders(HttpHeaders(HttpHeader("set-cookie", "zuid=demoCookie")))
-            )
-        )
-        wireMockServer.stubFor(
-            WireMock.post(WireMock.urlPathEqualTo("/v7/access"))
-                .withQueryParam("client_id", WireMock.matching(".*")).willReturn(
-                    WireMock.okJson(
-                        """
-                        {
-                            "access_token": "demoAccessToken",
-                            "expires_in" : 3600
-                        }
-                        """.trimIndent()
-                    )
-                )
-        )
-        wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/v7/feature-configs")).willReturn(
-                WireMock.okJson(
-                    """
-                    {
-                        "mls": {
-                            "config": {
-                                "allowedCipherSuites": [1],
-                                "defaultCipherSuite": 1,
-                                "defaultProtocol": "mls",
-                                "supportedProtocols": ["mls", "proteus"]
-                            },
-                            "status": "enabled"
-                        }
-                    }
-                    """.trimIndent()
-                )
-            )
-        )
-        wireMockServer.stubFor(
-            WireMock.put(WireMock.urlPathTemplate("/v7/clients/{appClientId}")).willReturn(
-                ok()
-            )
-        )
-        wireMockServer.stubFor(
-            WireMock.post(
-                WireMock.urlPathTemplate("/v7/mls/key-packages/self/{appClientId}")
-            ).willReturn(ok())
-        )
-    }
-
     companion object {
-        private val APPLICATION_ID = UUID.randomUUID()
-        private const val API_TOKEN = "dummyToken"
-        private const val API_HOST = "http://localhost:8086"
-        private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "dummyPassword"
         private val EXPECTED_NEW_CONVERSATION_VALUE = Instant.DISTANT_FUTURE
         private val CONVERSATION_ID =
             QualifiedId(
