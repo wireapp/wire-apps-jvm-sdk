@@ -34,10 +34,13 @@ dependencies {
 ## Initializing the SDK
 
 The SDK needs to be initialized with your application's credentials, the backend host, a password for the cryptographic material and your event handler implementation:
-- `applicationId` and `apiToken` are retrieved from the backend during onboarding, when you register a new Application
-- `apiHost` is the target backend, should be production for normal operations: https://prod-nginz-https.wire.com
-- `cryptographyStoragePassword` is the password you choose to let the SDK encrypt the cryptographic material at rest. It is recommended to be generated randomly and stored in a secure place
-- `wireEventsHandler` is your implementation (extending the `WireEventsHandler` abstract class)
+
+| Parameter                     | Description                                                                                       |
+|-------------------------------|---------------------------------------------------------------------------------------------------|
+| `applicationId` + `apiToken`  | Retrieved from the backend during onboarding, when you register a new Application                |
+| `apiHost`                     | The target backend, should be production for normal operations: https://prod-nginz-https.wire.com |
+| `cryptographyStoragePassword` | The password you choose to let the SDK encrypt the cryptographic material at rest. It is recommended to be generated randomly and stored in a secure place |
+| `wireEventsHandler`           | Your implementation (extending the `WireEventsHandler` abstract class)                            |
 
 Initializing an instance of WireAppSdk is enough to get access to local stored teams and conversations and to send messages or similar actions.
 
@@ -62,10 +65,6 @@ val conversations = applicationManager.getStoredConversations()
 conversations.forEach { conversation ->
     println("Conversation: ${conversation.id} in team: ${conversation.teamId}")
 }
-
-// Get metadata about the Wire backend
-val metadata = applicationManager.getApplicationMetadata()
-println("Connected to Wire domain: ${metadata.domain}")
 
 // Get application data
 val appData = applicationManager.getApplicationData()
