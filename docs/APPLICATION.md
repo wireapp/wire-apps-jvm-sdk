@@ -1,0 +1,129 @@
+# Getting started creating a Wire Application with Wire JVM SDK
+
+This guide will help you create and understand how to develop and deploy a Wire Application written
+in a JVM language (Java, Kotlin, Scala). The SDK you will be using will simplify encryption/decryption, and http client calls to the Wire backend, leaving you to care about your business logic.
+
+Note that the SDK takes care of security in transit and partially for securing cryptographic data stored by the SDK in the filesystem. However, as you will have access to decrypted messages and identifiers of conversations and teams, it is up to you to secure them.
+
+## Prerequisites
+
+- Java 17 or higher
+- An application registered with Wire (to obtain an API token)
+- File system access for storing cryptographic keys and data
+
+## Adding the SDK to Your Project
+
+### Gradle
+
+```kotlin
+dependencies {
+    implementation("com.wire.integrations:wire-apps-jvm-sdk:{version}")
+}
+```
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>com.wire.integrations</groupId>
+    <artifactId>wire-apps-jvm-sdk</artifactId>
+    <version>{version}</version>
+</dependency>
+```
+
+## Initializing the SDK
+
+The SDK needs to be initialized with your application's credentials, the backend host, a password for the cryptographic material and your event handler implementation:
+
+| Parameter                     | Description                                                                                       |
+|-------------------------------|---------------------------------------------------------------------------------------------------|
+| `applicationId` + `apiToken`  | Retrieved from the backend during onboarding, when you register a new Application                |
+| `apiHost`                     | The target backend, should be production for normal operations: https://prod-nginz-https.wire.com |
+| `cryptographyStoragePassword` | The password you choose to let the SDK encrypt the cryptographic material at rest. It is recommended to be generated randomly and stored in a secure place |
+| `wireEventsHandler`           | Your implementation (extending the `WireEventsHandler` abstract class)                            |
+
+Initializing an instance of WireAppSdk is enough to get access to local stored teams and conversations and to send messages or similar actions.
+
+However, to establish a long-lasting connection with the backend and receive all the events targeted to you Application, you need to call the `start()` method.
+The `start()` method keeps a background thread running until explicitly stopped or the application terminates.
+
+## Managing Teams and Conversations
+
+The SDK provides access to teams and conversations through the `WireApplicationManager`, available after initializing the `WireAppSDK`
+
+```kotlin
+val applicationManager = wireAppSdk.getTeamManager()
+
+// Get all teams the application has been invited to
+val teams = applicationManager.getStoredTeams()
+teams.forEach { teamId ->
+    println("Team: $teamId")
+}
+
+// Get all conversations the application has access to
+val conversations = applicationManager.getStoredConversations()
+conversations.forEach { conversation ->
+    println("Conversation: ${conversation.id} in team: ${conversation.teamId}")
+}
+
+// Get application data
+val appData = applicationManager.getApplicationData()
+println("Application name: ${appData.name}")
+```
+
+## Handling Events
+
+The SDK uses the `WireEventsHandler` to notify your application about events and messages. Override the methods that you need in this class to handle them however you want. The http connection, deserialization, authentication and decrypting are performed by the Application, so you will receive the event as a `WireMessage`
+
+## Complete Example
+
+Here's a complete example showing how to initialize the SDK and handle received events:
+
+```kotlin
+import com.wire.integrations.jvm.WireAppSdk
+import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.model.WireMessage
+import java.util.UUID
+
+fun main() {
+    val wireAppSdk = WireAppSdk(
+        applicationId = "9c40bb37-6904-11ef-8008-be4b58ff1d17",
+        apiToken = "your-api-token",
+        apiHost = "https://your-wire-backend.example.com",
+        cryptographyStoragePassword = "secure-password",
+        object : WireEventsHandler() {
+            override fun onNewMLSMessage(wireMessage: WireMessage) {
+                println("Message received: $wireMessage")
+                
+                // Add your message handling logic here, like storing the message,
+                //   sending back another message, or triggering some workflow
+            }
+        }
+    )
+    
+    // Start the SDK
+    wireAppSdk.start()
+}
+```
+
+**NOTE**: Your application can simply call `start()` and a new thread is created and will keep the Application running and receiving events. To stop it, just close the Application (Cmd+d) or call `stop()`
+
+## Deploy example
+
+After building your Application leveraging the SDK, you need to find a place to let it run. At its core, the SDK is working as a client for the Wire Backend, with some storage for crypto data and for conversations (local `SQLite` database). This means that generally it needs only to be able to reach the public internet, specifically the Wire backend host you chose.
+
+You can take the artifacts built from your Application and run it in any server, on-premise or in the cloud, or Dockerize the Application and do the same. Note that you want 1 instance of the Application running and it can run indefinitely.
+
+For example, giving that the app does not need HTTPS, DNS, CDN, simpler deployment processes are available, for example: [Heroku - Java](https://devcenter.heroku.com/articles/getting-started-with-java)
+
+## Troubleshooting
+
+- If you switch between different Wire environments, you may need to delete the `apps.db` directory to avoid conflicts
+- For connection issues, verify your API token, host URL and if your deployed app has access to the public network (firewalls, docker ports, etc.)
+- When running into cryptography issues, ensure your storage password is consistent between app restarts
+- The SDK is designed to be thread-safe. The `start()` and `stop()` methods are synchronized to prevent concurrent modifications to the SDK state. However at this moment, only using a single Wire Application instance has been tested.
+
+## Additional Resources
+
+- Check the [SDK README](../README.md) for more information
+- For any issue, requests or improvements, let us know by contacting us or creating a new issue on GitHub
