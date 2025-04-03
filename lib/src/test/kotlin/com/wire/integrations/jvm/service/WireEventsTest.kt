@@ -99,7 +99,7 @@ class WireEventsTest : KoinTest {
                     assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
                 }
 
-                override suspend fun onNewMLSMessage(wireMessage: WireMessage) {
+                override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
                         (wireMessage as WireMessage.Text).text
