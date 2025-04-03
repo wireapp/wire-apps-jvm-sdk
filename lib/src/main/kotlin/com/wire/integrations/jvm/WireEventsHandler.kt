@@ -38,8 +38,12 @@ abstract class WireEventsHandler {
         logger.info("Received event: onNewConversation")
     }
 
-    open suspend fun onNewMLSMessage(wireMessage: WireMessage) {
+    open fun onNewMLSMessage(wireMessage: WireMessage) {
         logger.info("Received event: onNewMLSMessage - message content: $wireMessage")
+    }
+
+    open suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
+        logger.info("Received event: onNewMLSMessageSuspending - message content: $wireMessage")
     }
 
     open fun onMemberJoin(value: String) {

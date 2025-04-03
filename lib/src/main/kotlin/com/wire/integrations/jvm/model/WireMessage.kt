@@ -19,11 +19,9 @@ package com.wire.integrations.jvm.model
 import java.util.UUID
 
 sealed interface WireMessage {
-    val conversationId: QualifiedId
-
     @JvmRecord
     data class Text(
-        override val conversationId: QualifiedId,
+        val conversationId: QualifiedId,
         val id: UUID,
         val text: String? = null,
         val quotedMessageId: UUID? = null,
@@ -79,11 +77,5 @@ sealed interface WireMessage {
         }
     }
 
-    data object Unknown : WireMessage {
-        override val conversationId: QualifiedId
-            get() = QualifiedId(
-                id = UUID.randomUUID(),
-                domain = ""
-            )
-    }
+    data object Unknown : WireMessage
 }

@@ -100,7 +100,7 @@ internal class EventsRouter internal constructor(
                         conversationId = event.qualifiedConversation
                     )
 
-                    wireEventsHandler.onNewMLSMessage(
+                    wireEventsHandler.onNewMLSMessageSuspending(
                         wireMessage = wireMessage
                     )
                 }

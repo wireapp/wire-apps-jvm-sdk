@@ -31,7 +31,7 @@ fun main() {
                 println("Custom events handler: $event")
             }
 
-            override suspend fun onNewMLSMessage(wireMessage: WireMessage) {
+            override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
                 println("Received MLS Message : $wireMessage")
                 val sdkMessage = "${(wireMessage as WireMessage.Text).text} -- Sent from the SDK"
 
