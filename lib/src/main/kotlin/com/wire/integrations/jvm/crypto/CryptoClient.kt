@@ -25,7 +25,7 @@ import com.wire.integrations.jvm.model.http.MlsPublicKeys
 internal interface CryptoClient : AutoCloseable {
     suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
-        plainMessage: ByteArray
+        plainMessage: String
     ): ByteArray
 
     suspend fun decryptMls(

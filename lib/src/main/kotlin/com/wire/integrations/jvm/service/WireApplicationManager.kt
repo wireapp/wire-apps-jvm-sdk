@@ -16,8 +16,10 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
+import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.ConversationData
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
@@ -33,7 +35,8 @@ import kotlinx.coroutines.runBlocking
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationStorage: ConversationStorage,
-    private val backendClient: BackendClient
+    private val backendClient: BackendClient,
+    private val cryptoClient: CryptoClient
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
@@ -73,4 +76,19 @@ class WireApplicationManager internal constructor(
      */
     @Throws(WireException::class)
     suspend fun getApplicationDataSuspending(): AppDataResponse = backendClient.getApplicationData()
+
+    suspend fun sendMessage(
+        conversationId: QualifiedId,
+        message: String
+    ) {
+        val conversation = conversationStorage.getById(conversationId = conversationId)
+        conversation?.mlsGroupId?.let { mlsGroupId ->
+            backendClient.sendMessage(
+                mlsMessage = cryptoClient.encryptMls(
+                    mlsGroupId = mlsGroupId,
+                    plainMessage = message
+                )
+            )
+        } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
+    }
 }

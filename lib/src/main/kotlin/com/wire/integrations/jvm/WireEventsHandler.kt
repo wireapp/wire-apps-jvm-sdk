@@ -15,7 +15,9 @@
 
 package com.wire.integrations.jvm
 
+import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.jvm.service.WireApplicationManager
 import org.slf4j.LoggerFactory
 
 /**
@@ -24,6 +26,9 @@ import org.slf4j.LoggerFactory
  */
 abstract class WireEventsHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
+    protected val manager: WireApplicationManager get() {
+        return IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
+    }
 
     open fun onEvent(event: String) {
         logger.info("Received event: onEvent")
@@ -33,7 +38,7 @@ abstract class WireEventsHandler {
         logger.info("Received event: onNewConversation")
     }
 
-    open fun onNewMLSMessage(wireMessage: WireMessage) {
+    open suspend fun onNewMLSMessage(wireMessage: WireMessage) {
         logger.info("Received event: onNewMLSMessage - message content: $wireMessage")
     }
 

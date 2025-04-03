@@ -16,16 +16,22 @@
 
 package com.wire.integrations.jvm.model.protobuf
 
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
 
 object ProtobufProcessor {
-    fun processGenericMessage(genericMessage: GenericMessage): WireMessage {
+    fun processGenericMessage(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId
+    ): WireMessage {
         if (genericMessage.hasText()) {
             val text = genericMessage.text
 
             return WireMessage.Text(
+                conversationId = conversationId,
+                id = UUID.fromString(genericMessage.messageId),
                 text = text.content,
                 quotedMessageId =
                     if (text.hasQuote()) UUID.fromString(text.quote.quotedMessageId) else null,

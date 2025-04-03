@@ -8,7 +8,11 @@ import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupId
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.AppClientId
+import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.jvm.model.protobuf.ProtobufProcessor
 import com.wire.integrations.jvm.utils.MlsTransportLastWelcome
+import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -81,7 +85,7 @@ class CoreCryptoClientTest : KoinTest {
             // Encrypt a message for the joined conversation
             val plainMessage = UUID.randomUUID().toString()
             val encryptedMessage: ByteArray =
-                mlsClient.encryptMls(groupIdGenerated, plainMessage.toByteArray())
+                mlsClient.encryptMls(groupIdGenerated, plainMessage)
             assertTrue { encryptedMessage.size > 10 }
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
 
@@ -127,15 +131,25 @@ class CoreCryptoClientTest : KoinTest {
             assert(aliceClient.mlsConversationExists(groupId))
 
             // Alice encrypts a message for the joined conversation
-            val plainMessage = UUID.randomUUID().toString()
+            val plainMessage = "random_message" // UUID.randomUUID().toString()
             val encryptedMessage: ByteArray =
-                aliceClient.encryptMls(groupId, plainMessage.toByteArray())
+                aliceClient.encryptMls(groupId, plainMessage)
             assert(encryptedMessage.size > 10)
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
 
             // Bob decrypts the message
             val decrypted: ByteArray = bobClient.decryptMls(groupId, encryptedBase64Message)
-            assert(String(decrypted) == plainMessage)
+
+            val genericMessage = GenericMessage.parseFrom(decrypted)
+            val wireMessage = ProtobufProcessor.processGenericMessage(
+                genericMessage = genericMessage,
+                conversationId = QualifiedId(
+                    id = UUID.randomUUID(),
+                    domain = "random_domain"
+                )
+            )
+
+            assertEquals((wireMessage as WireMessage.Text).text, plainMessage)
 
             assertThrows<CoreCryptoException.Mls> {
                 bobClient.decryptMls(groupId, encryptedBase64Message)

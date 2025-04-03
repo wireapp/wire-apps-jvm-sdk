@@ -33,6 +33,7 @@ class WireAppSdkTest : KoinTest {
 
     @Test
     fun koinModulesLoadCorrectly() {
+        TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
         val wireAppSdk =
             WireAppSdk(
                 applicationId = APPLICATION_ID,
@@ -45,7 +46,7 @@ class WireAppSdkTest : KoinTest {
                     }
                 }
             )
-        assertNotNull(wireAppSdk.getTeamManager(), "Koin dependency injection failed")
+        assertNotNull(wireAppSdk.getApplicationManager(), "Koin dependency injection failed")
     }
 
     @Test
@@ -77,7 +78,7 @@ class WireAppSdkTest : KoinTest {
                     }
                 }
             )
-        val appMetadata = wireAppSdk.getTeamManager().getApplicationMetadata()
+        val appMetadata = wireAppSdk.getApplicationManager().getApplicationMetadata()
         assertEquals("host.com", appMetadata.domain)
     }
 

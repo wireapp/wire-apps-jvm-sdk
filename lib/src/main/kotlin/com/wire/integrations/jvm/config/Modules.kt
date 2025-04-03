@@ -21,8 +21,11 @@ import com.wire.crypto.MlsTransport
 import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.client.BackendClientDemo
+import com.wire.integrations.jvm.crypto.CoreCryptoClient
+import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.crypto.MlsTransportImpl
 import com.wire.integrations.jvm.logging.LoggingConfiguration
+import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.persistence.AppSqlLiteStorage
 import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.persistence.ConversationSqlLiteStorage
@@ -46,6 +49,7 @@ import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.zalando.logbook.client.LogbookClient
@@ -65,16 +69,21 @@ val sdkModule =
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
         single<BackendClient> { BackendClientDemo(get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
-        single { WireApplicationManager(get(), get(), get()) }
-        single { EventsRouter(get(), get(), get(), get()) }
-        single { WireTeamEventsListener(get(), get(), get(), get()) }
+        single { EventsRouter(get(), get(), get(), get(), get()) }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost())
         }
+        single<CryptoClient> {
+            runBlocking {
+                getOrInitCryptoClient(get(), get(), get())
+            }
+        }
+        single { WireTeamEventsListener(get(), get()) }
+        single { WireApplicationManager(get(), get(), get(), get()) }
     }
 
 @OptIn(ExperimentalLogbookKtorApi::class)
-private fun createHttpClient(apiHost: String?): HttpClient {
+internal fun createHttpClient(apiHost: String?): HttpClient {
     return HttpClient(CIO) {
         expectSuccess = true
         followRedirects = true
@@ -111,5 +120,52 @@ private fun createHttpClient(apiHost: String?): HttpClient {
                 url(apiHost)
             }
         }
+    }
+}
+
+/**
+ * Initialize the [CoreCryptoClient] if it's not already initialized.
+ * Uploads the MLS public keys and key packages to the backend.
+ *
+ * The following times the SDK is started, the client will be loaded from the storage.
+ */
+internal suspend fun getOrInitCryptoClient(
+    backendClient: BackendClient,
+    appStorage: AppStorage,
+    mlsTransport: MlsTransport
+): CryptoClient {
+    val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
+        .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
+    val storedClientId = appStorage.getClientId()
+
+    return if (storedClientId != null) {
+        // logger.info("App has a client already, loading it")
+        CoreCryptoClient.create(
+            appClientId = AppClientId(storedClientId.value),
+            ciphersuiteCode = mlsCipherSuiteCode,
+            mlsTransport = mlsTransport
+        )
+    } else {
+        // logger.info("App does not have a client yet, initializing it")
+        val appData = backendClient.getApplicationData()
+        val appClientId = AppClientId(appData.appClientId)
+
+        val cryptoClient = CoreCryptoClient.create(
+            appClientId = appClientId,
+            ciphersuiteCode = mlsCipherSuiteCode,
+            mlsTransport = mlsTransport
+        )
+        backendClient.updateClientWithMlsPublicKey(
+            appClientId = appClientId,
+            mlsPublicKeys = cryptoClient.mlsGetPublicKey()
+        )
+        backendClient.uploadMlsKeyPackages(
+            appClientId = appClientId,
+            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
+        )
+        // logger.info("MLS client for $appClientId fully initialized")
+
+        appStorage.saveClientId(appClientId.value)
+        cryptoClient
     }
 }

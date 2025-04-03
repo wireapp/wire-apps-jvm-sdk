@@ -16,29 +16,20 @@ import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.exception.WireException.InvalidParameter
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.utils.toProtobufGenericMessage
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.Base64
 
-internal class CoreCryptoClient : CryptoClient {
+/**
+ * Internal use only, use the factory function [create] to create a new instance.
+ */
+internal class CoreCryptoClient private constructor(
     // App specific appClientId: app@domain:UUIDv4
-    private val appClientId: AppClientId
-    private val ciphersuite: Ciphersuite
+    private val appClientId: AppClientId,
+    private val ciphersuite: Ciphersuite,
     private var coreCrypto: CoreCrypto
-
-    /**
-     * Internal use only, use the factory function [create] to create a new instance.
-     */
-    private constructor(
-        appClientId: AppClientId,
-        ciphersuite: Ciphersuite,
-        coreCrypto: CoreCrypto
-    ) {
-        this.appClientId = appClientId
-        this.ciphersuite = ciphersuite
-        this.coreCrypto = coreCrypto
-    }
-
+) : CryptoClient {
     companion object {
         private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
         private const val KEYSTORE_NAME = "keystore"
@@ -92,10 +83,19 @@ internal class CoreCryptoClient : CryptoClient {
 
     override suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
-        plainMessage: ByteArray
+        plainMessage: String
     ): ByteArray {
         val encryptedMessage =
-            coreCrypto.transaction { it.encryptMessage(mlsGroupId, PlaintextMessage(plainMessage)) }
+            coreCrypto.transaction {
+                it.encryptMessage(
+                    mlsGroupId,
+                    PlaintextMessage(
+                        plainMessage
+                            .toProtobufGenericMessage()
+                            .toByteArray()
+                    )
+                )
+            }
         return encryptedMessage.value
     }
 

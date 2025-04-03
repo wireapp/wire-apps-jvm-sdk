@@ -77,7 +77,13 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
     private fun conversationMapper(conv: Conversation) =
         ConversationData(
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),
-            teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
+            teamId = conv.team_id?.let {
+                if (it == "" || it == "null") {
+                    null
+                } else {
+                    TeamId(UUID.fromString(it))
+                }
+            },
             mlsGroupId = conv.mls_group_id?.let { MLSGroupId(Base64.getDecoder().decode(it)) }
         )
 }

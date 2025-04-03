@@ -16,6 +16,8 @@
 
 package com.wire.integrations.jvm.service
 
+import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.wire.crypto.GroupInfo
@@ -23,9 +25,13 @@ import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
+import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.client.BackendClient
+import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.config.createHttpClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
@@ -33,29 +39,29 @@ import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.persistence.ConversationSqlLiteStorage
 import com.wire.integrations.jvm.persistence.ConversationStorage
+import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
-import java.io.ByteArrayOutputStream
+import io.ktor.client.HttpClient
+import java.util.UUID
+import java.util.Base64
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.koin.core.Koin
+import org.koin.core.context.startKoin
+import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.get
-import java.util.Base64
-import java.util.UUID
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class WireEventsIntegrationTest : KoinTest {
-    // Override the Koin instance as we use an isolated context
-    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
-
     @Test
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
         runBlocking {
@@ -68,18 +74,15 @@ class WireEventsIntegrationTest : KoinTest {
             TestUtils.setupSdk(eventsHandler)
 
             val eventsRouter = get<EventsRouter>()
-            val listener = get<WireTeamEventsListener>()
-            val client = listener.getOrInitCryptoClient()
             eventsRouter.route(
-                eventResponse = NEW_TEAM_INVITE_EVENT,
-                cryptoClient = client
+                eventResponse = NEW_TEAM_INVITE_EVENT
             )
             eventsRouter.route(
-                eventResponse = NEW_CONVERSATION_EVENT,
-                cryptoClient = client
+                eventResponse = NEW_CONVERSATION_EVENT
             )
 
             val teamStorage = get<TeamStorage>()
+            println("SIZE == ${teamStorage.getAll().size}")
             assertTrue { teamStorage.getAll().size == 1 }
         }
     }
@@ -90,7 +93,6 @@ class WireEventsIntegrationTest : KoinTest {
         TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
 
         // Mock MLSMessage decryption result
-        val mockDecryptedMessage = "Decrypted message content"
         val stubConvPath = "/v7/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}"
         wireMockServer.stubFor(
             WireMock.get(WireMock.urlPathMatching(stubConvPath))
@@ -110,16 +112,8 @@ class WireEventsIntegrationTest : KoinTest {
                 )
         )
 
-        // Custom event handler to capture the event
-        var capturedMessage: WireMessage? = null
-        val customHandler = object : WireEventsHandler() {
-            override fun onNewMLSMessage(wireMessage: WireMessage) {
-                capturedMessage = wireMessage
-            }
-        }
-
         // Create SDK with our custom handler
-        TestUtils.setupSdk(customHandler)
+        TestUtils.setupSdk(wireEventsHandler)
 
         // Execute
         val conversationStorage = get<ConversationStorage>()
@@ -128,91 +122,35 @@ class WireEventsIntegrationTest : KoinTest {
 
         val eventsRouter = get<EventsRouter>()
         runBlocking {
-            val textMessage = GenericMessage
-                .newBuilder()
-                .setMessageId(UUID.randomUUID().toString())
-                .setText(
-                    Messages.Text.newBuilder()
-                        .setContent(mockDecryptedMessage)
-                        .build()
+            val encryptedBase64Message = Base64
+                .getEncoder()
+                .encodeToString(
+                    GENERIC_TEXT_MESSAGE.toByteArray()
                 )
-                .build()
-            val stream = ByteArrayOutputStream()
-            textMessage.writeTo(stream)
-            val textMessageSerialized = stream.toByteArray()
 
             eventsRouter.route(
-                eventResponse = NEW_MLS_MESSAGE_EVENT,
-                cryptoClient = mockCryptoClient(String(textMessageSerialized))
+                eventResponse = NEW_MLS_MESSAGE_EVENT.copy(
+                    payload = listOf(
+                        (
+                            NEW_MLS_MESSAGE_EVENT.payload?.first() as EventContentDTO
+                                .Conversation
+                                .NewMLSMessageDTO
+                        ).copy(
+                            message = encryptedBase64Message.toString()
+                        )
+                    )
+                )
             )
         }
-
-        // Verify
-        assertEquals(mockDecryptedMessage, (capturedMessage as WireMessage.Text).text)
 
         val conversation = conversationStorage.getById(CONVERSATION_ID)
         assertEquals(conversation?.id, CONVERSATION_ID)
         assertEquals(conversation?.teamId, TEAM_ID)
     }
 
-    // Replace the real crypto client with a mock one for MLS decryption
-    private fun mockCryptoClient(mockDecryptedMessage: String) =
-        object : CryptoClient {
-            override suspend fun decryptMls(
-                mlsGroupId: MLSGroupId,
-                encryptedMessage: String
-            ): ByteArray = mockDecryptedMessage.toByteArray()
-
-            // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
-            override suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId {
-                throw MlsException.OrphanWelcome()
-            }
-
-            // Mock joining the conversation, assume the backend accepts the invitation
-            override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId =
-                MLS_GROUP_ID
-
-            override suspend fun encryptMls(
-                mlsGroupId: MLSGroupId,
-                plainMessage: ByteArray
-            ): ByteArray {
-                TODO("Not yet implemented")
-            }
-
-            override suspend fun mlsGetPublicKey(): MlsPublicKeys {
-                TODO("Not yet implemented")
-            }
-
-            override suspend fun mlsGenerateKeyPackages(packageCount: UInt): List<MLSKeyPackage> {
-                TODO("Not yet implemented")
-            }
-
-            override suspend fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean {
-                TODO("Not yet implemented")
-            }
-
-            override suspend fun validKeyPackageCount(): Long {
-                TODO("Not yet implemented")
-            }
-
-            override fun close() {
-                TODO("Not yet implemented")
-            }
-
-            override suspend fun createConversation(groupId: MLSGroupId) {
-                TODO("Not yet implemented")
-            }
-
-            override suspend fun addMemberToMlsConversation(
-                mlsGroupId: MLSGroupId,
-                keyPackages: List<MLSKeyPackage>
-            ) {
-                TODO("Not yet implemented")
-            }
-        }
-
     companion object {
         private val EXPECTED_NEW_CONVERSATION_VALUE = Instant.DISTANT_FUTURE
+        private const val MOCK_DECRYPTED_MESSAGE = "Decrypted message content"
         private val CONVERSATION_ID =
             QualifiedId(
                 id = UUID.randomUUID(),
@@ -259,18 +197,124 @@ class WireEventsIntegrationTest : KoinTest {
                             qualifiedConversation = CONVERSATION_ID,
                             qualifiedFrom = USER_ID,
                             time = EXPECTED_NEW_CONVERSATION_VALUE,
-                            message = "Encrypted message content",
+                            message = MOCK_DECRYPTED_MESSAGE,
                             subconversation = null
                         )
                     ),
                 transient = true
             )
+        private val GENERIC_TEXT_MESSAGE = GenericMessage
+            .newBuilder()
+            .setMessageId(UUID.randomUUID().toString())
+            .setText(
+                Messages.Text.newBuilder()
+                    .setContent("Decrypted message content")
+                    .build()
+            )
+            .build()
+
         private val wireMockServer = WireMockServer(8086)
+
+        // Replace the real crypto client with a mock one for MLS decryption
+        private fun mockCryptoClient() =
+            object : CryptoClient {
+                override suspend fun decryptMls(
+                    mlsGroupId: MLSGroupId,
+                    encryptedMessage: String
+                ): ByteArray {
+                    return GENERIC_TEXT_MESSAGE.toByteArray()
+                }
+
+                // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
+                override suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId {
+                    throw MlsException.OrphanWelcome()
+                }
+
+                // Mock joining the conversation, assume the backend accepts the invitation
+                override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId =
+                    MLS_GROUP_ID
+
+                override suspend fun encryptMls(
+                    mlsGroupId: MLSGroupId,
+                    plainMessage: String
+                ): ByteArray {
+                    TODO("Not yet implemented")
+                }
+
+                override suspend fun mlsGetPublicKey(): MlsPublicKeys {
+                    TODO("Not yet implemented")
+                }
+
+                override suspend fun mlsGenerateKeyPackages(
+                    packageCount: UInt
+                ): List<MLSKeyPackage> {
+                    TODO("Not yet implemented")
+                }
+
+                override suspend fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean {
+                    TODO("Not yet implemented")
+                }
+
+                override suspend fun validKeyPackageCount(): Long {
+                    TODO("Not yet implemented")
+                }
+
+                override fun close() {
+                    TODO("Not yet implemented")
+                }
+
+                override suspend fun createConversation(groupId: MLSGroupId) {
+                    TODO("Not yet implemented")
+                }
+
+                override suspend fun addMemberToMlsConversation(
+                    mlsGroupId: MLSGroupId,
+                    keyPackages: List<MLSKeyPackage>
+                ) {
+                    TODO("Not yet implemented")
+                }
+            }
+
+        private val wireEventsHandler =
+            object : WireEventsHandler() {
+                override suspend fun onNewMLSMessage(wireMessage: WireMessage) {
+                    // Verify
+                    assertEquals(
+                        MOCK_DECRYPTED_MESSAGE,
+                        (wireMessage as WireMessage.Text).text
+                    )
+                }
+            }
+
+        private val TEST_DATABASE_URL = "jdbc:sqlite:apps-test-${UUID.randomUUID()}.db"
 
         @JvmStatic
         @BeforeAll
         fun before() {
             wireMockServer.start()
+
+            startKoin {
+                modules(
+                    module {
+                        single<SqlDriver> {
+                            val driver: SqlDriver = JdbcSqliteDriver(TEST_DATABASE_URL)
+                            AppsSdkDatabase.Schema.create(driver)
+                            driver
+                        }
+                        single<HttpClient> {
+                            createHttpClient(IsolatedKoinContext.getApiHost())
+                        }
+                        single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
+                        single<ConversationStorage> {
+                            ConversationSqlLiteStorage(AppsSdkDatabase(get()))
+                        }
+                        single<BackendClient> { BackendClientDemo(get()) }
+                        single<WireEventsHandler> { wireEventsHandler }
+                        single<CryptoClient> { mockCryptoClient() }
+                        single<EventsRouter> { EventsRouter(get(), get(), get(), get(), get()) }
+                    }
+                )
+            }
         }
 
         @JvmStatic

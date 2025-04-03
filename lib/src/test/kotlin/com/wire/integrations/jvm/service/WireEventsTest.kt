@@ -17,58 +17,40 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
+import java.util.UUID
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.get
-import org.koin.test.junit5.KoinTestExtension
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 
 class WireEventsTest : KoinTest {
-    private val wireEventsHandler =
-        object : WireEventsHandler() {
-            override fun onNewConversation(value: String) {
-                assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
-            }
-
-            override fun onNewMLSMessage(wireMessage: WireMessage) {
-                assertEquals(
-                    EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
-                    (wireMessage as WireMessage.Text).text
-                )
-            }
-        }
-
-    @JvmField
-    @RegisterExtension
-    val koinTestExtension =
-        KoinTestExtension.create {
-            modules(
-                module {
-                    single<WireEventsHandler> { wireEventsHandler }
-                    single<EventsRouter> { EventsRouter(get(), get(), get(), get()) }
-                }
-            )
-        }
-
     @Test
-    fun givenWireEventsHandlerIsInjectedThenCallingItsMethodsSucceeds() {
-        val wireEvents = get<WireEventsHandler>()
+    fun givenWireEventsHandlerIsInjectedThenCallingItsMethodsSucceeds() =
+        runBlocking {
+            val wireEvents = get<WireEventsHandler>()
 
-        wireEvents.onNewConversation(EXPECTED_NEW_CONVERSATION_VALUE.toString())
-        wireEvents.onNewMLSMessage(
-            WireMessage.Text(
-                text = EXPECTED_NEW_MLS_MESSAGE_VALUE.toString()
+            wireEvents.onNewConversation(EXPECTED_NEW_CONVERSATION_VALUE.toString())
+            wireEvents.onNewMLSMessage(
+                WireMessage.Text(
+                    id = UUID.randomUUID(),
+                    conversationId = CONVERSATION_ID,
+                    text = EXPECTED_NEW_MLS_MESSAGE_VALUE.toString()
+                )
             )
-        )
-    }
+        }
 
     @Test
     fun whenDeserializingConversationCreateEventThenItShouldMapCorrectlyToNewConversationDTO() {
@@ -83,8 +65,12 @@ class WireEventsTest : KoinTest {
     companion object {
         private val EXPECTED_NEW_CONVERSATION_VALUE = Instant.DISTANT_FUTURE
         private val EXPECTED_NEW_MLS_MESSAGE_VALUE = Instant.DISTANT_PAST
+        private val CONVERSATION_ID = QualifiedId(
+            id = UUID.fromString("9bb5fc3f-a5fb-4783-ae88-00a07a39732d"),
+            domain = "anta.wire.link"
+        )
 
-        private const val DUMMY_CONVERSATION_CREATE_EVENT_RESPONSE =
+        private val DUMMY_CONVERSATION_CREATE_EVENT_RESPONSE =
             """{
                   "id": "4c2c48f6-84af-11ef-8001-860acb7b851a",
                   "payload": [
@@ -92,8 +78,8 @@ class WireEventsTest : KoinTest {
                       "conversation": "9bb5fc3f-a5fb-4783-ae88-00a07a39732d",
                       "from": "95d52e20-8428-4619-9a81-dbc2298a3f28",
                       "qualified_conversation": {
-                        "domain": "anta.wire.link",
-                        "id": "9bb5fc3f-a5fb-4783-ae88-00a07a39732d"
+                        "domain": "${CONVERSATION_ID.domain}",
+                        "id": "${CONVERSATION_ID.id}"
                       },
                       "qualified_from": {
                         "domain": "anta.wire.link",
@@ -106,5 +92,39 @@ class WireEventsTest : KoinTest {
                   ]
                 }
             """
+
+        private val wireEventsHandler =
+            object : WireEventsHandler() {
+                override fun onNewConversation(value: String) {
+                    assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
+                }
+
+                override suspend fun onNewMLSMessage(wireMessage: WireMessage) {
+                    assertEquals(
+                        EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
+                        (wireMessage as WireMessage.Text).text
+                    )
+                }
+            }
+
+        @JvmStatic
+        @BeforeAll
+        fun before() {
+            stopKoin()
+            startKoin {
+                modules(
+                    module {
+                        single<WireEventsHandler> { wireEventsHandler }
+                        single<EventsRouter> { EventsRouter(get(), get(), get(), get(), get()) }
+                    }
+                )
+            }
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun after() {
+            stopKoin()
+        }
     }
 }
