@@ -44,8 +44,8 @@ The SDK needs to be initialized with your application's credentials, the backend
 
 Initializing an instance of WireAppSdk is enough to get access to local stored teams and conversations and to send messages or similar actions.
 
-However, to establish a long-lasting connection with the backend and receive all the events targeted to you Application, you need to call the `start()` method.
-The `start()` method keeps a background thread running until explicitly stopped or the application terminates.
+However, to establish a long-lasting connection with the backend and receive all the events targeted to you Application, you need to call the `startListening()` method.
+The `startListening()` method keeps a background thread running until explicitly stopped or the application terminates.
 
 ## Managing Teams and Conversations
 
@@ -92,7 +92,7 @@ fun main() {
         apiHost = "https://your-wire-backend.example.com",
         cryptographyStoragePassword = "secure-password",
         object : WireEventsHandler() {
-            override fun onNewMLSMessage(wireMessage: WireMessage) {
+            override fun onNewMessage(wireMessage: WireMessage) {
                 println("Message received: $wireMessage")
                 
                 // Add your message handling logic here, like storing the message,
@@ -102,11 +102,11 @@ fun main() {
     )
     
     // Start the SDK
-    wireAppSdk.start()
+    wireAppSdk.startListening()
 }
 ```
 
-**NOTE**: Your application can simply call `start()` and a new thread is created and will keep the Application running and receiving events. To stop it, just close the Application (Cmd+d) or call `stop()`
+**NOTE**: Your application can simply call `startListening()` and a new thread is created and will keep the Application running and receiving events. To stop it, just close the Application (Cmd+d) or call `stopListening()`
 
 ## Sending Messages
 
@@ -136,7 +136,7 @@ For when the SDK received an event and you want to react/respond to this event b
 This is done inside the method override of `WireEventsHandler` using a local `manager`.
 
 ```kotlin
-override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
+override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
     println("Message received: $wireMessage")
     
     // Add your message handling logic here, like storing the message,
@@ -148,7 +148,7 @@ override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
     )
 }
 ```
-> **_Java:_**  Use `override fun onNewMLSMessage(wireMessage: WireMessage) { .. }`
+> **_Java:_**  Use `override fun onNewMessage(wireMessage: WireMessage) { .. }`
 
 ## Deploy example
 
@@ -160,10 +160,11 @@ For example, giving that the app does not need HTTPS, DNS, CDN, simpler deployme
 
 ## Troubleshooting
 
+- Enable DEBUG logging on the SDK if you are developing an Application and want to test it in a safe environment. Set the log level to DEBUG in your logging framework for the package `com.wire.integrations.jvm` (e.g. for Logback `<logger name="com.wire.integrations.jvm" level="DEBUG" />`).
 - If you switch between different Wire environments, you may need to delete the `apps.db` directory to avoid conflicts
 - For connection issues, verify your API token, host URL and if your deployed app has access to the public network (firewalls, docker ports, etc.)
 - When running into cryptography issues, ensure your storage password is consistent between app restarts
-- The SDK is designed to be thread-safe. The `start()` and `stop()` methods are synchronized to prevent concurrent modifications to the SDK state. However at this moment, only using a single Wire Application instance has been tested.
+- The SDK is designed to be thread-safe. The `startListening()` and `stopListening()` methods are synchronized to prevent concurrent modifications to the SDK state. However at this moment, only using a single Wire Application instance has been tested.
 
 ## Additional Resources
 

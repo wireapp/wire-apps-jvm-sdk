@@ -18,7 +18,10 @@ package com.wire.integrations.sample
 import com.wire.integrations.jvm.WireAppSdk
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.model.WireMessage
+import org.slf4j.LoggerFactory
 import java.util.UUID
+
+private val logger = LoggerFactory.getLogger("WireAppSdkSample")
 
 fun main() {
     val wireAppSdk = WireAppSdk(
@@ -28,11 +31,11 @@ fun main() {
         cryptographyStoragePassword = "myDummyPassword",
         object : WireEventsHandler() {
             override fun onEvent(event: String) {
-                println("Custom events handler: $event")
+                logger.info("Custom events handler: $event")
             }
 
-            override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
-                println("Received MLS Message : $wireMessage")
+            override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
+                logger.info("Received MLS Message : $wireMessage")
                 val sdkMessage = "${(wireMessage as WireMessage.Text).text} -- Sent from the SDK"
 
                 manager.sendMessage(
@@ -41,17 +44,17 @@ fun main() {
                 )
             }
         })
-    println("Starting Wire Apps SDK...")
-    wireAppSdk.start() // Will keep a thread running in the background until explicitly stopped
+    logger.info("Starting Wire Apps SDK...")
+    wireAppSdk.startListening() // Will keep a thread running in the background until explicitly stopped
     val applicationManager = wireAppSdk.getApplicationManager()
 
     applicationManager.getStoredTeams().forEach {
-        println("Team: $it")
+        logger.info("Team: $it")
     }
     applicationManager.getStoredConversations().forEach {
-        println("Conversation: $it")
+        logger.info("Conversation: $it")
     }
-    println("Wire backend domain: ${applicationManager.getApplicationMetadata().domain}")
+    logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
 
     // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

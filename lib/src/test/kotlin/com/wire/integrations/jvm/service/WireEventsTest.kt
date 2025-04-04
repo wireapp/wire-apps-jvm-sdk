@@ -22,19 +22,19 @@ import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
-import java.util.UUID
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.get
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 
 class WireEventsTest : KoinTest {
     @Test
@@ -43,7 +43,7 @@ class WireEventsTest : KoinTest {
             val wireEvents = get<WireEventsHandler>()
 
             wireEvents.onNewConversation(EXPECTED_NEW_CONVERSATION_VALUE.toString())
-            wireEvents.onNewMLSMessage(
+            wireEvents.onNewMessage(
                 WireMessage.Text(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -99,7 +99,7 @@ class WireEventsTest : KoinTest {
                     assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
                 }
 
-                override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
+                override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
                         (wireMessage as WireMessage.Text).text

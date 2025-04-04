@@ -33,8 +33,8 @@ import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.ktor.client.plugins.ResponseException
-import java.util.Base64
 import org.slf4j.LoggerFactory
+import java.util.Base64
 
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
@@ -46,6 +46,7 @@ internal class EventsRouter internal constructor(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     internal suspend fun route(eventResponse: EventResponse) {
+        logger.debug("Event received: {}", eventResponse)
         eventResponse.payload?.forEach { event ->
             when (event) {
                 is EventContentDTO.TeamInvite -> {
@@ -100,7 +101,7 @@ internal class EventsRouter internal constructor(
                         conversationId = event.qualifiedConversation
                     )
 
-                    wireEventsHandler.onNewMLSMessageSuspending(
+                    wireEventsHandler.onNewMessageSuspending(
                         wireMessage = wireMessage
                     )
                 }
@@ -144,6 +145,12 @@ internal class EventsRouter internal constructor(
     private suspend fun fetchGroupIdFromConversation(
         event: EventContentDTO.Conversation.NewMLSMessageDTO
     ): MLSGroupId {
+        logger.debug(
+            "Searching for group ID of conversation: {}:{}",
+            event.qualifiedConversation.id,
+            event.qualifiedConversation.domain
+        )
+
         val storedConversation =
             conversationStorage.getById(event.qualifiedConversation)
         return if (storedConversation?.mlsGroupId != null) {
@@ -169,6 +176,7 @@ internal class EventsRouter internal constructor(
 
     private suspend fun newTeamInvite(teamId: TeamId) {
         try {
+            logger.debug("Confirming team: {}", teamId.value.toString())
             backendClient.confirmTeam(teamId)
             teamStorage.save(teamId) // Can be done async ?
         } catch (e: ResponseException) {

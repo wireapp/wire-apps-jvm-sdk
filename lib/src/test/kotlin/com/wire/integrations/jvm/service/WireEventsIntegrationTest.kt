@@ -16,8 +16,6 @@
 
 package com.wire.integrations.jvm.service
 
-import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.wire.crypto.GroupInfo
@@ -25,13 +23,9 @@ import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
-import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.WireEventsHandler
-import com.wire.integrations.jvm.client.BackendClient
-import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.config.createHttpClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
@@ -39,29 +33,29 @@ import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
-import com.wire.integrations.jvm.persistence.ConversationSqlLiteStorage
 import com.wire.integrations.jvm.persistence.ConversationStorage
-import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
-import io.ktor.client.HttpClient
-import java.util.UUID
-import java.util.Base64
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
+import org.koin.core.Koin
 import org.koin.dsl.module
 import org.koin.test.KoinTest
 import org.koin.test.get
+import java.util.Base64
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class WireEventsIntegrationTest : KoinTest {
+    // Override the Koin instance as we use an isolated context
+    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
+
     @Test
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
         runBlocking {
@@ -277,7 +271,7 @@ class WireEventsIntegrationTest : KoinTest {
 
         private val wireEventsHandler =
             object : WireEventsHandler() {
-                override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
+                override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
                     // Verify
                     assertEquals(
                         MOCK_DECRYPTED_MESSAGE,
@@ -286,35 +280,16 @@ class WireEventsIntegrationTest : KoinTest {
                 }
             }
 
-        private val TEST_DATABASE_URL = "jdbc:sqlite:apps-test-${UUID.randomUUID()}.db"
-
         @JvmStatic
         @BeforeAll
         fun before() {
             wireMockServer.start()
 
-            startKoin {
-                modules(
-                    module {
-                        single<SqlDriver> {
-                            val driver: SqlDriver = JdbcSqliteDriver(TEST_DATABASE_URL)
-                            AppsSdkDatabase.Schema.create(driver)
-                            driver
-                        }
-                        single<HttpClient> {
-                            createHttpClient(IsolatedKoinContext.getApiHost())
-                        }
-                        single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
-                        single<ConversationStorage> {
-                            ConversationSqlLiteStorage(AppsSdkDatabase(get()))
-                        }
-                        single<BackendClient> { BackendClientDemo(get()) }
-                        single<WireEventsHandler> { wireEventsHandler }
-                        single<CryptoClient> { mockCryptoClient() }
-                        single<EventsRouter> { EventsRouter(get(), get(), get(), get(), get()) }
-                    }
-                )
+            // Load the full IsolatedKoinContext, then override just the crypto client
+            val module = module {
+                single<CryptoClient> { mockCryptoClient() }
             }
+            IsolatedKoinContext.koinApp.koin.loadModules(listOf(module))
         }
 
         @JvmStatic

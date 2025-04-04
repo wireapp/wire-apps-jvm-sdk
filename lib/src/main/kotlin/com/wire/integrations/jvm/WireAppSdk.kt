@@ -47,7 +47,7 @@ class WireAppSdk(
     }
 
     @Synchronized
-    fun start() {
+    fun startListening() {
         if (running.get()) {
             logger.info("Wire Apps SDK is already running")
             return
@@ -63,7 +63,7 @@ class WireAppSdk(
     }
 
     @Synchronized
-    fun stop() {
+    fun stopListening() {
         if (!running.get()) {
             logger.info("Wire Apps SDK is not running")
             return

@@ -47,9 +47,9 @@ class WireApplicationManager internal constructor(
      * Blocking method for Java interoperability
      */
     @Throws(WireException::class)
-    fun getApplicationMetadata(): ApiVersionResponse =
+    fun getBackendConfiguration(): ApiVersionResponse =
         runBlocking {
-            getApplicationMetadataSuspending()
+            getBackendConfigurationSuspending()
         }
 
     /**
@@ -57,7 +57,7 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers
      */
     @Throws(WireException::class)
-    suspend fun getApplicationMetadataSuspending(): ApiVersionResponse =
+    suspend fun getBackendConfigurationSuspending(): ApiVersionResponse =
         backendClient.getBackendVersion()
 
     /**

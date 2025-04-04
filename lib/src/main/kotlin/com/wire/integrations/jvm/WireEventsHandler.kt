@@ -26,8 +26,15 @@ import org.slf4j.LoggerFactory
  */
 abstract class WireEventsHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    protected val manager: WireApplicationManager get() {
-        return IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
+
+    /**
+     * The [WireApplicationManager] is used to manage the Wire application lifecycle and
+     * communication with the backend.
+     * NOTE: Do not use manager in the constructor of this class, as it will be null at that time.
+     * Use it only inside the event handling methods.
+     */
+    protected val manager: WireApplicationManager by lazy {
+        IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
     }
 
     open fun onEvent(event: String) {
@@ -38,12 +45,12 @@ abstract class WireEventsHandler {
         logger.info("Received event: onNewConversation")
     }
 
-    open fun onNewMLSMessage(wireMessage: WireMessage) {
-        logger.info("Received event: onNewMLSMessage - message content: $wireMessage")
+    open fun onNewMessage(wireMessage: WireMessage) {
+        logger.info("Received event: onNewMessage - message content: $wireMessage")
     }
 
-    open suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
-        logger.info("Received event: onNewMLSMessageSuspending - message content: $wireMessage")
+    open suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
+        logger.info("Received event: onNewMessageSuspending - message content: $wireMessage")
     }
 
     open fun onMemberJoin(value: String) {
