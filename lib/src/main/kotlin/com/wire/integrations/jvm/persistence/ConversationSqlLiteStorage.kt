@@ -37,7 +37,7 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             id = conversationId.id.toString(),
             domain = conversationId.domain,
             mls_group_id = Base64.getEncoder().encodeToString(mlsGroupId.value),
-            team_id = teamId?.value.toString()
+            team_id = teamId?.value?.toString()
         )
     }
 

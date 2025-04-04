@@ -16,8 +16,10 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
+import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.ConversationData
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
@@ -33,7 +35,8 @@ import kotlinx.coroutines.runBlocking
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationStorage: ConversationStorage,
-    private val backendClient: BackendClient
+    private val backendClient: BackendClient,
+    private val cryptoClient: CryptoClient
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
@@ -73,4 +76,68 @@ class WireApplicationManager internal constructor(
      */
     @Throws(WireException::class)
     suspend fun getApplicationDataSuspending(): AppDataResponse = backendClient.getApplicationData()
+
+    /**
+     * Sends a message to a conversation by getting the mlsGroupId and encrypting the message.
+     *
+     * Before calling this function, make sure that the conversation
+     * has already been joined; otherwise, the message cannot be sent.
+     *
+     * The conversation ID can be retrieved from internal storage, but this is not required—if you
+     * already have it from another source (from receiving events), you can use that instead.
+     *
+     * Blocking method for Java interoperability
+     *
+     * @param conversationId The unique ID of the conversation where the message should be sent.
+     * @param message The text of the message to be sent.
+     *
+     * @throws WireException.EntityNotFound If the conversation cannot be found.
+     */
+    fun sendMessage(
+        conversationId: QualifiedId,
+        message: String
+    ) {
+        val conversation = conversationStorage.getById(conversationId = conversationId)
+        conversation?.mlsGroupId?.let { mlsGroupId ->
+            runBlocking {
+                backendClient.sendMessage(
+                    mlsMessage = cryptoClient.encryptMls(
+                        mlsGroupId = mlsGroupId,
+                        plainMessage = message
+                    )
+                )
+            }
+        } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
+    }
+
+    /**
+     * Sends a message to a conversation by getting the mlsGroupId and encrypting the message.
+     *
+     * Before calling this function, make sure that the conversation
+     * has already been joined; otherwise, the message cannot be sent.
+     *
+     * The conversation ID can be retrieved from internal storage, but this is not required—if you
+     * already have it from another source (from receiving events), you can use that instead.
+     *
+     * Suspending method for Kotlin consumers.
+     *
+     * @param conversationId The unique ID of the conversation where the message should be sent.
+     * @param message The text of the message to be sent.
+     *
+     * @throws WireException.EntityNotFound If the conversation cannot be found.
+     */
+    suspend fun sendMessageSuspending(
+        conversationId: QualifiedId,
+        message: String
+    ) {
+        val conversation = conversationStorage.getById(conversationId = conversationId)
+        conversation?.mlsGroupId?.let { mlsGroupId ->
+            backendClient.sendMessage(
+                mlsMessage = cryptoClient.encryptMls(
+                    mlsGroupId = mlsGroupId,
+                    plainMessage = message
+                )
+            )
+        } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
+    }
 }

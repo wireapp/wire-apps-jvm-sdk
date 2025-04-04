@@ -33,21 +33,19 @@ import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.ktor.client.plugins.ResponseException
-import org.slf4j.LoggerFactory
 import java.util.Base64
+import org.slf4j.LoggerFactory
 
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationStorage: ConversationStorage,
     private val backendClient: BackendClient,
-    private val wireEventsHandler: WireEventsHandler
+    private val wireEventsHandler: WireEventsHandler,
+    private val cryptoClient: CryptoClient
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    internal suspend fun route(
-        eventResponse: EventResponse,
-        cryptoClient: CryptoClient
-    ) {
+    internal suspend fun route(eventResponse: EventResponse) {
         eventResponse.payload?.forEach { event ->
             when (event) {
                 is EventContentDTO.TeamInvite -> {
@@ -98,10 +96,13 @@ internal class EventsRouter internal constructor(
 
                     val genericMessage = GenericMessage.parseFrom(message)
                     val wireMessage = ProtobufProcessor.processGenericMessage(
-                        genericMessage = genericMessage
+                        genericMessage = genericMessage,
+                        conversationId = event.qualifiedConversation
                     )
 
-                    wireEventsHandler.onNewMLSMessage(wireMessage = wireMessage)
+                    wireEventsHandler.onNewMLSMessageSuspending(
+                        wireMessage = wireMessage
+                    )
                 }
 
                 is EventContentDTO.Unknown -> {

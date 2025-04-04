@@ -108,6 +108,48 @@ fun main() {
 
 **NOTE**: Your application can simply call `start()` and a new thread is created and will keep the Application running and receiving events. To stop it, just close the Application (Cmd+d) or call `stop()`
 
+## Sending Messages
+
+You can make your application send messages to specific conversations.
+It can be sent via WireApplicationManager, for example you might want to send a message when an external event happens or in a scheduled fashion.
+Otherwise, you can make the Application react to events it receives, and send back a message immediately.
+
+There are two ways to send messages on the SDK:
+
+### Standalone messages
+For when you to send a message. It can be achieved when you have the conversation ID it needs to be sending a message.
+```kotlin
+val applicationManager = wireAppSdk.getApplicationManager()
+applicationManager.sendMessageSuspending(
+    conversationId = QualifiedId(
+        id = "conversation-id",
+        domain = "conversation-domain"
+    ),
+    message = "My custom message"
+)
+```
+> **_Java:_**  Use `applicationManager.sendMessage`
+
+
+### Reacting to events
+For when the SDK received an event and you want to react/respond to this event by sending a message.
+This is done inside the method override of `WireEventsHandler` using a local `manager`.
+
+```kotlin
+override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
+    println("Message received: $wireMessage")
+    
+    // Add your message handling logic here, like storing the message,
+    //   sending back another message, or triggering some workflow
+
+    manager.sendMessageSuspending(
+        conversationId = wireMessage.conversationId,
+        message = "My event reaction message"
+    )
+}
+```
+> **_Java:_**  Use `override fun onNewMLSMessage(wireMessage: WireMessage) { .. }`
+
 ## Deploy example
 
 After building your Application leveraging the SDK, you need to find a place to let it run. At its core, the SDK is working as a client for the Wire Backend, with some storage for crypto data and for conversations (local `SQLite` database). This means that generally it needs only to be able to reach the public internet, specifically the Wire backend host you chose.

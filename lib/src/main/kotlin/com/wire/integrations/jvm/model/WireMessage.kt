@@ -21,6 +21,8 @@ import java.util.UUID
 sealed interface WireMessage {
     @JvmRecord
     data class Text(
+        val conversationId: QualifiedId,
+        val id: UUID,
         val text: String? = null,
         val quotedMessageId: UUID? = null,
         val quotedMessageSha256: ByteArray? = null,

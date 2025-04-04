@@ -31,21 +31,27 @@ fun main() {
                 println("Custom events handler: $event")
             }
 
-            override fun onNewMLSMessage(wireMessage: WireMessage) {
+            override suspend fun onNewMLSMessageSuspending(wireMessage: WireMessage) {
                 println("Received MLS Message : $wireMessage")
+                val sdkMessage = "${(wireMessage as WireMessage.Text).text} -- Sent from the SDK"
+
+                manager.sendMessage(
+                    conversationId = wireMessage.conversationId,
+                    message = sdkMessage
+                )
             }
         })
     println("Starting Wire Apps SDK...")
     wireAppSdk.start() // Will keep a thread running in the background until explicitly stopped
-    val credentialsManager = wireAppSdk.getTeamManager()
+    val applicationManager = wireAppSdk.getApplicationManager()
 
-    credentialsManager.getStoredTeams().forEach {
+    applicationManager.getStoredTeams().forEach {
         println("Team: $it")
     }
-    credentialsManager.getStoredConversations().forEach {
+    applicationManager.getStoredConversations().forEach {
         println("Conversation: $it")
     }
-    println("Wire backend domain: ${credentialsManager.getApplicationMetadata().domain}")
+    println("Wire backend domain: ${applicationManager.getApplicationMetadata().domain}")
 
     // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

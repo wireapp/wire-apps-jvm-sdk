@@ -15,13 +15,9 @@
 
 package com.wire.integrations.jvm.service
 
-import com.wire.crypto.MlsTransport
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
-import com.wire.integrations.jvm.crypto.CryptoClient
-import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.http.EventResponse
-import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.utils.KtxSerializer
 import io.ktor.websocket.Frame
 import org.slf4j.LoggerFactory
@@ -32,9 +28,7 @@ import org.slf4j.LoggerFactory
  * Initializes the [CoreCryptoClient] used for any message on the first startup.
  */
 internal class WireTeamEventsListener internal constructor(
-    private val appStorage: AppStorage,
     private val backendClient: BackendClient,
-    private val mlsTransport: MlsTransport,
     private val eventsRouter: EventsRouter
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -45,8 +39,6 @@ internal class WireTeamEventsListener internal constructor(
      */
     suspend fun connect() {
         try {
-            val cryptoClient = getOrInitCryptoClient()
-
             // TODO Change endpoint to /events and add consumable-notifications client
             //  capability once v8 is released
             backendClient.connectWebSocket { incoming ->
@@ -60,7 +52,7 @@ internal class WireTeamEventsListener internal constructor(
                                 KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
 
                             try {
-                                eventsRouter.route(event, cryptoClient)
+                                eventsRouter.route(event)
                                 // Send back ACK event
                             } catch (e: Exception) {
                                 logger.error("Error processing event: $event", e)
@@ -77,49 +69,6 @@ internal class WireTeamEventsListener internal constructor(
             val error = e.message ?: "Error connecting to WebSocket or establishing MLS client"
             logger.error(error, e)
             throw InterruptedException(error)
-        }
-    }
-
-    /**
-     * Initialize the [CoreCryptoClient] if it's not already initialized.
-     * Uploads the MLS public keys and key packages to the backend.
-     *
-     * The following times the SDK is started, the client will be loaded from the storage.
-     */
-    suspend fun getOrInitCryptoClient(): CryptoClient {
-        val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
-            .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
-        val storedClientId = appStorage.getClientId()
-
-        return if (storedClientId != null) {
-            logger.info("App has a client already, loading it")
-            CoreCryptoClient.create(
-                appClientId = AppClientId(storedClientId.value),
-                ciphersuiteCode = mlsCipherSuiteCode,
-                mlsTransport = mlsTransport
-            )
-        } else {
-            logger.info("App does not have a client yet, initializing it")
-            val appData = backendClient.getApplicationData()
-            val appClientId = AppClientId(appData.appClientId)
-
-            val cryptoClient = CoreCryptoClient.create(
-                appClientId = appClientId,
-                ciphersuiteCode = mlsCipherSuiteCode,
-                mlsTransport = mlsTransport
-            )
-            backendClient.updateClientWithMlsPublicKey(
-                appClientId = appClientId,
-                mlsPublicKeys = cryptoClient.mlsGetPublicKey()
-            )
-            backendClient.uploadMlsKeyPackages(
-                appClientId = appClientId,
-                mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
-            )
-            logger.info("MLS client for $appClientId fully initialized")
-
-            appStorage.saveClientId(appClientId.value)
-            cryptoClient
         }
     }
 }

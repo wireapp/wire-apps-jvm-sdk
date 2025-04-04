@@ -75,7 +75,7 @@ class WireAppSdk(
 
     fun isRunning(): Boolean = running.get()
 
-    fun getTeamManager(): WireApplicationManager {
+    fun getApplicationManager(): WireApplicationManager {
         return IsolatedKoinContext.koinApp.koin.get()
     }
 
