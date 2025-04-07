@@ -47,9 +47,9 @@ class WireApplicationManager internal constructor(
      * Blocking method for Java interoperability
      */
     @Throws(WireException::class)
-    fun getApplicationMetadata(): ApiVersionResponse =
+    fun getBackendConfiguration(): ApiVersionResponse =
         runBlocking {
-            getApplicationMetadataSuspending()
+            getBackendConfigurationSuspending()
         }
 
     /**
@@ -57,7 +57,7 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers
      */
     @Throws(WireException::class)
-    suspend fun getApplicationMetadataSuspending(): ApiVersionResponse =
+    suspend fun getBackendConfigurationSuspending(): ApiVersionResponse =
         backendClient.getBackendVersion()
 
     /**
@@ -97,17 +97,9 @@ class WireApplicationManager internal constructor(
         conversationId: QualifiedId,
         message: String
     ) {
-        val conversation = conversationStorage.getById(conversationId = conversationId)
-        conversation?.mlsGroupId?.let { mlsGroupId ->
-            runBlocking {
-                backendClient.sendMessage(
-                    mlsMessage = cryptoClient.encryptMls(
-                        mlsGroupId = mlsGroupId,
-                        plainMessage = message
-                    )
-                )
-            }
-        } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
+        runBlocking {
+            sendMessageSuspending(conversationId, message)
+        }
     }
 
     /**

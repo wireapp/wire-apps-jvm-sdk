@@ -112,10 +112,20 @@ detekt {
 }
 
 protobuf {
-    generatedFilesBaseDir = "$projectDir/generated"
+    sourceSets {
+        getByName("main") {
+            proto {
+                srcDir("src/main/proto")
+            }
+        }
+    }
     protoc {
         artifact = "com.google.protobuf:protoc:3.24.0"
     }
+}
+
+tasks.withType<ProcessResources> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 tasks.named<Test>("test") {

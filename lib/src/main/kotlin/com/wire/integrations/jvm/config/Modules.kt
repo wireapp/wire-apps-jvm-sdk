@@ -52,10 +52,12 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
+import org.slf4j.LoggerFactory
 import org.zalando.logbook.client.LogbookClient
 import org.zalando.logbook.common.ExperimentalLogbookKtorApi
 
 private const val WEBSOCKET_PING_INTERVAL_MILLIS = 20_000L
+private val logger = LoggerFactory.getLogger(object {}::class.java.`package`.name)
 
 val sdkModule =
     module {
@@ -136,17 +138,19 @@ internal suspend fun getOrInitCryptoClient(
 ): CryptoClient {
     val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
         .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
-    val storedClientId = appStorage.getClientId()
+    logger.debug("Current ciphersuite: $mlsCipherSuiteCode")
 
+    val storedClientId = appStorage.getClientId()
     return if (storedClientId != null) {
-        // logger.info("App has a client already, loading it")
+        logger.info("App has a client already, loading it")
+        logger.debug("Stored client id: ${storedClientId.value}")
         CoreCryptoClient.create(
             appClientId = AppClientId(storedClientId.value),
             ciphersuiteCode = mlsCipherSuiteCode,
             mlsTransport = mlsTransport
         )
     } else {
-        // logger.info("App does not have a client yet, initializing it")
+        logger.info("App does not have a client yet, initializing it")
         val appData = backendClient.getApplicationData()
         val appClientId = AppClientId(appData.appClientId)
 
@@ -163,7 +167,7 @@ internal suspend fun getOrInitCryptoClient(
             appClientId = appClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
         )
-        // logger.info("MLS client for $appClientId fully initialized")
+        logger.info("MLS client for $appClientId fully initialized")
 
         appStorage.saveClientId(appClientId.value)
         cryptoClient

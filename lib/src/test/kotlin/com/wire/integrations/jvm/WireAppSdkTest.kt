@@ -78,7 +78,7 @@ class WireAppSdkTest : KoinTest {
                     }
                 }
             )
-        val appMetadata = wireAppSdk.getApplicationManager().getApplicationMetadata()
+        val appMetadata = wireAppSdk.getApplicationManager().getBackendConfiguration()
         assertEquals("host.com", appMetadata.domain)
     }
 

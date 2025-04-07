@@ -93,11 +93,13 @@ internal class BackendClientDemo internal constructor(
 
     override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
-        return AppDataResponse(
-            appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
-            appType = "FULL",
-            appCommand = "demo"
-        )
+        return runWithWireException {
+            AppDataResponse(
+                appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
+                appType = "FULL",
+                appCommand = "demo"
+            )
+        }
     }
 
     override suspend fun getApplicationFeatures(): FeaturesResponse {
