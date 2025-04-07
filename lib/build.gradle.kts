@@ -61,7 +61,7 @@ dependencies {
     implementation("org.zalando:logbook-core:3.11.0")
     implementation("org.zalando:logbook-ktor-client:3.11.0")
     implementation("org.zalando:logbook-json:3.11.0")
-    implementation("com.google.protobuf:protobuf-kotlin:4.30.0")
+    implementation("com.google.protobuf:protobuf-kotlin:4.30.2")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.4")
 
     testImplementation(kotlin("test"))
