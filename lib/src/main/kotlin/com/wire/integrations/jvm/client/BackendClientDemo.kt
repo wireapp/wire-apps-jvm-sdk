@@ -86,18 +86,20 @@ internal class BackendClientDemo internal constructor(
 
     override suspend fun getBackendVersion(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
-        return runWithWireException<ApiVersionResponse> {
+        return runWithWireException {
             httpClient.get("/$API_VERSION/api-version").body()
-        }.also { logger.debug(it.toString()) }
+        }
     }
 
     override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
-        return AppDataResponse(
-            appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
-            appType = "FULL",
-            appCommand = "demo"
-        ).also { logger.debug(it.toString()) }
+        return runWithWireException {
+            AppDataResponse(
+                appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
+                appType = "FULL",
+                appCommand = "demo"
+            )
+        }
     }
 
     override suspend fun getApplicationFeatures(): FeaturesResponse {
@@ -109,7 +111,7 @@ internal class BackendClientDemo internal constructor(
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
             }.body<FeaturesResponse>().also { cachedFeatures = it }
-        }.also { logger.debug(it.toString()) }
+        }
     }
 
     override suspend fun confirmTeam(teamId: TeamId) {
@@ -218,7 +220,7 @@ internal class BackendClientDemo internal constructor(
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
-            }.body<ConversationResponse>().also { logger.debug(it.toString()) }
+            }.body<ConversationResponse>()
         }
     }
 
@@ -234,7 +236,7 @@ internal class BackendClientDemo internal constructor(
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
                 accept(Mls)
-            }.body<ByteArray>().also { logger.debug(it.toString()) }
+            }.body<ByteArray>()
         }
     }
 

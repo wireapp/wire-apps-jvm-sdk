@@ -97,17 +97,9 @@ class WireApplicationManager internal constructor(
         conversationId: QualifiedId,
         message: String
     ) {
-        val conversation = conversationStorage.getById(conversationId = conversationId)
-        conversation?.mlsGroupId?.let { mlsGroupId ->
-            runBlocking {
-                backendClient.sendMessage(
-                    mlsMessage = cryptoClient.encryptMls(
-                        mlsGroupId = mlsGroupId,
-                        plainMessage = message
-                    )
-                )
-            }
-        } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
+        runBlocking {
+            sendMessageSuspending(conversationId, message)
+        }
     }
 
     /**

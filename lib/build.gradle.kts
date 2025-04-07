@@ -112,7 +112,6 @@ detekt {
 }
 
 protobuf {
-//    generatedFilesBaseDir = "$projectDir/generated"
     sourceSets {
         getByName("main") {
             proto {

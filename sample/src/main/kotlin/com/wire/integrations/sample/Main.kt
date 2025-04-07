@@ -38,7 +38,7 @@ fun main() {
                 logger.info("Received MLS Message : $wireMessage")
                 val sdkMessage = "${(wireMessage as WireMessage.Text).text} -- Sent from the SDK"
 
-                manager.sendMessage(
+                manager.sendMessageSuspending(
                     conversationId = wireMessage.conversationId,
                     message = sdkMessage
                 )

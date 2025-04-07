@@ -32,7 +32,7 @@ fun Exception.mapToWireException() =
 @Throws(WireException::class)
 internal inline fun <T> runWithWireException(block: () -> T): T {
     return try {
-        block()
+        block().also { logger.debug(it.toString()) }
     } catch (exception: Exception) {
         logger.warn("Error occurred", exception)
         throw exception.mapToWireException()
