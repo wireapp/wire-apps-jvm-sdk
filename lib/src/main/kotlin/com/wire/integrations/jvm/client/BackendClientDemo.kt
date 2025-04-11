@@ -38,8 +38,10 @@ import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
+import io.ktor.client.request.prepareGet
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
@@ -240,16 +242,40 @@ internal class BackendClientDemo internal constructor(
         }
     }
 
-    companion object {
-        private const val API_VERSION = "v7"
+    override suspend fun downloadAsset(
+        assetId: String,
+        assetDomain: String?,
+        assetToken: String?
+    ): ByteArray {
+        logger.info("Downloading asset")
 
-        private val DEMO_USER_EMAIL by lazy {
+        return runWithWireException {
+            val token = loginUser()
+            httpClient.prepareGet("$PATH_PUBLIC_ASSETS_V4/$assetDomain/$assetId") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                    if (!assetToken.isNullOrBlank()) {
+                        append(HEADER_ASSET_TOKEN, assetToken)
+                    }
+                }
+            }.execute { httpResponse ->
+                httpResponse.readRawBytes()
+            }
+        }
+    }
+
+    private companion object {
+        const val API_VERSION = "v7"
+        const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
+        const val HEADER_ASSET_TOKEN = "Asset-Token"
+
+        val DEMO_USER_EMAIL: String by lazy {
             DemoProperties.properties.getProperty(
                 "demo.user.email",
                 "integrations-admin@wire.com"
             )
         }
-        private val DEMO_USER_ID by lazy {
+        val DEMO_USER_ID: UUID by lazy {
             UUID.fromString(
                 DemoProperties.properties.getProperty(
                     "demo.user.id",
@@ -257,19 +283,19 @@ internal class BackendClientDemo internal constructor(
                 )
             )
         }
-        private val DEMO_USER_PASSWORD by lazy {
+        val DEMO_USER_PASSWORD: String by lazy {
             DemoProperties.properties.getProperty(
                 "demo.user.password",
                 "Aqa123456!"
             )
         }
-        private val DEMO_USER_CLIENT by lazy {
+        val DEMO_USER_CLIENT: String by lazy {
             DemoProperties.properties.getProperty(
                 "demo.user.client",
                 "d3507119febf62db"
             )
         }
-        private val DEMO_ENVIRONMENT by lazy {
+        val DEMO_ENVIRONMENT: String by lazy {
             DemoProperties.properties.getProperty(
                 "demo.environment",
                 "chala.wire.link"

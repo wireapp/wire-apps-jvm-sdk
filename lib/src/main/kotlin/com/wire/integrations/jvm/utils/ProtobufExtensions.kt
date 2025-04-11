@@ -18,7 +18,6 @@ package com.wire.integrations.jvm.utils
 
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.protobuf.messages.Messages
-import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
 
 fun Messages.QualifiedUserId.toModel(): QualifiedId =
@@ -26,16 +25,3 @@ fun Messages.QualifiedUserId.toModel(): QualifiedId =
         id = UUID.fromString(this.id),
         domain = this.domain
     )
-
-fun String.toProtobufGenericMessage(): GenericMessage =
-    GenericMessage
-        .newBuilder()
-        .setMessageId(UUID.randomUUID().toString())
-        .setText(
-            Messages.Text.newBuilder()
-                .setContent(this@toProtobufGenericMessage)
-                .setExpectsReadConfirmation(false)
-                .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
-                .build()
-        )
-        .build()

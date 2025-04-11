@@ -230,7 +230,7 @@ class WireEventsIntegrationTest : KoinTest {
 
                 override suspend fun encryptMls(
                     mlsGroupId: MLSGroupId,
-                    plainMessage: String
+                    message: ByteArray
                 ): ByteArray {
                     TODO("Not yet implemented")
                 }

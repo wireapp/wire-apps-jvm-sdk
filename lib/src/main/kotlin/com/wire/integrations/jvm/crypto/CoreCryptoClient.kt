@@ -16,7 +16,6 @@ import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.exception.WireException.InvalidParameter
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
-import com.wire.integrations.jvm.utils.toProtobufGenericMessage
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.Base64
@@ -83,17 +82,13 @@ internal class CoreCryptoClient private constructor(
 
     override suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
-        plainMessage: String
+        message: ByteArray
     ): ByteArray {
         val encryptedMessage =
             coreCrypto.transaction {
                 it.encryptMessage(
                     mlsGroupId,
-                    PlaintextMessage(
-                        plainMessage
-                            .toProtobufGenericMessage()
-                            .toByteArray()
-                    )
+                    PlaintextMessage(value = message)
                 )
             }
         return encryptedMessage.value

@@ -36,14 +36,41 @@ fun main() {
 
             override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
                 logger.info("Received MLS Message : $wireMessage")
-                val sdkMessage = "${(wireMessage as WireMessage.Text).text} -- Sent from the SDK"
 
-                manager.sendMessageSuspending(
-                    conversationId = wireMessage.conversationId,
-                    message = sdkMessage
-                )
+                if (wireMessage is WireMessage.Text) {
+                    val message = WireMessage.Text.create(
+                        conversationId = wireMessage.conversationId,
+                        text = "${wireMessage.text} -- Sent from the SDK"
+                    )
+
+                    manager.sendMessageSuspending(
+                        conversationId = wireMessage.conversationId,
+                        message = message
+                    )
+                }
+
+                if (wireMessage is WireMessage.Asset) {
+                    val message = WireMessage.Text.create(
+                        conversationId = wireMessage.conversationId,
+                        text = "Received Asset : ${wireMessage.name}"
+                    )
+
+                    manager.sendMessageSuspending(
+                        conversationId = wireMessage.conversationId,
+                        message = message
+                    )
+
+                    val asset = manager.downloadAsset(
+                        assetId = wireMessage.remoteData.assetId,
+                        assetDomain = wireMessage.remoteData.assetDomain,
+                        assetToken = wireMessage.remoteData.assetToken
+                    )
+                    logger.info("Downloaded asset in ByteArray: $asset")
+                }
             }
-        })
+        }
+    )
+
     logger.info("Starting Wire Apps SDK...")
     wireAppSdk.startListening() // Will keep a thread running in the background until explicitly stopped
     val applicationManager = wireAppSdk.getApplicationManager()
