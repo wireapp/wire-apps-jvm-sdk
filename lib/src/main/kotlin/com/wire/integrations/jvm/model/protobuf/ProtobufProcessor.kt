@@ -86,7 +86,7 @@ object ProtobufProcessor {
                 WireMessage.Asset.AssetMetadata.RemoteData(
                     otrKey = uploadedAsset.otrKey.toByteArray(),
                     sha256 = uploadedAsset.sha256.toByteArray(),
-                    assetId = uploadedAsset.assetId ?: "",
+                    assetId = uploadedAsset.assetId,
                     assetDomain = uploadedAsset.assetDomain,
                     assetToken = uploadedAsset.assetToken,
                     encryptionAlgorithm = EncryptionAlgorithmMapper.fromProtobufModel(
