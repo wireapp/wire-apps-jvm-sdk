@@ -80,33 +80,21 @@ object ProtobufProcessor {
                 else -> null
             }
 
-            val defaultRemoteData = WireMessage.Asset.AssetMetadata.RemoteData(
-                otrKey = ByteArray(0),
-                sha256 = ByteArray(0),
-                assetId = "",
-                assetDomain = null,
-                assetToken = null,
-                encryptionAlgorithm = null
-            )
+            val remoteData = if (asset.hasUploaded()) {
+                val uploadedAsset = asset.uploaded
 
-            val remoteData = when {
-                asset.hasUploaded() -> {
-                    val uploadedAsset = asset.uploaded
-
-                    WireMessage.Asset.AssetMetadata.RemoteData(
-                        otrKey = uploadedAsset.otrKey.toByteArray(),
-                        sha256 = uploadedAsset.sha256.toByteArray(),
-                        assetId = uploadedAsset.assetId ?: "",
-                        assetDomain = uploadedAsset.assetDomain,
-                        assetToken = uploadedAsset.assetToken,
-                        encryptionAlgorithm = EncryptionAlgorithmMapper.fromProtobufModel(
-                            encryptionAlgorithm = uploadedAsset.encryption
-                        )
+                WireMessage.Asset.AssetMetadata.RemoteData(
+                    otrKey = uploadedAsset.otrKey.toByteArray(),
+                    sha256 = uploadedAsset.sha256.toByteArray(),
+                    assetId = uploadedAsset.assetId ?: "",
+                    assetDomain = uploadedAsset.assetDomain,
+                    assetToken = uploadedAsset.assetToken,
+                    encryptionAlgorithm = EncryptionAlgorithmMapper.fromProtobufModel(
+                        encryptionAlgorithm = uploadedAsset.encryption
                     )
-                }
-
-                asset.hasNotUploaded() -> defaultRemoteData
-                else -> defaultRemoteData
+                )
+            } else {
+                null
             }
 
             return WireMessage.Asset(

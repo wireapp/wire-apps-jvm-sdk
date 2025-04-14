@@ -271,11 +271,11 @@ class WireEventsIntegrationTest : KoinTest {
 
         private val wireEventsHandler =
             object : WireEventsHandler() {
-                override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
+                override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
                     // Verify
                     assertEquals(
                         MOCK_DECRYPTED_MESSAGE,
-                        (wireMessage as WireMessage.Text).text
+                        wireMessage.text
                     )
                 }
             }

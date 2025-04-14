@@ -135,8 +135,9 @@ applicationManager.sendMessageSuspending(
 For when the SDK received an event and you want to react/respond to this event by sending a message.
 This is done inside the method override of `WireEventsHandler` using a local `manager`.
 
+#### Text
 ```kotlin
-override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
+override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
     println("Message received: $wireMessage")
     
     // Add your message handling logic here, like storing the message,
@@ -148,7 +149,29 @@ override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
     )
 }
 ```
-> **_Java:_**  Use `override fun onNewMessage(wireMessage: WireMessage) { .. }`
+> **_Java:_**  Use `override fun onNewMessage(wireMessage: WireMessage.Text) { .. }`
+
+#### Asset
+```kotlin
+override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
+    println("Asset received: $wireMessage")
+    
+    // Add your asset handling logic here, like downloading the asset,
+    // sending a message or triggering some workflow
+    
+    // To download the asset you can:
+    wireMessage.remoteData?.let { remoteData ->
+        val asset = manager.downloadAsset(
+            assetId = remoteData.assetId,
+            assetDomain = remoteData.assetDomain,
+            assetToken = remoteData.assetToken
+        )
+
+        println("Downloaded asset in ByteArray: $asset")
+    }
+}
+```
+> **_Java:_** Use `override fun onNewAsset(wireMessage: WireMessage.Asset) { .. }`
 
 ## Deploy example
 

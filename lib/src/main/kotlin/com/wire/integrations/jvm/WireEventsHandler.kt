@@ -45,12 +45,20 @@ abstract class WireEventsHandler {
         logger.info("Received event: onNewConversation")
     }
 
-    open fun onNewMessage(wireMessage: WireMessage) {
+    open fun onNewMessage(wireMessage: WireMessage.Text) {
         logger.info("Received event: onNewMessage - message content: $wireMessage")
     }
 
-    open suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
+    open suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
         logger.info("Received event: onNewMessageSuspending - message content: $wireMessage")
+    }
+
+    open fun onNewAsset(wireMessage: WireMessage.Asset) {
+        logger.info("Received event: onNewAsset - message content: $wireMessage")
+    }
+
+    open suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
+        logger.info("Received event: onNewAssetSuspending - message content: $wireMessage")
     }
 
     open fun onMemberJoin(value: String) {

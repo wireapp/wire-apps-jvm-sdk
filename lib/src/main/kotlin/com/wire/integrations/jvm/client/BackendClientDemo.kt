@@ -244,7 +244,7 @@ internal class BackendClientDemo internal constructor(
 
     override suspend fun downloadAsset(
         assetId: String,
-        assetDomain: String?,
+        assetDomain: String,
         assetToken: String?
     ): ByteArray {
         logger.info("Downloading asset")

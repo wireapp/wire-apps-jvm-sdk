@@ -58,7 +58,7 @@ interface BackendClient {
 
     suspend fun downloadAsset(
         assetId: String,
-        assetDomain: String?,
+        assetDomain: String,
         assetToken: String?
     ): ByteArray
 }

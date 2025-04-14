@@ -115,7 +115,7 @@ sealed interface WireMessage {
         val name: String? = null,
         val mimeType: String,
         val metadata: AssetMetadata? = null,
-        val remoteData: AssetMetadata.RemoteData
+        val remoteData: AssetMetadata.RemoteData? = null
     ) : WireMessage {
         sealed class AssetMetadata {
             data class Image(val width: Int, val height: Int) : AssetMetadata()
@@ -165,7 +165,7 @@ sealed interface WireMessage {
                 val sha256: ByteArray,
                 val assetId: String,
                 val assetToken: String?,
-                val assetDomain: String?,
+                val assetDomain: String,
                 val encryptionAlgorithm: MessageEncryptionAlgorithm?
             ) {
                 override fun equals(other: Any?): Boolean {
@@ -189,7 +189,7 @@ sealed interface WireMessage {
                     result = 31 * result + sha256.contentHashCode()
                     result = 31 * result + assetId.hashCode()
                     result = 31 * result + (assetToken?.hashCode() ?: 0)
-                    result = 31 * result + (assetDomain?.hashCode() ?: 0)
+                    result = 31 * result + assetDomain.hashCode()
                     result = 31 * result + (encryptionAlgorithm?.hashCode() ?: 0)
                     return result
                 }
