@@ -55,4 +55,10 @@ interface BackendClient {
     suspend fun getConversation(conversationId: QualifiedId): ConversationResponse
 
     suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray
+
+    suspend fun downloadAsset(
+        assetId: String,
+        assetDomain: String,
+        assetToken: String?
+    ): ByteArray
 }

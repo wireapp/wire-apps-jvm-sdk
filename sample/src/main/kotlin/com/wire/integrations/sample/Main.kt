@@ -34,16 +34,46 @@ fun main() {
                 logger.info("Custom events handler: $event")
             }
 
-            override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
-                logger.info("Received MLS Message : $wireMessage")
-                val sdkMessage = "${(wireMessage as WireMessage.Text).text} -- Sent from the SDK"
+            override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
+                logger.info("Received Text Message : $wireMessage")
+
+                val message = WireMessage.Text.create(
+                    conversationId = wireMessage.conversationId,
+                    text = "${wireMessage.text} -- Sent from the SDK"
+                )
 
                 manager.sendMessageSuspending(
                     conversationId = wireMessage.conversationId,
-                    message = sdkMessage
+                    message = message
                 )
             }
-        })
+
+            override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
+                logger.info("Received Asset Message : $wireMessage")
+
+                val message = WireMessage.Text.create(
+                    conversationId = wireMessage.conversationId,
+                    text = "Received Asset : ${wireMessage.name}"
+                )
+
+                manager.sendMessageSuspending(
+                    conversationId = wireMessage.conversationId,
+                    message = message
+                )
+
+                wireMessage.remoteData?.let { remoteData ->
+                    val asset = manager.downloadAsset(
+                        assetId = remoteData.assetId,
+                        assetDomain = remoteData.assetDomain,
+                        assetToken = remoteData.assetToken
+                    )
+
+                    logger.info("Downloaded asset in ByteArray: $asset")
+                }
+            }
+        }
+    )
+
     logger.info("Starting Wire Apps SDK...")
     wireAppSdk.startListening() // Will keep a thread running in the background until explicitly stopped
     val applicationManager = wireAppSdk.getApplicationManager()

@@ -116,6 +116,14 @@ internal class BackendClientImpl internal constructor(
         TODO("Not yet implemented")
     }
 
+    override suspend fun downloadAsset(
+        assetId: String,
+        assetDomain: String,
+        assetToken: String?
+    ): ByteArray {
+        TODO("Not yet implemented")
+    }
+
     companion object {
         private const val API_VERSION = "v7"
     }

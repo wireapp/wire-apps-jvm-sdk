@@ -10,6 +10,7 @@ import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.jvm.model.protobuf.ProtobufMapper
 import com.wire.integrations.jvm.model.protobuf.ProtobufProcessor
 import com.wire.integrations.jvm.utils.MlsTransportLastWelcome
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
@@ -84,8 +85,15 @@ class CoreCryptoClientTest : KoinTest {
 
             // Encrypt a message for the joined conversation
             val plainMessage = UUID.randomUUID().toString()
+            val wireTextMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = plainMessage
+            )
             val encryptedMessage: ByteArray =
-                mlsClient.encryptMls(groupIdGenerated, plainMessage)
+                mlsClient.encryptMls(
+                    groupIdGenerated,
+                    ProtobufMapper.toGenericMessageByteArray(wireMessage = wireTextMessage)
+                )
             assertTrue { encryptedMessage.size > 10 }
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
 
@@ -132,8 +140,15 @@ class CoreCryptoClientTest : KoinTest {
 
             // Alice encrypts a message for the joined conversation
             val plainMessage = "random_message" // UUID.randomUUID().toString()
+            val wireTextMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = plainMessage
+            )
             val encryptedMessage: ByteArray =
-                aliceClient.encryptMls(groupId, plainMessage)
+                aliceClient.encryptMls(
+                    groupId,
+                    ProtobufMapper.toGenericMessageByteArray(wireMessage = wireTextMessage)
+                )
             assert(encryptedMessage.size > 10)
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
 
@@ -169,5 +184,10 @@ class CoreCryptoClientTest : KoinTest {
             // Testing that full UTF-8 is accepted on storage password
             IsolatedKoinContext.setCryptographyStoragePassword("banana🍌")
         }
+
+        val CONVERSATION_ID = QualifiedId(
+            id = UUID.randomUUID(),
+            domain = UUID.randomUUID().toString()
+        )
     }
 }

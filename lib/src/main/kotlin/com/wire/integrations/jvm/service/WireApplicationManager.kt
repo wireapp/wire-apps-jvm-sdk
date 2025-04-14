@@ -21,8 +21,10 @@ import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.ConversationData
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
+import com.wire.integrations.jvm.model.protobuf.ProtobufMapper
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import kotlinx.coroutines.runBlocking
@@ -95,7 +97,7 @@ class WireApplicationManager internal constructor(
      */
     fun sendMessage(
         conversationId: QualifiedId,
-        message: String
+        message: WireMessage
     ) {
         runBlocking {
             sendMessageSuspending(conversationId, message)
@@ -120,16 +122,37 @@ class WireApplicationManager internal constructor(
      */
     suspend fun sendMessageSuspending(
         conversationId: QualifiedId,
-        message: String
+        message: WireMessage
     ) {
         val conversation = conversationStorage.getById(conversationId = conversationId)
         conversation?.mlsGroupId?.let { mlsGroupId ->
             backendClient.sendMessage(
                 mlsMessage = cryptoClient.encryptMls(
                     mlsGroupId = mlsGroupId,
-                    plainMessage = message
+                    message = ProtobufMapper.toGenericMessageByteArray(wireMessage = message)
                 )
             )
         } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
     }
+
+    /**
+     * Downloads an asset as a raw byte array from the public assets endpoint.
+     *
+     * @param assetId The unique identifier of the asset to download.
+     * @param assetDomain Optional domain or namespace under which the asset is categorized.
+     * @param assetToken Optional token used for additional access control to the asset.
+     * @return A [ByteArray] containing the raw binary content of the downloaded asset.
+     *
+     * @throws [WireException] If the request fails or an error occurs while fetching the asset.
+     */
+    suspend fun downloadAsset(
+        assetId: String,
+        assetDomain: String,
+        assetToken: String?
+    ): ByteArray =
+        backendClient.downloadAsset(
+            assetId = assetId,
+            assetDomain = assetDomain,
+            assetToken = assetToken
+        )
 }

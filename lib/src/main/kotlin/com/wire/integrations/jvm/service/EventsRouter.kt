@@ -26,6 +26,7 @@ import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.protobuf.ProtobufProcessor
@@ -45,6 +46,7 @@ internal class EventsRouter internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    @Suppress("LongMethod")
     internal suspend fun route(eventResponse: EventResponse) {
         logger.debug("Event received: {}", eventResponse)
         eventResponse.payload?.forEach { event ->
@@ -101,9 +103,19 @@ internal class EventsRouter internal constructor(
                         conversationId = event.qualifiedConversation
                     )
 
-                    wireEventsHandler.onNewMessageSuspending(
-                        wireMessage = wireMessage
-                    )
+                    when (wireMessage) {
+                        is WireMessage.Text -> wireEventsHandler.onNewMessageSuspending(
+                            wireMessage = wireMessage
+                        )
+
+                        is WireMessage.Asset -> wireEventsHandler.onNewAssetSuspending(
+                            wireMessage = wireMessage
+                        )
+
+                        WireMessage.Unknown -> {
+                            logger.warn("Unknown event received.")
+                        }
+                    }
                 }
 
                 is EventContentDTO.Unknown -> {

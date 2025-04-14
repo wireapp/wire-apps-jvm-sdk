@@ -44,10 +44,26 @@ class WireEventsTest : KoinTest {
 
             wireEvents.onNewConversation(EXPECTED_NEW_CONVERSATION_VALUE.toString())
             wireEvents.onNewMessage(
-                WireMessage.Text(
+                wireMessage = WireMessage.Text(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
                     text = EXPECTED_NEW_MLS_MESSAGE_VALUE.toString()
+                )
+            )
+        }
+
+    @Test
+    fun givenWireEventsHandlerIsInjectedThenCallingNewAssetMethodItSucceeds() =
+        runBlocking {
+            val wireEvents = get<WireEventsHandler>()
+
+            wireEvents.onNewConversation(EXPECTED_NEW_CONVERSATION_VALUE.toString())
+            wireEvents.onNewAsset(
+                wireMessage = WireMessage.Asset(
+                    conversationId = CONVERSATION_ID,
+                    sizeInBytes = 1000L,
+                    name = EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
+                    mimeType = "*/*"
                 )
             )
         }
@@ -99,10 +115,17 @@ class WireEventsTest : KoinTest {
                     assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
                 }
 
-                override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
+                override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
-                        (wireMessage as WireMessage.Text).text
+                        wireMessage.text
+                    )
+                }
+
+                override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
+                    assertEquals(
+                        EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
+                        wireMessage.name
                     )
                 }
             }

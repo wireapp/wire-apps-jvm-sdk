@@ -230,7 +230,7 @@ class WireEventsIntegrationTest : KoinTest {
 
                 override suspend fun encryptMls(
                     mlsGroupId: MLSGroupId,
-                    plainMessage: String
+                    message: ByteArray
                 ): ByteArray {
                     TODO("Not yet implemented")
                 }
@@ -271,11 +271,11 @@ class WireEventsIntegrationTest : KoinTest {
 
         private val wireEventsHandler =
             object : WireEventsHandler() {
-                override suspend fun onNewMessageSuspending(wireMessage: WireMessage) {
+                override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
                     // Verify
                     assertEquals(
                         MOCK_DECRYPTED_MESSAGE,
-                        (wireMessage as WireMessage.Text).text
+                        wireMessage.text
                     )
                 }
             }
