@@ -68,7 +68,7 @@ dependencies {
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
     testImplementation("io.insert-koin:koin-test-junit5")
     testImplementation("org.wiremock:wiremock:$wireMockVersion")
-    testImplementation("org.mockito:mockito-core:5.16.1")
+    testImplementation("org.mockito:mockito-core:5.17.0")
 }
 
 java {
