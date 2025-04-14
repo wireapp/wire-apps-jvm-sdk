@@ -42,7 +42,7 @@ dependencies {
         api("commons-io:commons-io:2.18.0")
     }
 
-    implementation(platform("io.insert-koin:koin-bom:4.0.3"))
+    implementation(platform("io.insert-koin:koin-bom:4.0.4"))
     implementation("io.insert-koin:koin-core")
     implementation("ch.qos.logback:logback-classic:1.5.18")
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
