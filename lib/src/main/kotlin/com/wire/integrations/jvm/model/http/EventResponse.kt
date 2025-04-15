@@ -17,7 +17,9 @@
 package com.wire.integrations.jvm.model.http
 
 import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.model.http.conversation.ConversationCreateData
 import com.wire.integrations.jvm.model.http.conversation.MemberJoinEventData
+import com.wire.integrations.jvm.model.http.conversation.MemberLeaveEventData
 import com.wire.integrations.jvm.utils.UUIDSerializer
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
@@ -49,6 +51,15 @@ sealed class EventContentDTO {
         data class NewConversationDTO(
             @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
             @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
+            @SerialName("data") val data: ConversationCreateData,
+            @SerialName("time") val time: Instant
+        ) : Conversation()
+
+        @Serializable
+        @SerialName("conversation.delete")
+        data class DeleteConversation(
+            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
             @SerialName("time") val time: Instant
         ) : Conversation()
 
@@ -69,6 +80,15 @@ sealed class EventContentDTO {
             @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
             @SerialName("time") val time: Instant,
             @SerialName("data") val data: MemberJoinEventData
+        ) : Conversation()
+
+        @Serializable
+        @SerialName("conversation.member-leave")
+        data class MemberLeave(
+            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
+            @SerialName("time") val time: Instant,
+            @SerialName("data") val data: MemberLeaveEventData
         ) : Conversation()
 
         @Serializable

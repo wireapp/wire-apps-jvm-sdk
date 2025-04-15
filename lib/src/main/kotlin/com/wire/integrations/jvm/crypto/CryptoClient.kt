@@ -20,9 +20,12 @@ import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.Welcome
+import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 
 internal interface CryptoClient : AutoCloseable {
+    fun getAppClientId(): AppClientId
+
     suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
         message: ByteArray
@@ -67,7 +70,7 @@ internal interface CryptoClient : AutoCloseable {
      */
     suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId
 
-    suspend fun validKeyPackageCount(): Long
+    suspend fun hasTooFewKeyPackageCount(): Boolean
 
     companion object {
         const val DEFAULT_KEYPACKAGE_COUNT = 100u

@@ -18,6 +18,7 @@ package com.wire.integrations.jvm
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.model.WireMessage
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeAll
@@ -41,8 +42,8 @@ class WireAppSdkTest : KoinTest {
                 apiHost = API_HOST,
                 cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
                 object : WireEventsHandler() {
-                    override fun onEvent(event: String) {
-                        println(event)
+                    override fun onNewMessage(wireMessage: WireMessage.Text) {
+                        println(wireMessage)
                     }
                 }
             )
@@ -73,8 +74,8 @@ class WireAppSdkTest : KoinTest {
                 apiHost = API_HOST,
                 cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
                 object : WireEventsHandler() {
-                    override fun onEvent(event: String) {
-                        println(event)
+                    override fun onNewMessage(wireMessage: WireMessage.Text) {
+                        println(wireMessage)
                     }
                 }
             )

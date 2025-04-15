@@ -2,6 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>CyclomaticComplexMethod:EventsRouter.kt$EventsRouter$@Suppress("LongMethod") internal suspend fun route(eventResponse: EventResponse)</ID>
     <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$3</ID>
     <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$4</ID>
     <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$5</ID>
@@ -13,5 +14,6 @@
     <ID>TooManyFunctions:BackendClientDemo.kt$BackendClientDemo : BackendClient</ID>
     <ID>TooManyFunctions:BackendClientImpl.kt$BackendClientImpl : BackendClient</ID>
     <ID>TooManyFunctions:CoreCryptoClient.kt$CoreCryptoClient : CryptoClient</ID>
+    <ID>TooManyFunctions:CryptoClient.kt$CryptoClient : AutoCloseable</ID>
   </CurrentIssues>
 </SmellBaseline>

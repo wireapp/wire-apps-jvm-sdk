@@ -15,48 +15,41 @@
 
 package com.wire.integrations.jvm.persistence
 
-import com.wire.crypto.MLSGroupId
 import com.wire.integrations.jvm.model.ConversationData
+import com.wire.integrations.jvm.model.ConversationMember
 import com.wire.integrations.jvm.model.QualifiedId
-import com.wire.integrations.jvm.model.TeamId
 
 interface ConversationStorage {
     /**
-     * Save a conversation with its teamId and mlsGroupId.
+     * Save (UPSERT) a conversation with its teamId and mlsGroupId.
+     * The mlsGroupId might come from a Rest API call or from a local MLS group creation (welcome)
      */
-    fun save(
-        conversationId: QualifiedId,
-        mlsGroupId: MLSGroupId,
-        teamId: TeamId?
-    )
+    fun save(conversation: ConversationData)
 
     /**
-     * Conversations can be created partially via 2 different events, member-join and mls-welcome.
-     * Only when both events are received, the conversation is considered fully created for MLS.
-     *
-     * This function is called when a mls-welcome event is received.
+     * Save (UPSERT) all the members of a conversation.
      */
-    fun saveOnlyMlsGroupId(
-        conversationId: QualifiedId,
-        mlsGroupId: MLSGroupId
-    )
-
-    /**
-     * Conversations can be created partially via 2 different events, member-join and mls-welcome.
-     * Only when both events are received, the conversation is considered fully created for MLS.
-     *
-     * This function is called when a member-join event is received.
-     */
-    fun saveOnlyTeamId(
-        conversationId: QualifiedId,
-        teamId: TeamId
-    )
+    fun saveMembers(members: List<ConversationMember>)
 
     fun getAll(): List<ConversationData>
+
+    fun getAllMembers(): List<ConversationMember>
 
     /**
      * Get conversation by its ID. To be able to send messages to a conversation,
      * it must be fully created, meaning both the teamId and mlsGroupId must be present.
      */
     fun getById(conversationId: QualifiedId): ConversationData?
+
+    /**
+     * Get all the members of a conversation by its ID.
+     */
+    fun getMembersByConversationId(conversationId: QualifiedId): List<ConversationMember>
+
+    fun delete(conversationId: QualifiedId)
+
+    fun deleteMembers(
+        conversationId: QualifiedId,
+        users: List<QualifiedId>
+    )
 }

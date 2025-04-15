@@ -18,8 +18,11 @@ package com.wire.integrations.jvm.persistence
 import com.wire.crypto.MLSGroupId
 import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.Conversation
+import com.wire.integrations.jvm.ConversationMemberQueries
 import com.wire.integrations.jvm.ConversationQueries
+import com.wire.integrations.jvm.Conversation_member
 import com.wire.integrations.jvm.model.ConversationData
+import com.wire.integrations.jvm.model.ConversationMember
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import java.util.Base64
@@ -27,40 +30,39 @@ import java.util.UUID
 
 internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationStorage {
     private val conversationQueries: ConversationQueries = db.conversationQueries
+    private val conversationMemberQueries: ConversationMemberQueries = db.conversationMemberQueries
 
-    override fun save(
-        conversationId: QualifiedId,
-        mlsGroupId: MLSGroupId,
-        teamId: TeamId?
-    ) {
+    override fun save(conversation: ConversationData) {
         conversationQueries.insert(
-            id = conversationId.id.toString(),
-            domain = conversationId.domain,
-            mls_group_id = Base64.getEncoder().encodeToString(mlsGroupId.value),
-            team_id = teamId?.value?.toString()
+            id = conversation.id.id.toString(),
+            domain = conversation.id.domain,
+            name = conversation.name,
+            mls_group_id = Base64.getEncoder().encodeToString(conversation.mlsGroupId.value),
+            team_id = conversation.teamId?.value?.toString()
         )
     }
 
-    override fun saveOnlyMlsGroupId(
-        conversationId: QualifiedId,
-        mlsGroupId: MLSGroupId
-    ) {
-        conversationQueries.insertWithMlsGroupId(
-            id = conversationId.id.toString(),
-            domain = conversationId.domain,
-            mls_group_id = Base64.getEncoder().encodeToString(mlsGroupId.value)
-        )
-    }
-
-    override fun saveOnlyTeamId(
-        conversationId: QualifiedId,
-        teamId: TeamId
-    ) {
-        conversationQueries.insertWithTeamId(
-            id = conversationId.id.toString(),
-            domain = conversationId.domain,
-            team_id = teamId.value.toString()
-        )
+    /**
+     * Stores the members of a conversation, if the conversation already exists in the database,
+     * else does nothing (members will be stored later when fetching
+     * the whole conversation from the backend).
+     *
+     * Currently, there is no way to have a random number of members in Sqlite parametric queries.
+     * Therefore, we cannot insert all members in one go. The recommendation is to use a transaction
+     */
+    override fun saveMembers(members: List<ConversationMember>) {
+        if (members.isEmpty() || getById(members.first().conversationId) == null) return
+        conversationMemberQueries.transaction {
+            members.forEach {
+                conversationMemberQueries.insert(
+                    user_id = it.userId.id.toString(),
+                    user_domain = it.userId.domain,
+                    conversation_id = it.conversationId.id.toString(),
+                    conversation_domain = it.conversationId.domain,
+                    role = it.role
+                )
+            }
+        }
     }
 
     override fun getAll(): List<ConversationData> =
@@ -74,10 +76,52 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
         }.getOrNull()
     }
 
+    override fun getAllMembers(): List<ConversationMember> =
+        conversationMemberQueries.selectAll().executeAsList().map { conversationMemberMapper(it) }
+
+    override fun getMembersByConversationId(conversationId: QualifiedId): List<ConversationMember> =
+        conversationMemberQueries
+            .selectByConversationIdAndDomain(conversationId.id.toString(), conversationId.domain)
+            .executeAsList().map { conversationMemberMapper(it) }
+
+    override fun delete(conversationId: QualifiedId) {
+        conversationQueries.delete(conversationId.id.toString(), conversationId.domain)
+    }
+
+    override fun deleteMembers(
+        conversationId: QualifiedId,
+        users: List<QualifiedId>
+    ) {
+        conversationMemberQueries.transaction {
+            users.forEach {
+                conversationMemberQueries.delete(
+                    user_id = it.id.toString(),
+                    user_domain = it.domain,
+                    conversation_id = conversationId.id.toString(),
+                    conversation_domain = conversationId.domain
+                )
+            }
+        }
+    }
+
     private fun conversationMapper(conv: Conversation) =
         ConversationData(
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),
+            name = conv.name,
             teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
-            mlsGroupId = conv.mls_group_id?.let { MLSGroupId(Base64.getDecoder().decode(it)) }
+            mlsGroupId = MLSGroupId(Base64.getDecoder().decode(conv.mls_group_id))
+        )
+
+    private fun conversationMemberMapper(member: Conversation_member) =
+        ConversationMember(
+            userId = QualifiedId(
+                id = UUID.fromString(member.user_id),
+                domain = member.user_domain
+            ),
+            conversationId = QualifiedId(
+                id = UUID.fromString(member.conversation_id),
+                domain = member.conversation_domain
+            ),
+            role = member.role
         )
 }

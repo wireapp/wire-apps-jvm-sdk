@@ -30,10 +30,6 @@ fun main() {
         apiHost = "https://nginz-https.chala.wire.link",
         cryptographyStoragePassword = "myDummyPassword",
         object : WireEventsHandler() {
-            override fun onEvent(event: String) {
-                logger.info("Custom events handler: $event")
-            }
-
             override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
                 logger.info("Received Text Message : $wireMessage")
 

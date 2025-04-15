@@ -12,6 +12,8 @@ import com.wire.crypto.MlsTransport
 import com.wire.crypto.PlaintextMessage
 import com.wire.crypto.Welcome
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.crypto.CoreCryptoClient.Companion.create
+import com.wire.integrations.jvm.crypto.CryptoClient.Companion.DEFAULT_KEYPACKAGE_COUNT
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.exception.WireException.InvalidParameter
 import com.wire.integrations.jvm.model.AppClientId
@@ -79,6 +81,8 @@ internal class CoreCryptoClient private constructor(
             }
         }
     }
+
+    override fun getAppClientId(): AppClientId = appClientId
 
     override suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
@@ -181,9 +185,9 @@ internal class CoreCryptoClient private constructor(
         return welcomeBundle.id
     }
 
-    override suspend fun validKeyPackageCount(): Long {
+    override suspend fun hasTooFewKeyPackageCount(): Boolean {
         val packageCount = coreCrypto.transaction { it.validKeyPackageCount(ciphersuite) }
-        return packageCount.toLong()
+        return packageCount < DEFAULT_KEYPACKAGE_COUNT / 2u
     }
 
     override fun close() {

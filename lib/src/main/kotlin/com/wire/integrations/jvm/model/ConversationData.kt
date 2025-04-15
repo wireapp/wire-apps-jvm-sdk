@@ -20,6 +20,7 @@ import com.wire.crypto.MLSGroupId
 @JvmRecord
 data class ConversationData(
     val id: QualifiedId,
+    val name: String,
     val teamId: TeamId?,
-    val mlsGroupId: MLSGroupId?
+    val mlsGroupId: MLSGroupId
 )

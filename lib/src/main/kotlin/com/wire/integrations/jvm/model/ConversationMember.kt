@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,25 +14,11 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.persistence
+package com.wire.integrations.jvm.model
 
-import com.wire.integrations.jvm.model.AppClientId
-import com.wire.integrations.jvm.model.AppData
-
-interface AppStorage {
-    /**
-     * Save (UPSERT) a key-value pair representing a property.
-     */
-    fun save(
-        key: String,
-        value: String
-    )
-
-    fun getAll(): List<AppData>
-
-    fun getById(key: String): AppData
-
-    fun getClientId(): AppClientId?
-
-    fun saveClientId(appClientId: String)
-}
+@JvmRecord
+data class ConversationMember(
+    val userId: QualifiedId,
+    val conversationId: QualifiedId,
+    val role: String
+)
