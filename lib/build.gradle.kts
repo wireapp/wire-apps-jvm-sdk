@@ -149,18 +149,6 @@ mavenPublishing {
                 distribution = "https://www.gnu.org/licenses/gpl-3.0.en.html"
             }
         }
-        developers {
-            developer {
-                id = "alexandreferris"
-                name = "Alexandre Ferris"
-                url = "https://github.com/alexandreferris"
-            }
-            developer {
-                id = "spoonman01"
-                name = "Luca Rospocher"
-                url = "https://github.com/spoonman01"
-            }
-        }
         scm {
             url = "https://github.com/wireapp/wire-apps-jvm-sdk"
             connection = "scm:git:git://github.com/wireapp/wire-apps-jvm-sdk.git"
