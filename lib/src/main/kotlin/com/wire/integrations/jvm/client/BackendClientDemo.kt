@@ -292,7 +292,7 @@ internal class BackendClientDemo internal constructor(
         val DEMO_USER_CLIENT: String by lazy {
             DemoProperties.properties.getProperty(
                 "demo.user.client",
-                "d3507119febf62db"
+                "fc088e7f958fb833"
             )
         }
         val DEMO_ENVIRONMENT: String by lazy {

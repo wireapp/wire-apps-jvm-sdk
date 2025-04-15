@@ -25,6 +25,7 @@ import com.wire.integrations.jvm.model.ConversationData
 import com.wire.integrations.jvm.model.ConversationMember
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.http.conversation.ConversationRole
 import java.util.Base64
 import java.util.UUID
 
@@ -50,16 +51,19 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
      * Currently, there is no way to have a random number of members in Sqlite parametric queries.
      * Therefore, we cannot insert all members in one go. The recommendation is to use a transaction
      */
-    override fun saveMembers(members: List<ConversationMember>) {
-        if (members.isEmpty() || getById(members.first().conversationId) == null) return
+    override fun saveMembers(
+        conversationId: QualifiedId,
+        members: List<ConversationMember>
+    ) {
+        if (members.isEmpty() || getById(conversationId) == null) return
         conversationMemberQueries.transaction {
             members.forEach {
                 conversationMemberQueries.insert(
                     user_id = it.userId.id.toString(),
                     user_domain = it.userId.domain,
-                    conversation_id = it.conversationId.id.toString(),
-                    conversation_domain = it.conversationId.domain,
-                    role = it.role
+                    conversation_id = conversationId.id.toString(),
+                    conversation_domain = conversationId.domain,
+                    role = it.role.name
                 )
             }
         }
@@ -118,10 +122,6 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
                 id = UUID.fromString(member.user_id),
                 domain = member.user_domain
             ),
-            conversationId = QualifiedId(
-                id = UUID.fromString(member.conversation_id),
-                domain = member.conversation_domain
-            ),
-            role = member.role
+            role = ConversationRole.valueOf(member.role)
         )
 }

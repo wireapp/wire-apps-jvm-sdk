@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS conversation (
   id TEXT NOT NULL,
   domain TEXT NOT NULL,
-  name TEXT NOT NULL,
+  name TEXT,
   team_id TEXT,
   mls_group_id TEXT NOT NULL,
   creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,

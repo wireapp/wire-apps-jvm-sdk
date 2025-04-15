@@ -29,7 +29,10 @@ interface ConversationStorage {
     /**
      * Save (UPSERT) all the members of a conversation.
      */
-    fun saveMembers(members: List<ConversationMember>)
+    fun saveMembers(
+        conversationId: QualifiedId,
+        members: List<ConversationMember>
+    )
 
     fun getAll(): List<ConversationData>
 

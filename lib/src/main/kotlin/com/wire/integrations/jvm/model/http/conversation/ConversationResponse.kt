@@ -50,5 +50,5 @@ data class ConversationMemberOther(
     @SerialName("qualified_id")
     val id: QualifiedId,
     @SerialName("conversation_role")
-    val conversationRole: String
+    val conversationRole: ConversationRole
 )

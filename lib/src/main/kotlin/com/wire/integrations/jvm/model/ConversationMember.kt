@@ -16,9 +16,10 @@
 
 package com.wire.integrations.jvm.model
 
+import com.wire.integrations.jvm.model.http.conversation.ConversationRole
+
 @JvmRecord
 data class ConversationMember(
     val userId: QualifiedId,
-    val conversationId: QualifiedId,
-    val role: String
+    val role: ConversationRole
 )

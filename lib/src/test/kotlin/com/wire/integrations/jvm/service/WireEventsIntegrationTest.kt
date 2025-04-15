@@ -37,6 +37,7 @@ import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.conversation.ConversationCreateData
 import com.wire.integrations.jvm.model.http.conversation.ConversationCreateMembers
+import com.wire.integrations.jvm.model.http.conversation.ConversationRole
 import com.wire.integrations.jvm.model.http.conversation.Member
 import com.wire.integrations.jvm.model.http.conversation.MemberJoinEventData
 import com.wire.integrations.jvm.model.http.conversation.MemberLeaveEventData
@@ -150,9 +151,9 @@ class WireEventsIntegrationTest : KoinTest {
                                 time = EXPECTED_NEW_CONVERSATION_VALUE,
                                 data = MemberJoinEventData(
                                     users = listOf(
-                                        Member(newUser1, "admin"),
-                                        Member(newUser2, "user"),
-                                        Member(newUser3, "user")
+                                        Member(newUser1, ConversationRole.ADMIN),
+                                        Member(newUser2, ConversationRole.MEMBER),
+                                        Member(newUser3, ConversationRole.MEMBER)
                                     )
                                 )
                             )
@@ -422,7 +423,7 @@ class WireEventsIntegrationTest : KoinTest {
                                             "id": "${UUID.randomUUID()}",
                                             "domain": "${USER_ID.domain}"
                                         },
-                                        "conversation_role": "admin"
+                                        "conversation_role": "wire_admin"
                                     }
                                 ]
                             },

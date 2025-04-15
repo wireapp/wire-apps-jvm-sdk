@@ -77,11 +77,10 @@ internal class EventsRouter internal constructor(
                     val members = event.data.users.map {
                         ConversationMember(
                             userId = it.userId,
-                            conversationId = event.qualifiedConversation,
                             role = it.conversationRole
                         )
                     }
-                    conversationStorage.saveMembers(members)
+                    conversationStorage.saveMembers(event.qualifiedConversation, members)
                     wireEventsHandler.onMemberJoin(event.qualifiedConversation, members)
                 }
 
@@ -110,13 +109,12 @@ internal class EventsRouter internal constructor(
                     val members = conversation.members.others.map {
                         ConversationMember(
                             userId = it.id,
-                            conversationId = event.qualifiedConversation,
                             role = it.conversationRole
                         )
                     }
                     // Saves the conversation in the local database, used later to decrypt messages
                     conversationStorage.save(conversationData)
-                    conversationStorage.saveMembers(members)
+                    conversationStorage.saveMembers(event.qualifiedConversation, members)
 
                     if (cryptoClient.hasTooFewKeyPackageCount()) {
                         backendClient.uploadMlsKeyPackages(

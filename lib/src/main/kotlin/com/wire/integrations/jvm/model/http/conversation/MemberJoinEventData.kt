@@ -27,7 +27,7 @@ data class MemberJoinEventData(
 
 @Serializable
 data class ConversationCreateData(
-    @SerialName("name") val name: String,
+    @SerialName("name") val name: String?,
     @SerialName("members") val members: ConversationCreateMembers
 )
 
@@ -40,5 +40,5 @@ data class ConversationCreateMembers(
 @Serializable
 data class Member(
     @SerialName("qualified_id") val userId: QualifiedId,
-    @SerialName("conversation_role") val conversationRole: String
+    @SerialName("conversation_role") val conversationRole: ConversationRole
 )
