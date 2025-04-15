@@ -13,6 +13,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
+import com.vanniktech.maven.publish.SonatypeHost
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -24,10 +25,14 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version("1.23.7")
     id("app.cash.sqldelight") version "2.0.2"
     id("com.google.protobuf") version "0.9.4"
+
+    // Maven Central
+    id("com.vanniktech.maven.publish") version "0.31.0"
 }
 
 group = "com.wire.integrations"
 version = "0.0.1-SNAPSHOT"
+val artifactId = "wire-apps-jvm-sdk"
 
 repositories {
     google()
@@ -121,6 +126,34 @@ protobuf {
     }
     protoc {
         artifact = "com.google.protobuf:protoc:3.24.0"
+    }
+}
+
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+
+    signAllPublications()
+
+    coordinates(group.toString(), artifactId, version.toString())
+
+    pom {
+        name = "Wire Apps JVM SDK"
+        description =
+            "SDK for Wire third-party applications written in Kotlin, supporting JVM languages."
+        inceptionYear = "2025"
+        url = "https://github.com/wireapp/wire-apps-jvm-sdk"
+        licenses {
+            license {
+                name = "The GNU General Public License v3.0"
+                url = "https://www.gnu.org/licenses/gpl-3.0.en.html"
+                distribution = "https://www.gnu.org/licenses/gpl-3.0.en.html"
+            }
+        }
+        scm {
+            url = "https://github.com/wireapp/wire-apps-jvm-sdk"
+            connection = "scm:git:git://github.com/wireapp/wire-apps-jvm-sdk.git"
+            developerConnection = "scm:git:ssh://git@github.com:wireapp/wire-apps-jvm-sdk.git"
+        }
     }
 }
 
