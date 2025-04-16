@@ -30,7 +30,7 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.31.0"
 }
 
-group = "com.wire.integrations"
+group = "com.wire"
 version = "0.0.1"
 val artifactId = "wire-apps-jvm-sdk"
 
