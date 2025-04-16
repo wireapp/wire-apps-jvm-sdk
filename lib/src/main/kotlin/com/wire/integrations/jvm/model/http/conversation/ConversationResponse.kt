@@ -30,5 +30,25 @@ data class ConversationResponse(
     @SerialName("team")
     val teamId: UUID?,
     @SerialName("group_id")
-    val groupId: String
+    val groupId: String,
+    @SerialName("name")
+    val name: String,
+    @SerialName("epoch")
+    val epoch: Long,
+    @SerialName("members")
+    val members: ConversationMembers
+)
+
+@Serializable
+data class ConversationMembers(
+    @SerialName("others")
+    val others: List<ConversationMemberOther>
+)
+
+@Serializable
+data class ConversationMemberOther(
+    @SerialName("qualified_id")
+    val id: QualifiedId,
+    @SerialName("conversation_role")
+    val conversationRole: ConversationRole
 )

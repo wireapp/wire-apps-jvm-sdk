@@ -18,6 +18,7 @@ package com.wire.integrations.jvm.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
@@ -27,12 +28,19 @@ import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
+import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.model.http.conversation.ConversationCreateData
+import com.wire.integrations.jvm.model.http.conversation.ConversationCreateMembers
+import com.wire.integrations.jvm.model.http.conversation.ConversationRole
+import com.wire.integrations.jvm.model.http.conversation.Member
+import com.wire.integrations.jvm.model.http.conversation.MemberJoinEventData
+import com.wire.integrations.jvm.model.http.conversation.MemberLeaveEventData
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages
@@ -52,6 +60,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/**
+ * This integrations test verifies the behavior of the WireEventsHandler and EventsRouter classes.
+ * It mocks the CryptoClient and uses WireMock to send real http call to a temporary server.
+ * All the other components are real and use the real Koin context.
+ */
 class WireEventsIntegrationTest : KoinTest {
     // Override the Koin instance as we use an isolated context
     override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
@@ -60,11 +73,7 @@ class WireEventsIntegrationTest : KoinTest {
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
         runBlocking {
             TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
-            val eventsHandler = object : WireEventsHandler() {
-                override fun onEvent(event: String) {
-                    println(event)
-                }
-            }
+            val eventsHandler = object : WireEventsHandler() {}
             TestUtils.setupSdk(eventsHandler)
 
             val eventsRouter = get<EventsRouter>()
@@ -82,29 +91,108 @@ class WireEventsIntegrationTest : KoinTest {
     }
 
     @Test
-    fun givenNewMLSMessageEventWhenRouterProcessesItThenMessageIsDecryptedAndHandled() {
+    fun givenNewConversationsThenMembersAreCreatedAndDeleted() {
         // Setup
         TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
 
-        // Mock MLSMessage decryption result
-        val stubConvPath = "/v7/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}"
-        wireMockServer.stubFor(
-            WireMock.get(WireMock.urlPathMatching(stubConvPath))
-                .willReturn(
-                    WireMock.okJson(
-                        """
-                        {
-                            "qualified_id": {
-                                "id": "${CONVERSATION_ID.id}",
-                                "domain": "${CONVERSATION_ID.domain}"
-                            },
-                            "group_id": "${Base64.getEncoder().encodeToString(MLS_GROUP_ID.value)}",
-                            "team": "${TEAM_ID.value}"
-                        }
-                        """.trimIndent()
-                    )
+        // Create SDK with our custom handler
+        TestUtils.setupSdk(wireEventsHandler)
+
+        val conversationId =
+            QualifiedId(
+                id = UUID.randomUUID(),
+                domain = "wire.com"
+            )
+        // Execute
+        val conversationStorage = get<ConversationStorage>()
+        val conversationPrevious = conversationStorage.getById(conversationId)
+        assertNull(conversationPrevious)
+
+        val eventsRouter = get<EventsRouter>()
+
+        runBlocking {
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id10",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MlsWelcome(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = "xyz"
+                            )
+                        ),
+                    transient = true
                 )
-        )
+            )
+        }
+
+        val conversation = conversationStorage.getById(conversationId)
+        assertEquals(conversation?.id, conversationId)
+        assertEquals(conversation?.teamId, TEAM_ID)
+        var conversationMember = conversationStorage.getMembersByConversationId(conversationId)
+        // First member received when fetching whole conversation after welcome
+        assertEquals(1, conversationMember.size)
+
+        val newUser1 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
+        val newUser2 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
+        val newUser3 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
+
+        runBlocking {
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id11",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MemberJoin(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = MemberJoinEventData(
+                                    users = listOf(
+                                        Member(newUser1, ConversationRole.ADMIN),
+                                        Member(newUser2, ConversationRole.MEMBER),
+                                        Member(newUser3, ConversationRole.MEMBER)
+                                    )
+                                )
+                            )
+                        ),
+                    transient = true
+                )
+            )
+        }
+        conversationMember = conversationStorage.getMembersByConversationId(conversationId)
+        assertEquals(4, conversationMember.size)
+
+        runBlocking {
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id12",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MemberLeave(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = MemberLeaveEventData(
+                                    users = listOf(newUser1, newUser2),
+                                    reason = "deletion"
+                                )
+                            )
+                        ),
+                    transient = true
+                )
+            )
+        }
+        conversationMember = conversationStorage.getMembersByConversationId(conversationId)
+        assertEquals(2, conversationMember.size)
+    }
+
+    @Test
+    fun givenNewMLSMessageEventWhenRouterProcessesItThenMessageIsDecryptedAndHandled() {
+        // Setup
+        TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
 
         // Create SDK with our custom handler
         TestUtils.setupSdk(wireEventsHandler)
@@ -115,7 +203,15 @@ class WireEventsIntegrationTest : KoinTest {
         assertNull(conversationPrevious)
 
         val eventsRouter = get<EventsRouter>()
+
         runBlocking {
+            eventsRouter.route(
+                eventResponse = NEW_CONVERSATION_EVENT
+            )
+            eventsRouter.route(
+                eventResponse = NEW_WELCOME_EVENT
+            )
+
             val encryptedBase64Message = Base64
                 .getEncoder()
                 .encodeToString(
@@ -140,6 +236,8 @@ class WireEventsIntegrationTest : KoinTest {
         val conversation = conversationStorage.getById(CONVERSATION_ID)
         assertEquals(conversation?.id, CONVERSATION_ID)
         assertEquals(conversation?.teamId, TEAM_ID)
+        val conversationMember = conversationStorage.getMembersByConversationId(CONVERSATION_ID)
+        assertEquals(1, conversationMember.size)
     }
 
     companion object {
@@ -177,14 +275,32 @@ class WireEventsIntegrationTest : KoinTest {
                         EventContentDTO.Conversation.NewConversationDTO(
                             qualifiedConversation = CONVERSATION_ID,
                             qualifiedFrom = USER_ID,
-                            time = EXPECTED_NEW_CONVERSATION_VALUE
+                            time = EXPECTED_NEW_CONVERSATION_VALUE,
+                            data = ConversationCreateData(
+                                "DEMO",
+                                ConversationCreateMembers(emptyList())
+                            )
+                        )
+                    ),
+                transient = true
+            )
+        private val NEW_WELCOME_EVENT =
+            EventResponse(
+                id = "event_id3",
+                payload =
+                    listOf(
+                        EventContentDTO.Conversation.MlsWelcome(
+                            qualifiedConversation = CONVERSATION_ID,
+                            qualifiedFrom = USER_ID,
+                            time = EXPECTED_NEW_CONVERSATION_VALUE,
+                            data = "xyz"
                         )
                     ),
                 transient = true
             )
         private val NEW_MLS_MESSAGE_EVENT =
             EventResponse(
-                id = "event_id3",
+                id = "event_id4",
                 payload =
                     listOf(
                         EventContentDTO.Conversation.NewMLSMessageDTO(
@@ -221,12 +337,16 @@ class WireEventsIntegrationTest : KoinTest {
 
                 // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
                 override suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId {
-                    throw MlsException.OrphanWelcome()
+                    throw CoreCryptoException.Mls(MlsException.OrphanWelcome())
                 }
 
                 // Mock joining the conversation, assume the backend accepts the invitation
                 override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId =
                     MLS_GROUP_ID
+
+                override fun getAppClientId(): AppClientId {
+                    TODO("Not yet implemented")
+                }
 
                 override suspend fun encryptMls(
                     mlsGroupId: MLSGroupId,
@@ -249,9 +369,7 @@ class WireEventsIntegrationTest : KoinTest {
                     TODO("Not yet implemented")
                 }
 
-                override suspend fun validKeyPackageCount(): Long {
-                    TODO("Not yet implemented")
-                }
+                override suspend fun hasTooFewKeyPackageCount(): Boolean = false
 
                 override fun close() {
                     TODO("Not yet implemented")
@@ -284,6 +402,49 @@ class WireEventsIntegrationTest : KoinTest {
         @BeforeAll
         fun before() {
             wireMockServer.start()
+
+            // Mock conversation fetching
+            val stubConvPath = "/v7/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
+            wireMockServer.stubFor(
+                WireMock.get(WireMock.urlPathTemplate(stubConvPath)).willReturn(
+                    WireMock.okJson(
+                        """
+                        {
+                            "qualified_id": {
+                                "id": "${CONVERSATION_ID.id}",
+                                "domain": "${CONVERSATION_ID.domain}"
+                            },
+                            "name": "Test conversation",
+                            "epoch": 0,
+                            "members": {
+                                "others": [
+                                    {
+                                        "qualified_id": {
+                                            "id": "${UUID.randomUUID()}",
+                                            "domain": "${USER_ID.domain}"
+                                        },
+                                        "conversation_role": "wire_admin"
+                                    }
+                                ]
+                            },
+                            "group_id": "${Base64.getEncoder().encodeToString(MLS_GROUP_ID.value)}",
+                            "team": "${TEAM_ID.value}"
+                        }
+                        """.trimIndent()
+                    )
+                )
+            )
+            val stubConvGroupInfoPath =
+                "/v7/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
+            wireMockServer.stubFor(
+                WireMock.get(WireMock.urlPathTemplate(stubConvGroupInfoPath))
+                    .willReturn(
+                        WireMock.aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "message/mls")
+                            .withBody(ByteArray(128) { 1 })
+                    )
+            )
 
             // Load the full IsolatedKoinContext, then override just the crypto client
             val module = module {

@@ -22,6 +22,7 @@ sealed interface WireMessage {
     @JvmRecord
     data class Text(
         val conversationId: QualifiedId,
+        val sender: QualifiedId? = null,
         val id: UUID,
         val text: String? = null,
         val quotedMessageId: UUID? = null,

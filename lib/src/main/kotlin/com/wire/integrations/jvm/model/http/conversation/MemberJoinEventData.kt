@@ -22,10 +22,23 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MemberJoinEventData(
-    @SerialName("users") val users: List<UsersEventData>
+    @SerialName("users") val users: List<Member>
 )
 
 @Serializable
-data class UsersEventData(
-    @SerialName("qualified_id") val userId: QualifiedId
+data class ConversationCreateData(
+    @SerialName("name") val name: String?,
+    @SerialName("members") val members: ConversationCreateMembers
+)
+
+@Serializable
+data class ConversationCreateMembers(
+    @SerialName("others")
+    val others: List<Member>
+)
+
+@Serializable
+data class Member(
+    @SerialName("qualified_id") val userId: QualifiedId,
+    @SerialName("conversation_role") val conversationRole: ConversationRole
 )

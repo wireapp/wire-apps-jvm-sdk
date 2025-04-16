@@ -19,6 +19,9 @@ import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.AppData
 
 interface AppStorage {
+    /**
+     * Save (UPSERT) a key-value pair representing a property.
+     */
     fun save(
         key: String,
         value: String

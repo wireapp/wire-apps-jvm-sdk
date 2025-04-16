@@ -25,13 +25,15 @@ object ProtobufProcessor {
     @Suppress("ReturnCount", "LongMethod")
     fun processGenericMessage(
         genericMessage: GenericMessage,
-        conversationId: QualifiedId
+        conversationId: QualifiedId,
+        sender: QualifiedId
     ): WireMessage {
         if (genericMessage.hasText()) {
             val text = genericMessage.text
 
             return WireMessage.Text(
                 conversationId = conversationId,
+                sender = sender,
                 id = UUID.fromString(genericMessage.messageId),
                 text = text.content,
                 quotedMessageId =

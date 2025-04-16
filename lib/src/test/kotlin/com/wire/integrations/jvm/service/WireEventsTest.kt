@@ -16,14 +16,16 @@
 
 package com.wire.integrations.jvm.service
 
+import com.wire.crypto.MLSGroupId
 import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.model.ConversationData
+import com.wire.integrations.jvm.model.ConversationMember
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -42,12 +44,25 @@ class WireEventsTest : KoinTest {
         runBlocking {
             val wireEvents = get<WireEventsHandler>()
 
-            wireEvents.onNewConversation(EXPECTED_NEW_CONVERSATION_VALUE.toString())
+            wireEvents.onConversationJoin(
+                conversation = ConversationData(
+                    id = CONVERSATION_ID,
+                    name = "Test conversation",
+                    teamId = null,
+                    mlsGroupId = MLSGroupId(ByteArray(32) { 1 })
+                ),
+                members = emptyList()
+            )
+
             wireEvents.onNewMessage(
                 wireMessage = WireMessage.Text(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
-                    text = EXPECTED_NEW_MLS_MESSAGE_VALUE.toString()
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = "anta.wire.link"
+                    ),
+                    text = EXPECTED_NEW_MLS_MESSAGE_VALUE
                 )
             )
         }
@@ -57,7 +72,6 @@ class WireEventsTest : KoinTest {
         runBlocking {
             val wireEvents = get<WireEventsHandler>()
 
-            wireEvents.onNewConversation(EXPECTED_NEW_CONVERSATION_VALUE.toString())
             wireEvents.onNewAsset(
                 wireMessage = WireMessage.Asset(
                     conversationId = CONVERSATION_ID,
@@ -79,10 +93,9 @@ class WireEventsTest : KoinTest {
     }
 
     companion object {
-        private val EXPECTED_NEW_CONVERSATION_VALUE = Instant.DISTANT_FUTURE
-        private val EXPECTED_NEW_MLS_MESSAGE_VALUE = Instant.DISTANT_PAST
+        private val EXPECTED_NEW_MLS_MESSAGE_VALUE = UUID.randomUUID().toString()
         private val CONVERSATION_ID = QualifiedId(
-            id = UUID.fromString("9bb5fc3f-a5fb-4783-ae88-00a07a39732d"),
+            id = UUID.randomUUID(),
             domain = "anta.wire.link"
         )
 
@@ -91,8 +104,42 @@ class WireEventsTest : KoinTest {
                   "id": "4c2c48f6-84af-11ef-8001-860acb7b851a",
                   "payload": [
                     {
-                      "conversation": "9bb5fc3f-a5fb-4783-ae88-00a07a39732d",
+                      "conversation": ${CONVERSATION_ID.id},
                       "from": "95d52e20-8428-4619-9a81-dbc2298a3f28",
+                      "data": {
+                        "name": "Test conversation",
+                        "members": {
+                            "others": [
+                                {
+                                    "conversation_role": "wire_admin",
+                                    "id": "0281c0d1-a37b-490e-ab89-4846f12069ed",
+                                    "qualified_id": {
+                                        "domain": "wire.com",
+                                        "id": "0281c0d1-a37b-490e-ab89-4846f12069ed"
+                                    },
+                                    "status": 0
+                                }
+                            ],
+                            "self": {
+                                "conversation_role": "wire_member",
+                                "hidden": false,
+                                "hidden_ref": null,
+                                "id": "0c5fbeaf-dcb0-4c03-ad67-4198f7457196",
+                                "otr_archived": false,
+                                "otr_archived_ref": null,
+                                "otr_muted_ref": null,
+                                "otr_muted_status": null,
+                                "qualified_id": {
+                                    "domain": "wire.com",
+                                    "id": "0c5fbeaf-dcb0-4c03-ad67-4198f7457196"
+                                },
+                                "service": null,
+                                "status": 0,
+                                "status_ref": "0.0",
+                                "status_time": "1970-01-01T00:00:00.000Z"
+                            }
+                        }
+                      },
                       "qualified_conversation": {
                         "domain": "${CONVERSATION_ID.domain}",
                         "id": "${CONVERSATION_ID.id}"
@@ -111,13 +158,16 @@ class WireEventsTest : KoinTest {
 
         private val wireEventsHandler =
             object : WireEventsHandler() {
-                override fun onNewConversation(value: String) {
-                    assertEquals(EXPECTED_NEW_CONVERSATION_VALUE.toString(), value)
+                override fun onConversationJoin(
+                    conversation: ConversationData,
+                    members: List<ConversationMember>
+                ) {
+                    assertEquals(CONVERSATION_ID, conversation.id)
                 }
 
                 override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
                     assertEquals(
-                        EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
+                        EXPECTED_NEW_MLS_MESSAGE_VALUE,
                         wireMessage.text
                     )
                 }

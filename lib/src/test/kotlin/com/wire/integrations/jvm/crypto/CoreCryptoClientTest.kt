@@ -161,6 +161,10 @@ class CoreCryptoClientTest : KoinTest {
                 conversationId = QualifiedId(
                     id = UUID.randomUUID(),
                     domain = "random_domain"
+                ),
+                sender = QualifiedId(
+                    id = UUID.randomUUID(),
+                    domain = "random_domain"
                 )
             )
 

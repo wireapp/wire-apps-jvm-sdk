@@ -16,6 +16,9 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.model.ConversationData
+import com.wire.integrations.jvm.model.ConversationMember
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.service.WireApplicationManager
 import org.slf4j.LoggerFactory
@@ -37,20 +40,30 @@ abstract class WireEventsHandler {
         IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
     }
 
-    open fun onEvent(event: String) {
-        logger.info("Received event: onEvent")
-    }
-
-    open fun onNewConversation(value: String) {
-        logger.info("Received event: onNewConversation")
-    }
-
     open fun onNewMessage(wireMessage: WireMessage.Text) {
-        logger.info("Received event: onNewMessage - message content: $wireMessage")
+        logger.info("Received event: onNewMessage")
     }
 
     open suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
-        logger.info("Received event: onNewMessageSuspending - message content: $wireMessage")
+        logger.info("Received event: onNewMessageSuspending")
+    }
+
+    /**
+     * One or more users have joined a conversation accessible by the Wire App.
+     * This can be new users or your Wire App itself just joining a conversation
+     */
+    open fun onConversationJoin(
+        conversation: ConversationData,
+        members: List<ConversationMember>
+    ) {
+        logger.info("Received event: onConversationJoin")
+    }
+
+    /**
+     * A user deleted a conversation accessible by the Wire App.
+     */
+    open fun onConversationDelete(conversationId: QualifiedId) {
+        logger.info("Received event: onConversationDelete")
     }
 
     open fun onNewAsset(wireMessage: WireMessage.Asset) {
@@ -61,7 +74,25 @@ abstract class WireEventsHandler {
         logger.info("Received event: onNewAssetSuspending - message content: $wireMessage")
     }
 
-    open fun onMemberJoin(value: String) {
+    /**
+     * One or more users have joined a conversation accessible by the Wire App.
+     * This event is triggered when the App is already in the conversation and new users joins,
+     * or when other users join the conversation at the same time as the App.
+     */
+    open fun onMemberJoin(
+        conversationId: QualifiedId,
+        members: List<ConversationMember>
+    ) {
         logger.info("Received event: onMemberJoin")
+    }
+
+    /**
+     * One or more users have left a conversation accessible by the Wire App.
+     */
+    open fun onMemberLeave(
+        conversationId: QualifiedId,
+        members: List<QualifiedId>
+    ) {
+        logger.info("Received event: onMemberLeave")
     }
 }

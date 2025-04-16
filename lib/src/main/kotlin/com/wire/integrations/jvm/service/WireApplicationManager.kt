@@ -19,6 +19,7 @@ import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.ConversationData
+import com.wire.integrations.jvm.model.ConversationMember
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.WireMessage
@@ -43,6 +44,9 @@ class WireApplicationManager internal constructor(
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
     fun getStoredConversations(): List<ConversationData> = conversationStorage.getAll()
+
+    fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
+        conversationStorage.getMembersByConversationId(conversationId)
 
     /**
      * Get API configuration from the connected Wire backend.
