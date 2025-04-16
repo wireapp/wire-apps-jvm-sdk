@@ -31,7 +31,7 @@ plugins {
 }
 
 group = "com.wire.integrations"
-version = "0.0.1-SNAPSHOT"
+version = "0.0.1"
 val artifactId = "wire-apps-jvm-sdk"
 
 repositories {
@@ -147,6 +147,22 @@ mavenPublishing {
                 name = "The GNU General Public License v3.0"
                 url = "https://www.gnu.org/licenses/gpl-3.0.en.html"
                 distribution = "https://www.gnu.org/licenses/gpl-3.0.en.html"
+            }
+        }
+        developers {
+            developer {
+                id = "alexandreferris"
+                name = "Alexandre Ferris"
+                url = "https://github.com/alexandreferris"
+                organization = "Wire Germany GmbH"
+                organizationUrl = "https://wire.com/"
+            }
+            developer {
+                id = "spoonman01"
+                name = "Luca Rospocher"
+                url = "https://github.com/spoonman01"
+                organization = "Wire Germany GmbH"
+                organizationUrl = "https://wire.com/"
             }
         }
         scm {
