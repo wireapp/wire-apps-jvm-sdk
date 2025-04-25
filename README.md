@@ -37,16 +37,16 @@ by creating a `demo.properties` file in the classpath (e.g. `src/main/resources/
 
 ```kotlin
 dependencies {
-    implementation("com.wire.integrations:wire-apps-jvm-sdk:0.0.1-SNAPSHOT")
+    implementation("com.wire:wire-apps-jvm-sdk:0.0.1")
 }
 ```
 
 ### Maven
 ```xml
 <dependency>
-    <groupId>com.wire.integrations</groupId>
+    <groupId>com.wire</groupId>
     <artifactId>wire-apps-jvm-sdk</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
 </dependency>
 ```
 

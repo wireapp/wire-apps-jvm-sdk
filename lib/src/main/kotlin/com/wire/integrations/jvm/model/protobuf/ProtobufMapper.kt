@@ -20,7 +20,11 @@ import com.wire.crypto.toByteArray
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages
+import com.wire.integrations.protobuf.messages.Messages.ButtonAction
+import com.wire.integrations.protobuf.messages.Messages.ButtonActionConfirmation
+import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import java.util.UUID
 
 /**
  * Object class mapper for mapping [WireMessage] to [GenericMessage] returning
@@ -34,6 +38,9 @@ object ProtobufMapper {
         when (wireMessage) {
             is WireMessage.Text -> packText(wireMessage)
             is WireMessage.Asset -> packAsset(wireMessage)
+            is WireMessage.Composite -> packComposite(wireMessage)
+            is WireMessage.ButtonAction -> packButtonAction(wireMessage)
+            is WireMessage.ButtonActionConfirmation -> packButtonActionConfirmation(wireMessage)
             is WireMessage.Unknown -> throw WireException.CryptographicSystemError(
                 "Unexpected message content type: $wireMessage"
             )
@@ -55,4 +62,76 @@ object ProtobufMapper {
 
     private fun packAsset(wireMessage: WireMessage.Asset): ByteArray =
         wireMessage.name?.toByteArray() ?: byteArrayOf()
+
+    private fun packButtonList(
+        buttonList: List<WireMessage.Composite.Button>
+    ): List<Composite.Item> =
+        buttonList.map {
+            val button = Composite.Item.newBuilder().buttonBuilder
+            button.id = it.id
+            button.text = it.text
+
+            Composite.Item.newBuilder().setButton(button).build()
+        }
+
+    private fun packComposite(wireMessage: WireMessage.Composite): ByteArray {
+        val items: MutableList<Composite.Item> = mutableListOf()
+
+        wireMessage.textContent?.let {
+            val text = Messages.Text.newBuilder()
+                .setContent(it.text)
+                .setExpectsReadConfirmation(false)
+                .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
+                .build()
+            items.add(Composite.Item.newBuilder().setText(text).build())
+        }
+
+        items.addAll(
+            packButtonList(
+                buttonList = wireMessage.buttonList
+            )
+        )
+
+        return GenericMessage
+            .newBuilder()
+            .setMessageId(UUID.randomUUID().toString())
+            .setComposite(
+                Composite
+                    .newBuilder()
+                    .addAllItems(items)
+                    .build()
+            )
+            .build()
+            .toByteArray()
+    }
+
+    private fun packButtonAction(wireMessage: WireMessage.ButtonAction): ByteArray =
+        GenericMessage
+            .newBuilder()
+            .setMessageId(UUID.randomUUID().toString())
+            .setButtonAction(
+                ButtonAction
+                    .newBuilder()
+                    .setButtonId(wireMessage.buttonId)
+                    .setReferenceMessageId(wireMessage.referencedMessageId)
+                    .build()
+            )
+            .build()
+            .toByteArray()
+
+    private fun packButtonActionConfirmation(
+        wireMessage: WireMessage.ButtonActionConfirmation
+    ): ByteArray =
+        GenericMessage
+            .newBuilder()
+            .setMessageId(UUID.randomUUID().toString())
+            .setButtonActionConfirmation(
+                ButtonActionConfirmation
+                    .newBuilder()
+                    .setButtonId(wireMessage.buttonId)
+                    .setReferenceMessageId(wireMessage.referencedMessageId)
+                    .build()
+            )
+            .build()
+            .toByteArray()
 }
