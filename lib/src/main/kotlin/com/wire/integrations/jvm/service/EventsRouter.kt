@@ -151,6 +151,20 @@ internal class EventsRouter internal constructor(
                             wireMessage = wireMessage
                         )
 
+                        is WireMessage.Composite -> wireEventsHandler.onNewCompositeSuspending(
+                            wireMessage = wireMessage
+                        )
+
+                        is WireMessage.ButtonAction ->
+                            wireEventsHandler.onNewButtonActionSuspending(
+                                wireMessage = wireMessage
+                            )
+
+                        is WireMessage.ButtonActionConfirmation ->
+                            wireEventsHandler.onNewButtonActionConfirmationSuspending(
+                                wireMessage = wireMessage
+                            )
+
                         WireMessage.Unknown -> {
                             logger.warn("Unknown event received.")
                         }

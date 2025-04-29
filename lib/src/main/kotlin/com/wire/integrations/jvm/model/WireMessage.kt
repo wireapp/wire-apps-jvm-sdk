@@ -198,5 +198,124 @@ sealed interface WireMessage {
         }
     }
 
+    @JvmRecord
+    data class Composite(
+        val textContent: Text?,
+        val buttonList: List<Button>
+    ) : WireMessage {
+        data class Button(
+            val text: String,
+            val id: String,
+            val isSelected: Boolean
+        ) {
+            companion object {
+                /**
+                 * Creates a Composite Button message with minimal required parameters.
+                 *
+                 * Usage from Kotlin:
+                 * ```kotlin
+                 * val button = Composite.Button.create(conversationId, "Hello world")
+                 * ```
+                 *
+                 * Usage from Java:
+                 * ```java
+                 * Composite.Button button =
+                 *      Composite.Button.Companion.create(conversationId, "Hello world");
+                 * ```
+                 *
+                 * @param text The text content of the message
+                 * @param isSelected Whether the button is selected.
+                 * @param id Random generated UUID or received ID value.
+                 * @return A new Composite.Button message with a random UUID
+                 */
+                @JvmStatic
+                fun create(
+                    text: String,
+                    isSelected: Boolean,
+                    id: String? = null
+                ): Button {
+                    return Button(
+                        text = text,
+                        isSelected = isSelected,
+                        id = id ?: UUID.randomUUID().toString()
+                    )
+                }
+            }
+        }
+
+        companion object {
+            /**
+             * Creates a Composite message.
+             *
+             * Usage from Kotlin:
+             * ```kotlin
+             * val message = Composite.create(conversationId, "Hello world", buttonList)
+             * ```
+             *
+             * Usage from Java:
+             * ```java
+             * Composite composite =
+             *      Composite.Companion.create(conversationId, "Hello world", buttonList);
+             * ```
+             *
+             * @param conversationId The qualified ID of the conversation
+             * @param text The text content of the message
+             * @param buttonList The list of buttons to be selected
+             * @return A new Composite message
+             */
+            @JvmStatic
+            fun create(
+                conversationId: QualifiedId,
+                text: String,
+                buttonList: List<Button>
+            ): Composite {
+                return Composite(
+                    textContent = Text.create(
+                        conversationId = conversationId,
+                        text = text
+                    ),
+                    buttonList = buttonList
+                )
+            }
+        }
+    }
+
+    /**
+     * Notifies the author of a [Composite] message that a user has
+     * selected one of its buttons.
+     * @see Composite
+     * @see ButtonActionConfirmation
+     */
+    @JvmRecord
+    data class ButtonAction(
+        /**
+         * The ID of the original composite message.
+         */
+        val referencedMessageId: String,
+        /**
+         * ID of the button that was selected.
+         */
+        val buttonId: String
+    ) : WireMessage
+
+    /**
+     * Message sent by the author of a [Composite] to
+     * notify which button should be marked as selected.
+     * For example, after we send [ButtonAction], the author might reply
+     * with [ButtonActionConfirmation] to confirm that the button event was processed.
+     * @see ButtonAction
+     * @see Composite
+     */
+    data class ButtonActionConfirmation(
+        /**
+         * ID fo the original composite message
+         */
+        val referencedMessageId: String,
+        /**
+         * ID of the selected button. Null if no button should be marked as selected.
+         */
+        val buttonId: String?
+    ) : WireMessage
+
     data object Unknown : WireMessage
 }

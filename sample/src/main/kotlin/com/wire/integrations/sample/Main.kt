@@ -67,6 +67,24 @@ fun main() {
                     logger.info("Downloaded asset in ByteArray: $asset")
                 }
             }
+
+            override suspend fun onNewCompositeSuspending(wireMessage: WireMessage.Composite) {
+                logger.info("Received Composite Message : $wireMessage")
+
+                logger.info("Received Composite Title: ${wireMessage.textContent?.text}")
+                logger.info("Received Composite Buttons:")
+                wireMessage.buttonList.forEach {
+                    logger.info("Composite Buttons: ${it.text} | isSelected: ${it.isSelected}")
+                }
+            }
+
+            override suspend fun onNewButtonActionSuspending(wireMessage: WireMessage.ButtonAction) {
+                logger.info("Received ButtonAction Message : $wireMessage")
+            }
+
+            override suspend fun onNewButtonActionConfirmationSuspending(wireMessage: WireMessage.ButtonActionConfirmation) {
+                logger.info("Received ButtonActionConfirmation Message : $wireMessage")
+            }
         }
     )
 
