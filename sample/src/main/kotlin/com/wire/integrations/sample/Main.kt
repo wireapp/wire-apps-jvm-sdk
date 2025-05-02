@@ -17,8 +17,11 @@ package com.wire.integrations.sample
 
 import com.wire.integrations.jvm.WireAppSdk
 import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.model.AssetResource
 import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.jvm.model.asset.AssetRetention
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("WireAppSdkSample")
@@ -32,6 +35,20 @@ fun main() {
         object : WireEventsHandler() {
             override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
                 logger.info("Received Text Message : $wireMessage")
+
+                if (wireMessage.text?.contains("asset") ?: false) {
+                    val resourcePath = javaClass.classLoader.getResource("banana-icon.png")?.path
+                        ?: throw IllegalStateException("Test resource 'banana-icon.png' not found")
+                    val originalData = File(resourcePath).readBytes()
+
+                    manager.uploadAndSendMessageSuspending(
+                        conversationId = wireMessage.conversationId,
+                        asset = AssetResource(originalData),
+                        mimeType = "image/png",
+                        retention = AssetRetention.VOLATILE
+                    )
+                    return
+                }
 
                 val message = WireMessage.Text.create(
                     conversationId = wireMessage.conversationId,
@@ -58,13 +75,12 @@ fun main() {
                 )
 
                 wireMessage.remoteData?.let { remoteData ->
-                    val asset = manager.downloadAsset(
-                        assetId = remoteData.assetId,
-                        assetDomain = remoteData.assetDomain,
-                        assetToken = remoteData.assetToken
-                    )
-
-                    logger.info("Downloaded asset in ByteArray: $asset")
+                    val asset = manager.downloadAssetSuspending(remoteData)
+                    val fileName = wireMessage.name ?: "unknown-${UUID.randomUUID()}"
+                    val outputDir = File("build/downloaded_assets").apply { mkdirs() }
+                    val outputFile = File(outputDir, fileName)
+                    outputFile.writeBytes(asset.value)
+                    logger.info("Downloaded asset with size: ${asset.value.size} bytes, saved to: ${outputFile.absolutePath}")
                 }
             }
         }

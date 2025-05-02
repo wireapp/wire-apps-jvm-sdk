@@ -101,7 +101,7 @@ internal class CoreCryptoClient private constructor(
     override suspend fun decryptMls(
         mlsGroupId: MLSGroupId,
         encryptedMessage: String
-    ): ByteArray {
+    ): ByteArray? {
         val encryptedMessageBytes: ByteArray = Base64.getDecoder().decode(encryptedMessage)
         val decryptedMessage =
             coreCrypto.transaction {
@@ -111,7 +111,6 @@ internal class CoreCryptoClient private constructor(
                 )
             }
         return decryptedMessage.message
-            ?: throw WireException.CryptographicSystemError("Decryption failed")
     }
 
     override suspend fun mlsGetPublicKey(): MlsPublicKeys {

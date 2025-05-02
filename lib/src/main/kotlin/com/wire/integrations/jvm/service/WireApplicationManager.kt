@@ -18,17 +18,26 @@ package com.wire.integrations.jvm.service
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.model.AssetResource
 import com.wire.integrations.jvm.model.ConversationData
 import com.wire.integrations.jvm.model.ConversationMember
+import com.wire.integrations.jvm.model.EncryptionKey
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.jvm.model.WireMessage.Asset.AssetMetadata
+import com.wire.integrations.jvm.model.asset.AssetRetention
+import com.wire.integrations.jvm.model.asset.AssetUploadData
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.protobuf.ProtobufMapper
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
+import com.wire.integrations.jvm.utils.AESDecrypt
+import com.wire.integrations.jvm.utils.AESEncrypt
+import com.wire.integrations.jvm.utils.MAX_DATA_SIZE
 import kotlinx.coroutines.runBlocking
+import java.util.UUID
 
 /**
  * Allows fetching common data and interacting with each Team instance invited to the Application.
@@ -140,23 +149,127 @@ class WireApplicationManager internal constructor(
     }
 
     /**
-     * Downloads an asset as a raw byte array from the public assets endpoint.
+     * Downloads an asset as a raw byte array.
      *
-     * @param assetId The unique identifier of the asset to download.
-     * @param assetDomain Optional domain or namespace under which the asset is categorized.
-     * @param assetToken Optional token used for additional access control to the asset.
-     * @return A [ByteArray] containing the raw binary content of the downloaded asset.
+     * @param assetRemoteData the data required to identify and decrypt the asset.
+     * You can use the AssetRemoteData directly inside WireMessage.Asset when an asset is received.
+     * @return A [AssetResource] containing the raw binary content of the downloaded asset. You can
+     * parse it to a file and store it.
+     *
+     * Blocking method for Java interoperability
      *
      * @throws [WireException] If the request fails or an error occurs while fetching the asset.
      */
-    suspend fun downloadAsset(
-        assetId: String,
-        assetDomain: String,
-        assetToken: String?
-    ): ByteArray =
-        backendClient.downloadAsset(
-            assetId = assetId,
-            assetDomain = assetDomain,
-            assetToken = assetToken
+    fun downloadAsset(assetRemoteData: AssetMetadata.RemoteData): AssetResource {
+        return runBlocking {
+            downloadAssetSuspending(assetRemoteData)
+        }
+    }
+
+    /**
+     * Downloads an asset as a raw byte array.
+     *
+     * @param assetRemoteData the data required to identify and decrypt the asset.
+     * You can use the AssetRemoteData directly inside WireMessage.Asset when an asset is received.
+     * @return A [AssetResource] containing the raw binary content of the downloaded asset. You can
+     * parse it to a file and store it.
+     *
+     * Suspending method for Kotlin consumers.
+     *
+     * @throws [WireException] If the request fails or an error occurs while fetching the asset.
+     */
+    suspend fun downloadAssetSuspending(assetRemoteData: AssetMetadata.RemoteData): AssetResource {
+        val encryptedAsset = backendClient.downloadAsset(
+            assetId = assetRemoteData.assetId,
+            assetDomain = assetRemoteData.assetDomain,
+            assetToken = assetRemoteData.assetToken
         )
+
+        val calculatedSha256 = AESEncrypt.calculateSha256Hash(encryptedAsset)
+        if (!assetRemoteData.sha256.contentEquals(calculatedSha256)) {
+            throw WireException.InvalidParameter("Asset checksums do not match")
+        }
+
+        val decryptedAsset = AESDecrypt.decryptData(encryptedAsset, assetRemoteData.otrKey)
+        return AssetResource(decryptedAsset)
+    }
+
+    /**
+     * Uploads an asset and sends it as a message to the specified conversation.
+     *
+     * Blocking method for Java interoperability
+     *
+     * @return The encryption key used to encrypt the asset. Might be useful if you want to
+     * download the file later, other clients will receive the same key automatically.
+     */
+    fun uploadAndSendMessage(
+        conversationId: QualifiedId,
+        asset: AssetResource,
+        mimeType: String,
+        retention: AssetRetention
+    ): EncryptionKey {
+        return runBlocking {
+            uploadAndSendMessageSuspending(
+                conversationId = conversationId,
+                asset = asset,
+                mimeType = mimeType,
+                retention = retention
+            )
+        }
+    }
+
+    /**
+     * Uploads an asset and sends it as a message to the specified conversation.
+     *
+     * Suspending method for Kotlin consumers.
+     *
+     * @return The encryption key used to encrypt the asset. Might be useful if you want to
+     * download the file later, other clients will receive the same key automatically.
+     */
+    suspend fun uploadAndSendMessageSuspending(
+        conversationId: QualifiedId,
+        asset: AssetResource,
+        mimeType: String,
+        retention: AssetRetention
+    ): EncryptionKey {
+        // Determine max size
+        if (asset.value.size > MAX_DATA_SIZE) {
+            throw WireException.InvalidParameter("Asset size exceeds the maximum limit")
+        }
+
+        // Encryption with AES
+        val newAesKey = AESEncrypt.generateRandomAES256Key()
+        val encryptedAsset = AESEncrypt.encryptData(asset.value, newAesKey)
+        val assetUploadData = AssetUploadData(
+            public = false,
+            retention = retention,
+            md5 = AESEncrypt.calculateSha256Hash(encryptedAsset)
+        )
+
+        // Upload the asset
+        val assetUploadResponse = backendClient.uploadAsset(
+            encryptedFile = encryptedAsset,
+            encryptedFileLength = encryptedAsset.size.toLong(),
+            assetUploadData = assetUploadData
+        )
+
+        // Build WireMessage.Asset
+        val assetMessage = WireMessage.Asset(
+            id = UUID.randomUUID(),
+            conversationId = conversationId,
+            sizeInBytes = encryptedAsset.size.toLong(),
+            mimeType = mimeType,
+            remoteData = AssetMetadata.RemoteData(
+                assetId = assetUploadResponse.key,
+                assetDomain = assetUploadResponse.domain,
+                assetToken = assetUploadResponse.token,
+                otrKey = newAesKey,
+                sha256 = assetUploadData.md5
+            )
+        )
+
+        // Send the asset
+        sendMessageSuspending(conversationId, assetMessage)
+        return EncryptionKey(newAesKey)
+    }
 }

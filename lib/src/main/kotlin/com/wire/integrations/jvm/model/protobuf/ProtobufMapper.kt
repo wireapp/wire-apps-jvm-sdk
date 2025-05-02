@@ -16,7 +16,7 @@
 
 package com.wire.integrations.jvm.model.protobuf
 
-import com.wire.crypto.toByteArray
+import com.google.protobuf.ByteString
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages
@@ -53,6 +53,23 @@ object ProtobufMapper {
             .build()
             .toByteArray()
 
-    private fun packAsset(wireMessage: WireMessage.Asset): ByteArray =
-        wireMessage.name?.toByteArray() ?: byteArrayOf()
+    private fun packAsset(wireMessage: WireMessage.Asset): ByteArray {
+        return GenericMessage
+            .newBuilder()
+            .setMessageId(wireMessage.id.toString())
+            .setAsset(
+                Messages.Asset.newBuilder()
+                    .setUploaded(
+                        Messages.Asset.RemoteData.newBuilder()
+                            .setAssetId(wireMessage.remoteData?.assetId)
+                            .setAssetDomain(wireMessage.remoteData?.assetDomain)
+                            .setAssetToken(wireMessage.remoteData?.assetToken)
+                            .setOtrKey(ByteString.copyFrom(wireMessage.remoteData?.otrKey))
+                            .setSha256(ByteString.copyFrom(wireMessage.remoteData?.sha256))
+                    )
+                    .build()
+            )
+            .build()
+            .toByteArray()
+    }
 }

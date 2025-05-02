@@ -21,9 +21,9 @@ import java.util.UUID
 sealed interface WireMessage {
     @JvmRecord
     data class Text(
+        val id: UUID,
         val conversationId: QualifiedId,
         val sender: QualifiedId? = null,
-        val id: UUID,
         val text: String? = null,
         val quotedMessageId: UUID? = null,
         val quotedMessageSha256: ByteArray? = null,
@@ -111,6 +111,7 @@ sealed interface WireMessage {
 
     @JvmRecord
     data class Asset(
+        val id: UUID,
         val conversationId: QualifiedId,
         val sizeInBytes: Long,
         val name: String? = null,
@@ -161,13 +162,14 @@ sealed interface WireMessage {
 
             enum class MessageEncryptionAlgorithm { AES_CBC, AES_GCM }
 
+            @JvmRecord
             data class RemoteData(
                 val otrKey: ByteArray,
                 val sha256: ByteArray,
                 val assetId: String,
-                val assetToken: String?,
+                val assetToken: String? = null,
                 val assetDomain: String,
-                val encryptionAlgorithm: MessageEncryptionAlgorithm?
+                val encryptionAlgorithm: MessageEncryptionAlgorithm? = null
             ) {
                 override fun equals(other: Any?): Boolean {
                     if (this === other) return true

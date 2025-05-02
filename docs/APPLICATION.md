@@ -130,6 +130,17 @@ applicationManager.sendMessageSuspending(
 ```
 > **_Java:_**  Use `applicationManager.sendMessage`
 
+For when you to upload and send an asset (file) to a conversation.
+```kotlin
+applicationManager.uploadAndSendMessageSuspending(
+    conversationId = conversationId,
+    asset = AssetResource(originalData),
+    mimeType = "image/png",
+    retention = AssetRetention.ETERNAL
+)
+```
+> **_Java:_**  Use `applicationManager.uploadAndSendMessage`
+
 
 ### Reacting to events
 For when the SDK received an event and you want to react/respond to this event by sending a message.
@@ -152,6 +163,12 @@ override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
 > **_Java:_**  Use `override fun onNewMessage(wireMessage: WireMessage.Text) { .. }`
 
 #### Asset
+
+Receiving an asset event does not mean receiving the asset itself. The asset is a separate entity that needs to be downloaded.
+In the event there will be a `remoteData` field that contains the information needed to download the asset.
+For simplicity, you can simply forward the `AssetRemoteData` to downloadAssetSuspending, which will
+actually return the asset in byte array format.
+
 ```kotlin
 override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
     println("Asset received: $wireMessage")
@@ -161,13 +178,12 @@ override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
     
     // To download the asset you can:
     wireMessage.remoteData?.let { remoteData ->
-        val asset = manager.downloadAsset(
-            assetId = remoteData.assetId,
-            assetDomain = remoteData.assetDomain,
-            assetToken = remoteData.assetToken
-        )
-
-        println("Downloaded asset in ByteArray: $asset")
+        val asset = manager.downloadAssetSuspending(remoteData)
+        val fileName = wireMessage.name ?: "unknown-${UUID.randomUUID()}"
+        val outputDir = File("build/downloaded_assets").apply { mkdirs() }
+        val outputFile = File(outputDir, fileName)
+        outputFile.writeBytes(asset.value)
+        println("Downloaded asset with size: ${asset.value.size} bytes, saved to: ${outputFile.absolutePath}")
     }
 }
 ```

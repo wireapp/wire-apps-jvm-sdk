@@ -133,6 +133,10 @@ internal class EventsRouter internal constructor(
                         mlsGroupId = groupId,
                         encryptedMessage = event.message
                     )
+                    if (message == null) {
+                        logger.debug("Decryption success but no message, probably epoch update")
+                        return
+                    }
 
                     val genericMessage = GenericMessage.parseFrom(message)
                     val wireMessage = ProtobufProcessor.processGenericMessage(

@@ -15,5 +15,6 @@
     <ID>TooManyFunctions:BackendClientImpl.kt$BackendClientImpl : BackendClient</ID>
     <ID>TooManyFunctions:CoreCryptoClient.kt$CoreCryptoClient : CryptoClient</ID>
     <ID>TooManyFunctions:CryptoClient.kt$CryptoClient : AutoCloseable</ID>
+    <ID>TooManyFunctions:WireApplicationManager.kt$WireApplicationManager</ID>
   </CurrentIssues>
 </SmellBaseline>

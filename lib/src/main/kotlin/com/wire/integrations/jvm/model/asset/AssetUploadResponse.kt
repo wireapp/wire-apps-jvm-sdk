@@ -14,16 +14,19 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model.http.conversation
+package com.wire.integrations.jvm.model.asset
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class ConversationRole {
-    @SerialName("wire_admin")
-    MEMBER,
-
-    @SerialName("wire_member")
-    ADMIN
-}
+data class AssetUploadResponse(
+    @SerialName("key")
+    val key: String,
+    @SerialName("domain")
+    val domain: String,
+    @SerialName("expires")
+    val expires: String?,
+    @SerialName("token")
+    val token: String?
+)

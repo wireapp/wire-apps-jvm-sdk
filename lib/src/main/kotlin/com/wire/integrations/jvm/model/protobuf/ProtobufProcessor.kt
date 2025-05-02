@@ -100,6 +100,7 @@ object ProtobufProcessor {
             }
 
             return WireMessage.Asset(
+                id = UUID.fromString(genericMessage.messageId),
                 conversationId = conversationId,
                 sizeInBytes = original?.size ?: 0,
                 name = original?.name,

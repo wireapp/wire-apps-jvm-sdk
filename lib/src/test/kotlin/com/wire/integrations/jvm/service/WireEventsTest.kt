@@ -74,6 +74,7 @@ class WireEventsTest : KoinTest {
 
             wireEvents.onNewAsset(
                 wireMessage = WireMessage.Asset(
+                    id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
                     sizeInBytes = 1000L,
                     name = EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),

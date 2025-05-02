@@ -34,7 +34,7 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun decryptMls(
         mlsGroupId: MLSGroupId,
         encryptedMessage: String
-    ): ByteArray
+    ): ByteArray?
 
     suspend fun mlsGetPublicKey(): MlsPublicKeys
 
