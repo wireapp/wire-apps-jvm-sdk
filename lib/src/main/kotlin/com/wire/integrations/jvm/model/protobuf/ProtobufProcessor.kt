@@ -48,7 +48,9 @@ object ProtobufProcessor {
             )
 
             genericMessage.hasButtonAction() -> unpackButtonAction(
-                genericMessage = genericMessage
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
             )
 
             genericMessage.hasButtonActionConfirmation() -> unpackButtonActionConfirmation(
@@ -185,10 +187,16 @@ object ProtobufProcessor {
             }
         }
 
-    private fun unpackButtonAction(genericMessage: GenericMessage): WireMessage =
+    private fun unpackButtonAction(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage =
         WireMessage.ButtonAction(
             referencedMessageId = genericMessage.buttonAction.referenceMessageId,
-            buttonId = genericMessage.buttonAction.buttonId
+            buttonId = genericMessage.buttonAction.buttonId,
+            conversationId = conversationId,
+            sender = sender
         )
 
     private fun unpackButtonActionConfirmation(genericMessage: GenericMessage): WireMessage =

@@ -288,6 +288,7 @@ sealed interface WireMessage {
      */
     @JvmRecord
     data class ButtonAction(
+        val conversationId: QualifiedId,
         /**
          * The ID of the original composite message.
          */
@@ -295,7 +296,8 @@ sealed interface WireMessage {
         /**
          * ID of the button that was selected.
          */
-        val buttonId: String
+        val buttonId: String,
+        val sender: QualifiedId
     ) : WireMessage
 
     /**
