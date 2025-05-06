@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory
  * Abstract class exposed by the SDK, clients can override the methods in this class and pass it
  * during SDK initialization to handle Wire events.
  */
+@Suppress("TooManyFunctions")
 abstract class WireEventsHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -67,11 +68,39 @@ abstract class WireEventsHandler {
     }
 
     open fun onNewAsset(wireMessage: WireMessage.Asset) {
-        logger.info("Received event: onNewAsset - message content: $wireMessage")
+        logger.info("Received event: onNewAsset")
     }
 
     open suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
-        logger.info("Received event: onNewAssetSuspending - message content: $wireMessage")
+        logger.info("Received event: onNewAssetSuspending")
+    }
+
+    open fun onNewComposite(wireMessage: WireMessage.Composite) {
+        logger.info("Received event: onNewComposite")
+    }
+
+    open suspend fun onNewCompositeSuspending(wireMessage: WireMessage.Composite) {
+        logger.info("Received event: onNewCompositeSuspending")
+    }
+
+    open suspend fun onNewButtonAction(wireMessage: WireMessage.ButtonAction) {
+        logger.info("Received event: onNewButtonAction")
+    }
+
+    open suspend fun onNewButtonActionSuspending(wireMessage: WireMessage.ButtonAction) {
+        logger.info("Received event: onNewButtonActionSuspending")
+    }
+
+    open suspend fun onNewButtonActionConfirmation(
+        wireMessage: WireMessage.ButtonActionConfirmation
+    ) {
+        logger.info("Received event: onNewButtonActionConfirmation")
+    }
+
+    open suspend fun onNewButtonActionConfirmationSuspending(
+        wireMessage: WireMessage.ButtonActionConfirmation
+    ) {
+        logger.info("Received event: onNewButtonActionConfirmationSuspending: $wireMessage")
     }
 
     /**

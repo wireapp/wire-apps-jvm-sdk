@@ -18,6 +18,7 @@ package com.wire.integrations.jvm.model.protobuf
 
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
 
@@ -27,89 +28,180 @@ object ProtobufProcessor {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId
-    ): WireMessage {
-        if (genericMessage.hasText()) {
-            val text = genericMessage.text
-
-            return WireMessage.Text(
+    ): WireMessage =
+        when {
+            genericMessage.hasText() -> unpackText(
+                genericMessage = genericMessage,
                 conversationId = conversationId,
-                sender = sender,
-                id = UUID.fromString(genericMessage.messageId),
-                text = text.content,
-                quotedMessageId =
-                    if (text.hasQuote()) UUID.fromString(text.quote.quotedMessageId) else null,
-                linkPreviews = text
-                    .linkPreviewList
-                    .mapNotNull {
-                        MessageLinkPreviewMapper.fromProtobuf(it)
-                    },
-                mentions = text
-                    .mentionsList
-                    .mapNotNull {
-                        MessageMentionMapper.fromProtobuf(it)
-                    }
+                sender = sender
             )
+
+            genericMessage.hasAsset() -> unpackAsset(
+                genericMessage = genericMessage,
+                conversationId = conversationId
+            )
+
+            genericMessage.hasComposite() -> unpackComposite(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasButtonAction() -> unpackButtonAction(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasButtonActionConfirmation() -> unpackButtonActionConfirmation(
+                genericMessage = genericMessage
+            )
+
+            else -> WireMessage.Unknown
         }
 
-        if (genericMessage.hasAsset()) {
-            val asset = genericMessage.asset
-            val original = asset.original
+    private fun unpackText(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.Text {
+        val text = genericMessage.text
 
-            val metadata: WireMessage.Asset.AssetMetadata? = when {
-                original?.hasImage() == true -> {
-                    val image = original.image
-                    WireMessage.Asset.AssetMetadata.Image(
-                        width = image.width,
-                        height = image.height
-                    )
+        return WireMessage.Text(
+            conversationId = conversationId,
+            sender = sender,
+            id = UUID.fromString(genericMessage.messageId),
+            text = text.content,
+            quotedMessageId =
+                if (text.hasQuote()) UUID.fromString(text.quote.quotedMessageId) else null,
+            linkPreviews = text
+                .linkPreviewList
+                .mapNotNull {
+                    MessageLinkPreviewMapper.fromProtobuf(it)
+                },
+            mentions = text
+                .mentionsList
+                .mapNotNull {
+                    MessageMentionMapper.fromProtobuf(it)
                 }
-                original?.hasAudio() == true -> {
-                    val audio = original.audio
-                    WireMessage.Asset.AssetMetadata.Audio(
-                        durationMs = audio.durationInMillis,
-                        normalizedLoudness = audio.normalizedLoudness?.toByteArray()
-                    )
-                }
-                original?.hasVideo() == true -> {
-                    val video = original.video
-                    WireMessage.Asset.AssetMetadata.Video(
-                        width = video.width,
-                        height = video.height,
-                        durationMs = video.durationInMillis
-                    )
-                }
-
-                else -> null
-            }
-
-            val remoteData = if (asset.hasUploaded()) {
-                val uploadedAsset = asset.uploaded
-
-                WireMessage.Asset.AssetMetadata.RemoteData(
-                    otrKey = uploadedAsset.otrKey.toByteArray(),
-                    sha256 = uploadedAsset.sha256.toByteArray(),
-                    assetId = uploadedAsset.assetId,
-                    assetDomain = uploadedAsset.assetDomain,
-                    assetToken = uploadedAsset.assetToken,
-                    encryptionAlgorithm = EncryptionAlgorithmMapper.fromProtobufModel(
-                        encryptionAlgorithm = uploadedAsset.encryption
-                    )
-                )
-            } else {
-                null
-            }
-
-            return WireMessage.Asset(
-                id = UUID.fromString(genericMessage.messageId),
-                conversationId = conversationId,
-                sizeInBytes = original?.size ?: 0,
-                name = original?.name,
-                mimeType = original?.mimeType ?: "*/*",
-                metadata = metadata,
-                remoteData = remoteData
-            )
-        }
-
-        return WireMessage.Unknown
+        )
     }
+
+    private fun unpackAsset(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId
+    ): WireMessage.Asset {
+        val asset = genericMessage.asset
+        val original = asset.original
+
+        val metadata: WireMessage.Asset.AssetMetadata? = when {
+            original?.hasImage() == true -> {
+                val image = original.image
+                WireMessage.Asset.AssetMetadata.Image(
+                    width = image.width,
+                    height = image.height
+                )
+            }
+
+            original?.hasAudio() == true -> {
+                val audio = original.audio
+                WireMessage.Asset.AssetMetadata.Audio(
+                    durationMs = audio.durationInMillis,
+                    normalizedLoudness = audio.normalizedLoudness?.toByteArray()
+                )
+            }
+
+            original?.hasVideo() == true -> {
+                val video = original.video
+                WireMessage.Asset.AssetMetadata.Video(
+                    width = video.width,
+                    height = video.height,
+                    durationMs = video.durationInMillis
+                )
+            }
+
+            else -> null
+        }
+
+        val remoteData = if (asset.hasUploaded()) {
+            val uploadedAsset = asset.uploaded
+
+            WireMessage.Asset.AssetMetadata.RemoteData(
+                otrKey = uploadedAsset.otrKey.toByteArray(),
+                sha256 = uploadedAsset.sha256.toByteArray(),
+                assetId = uploadedAsset.assetId,
+                assetDomain = uploadedAsset.assetDomain,
+                assetToken = uploadedAsset.assetToken,
+                encryptionAlgorithm = EncryptionAlgorithmMapper.fromProtobufModel(
+                    encryptionAlgorithm = uploadedAsset.encryption
+                )
+            )
+        } else {
+            null
+        }
+
+        return WireMessage.Asset(
+            conversationId = conversationId,
+            sizeInBytes = original?.size ?: 0,
+            name = original?.name,
+            mimeType = original?.mimeType ?: "*/*",
+            metadata = metadata,
+            remoteData = remoteData
+        )
+    }
+
+    private fun unpackComposite(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.Composite {
+        val items = genericMessage.composite.itemsList
+        val text = items.firstNotNullOfOrNull { item ->
+            item.text
+        }?.let {
+            unpackText(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+        }
+
+        val buttonList = unpackButtonList(items)
+
+        return WireMessage.Composite(
+            textContent = text,
+            buttonList = buttonList
+        )
+    }
+
+    private fun unpackButtonList(
+        compositeItemList: List<Composite.Item>
+    ): List<WireMessage.Composite.Button> =
+        compositeItemList.mapNotNull {
+            it.button?.let { button ->
+                WireMessage.Composite.Button(
+                    text = button.text,
+                    id = button.id,
+                    isSelected = false
+                )
+            }
+        }
+
+    private fun unpackButtonAction(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage =
+        WireMessage.ButtonAction(
+            referencedMessageId = genericMessage.buttonAction.referenceMessageId,
+            buttonId = genericMessage.buttonAction.buttonId,
+            conversationId = conversationId,
+            sender = sender
+        )
+
+    private fun unpackButtonActionConfirmation(genericMessage: GenericMessage): WireMessage =
+        WireMessage.ButtonActionConfirmation(
+            referencedMessageId = genericMessage.buttonActionConfirmation.referenceMessageId,
+            buttonId = genericMessage.buttonActionConfirmation.buttonId
+        )
 }

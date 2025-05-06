@@ -24,14 +24,14 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
     id("io.gitlab.arturbosch.detekt") version("1.23.7")
     id("app.cash.sqldelight") version "2.0.2"
-    id("com.google.protobuf") version "0.9.4"
+    id("com.google.protobuf") version "0.9.5"
 
     // Maven Central
     id("com.vanniktech.maven.publish") version "0.31.0"
 }
 
 group = "com.wire"
-version = "0.0.1"
+version = "0.0.2"
 val artifactId = "wire-apps-jvm-sdk"
 
 repositories {
@@ -39,12 +39,12 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.1.2"
-val wireMockVersion = "3.12.0"
+val ktorVersion = "3.1.3"
+val wireMockVersion = "3.13.0"
 
 dependencies {
     constraints {
-        api("commons-io:commons-io:2.18.0")
+        api("commons-io:commons-io:2.19.0")
     }
 
     implementation(platform("io.insert-koin:koin-bom:4.0.4"))
@@ -57,15 +57,15 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
     implementation("com.wire:core-crypto-jvm:4.1.0")
     implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
     implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.0.2")
-    implementation("org.zalando:logbook-core:3.11.0")
-    implementation("org.zalando:logbook-ktor-client:3.11.0")
-    implementation("org.zalando:logbook-json:3.11.0")
+    implementation("org.zalando:logbook-core:3.12.0")
+    implementation("org.zalando:logbook-ktor-client:3.12.0")
+    implementation("org.zalando:logbook-json:3.12.0")
     implementation("com.google.protobuf:protobuf-kotlin:4.30.0")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.4")
 
