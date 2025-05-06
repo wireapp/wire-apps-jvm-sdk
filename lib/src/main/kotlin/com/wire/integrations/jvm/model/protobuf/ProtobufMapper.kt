@@ -74,6 +74,11 @@ object ProtobufMapper {
                             .setOtrKey(ByteString.copyFrom(wireMessage.remoteData?.otrKey))
                             .setSha256(ByteString.copyFrom(wireMessage.remoteData?.sha256))
                     )
+                    .build()
+            )
+            .build()
+            .toByteArray()
+    }
 
     private fun packButtonList(
         buttonList: List<WireMessage.Composite.Button>
