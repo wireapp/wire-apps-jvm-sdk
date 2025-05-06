@@ -28,7 +28,6 @@ import java.util.UUID
 
 @Serializable
 data class EventResponse(
-    @Serializable
     @SerialName("id") val id: String,
     @SerialName("payload") val payload: List<EventContentDTO>?,
     @SerialName("transient") val transient: Boolean = false

@@ -21,6 +21,8 @@ import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.asset.AssetUploadData
+import com.wire.integrations.jvm.model.asset.AssetUploadResponse
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.ClientUpdateRequest
@@ -29,6 +31,7 @@ import com.wire.integrations.jvm.model.http.MlsKeyPackageRequest
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.utils.Mls
+import com.wire.integrations.jvm.utils.obfuscateId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
@@ -44,8 +47,10 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
 import io.ktor.http.setCookie
+import io.ktor.util.encodeBase64
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.serialization.SerialName
@@ -247,7 +252,7 @@ internal class BackendClientDemo internal constructor(
         assetDomain: String,
         assetToken: String?
     ): ByteArray {
-        logger.info("Downloading asset")
+        logger.info("Downloading asset ${assetId.obfuscateId()}")
 
         return runWithWireException {
             val token = loginUser()
@@ -264,8 +269,73 @@ internal class BackendClientDemo internal constructor(
         }
     }
 
+    override suspend fun uploadAsset(
+        encryptedFile: ByteArray,
+        encryptedFileLength: Long,
+        assetUploadData: AssetUploadData
+    ): AssetUploadResponse {
+        logger.info("Uploading new asset")
+
+        return runWithWireException {
+            val token = loginUser()
+            httpClient.post(PATH_PUBLIC_ASSETS_V3) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+                setBody(
+                    AssetBody(
+                        assetContent = encryptedFile,
+                        assetSize = encryptedFileLength,
+                        metadata = assetUploadData
+                    )
+                )
+                contentType(ContentType.MultiPart.Mixed)
+            }.body<AssetUploadResponse>()
+        }
+    }
+
+    internal class AssetBody internal constructor(
+        private val assetContent: ByteArray,
+        assetSize: Long,
+        metadata: AssetUploadData
+    ) : OutgoingContent.ByteArrayContent() {
+        private val openingData: String by lazy {
+            val body = StringBuilder()
+
+            // Part 1
+            val strMetadata = "{\"public\": ${metadata.public}, " +
+                "\"retention\": \"${metadata.retention.value}\"}"
+
+            body.append("--frontier\r\n")
+            body.append("Content-Type: application/json;charset=utf-8\r\n")
+            body.append("Content-Length: ")
+                .append(strMetadata.length)
+                .append("\r\n\r\n")
+            body.append(strMetadata)
+                .append("\r\n")
+
+            // Part 2
+            body.append("--frontier\r\n")
+            body.append("Content-Type: application/octet-stream")
+                .append("\r\n")
+            body.append("Content-Length: ")
+                .append(assetSize)
+                .append("\r\n")
+            body.append("Content-MD5: ")
+                .append(metadata.md5.encodeBase64())
+                .append("\r\n\r\n")
+
+            body.toString()
+        }
+        private val closingData = "\r\n--frontier--\r\n"
+
+        override fun bytes(): ByteArray =
+            openingData.toByteArray() + assetContent + closingData.toByteArray()
+    }
+
     private companion object {
         const val API_VERSION = "v7"
+        const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"
 

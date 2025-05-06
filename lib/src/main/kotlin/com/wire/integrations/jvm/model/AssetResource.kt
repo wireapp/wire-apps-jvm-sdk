@@ -14,16 +14,10 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model.http.conversation
+package com.wire.integrations.jvm.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@JvmInline
 @Serializable
-enum class ConversationRole {
-    @SerialName("wire_admin")
-    MEMBER,
-
-    @SerialName("wire_member")
-    ADMIN
-}
+value class AssetResource(val value: ByteArray)

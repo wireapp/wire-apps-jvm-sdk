@@ -21,6 +21,8 @@ import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.asset.AssetUploadData
+import com.wire.integrations.jvm.model.asset.AssetUploadResponse
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
@@ -121,6 +123,14 @@ internal class BackendClientImpl internal constructor(
         assetDomain: String,
         assetToken: String?
     ): ByteArray {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun uploadAsset(
+        encryptedFile: ByteArray,
+        encryptedFileLength: Long,
+        assetUploadData: AssetUploadData
+    ): AssetUploadResponse {
         TODO("Not yet implemented")
     }
 

@@ -17,7 +17,9 @@
 package com.wire.integrations.jvm.model
 
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class MlsStatus {
     @SerialName("enabled")
     ENABLED,

@@ -153,7 +153,7 @@ class CoreCryptoClientTest : KoinTest {
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
 
             // Bob decrypts the message
-            val decrypted: ByteArray = bobClient.decryptMls(groupId, encryptedBase64Message)
+            val decrypted: ByteArray? = bobClient.decryptMls(groupId, encryptedBase64Message)
 
             val genericMessage = GenericMessage.parseFrom(decrypted)
             val wireMessage = ProtobufProcessor.processGenericMessage(
