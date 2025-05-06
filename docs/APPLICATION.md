@@ -130,7 +130,7 @@ applicationManager.sendMessageSuspending(
 ```
 > **_Java:_**  Use `applicationManager.sendMessage`
 
-For when you to upload and send an asset (file) to a conversation.
+For when you upload and send an asset (file) to a conversation.
 ```kotlin
 applicationManager.uploadAndSendMessageSuspending(
     conversationId = conversationId,
