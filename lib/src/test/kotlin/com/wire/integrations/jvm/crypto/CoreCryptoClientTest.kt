@@ -10,8 +10,8 @@ import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
-import com.wire.integrations.jvm.model.protobuf.ProtobufMapper
-import com.wire.integrations.jvm.model.protobuf.ProtobufProcessor
+import com.wire.integrations.jvm.model.protobuf.ProtobufDeserializer
+import com.wire.integrations.jvm.model.protobuf.ProtobufSerializer
 import com.wire.integrations.jvm.utils.MlsTransportLastWelcome
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import kotlinx.coroutines.runBlocking
@@ -92,7 +92,7 @@ class CoreCryptoClientTest : KoinTest {
             val encryptedMessage: ByteArray =
                 mlsClient.encryptMls(
                     groupIdGenerated,
-                    ProtobufMapper.toGenericMessageByteArray(wireMessage = wireTextMessage)
+                    ProtobufSerializer.toGenericMessageByteArray(wireMessage = wireTextMessage)
                 )
             assertTrue { encryptedMessage.size > 10 }
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
@@ -147,7 +147,7 @@ class CoreCryptoClientTest : KoinTest {
             val encryptedMessage: ByteArray =
                 aliceClient.encryptMls(
                     groupId,
-                    ProtobufMapper.toGenericMessageByteArray(wireMessage = wireTextMessage)
+                    ProtobufSerializer.toGenericMessageByteArray(wireMessage = wireTextMessage)
                 )
             assert(encryptedMessage.size > 10)
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
@@ -156,7 +156,7 @@ class CoreCryptoClientTest : KoinTest {
             val decrypted: ByteArray? = bobClient.decryptMls(groupId, encryptedBase64Message)
 
             val genericMessage = GenericMessage.parseFrom(decrypted)
-            val wireMessage = ProtobufProcessor.processGenericMessage(
+            val wireMessage = ProtobufDeserializer.processGenericMessage(
                 genericMessage = genericMessage,
                 conversationId = QualifiedId(
                     id = UUID.randomUUID(),

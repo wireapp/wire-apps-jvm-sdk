@@ -32,7 +32,7 @@ import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
-import com.wire.integrations.jvm.model.protobuf.ProtobufProcessor
+import com.wire.integrations.jvm.model.protobuf.ProtobufDeserializer
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
@@ -139,7 +139,7 @@ internal class EventsRouter internal constructor(
                     }
 
                     val genericMessage = GenericMessage.parseFrom(message)
-                    val wireMessage = ProtobufProcessor.processGenericMessage(
+                    val wireMessage = ProtobufDeserializer.processGenericMessage(
                         genericMessage = genericMessage,
                         conversationId = event.qualifiedConversation,
                         sender = event.qualifiedFrom

@@ -22,7 +22,7 @@ import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
 
-object ProtobufProcessor {
+object ProtobufDeserializer {
     @Suppress("ReturnCount", "LongMethod")
     fun processGenericMessage(
         genericMessage: GenericMessage,
@@ -38,7 +38,8 @@ object ProtobufProcessor {
 
             genericMessage.hasAsset() -> unpackAsset(
                 genericMessage = genericMessage,
-                conversationId = conversationId
+                conversationId = conversationId,
+                sender = sender
             )
 
             genericMessage.hasComposite() -> unpackComposite(
@@ -54,7 +55,9 @@ object ProtobufProcessor {
             )
 
             genericMessage.hasButtonActionConfirmation() -> unpackButtonActionConfirmation(
-                genericMessage = genericMessage
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
             )
 
             else -> WireMessage.Unknown
@@ -89,7 +92,8 @@ object ProtobufProcessor {
 
     private fun unpackAsset(
         genericMessage: GenericMessage,
-        conversationId: QualifiedId
+        conversationId: QualifiedId,
+        sender: QualifiedId
     ): WireMessage.Asset {
         val asset = genericMessage.asset
         val original = asset.original
@@ -143,6 +147,7 @@ object ProtobufProcessor {
         return WireMessage.Asset(
             id = UUID.fromString(genericMessage.messageId),
             conversationId = conversationId,
+            sender = sender,
             sizeInBytes = original?.size ?: 0,
             name = original?.name,
             mimeType = original?.mimeType ?: "*/*",
@@ -157,34 +162,33 @@ object ProtobufProcessor {
         sender: QualifiedId
     ): WireMessage.Composite {
         val items = genericMessage.composite.itemsList
-        val text = items.firstNotNullOfOrNull { item ->
-            item.text
-        }?.let {
-            unpackText(
-                genericMessage = genericMessage,
-                conversationId = conversationId,
-                sender = sender
-            )
-        }
 
-        val buttonList = unpackButtonList(items)
+        val itemList = unpackItemList(conversationId, items)
 
         return WireMessage.Composite(
-            textContent = text,
-            buttonList = buttonList
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            items = itemList
         )
     }
 
-    private fun unpackButtonList(
+    private fun unpackItemList(
+        conversationId: QualifiedId,
         compositeItemList: List<Composite.Item>
-    ): List<WireMessage.Composite.Button> =
+    ): List<WireMessage.Item> =
         compositeItemList.mapNotNull {
-            it.button?.let { button ->
-                WireMessage.Composite.Button(
-                    text = button.text,
-                    id = button.id,
-                    isSelected = false
-                )
+            if (it.hasText()) {
+                it.text?.let { text ->
+                    WireMessage.Text.create(conversationId, text.content)
+                }
+            } else {
+                it.button?.let { button ->
+                    WireMessage.Composite.Button(
+                        text = button.text,
+                        id = button.id
+                    )
+                }
             }
         }
 
@@ -194,14 +198,22 @@ object ProtobufProcessor {
         sender: QualifiedId
     ): WireMessage =
         WireMessage.ButtonAction(
-            referencedMessageId = genericMessage.buttonAction.referenceMessageId,
-            buttonId = genericMessage.buttonAction.buttonId,
+            id = UUID.fromString(genericMessage.messageId),
             conversationId = conversationId,
-            sender = sender
+            sender = sender,
+            referencedMessageId = genericMessage.buttonAction.referenceMessageId,
+            buttonId = genericMessage.buttonAction.buttonId
         )
 
-    private fun unpackButtonActionConfirmation(genericMessage: GenericMessage): WireMessage =
+    private fun unpackButtonActionConfirmation(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage =
         WireMessage.ButtonActionConfirmation(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
             referencedMessageId = genericMessage.buttonActionConfirmation.referenceMessageId,
             buttonId = genericMessage.buttonActionConfirmation.buttonId
         )

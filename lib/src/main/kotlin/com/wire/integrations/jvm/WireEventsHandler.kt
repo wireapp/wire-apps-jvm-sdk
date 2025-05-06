@@ -50,8 +50,10 @@ abstract class WireEventsHandler {
     }
 
     /**
-     * One or more users have joined a conversation accessible by the Wire App.
-     * This can be new users or your Wire App itself just joining a conversation
+     * The app has been added to a conversation.
+     *
+     * @param conversation the conversation id with some extra data
+     * @param members the members that got added, including the app and possibly other users
      */
     open fun onConversationJoin(
         conversation: ConversationData,
@@ -105,8 +107,7 @@ abstract class WireEventsHandler {
 
     /**
      * One or more users have joined a conversation accessible by the Wire App.
-     * This event is triggered when the App is already in the conversation and new users joins,
-     * or when other users join the conversation at the same time as the App.
+     * This event is triggered when the App is already in the conversation and new users joins.
      */
     open fun onMemberJoin(
         conversationId: QualifiedId,

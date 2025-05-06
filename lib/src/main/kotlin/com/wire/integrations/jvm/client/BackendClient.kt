@@ -32,7 +32,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 interface BackendClient {
     suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit)
 
-    suspend fun getBackendVersion(): ApiVersionResponse
+    suspend fun getAvailableApiVersions(): ApiVersionResponse
 
     suspend fun getApplicationData(): AppDataResponse
 
@@ -69,4 +69,8 @@ interface BackendClient {
         encryptedFileLength: Long,
         assetUploadData: AssetUploadData
     ): AssetUploadResponse
+
+    companion object {
+        const val API_VERSION = "v8"
+    }
 }

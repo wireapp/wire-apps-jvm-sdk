@@ -17,6 +17,7 @@ package com.wire.integrations.jvm
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.wire.integrations.jvm.TestUtils.V
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.WireMessage
 import org.junit.jupiter.api.AfterAll
@@ -53,7 +54,7 @@ class WireAppSdkTest : KoinTest {
     @Test
     fun fetchingApiVersionWithWireMockReturnsDummyData() {
         wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/v7/api-version")).willReturn(
+            WireMock.get(WireMock.urlMatching("/$V/api-version")).willReturn(
                 WireMock.okJson(
                     """
                     {

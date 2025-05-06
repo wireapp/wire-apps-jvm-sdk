@@ -87,10 +87,9 @@ fun main() {
             override suspend fun onNewCompositeSuspending(wireMessage: WireMessage.Composite) {
                 logger.info("Received Composite Message : $wireMessage")
 
-                logger.info("Received Composite Title: ${wireMessage.textContent?.text}")
-                logger.info("Received Composite Buttons:")
-                wireMessage.buttonList.forEach {
-                    logger.info("Composite Buttons: ${it.text} | isSelected: ${it.isSelected}")
+                logger.info("Received Composite Items:")
+                wireMessage.items.forEach {
+                    logger.info("Composite Item: $it")
                 }
             }
 
