@@ -25,6 +25,7 @@ import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
 import com.wire.integrations.jvm.TestUtils
+import com.wire.integrations.jvm.TestUtils.V
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
@@ -404,7 +405,7 @@ class WireEventsIntegrationTest : KoinTest {
             wireMockServer.start()
 
             // Mock conversation fetching
-            val stubConvPath = "/v7/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
+            val stubConvPath = "/$V/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
             wireMockServer.stubFor(
                 WireMock.get(WireMock.urlPathTemplate(stubConvPath)).willReturn(
                     WireMock.okJson(
@@ -435,7 +436,7 @@ class WireEventsIntegrationTest : KoinTest {
                 )
             )
             val stubConvGroupInfoPath =
-                "/v7/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
+                "/$V/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
             wireMockServer.stubFor(
                 WireMock.get(WireMock.urlPathTemplate(stubConvGroupInfoPath))
                     .willReturn(

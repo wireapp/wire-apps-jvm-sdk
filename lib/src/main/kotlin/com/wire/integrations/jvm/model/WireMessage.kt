@@ -16,29 +16,37 @@
 
 package com.wire.integrations.jvm.model
 
+import com.wire.integrations.jvm.exception.WireException
 import java.util.UUID
 
+@Suppress("ArrayInDataClass")
 sealed interface WireMessage {
+    val id: UUID
+    val conversationId: QualifiedId
+    val sender: QualifiedId?
+
+    sealed interface Item
+
     @JvmRecord
-    data class Text(
-        val id: UUID,
-        val conversationId: QualifiedId,
-        val sender: QualifiedId? = null,
+    data class Text @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
         val text: String? = null,
         val quotedMessageId: UUID? = null,
         val quotedMessageSha256: ByteArray? = null,
         val mentions: List<Mention> = emptyList(),
         val linkPreviews: List<LinkPreview> = emptyList()
-    ) : WireMessage {
+    ) : WireMessage, Item {
         @JvmRecord
-        data class Mention(
+        data class Mention @JvmOverloads constructor(
             val userId: QualifiedId? = null,
             val offset: Int = 0,
             val length: Int = 0
         )
 
         @JvmRecord
-        data class LinkPreview(
+        data class LinkPreview @JvmOverloads constructor(
             val summary: String? = null,
             val title: String? = null,
             val url: String? = null,
@@ -47,35 +55,6 @@ sealed interface WireMessage {
             val name: String? = null,
             val size: Long = 0
         )
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Text
-
-            if (text != other.text) return false
-            if (quotedMessageId != other.quotedMessageId) return false
-            if (quotedMessageSha256 != null) {
-                if (other.quotedMessageSha256 == null) return false
-                if (!quotedMessageSha256.contentEquals(other.quotedMessageSha256)) return false
-            } else if (other.quotedMessageSha256 != null) {
-                return false
-            }
-            if (mentions != other.mentions) return false
-            if (linkPreviews != other.linkPreviews) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = text?.hashCode() ?: 0
-            result = 31 * result + (quotedMessageId?.hashCode() ?: 0)
-            result = 31 * result + (quotedMessageSha256?.contentHashCode() ?: 0)
-            result = 31 * result + mentions.hashCode()
-            result = 31 * result + linkPreviews.hashCode()
-            return result
-        }
 
         companion object {
             /**
@@ -101,8 +80,8 @@ sealed interface WireMessage {
                 text: String
             ): Text {
                 return Text(
-                    conversationId = conversationId,
                     id = UUID.randomUUID(),
+                    conversationId = conversationId,
                     text = text
                 )
             }
@@ -110,9 +89,10 @@ sealed interface WireMessage {
     }
 
     @JvmRecord
-    data class Asset(
-        val id: UUID,
-        val conversationId: QualifiedId,
+    data class Asset @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
         val sizeInBytes: Long,
         val name: String? = null,
         val mimeType: String,
@@ -131,123 +111,38 @@ sealed interface WireMessage {
             data class Audio(
                 val durationMs: Long?,
                 val normalizedLoudness: ByteArray?
-            ) : AssetMetadata() {
-                override fun equals(other: Any?): Boolean {
-                    if (this === other) return true
-                    if (other == null || this::class != other::class) return false
-
-                    other as Audio
-
-                    if (durationMs != other.durationMs) return false
-                    if (normalizedLoudness != null) {
-                        if (other.normalizedLoudness == null) {
-                            return false
-                        }
-                        if (!normalizedLoudness.contentEquals(other.normalizedLoudness)) {
-                            return false
-                        }
-                    } else if (other.normalizedLoudness != null) {
-                        return false
-                    }
-
-                    return true
-                }
-
-                override fun hashCode(): Int {
-                    var result = durationMs?.hashCode() ?: 0
-                    result = 31 * result + (normalizedLoudness?.contentHashCode() ?: 0)
-                    return result
-                }
-            }
+            ) : AssetMetadata()
 
             enum class MessageEncryptionAlgorithm { AES_CBC, AES_GCM }
 
             @JvmRecord
-            data class RemoteData(
+            data class RemoteData @JvmOverloads constructor(
                 val otrKey: ByteArray,
                 val sha256: ByteArray,
                 val assetId: String,
                 val assetToken: String? = null,
                 val assetDomain: String,
                 val encryptionAlgorithm: MessageEncryptionAlgorithm? = null
-            ) {
-                override fun equals(other: Any?): Boolean {
-                    if (this === other) return true
-                    if (other == null || this::class != other::class) return false
-
-                    other as RemoteData
-
-                    if (!otrKey.contentEquals(other.otrKey)) return false
-                    if (!sha256.contentEquals(other.sha256)) return false
-                    if (assetId != other.assetId) return false
-                    if (assetToken != other.assetToken) return false
-                    if (assetDomain != other.assetDomain) return false
-                    if (encryptionAlgorithm != other.encryptionAlgorithm) return false
-
-                    return true
-                }
-
-                override fun hashCode(): Int {
-                    var result = otrKey.contentHashCode()
-                    result = 31 * result + sha256.contentHashCode()
-                    result = 31 * result + assetId.hashCode()
-                    result = 31 * result + (assetToken?.hashCode() ?: 0)
-                    result = 31 * result + assetDomain.hashCode()
-                    result = 31 * result + (encryptionAlgorithm?.hashCode() ?: 0)
-                    return result
-                }
-            }
+            )
         }
     }
 
     @JvmRecord
     data class Composite(
-        val textContent: Text?,
-        val buttonList: List<Button>
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
+        val items: List<Item>
     ) : WireMessage {
-        data class Button(
+        @JvmRecord
+        data class Button @JvmOverloads constructor(
             val text: String,
-            val id: String,
-            val isSelected: Boolean
-        ) {
-            companion object {
-                /**
-                 * Creates a Composite Button message with minimal required parameters.
-                 *
-                 * Usage from Kotlin:
-                 * ```kotlin
-                 * val button = Composite.Button.create(conversationId, "Hello world")
-                 * ```
-                 *
-                 * Usage from Java:
-                 * ```java
-                 * Composite.Button button =
-                 *      Composite.Button.Companion.create(conversationId, "Hello world");
-                 * ```
-                 *
-                 * @param text The text content of the message
-                 * @param isSelected Whether the button is selected.
-                 * @param id Random generated UUID or received ID value.
-                 * @return A new Composite.Button message with a random UUID
-                 */
-                @JvmStatic
-                fun create(
-                    text: String,
-                    isSelected: Boolean,
-                    id: String? = null
-                ): Button {
-                    return Button(
-                        text = text,
-                        isSelected = isSelected,
-                        id = id ?: UUID.randomUUID().toString()
-                    )
-                }
-            }
-        }
+            val id: String = UUID.randomUUID().toString()
+        ) : Item
 
         companion object {
             /**
-             * Creates a Composite message.
+             * Creates a Composite message with a single text first, followed by a list of buttons.
              *
              * Usage from Kotlin:
              * ```kotlin
@@ -271,12 +166,15 @@ sealed interface WireMessage {
                 text: String,
                 buttonList: List<Button>
             ): Composite {
+                val textItem = Text.create(
+                    conversationId = conversationId,
+                    text = text
+                )
+
                 return Composite(
-                    textContent = Text.create(
-                        conversationId = conversationId,
-                        text = text
-                    ),
-                    buttonList = buttonList
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    items = listOf(textItem) + buttonList
                 )
             }
         }
@@ -289,8 +187,10 @@ sealed interface WireMessage {
      * @see ButtonActionConfirmation
      */
     @JvmRecord
-    data class ButtonAction(
-        val conversationId: QualifiedId,
+    data class ButtonAction @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
         /**
          * The ID of the original composite message.
          */
@@ -298,8 +198,7 @@ sealed interface WireMessage {
         /**
          * ID of the button that was selected.
          */
-        val buttonId: String,
-        val sender: QualifiedId
+        val buttonId: String
     ) : WireMessage
 
     /**
@@ -310,7 +209,11 @@ sealed interface WireMessage {
      * @see ButtonAction
      * @see Composite
      */
-    data class ButtonActionConfirmation(
+    @JvmRecord
+    data class ButtonActionConfirmation @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
         /**
          * ID fo the original composite message
          */
@@ -321,5 +224,12 @@ sealed interface WireMessage {
         val buttonId: String?
     ) : WireMessage
 
-    data object Unknown : WireMessage
+    data object Unknown : WireMessage {
+        override val id: UUID
+            get() = throw WireException.InvalidParameter("Unknown message, no ID")
+        override val conversationId: QualifiedId
+            get() = throw WireException.InvalidParameter("Unknown message, no conversation")
+        override val sender: QualifiedId?
+            get() = throw WireException.InvalidParameter("Unknown message, no sender")
+    }
 }

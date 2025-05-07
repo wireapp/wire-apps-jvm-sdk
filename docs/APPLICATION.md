@@ -8,6 +8,7 @@ Note that the SDK takes care of security in transit and partially for securing c
 ## Prerequisites
 
 - Java 17 or higher
+- Kotlin 2.x.x if you are using Kotlin
 - An application registered with Wire (to obtain an API token)
 - File system access for storing cryptographic keys and data
 
@@ -80,11 +81,6 @@ The SDK uses the `WireEventsHandler` to notify your application about events and
 Here's a complete example showing how to initialize the SDK and handle received events:
 
 ```kotlin
-import com.wire.integrations.jvm.WireAppSdk
-import com.wire.integrations.jvm.WireEventsHandler
-import com.wire.integrations.jvm.model.WireMessage
-import java.util.UUID
-
 fun main() {
     val wireAppSdk = WireAppSdk(
         applicationId = "9c40bb37-6904-11ef-8008-be4b58ff1d17",
@@ -103,6 +99,17 @@ fun main() {
     
     // Start the SDK
     wireAppSdk.startListening()
+}
+```
+For simplicity the subclassing of WireEventsHandler is done inline as an anonymous class, but you can create a separate class for it,
+especially if you handle events in a complex way:
+```kotlin
+class MyWireEventsHandler : WireEventsHandler() {
+    private val logger = LoggerFactory.getLogger(MyWireEventsHandler::class.java)
+
+    override fun onNewMessage(wireMessage: WireMessage.Text) {
+        logger.info("Message received: $wireMessage")
+    }
 }
 ```
 

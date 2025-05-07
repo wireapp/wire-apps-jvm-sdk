@@ -24,16 +24,15 @@ import com.wire.integrations.protobuf.messages.Messages.ButtonAction
 import com.wire.integrations.protobuf.messages.Messages.ButtonActionConfirmation
 import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
-import java.util.UUID
 
 /**
- * Object class mapper for mapping [WireMessage] to [GenericMessage] returning
+ * Object class mapper for mapping [WireMessage] to [GenericMessage] (Protobuf) returning
  * a ByteArray.
  *
  * To be used when sending a message from [WireApplicationManager]
  * before reaching [CoreCryptoClient]
  */
-object ProtobufMapper {
+object ProtobufSerializer {
     fun toGenericMessageByteArray(wireMessage: WireMessage): ByteArray =
         when (wireMessage) {
             is WireMessage.Text -> packText(wireMessage)
@@ -80,38 +79,41 @@ object ProtobufMapper {
             .toByteArray()
     }
 
-    private fun packButtonList(
-        buttonList: List<WireMessage.Composite.Button>
-    ): List<Composite.Item> =
-        buttonList.map {
-            val button = Composite.Item.newBuilder().buttonBuilder
-            button.id = it.id
-            button.text = it.text
+    private fun packItemsList(itemsList: List<WireMessage.Item>): List<Composite.Item> =
+        itemsList.map {
+            when (it) {
+                is WireMessage.Composite.Button -> {
+                    val button = Composite.Item.newBuilder().buttonBuilder
+                    button.id = it.id
+                    button.text = it.text
 
-            Composite.Item.newBuilder().setButton(button).build()
+                    Composite.Item.newBuilder().setButton(button).build()
+                }
+
+                is WireMessage.Text -> {
+                    val text = Messages.Text.newBuilder()
+                        .setContent(it.text)
+                        .setExpectsReadConfirmation(false)
+                        .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
+                        .build()
+
+                    Composite.Item.newBuilder().setText(text).build()
+                }
+            }
         }
 
     private fun packComposite(wireMessage: WireMessage.Composite): ByteArray {
         val items: MutableList<Composite.Item> = mutableListOf()
 
-        wireMessage.textContent?.let {
-            val text = Messages.Text.newBuilder()
-                .setContent(it.text)
-                .setExpectsReadConfirmation(false)
-                .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
-                .build()
-            items.add(Composite.Item.newBuilder().setText(text).build())
-        }
-
         items.addAll(
-            packButtonList(
-                buttonList = wireMessage.buttonList
+            packItemsList(
+                itemsList = wireMessage.items
             )
         )
 
         return GenericMessage
             .newBuilder()
-            .setMessageId(UUID.randomUUID().toString())
+            .setMessageId(wireMessage.id.toString())
             .setComposite(
                 Composite
                     .newBuilder()
@@ -125,7 +127,7 @@ object ProtobufMapper {
     private fun packButtonAction(wireMessage: WireMessage.ButtonAction): ByteArray =
         GenericMessage
             .newBuilder()
-            .setMessageId(UUID.randomUUID().toString())
+            .setMessageId(wireMessage.id.toString())
             .setButtonAction(
                 ButtonAction
                     .newBuilder()
@@ -141,7 +143,7 @@ object ProtobufMapper {
     ): ByteArray =
         GenericMessage
             .newBuilder()
-            .setMessageId(UUID.randomUUID().toString())
+            .setMessageId(wireMessage.id.toString())
             .setButtonActionConfirmation(
                 ButtonActionConfirmation
                     .newBuilder()

@@ -30,7 +30,7 @@ import com.wire.integrations.jvm.model.asset.AssetRetention
 import com.wire.integrations.jvm.model.asset.AssetUploadData
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
-import com.wire.integrations.jvm.model.protobuf.ProtobufMapper
+import com.wire.integrations.jvm.model.protobuf.ProtobufSerializer
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.utils.AESDecrypt
@@ -73,7 +73,7 @@ class WireApplicationManager internal constructor(
      */
     @Throws(WireException::class)
     suspend fun getBackendConfigurationSuspending(): ApiVersionResponse =
-        backendClient.getBackendVersion()
+        backendClient.getAvailableApiVersions()
 
     /**
      * Get the basic Wire Application data from the connected Wire backend.
@@ -142,7 +142,7 @@ class WireApplicationManager internal constructor(
             backendClient.sendMessage(
                 mlsMessage = cryptoClient.encryptMls(
                     mlsGroupId = mlsGroupId,
-                    message = ProtobufMapper.toGenericMessageByteArray(wireMessage = message)
+                    message = ProtobufSerializer.toGenericMessageByteArray(wireMessage = message)
                 )
             )
         } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")

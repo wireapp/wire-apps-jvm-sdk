@@ -16,6 +16,7 @@
 
 package com.wire.integrations.jvm.client
 
+import com.wire.integrations.jvm.client.BackendClient.Companion.API_VERSION
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.AppClientId
@@ -91,7 +92,7 @@ internal class BackendClientDemo internal constructor(
         }
     }
 
-    override suspend fun getBackendVersion(): ApiVersionResponse {
+    override suspend fun getAvailableApiVersions(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
         return runWithWireException {
             httpClient.get("/$API_VERSION/api-version").body()
@@ -334,7 +335,6 @@ internal class BackendClientDemo internal constructor(
     }
 
     private companion object {
-        const val API_VERSION = "v7"
         const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"

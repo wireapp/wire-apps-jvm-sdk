@@ -21,12 +21,15 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
+import com.wire.integrations.jvm.client.BackendClient
 import java.util.UUID
 
 object TestUtils {
+    const val V = BackendClient.API_VERSION
+
     fun setupWireMockStubs(wireMockServer: WireMockServer) {
         wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/v7/apps")).willReturn(
+            WireMock.get(WireMock.urlMatching("/$V/apps")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -39,7 +42,7 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.post(WireMock.urlMatching("/v7/clients")).willReturn(
+            WireMock.post(WireMock.urlMatching("/$V/clients")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -50,7 +53,7 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.post(WireMock.urlMatching("/v7/login")).willReturn(
+            WireMock.post(WireMock.urlMatching("/$V/login")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -62,7 +65,7 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.post(WireMock.urlPathEqualTo("/v7/access"))
+            WireMock.post(WireMock.urlPathEqualTo("/$V/access"))
                 .withQueryParam("client_id", WireMock.matching(".*")).willReturn(
                     WireMock.okJson(
                         """
@@ -75,7 +78,7 @@ object TestUtils {
                 )
         )
         wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/v7/feature-configs")).willReturn(
+            WireMock.get(WireMock.urlMatching("/$V/feature-configs")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -94,13 +97,13 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.put(WireMock.urlPathTemplate("/v7/clients/{appClientId}")).willReturn(
+            WireMock.put(WireMock.urlPathTemplate("/$V/clients/{appClientId}")).willReturn(
                 ok()
             )
         )
         wireMockServer.stubFor(
             WireMock.post(
-                WireMock.urlPathTemplate("/v7/mls/key-packages/self/{appClientId}")
+                WireMock.urlPathTemplate("/$V/mls/key-packages/self/{appClientId}")
             ).willReturn(ok())
         )
     }

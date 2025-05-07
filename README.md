@@ -32,17 +32,7 @@ messages to it.
 
 ## How to use it
 
-### Wire dev
-
-You can define the implementation of BackendClient to use, by changing it in the Modules.kt file.
-
-* BackendClientDemo targets the Wire backend for development purposes, it uses the Client API for
-  testing instead of the Application API
-* BackendClientImpl is the real implementation of the SDK, targeting the Wire backend as an
-  Application
-
-For the demo setup, some default properties are there, you can override those values
-by creating a `demo.properties` file in the classpath (e.g. `src/main/resources/demo.properties`).
+For information about usage and onboarding refer to [Sdk tutorial](docs/APPLICATION.md).
 
 ## Requirements
 
@@ -78,3 +68,15 @@ dependencies {
 
 If you have started using the SDK targeting one Wire environment,
 and later you want to switch to another, you may need to move/delete the `apps.db` directory
+
+### Testing the SDK
+
+You can define the implementation of BackendClient to use, by changing it in the Modules.kt file.
+
+* BackendClientDemo targets the Wire backend for development purposes, it uses the Client API for
+  testing instead of the Application API
+* BackendClientImpl is the real implementation of the SDK, targeting the Wire backend as an
+  Application
+
+For the demo setup, some default properties are there, you can override those values
+by creating a `demo.properties` file in the classpath (e.g. `src/main/resources/demo.properties`).
