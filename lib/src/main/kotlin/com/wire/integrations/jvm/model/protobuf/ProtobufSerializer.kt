@@ -24,6 +24,8 @@ import com.wire.integrations.protobuf.messages.Messages.ButtonAction
 import com.wire.integrations.protobuf.messages.Messages.ButtonActionConfirmation
 import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import com.wire.integrations.protobuf.messages.Messages.Knock
+import com.wire.integrations.protobuf.messages.Messages.Location
 
 /**
  * Object class mapper for mapping [WireMessage] to [GenericMessage] (Protobuf) returning
@@ -33,36 +35,51 @@ import com.wire.integrations.protobuf.messages.Messages.GenericMessage
  * before reaching [CoreCryptoClient]
  */
 object ProtobufSerializer {
-    fun toGenericMessageByteArray(wireMessage: WireMessage): ByteArray =
-        when (wireMessage) {
-            is WireMessage.Text -> packText(wireMessage)
-            is WireMessage.Asset -> packAsset(wireMessage)
-            is WireMessage.Composite -> packComposite(wireMessage)
-            is WireMessage.ButtonAction -> packButtonAction(wireMessage)
-            is WireMessage.ButtonActionConfirmation -> packButtonActionConfirmation(wireMessage)
+    fun toGenericMessageByteArray(wireMessage: WireMessage): ByteArray {
+        val genericMessage = GenericMessage
+            .newBuilder()
+            .setMessageId(wireMessage.id.toString())
+
+        val builtMessage = when (wireMessage) {
+            is WireMessage.Text -> packTextMessage(wireMessage, genericMessage)
+            is WireMessage.Asset -> packAsset(wireMessage, genericMessage)
+            is WireMessage.Composite -> packComposite(wireMessage, genericMessage)
+            is WireMessage.ButtonAction -> packButtonAction(wireMessage, genericMessage)
+            is WireMessage.ButtonActionConfirmation ->
+                packButtonActionConfirmation(wireMessage, genericMessage)
+            is WireMessage.Knock -> packKnock(wireMessage, genericMessage)
+            is WireMessage.Location -> packLocation(wireMessage, genericMessage)
             is WireMessage.Unknown -> throw WireException.CryptographicSystemError(
                 "Unexpected message content type: $wireMessage"
             )
         }
 
-    private fun packText(wireMessage: WireMessage.Text): ByteArray =
-        GenericMessage
-            .newBuilder()
-            .setMessageId(wireMessage.id.toString())
-            .setText(
-                Messages.Text.newBuilder()
-                    .setContent(wireMessage.text)
-                    .setExpectsReadConfirmation(false)
-                    .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
-                    .build()
-            )
+        return builtMessage
             .build()
             .toByteArray()
+    }
 
-    private fun packAsset(wireMessage: WireMessage.Asset): ByteArray {
-        return GenericMessage
-            .newBuilder()
-            .setMessageId(wireMessage.id.toString())
+    private fun packText(wireMessage: WireMessage.Text) =
+        Messages.Text.newBuilder()
+            .setContent(wireMessage.text)
+            .setExpectsReadConfirmation(false)
+            .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
+            .build()
+
+    private fun packTextMessage(
+        wireMessage: WireMessage.Text,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setText(
+                packText(wireMessage)
+            )
+
+    private fun packAsset(
+        wireMessage: WireMessage.Asset,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
             .setAsset(
                 Messages.Asset.newBuilder()
                     .setUploaded(
@@ -75,9 +92,6 @@ object ProtobufSerializer {
                     )
                     .build()
             )
-            .build()
-            .toByteArray()
-    }
 
     private fun packItemsList(itemsList: List<WireMessage.Item>): List<Composite.Item> =
         itemsList.map {
@@ -91,18 +105,17 @@ object ProtobufSerializer {
                 }
 
                 is WireMessage.Text -> {
-                    val text = Messages.Text.newBuilder()
-                        .setContent(it.text)
-                        .setExpectsReadConfirmation(false)
-                        .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
-                        .build()
+                    val text = packText(it)
 
                     Composite.Item.newBuilder().setText(text).build()
                 }
             }
         }
 
-    private fun packComposite(wireMessage: WireMessage.Composite): ByteArray {
+    private fun packComposite(
+        wireMessage: WireMessage.Composite,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder {
         val items: MutableList<Composite.Item> = mutableListOf()
 
         items.addAll(
@@ -111,23 +124,20 @@ object ProtobufSerializer {
             )
         )
 
-        return GenericMessage
-            .newBuilder()
-            .setMessageId(wireMessage.id.toString())
+        return genericMessage
             .setComposite(
                 Composite
                     .newBuilder()
                     .addAllItems(items)
                     .build()
             )
-            .build()
-            .toByteArray()
     }
 
-    private fun packButtonAction(wireMessage: WireMessage.ButtonAction): ByteArray =
-        GenericMessage
-            .newBuilder()
-            .setMessageId(wireMessage.id.toString())
+    private fun packButtonAction(
+        wireMessage: WireMessage.ButtonAction,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
             .setButtonAction(
                 ButtonAction
                     .newBuilder()
@@ -135,15 +145,12 @@ object ProtobufSerializer {
                     .setReferenceMessageId(wireMessage.referencedMessageId)
                     .build()
             )
-            .build()
-            .toByteArray()
 
     private fun packButtonActionConfirmation(
-        wireMessage: WireMessage.ButtonActionConfirmation
-    ): ByteArray =
-        GenericMessage
-            .newBuilder()
-            .setMessageId(wireMessage.id.toString())
+        wireMessage: WireMessage.ButtonActionConfirmation,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
             .setButtonActionConfirmation(
                 ButtonActionConfirmation
                     .newBuilder()
@@ -151,6 +158,30 @@ object ProtobufSerializer {
                     .setReferenceMessageId(wireMessage.referencedMessageId)
                     .build()
             )
-            .build()
-            .toByteArray()
+
+    private fun packKnock(
+        wireMessage: WireMessage.Knock,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setKnock(
+                Knock
+                    .newBuilder()
+                    .setHotKnock(wireMessage.hotKnock)
+                    .build()
+            )
+
+    private fun packLocation(
+        wireMessage: WireMessage.Location,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setLocation(
+                Location
+                    .newBuilder()
+                    .setLatitude(wireMessage.latitude)
+                    .setLongitude(wireMessage.longitude)
+                    .setName(wireMessage.name)
+                    .setZoom(wireMessage.zoom)
+            )
 }

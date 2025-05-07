@@ -105,6 +105,22 @@ abstract class WireEventsHandler {
         logger.info("Received event: onNewButtonActionConfirmationSuspending: $wireMessage")
     }
 
+    open fun onKnock(wireMessage: WireMessage.Knock) {
+        logger.info("Received event: onKnock: $wireMessage")
+    }
+
+    open suspend fun onKnockSuspending(wireMessage: WireMessage.Knock) {
+        logger.info("Received event: onKnockSuspending: $wireMessage")
+    }
+
+    open fun onLocation(wireMessage: WireMessage.Location) {
+        logger.info("Received event: onLocation: $wireMessage")
+    }
+
+    open suspend fun onLocationSuspending(wireMessage: WireMessage.Location) {
+        logger.info("Received event: onLocationSuspending: $wireMessage")
+    }
+
     /**
      * One or more users have joined a conversation accessible by the Wire App.
      * This event is triggered when the App is already in the conversation and new users joins.

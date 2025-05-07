@@ -224,6 +224,25 @@ sealed interface WireMessage {
         val buttonId: String?
     ) : WireMessage
 
+    @JvmRecord
+    data class Knock @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
+        val hotKnock: Boolean
+    ) : WireMessage
+
+    @JvmRecord
+    data class Location @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
+        val latitude: Float,
+        val longitude: Float,
+        val name: String? = null,
+        val zoom: Int = 0
+    ) : WireMessage
+
     data object Unknown : WireMessage {
         override val id: UUID
             get() = throw WireException.InvalidParameter("Unknown message, no ID")

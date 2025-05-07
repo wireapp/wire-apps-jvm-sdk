@@ -37,6 +37,7 @@ import org.koin.test.get
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class WireEventsTest : KoinTest {
     @Test
@@ -93,12 +94,44 @@ class WireEventsTest : KoinTest {
         assertIs<EventContentDTO.Conversation.NewConversationDTO>(event.payload?.first())
     }
 
+    @Test
+    fun givenWireEventsHandlerIsInjectedThenCallingNewKnockMethodItSucceeds() =
+        runBlocking {
+            val wireEvents = get<WireEventsHandler>()
+
+            wireEvents.onKnockSuspending(
+                wireMessage = WireMessage.Knock(
+                    id = UUID.randomUUID(),
+                    conversationId = CONVERSATION_ID,
+                    hotKnock = true
+                )
+            )
+        }
+
+    @Test
+    fun givenWireEventsHandlerIsInjectedThenCallingNewLocationMethodItSucceeds() =
+        runBlocking {
+            val wireEvents = get<WireEventsHandler>()
+
+            wireEvents.onLocationSuspending(
+                wireMessage = WireMessage.Location(
+                    id = UUID.randomUUID(),
+                    conversationId = CONVERSATION_ID,
+                    latitude = EXPECTED_LOCATION_LATITUDE,
+                    longitude = EXPECTED_LOCATION_LONGITUDE
+                )
+            )
+        }
+
     companion object {
         private val EXPECTED_NEW_MLS_MESSAGE_VALUE = UUID.randomUUID().toString()
         private val CONVERSATION_ID = QualifiedId(
             id = UUID.randomUUID(),
             domain = "anta.wire.link"
         )
+
+        private val EXPECTED_LOCATION_LATITUDE = 11.12345F
+        private val EXPECTED_LOCATION_LONGITUDE = 12.12345F
 
         private val DUMMY_CONVERSATION_CREATE_EVENT_RESPONSE =
             """{
@@ -178,6 +211,15 @@ class WireEventsTest : KoinTest {
                         EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
                         wireMessage.name
                     )
+                }
+
+                override suspend fun onKnockSuspending(wireMessage: WireMessage.Knock) {
+                    assertTrue { wireMessage.hotKnock }
+                }
+
+                override suspend fun onLocationSuspending(wireMessage: WireMessage.Location) {
+                    assertEquals(EXPECTED_LOCATION_LATITUDE, wireMessage.latitude)
+                    assertEquals(EXPECTED_LOCATION_LONGITUDE, wireMessage.longitude)
                 }
             }
 
