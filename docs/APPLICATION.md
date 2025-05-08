@@ -204,6 +204,13 @@ You can take the artifacts built from your Application and run it in any server,
 
 For example, giving that the app does not need HTTPS, DNS, CDN, simpler deployment processes are available, for example: [Heroku - Java](https://devcenter.heroku.com/articles/getting-started-with-java)
 
+## Building Locally
+In case you need to build the SDK locally, you can skip the signing option by running:
+```bash
+./gradlew publishToMavenLocal -PskipSigning=true
+```
+> **_Keep in mind_** to include `repositories { mavenCentral() }` in your `build.gradle.kts` file.
+
 ## Troubleshooting
 
 - Enable DEBUG logging on the SDK if you are developing an Application and want to test it in a safe environment. Set the log level to DEBUG in your logging framework for the package `com.wire.integrations.jvm` (e.g. for Logback `<logger name="com.wire.integrations.jvm" level="DEBUG" />`).
