@@ -230,7 +230,38 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId? = null,
         val hotKnock: Boolean
-    ) : WireMessage
+    ) : WireMessage {
+        companion object {
+            /**
+             * Creates a basic Knock message with minimal required parameters.
+             *
+             * Usage from Kotlin:
+             * ```kotlin
+             * val message = Knock.create(conversationId, true)
+             * ```
+             *
+             * Usage from Java:
+             * ```java
+             * Text message = Knock.Companion.create(conversationId, true);
+             * ```
+             *
+             * @param conversationId The qualified ID of the conversation
+             * @param hotKnock
+             * @return A new Knock message with a random UUID
+             */
+            @JvmStatic
+            fun create(
+                conversationId: QualifiedId,
+                hotKnock: Boolean
+            ): Knock {
+                return Knock(
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    hotKnock = hotKnock
+                )
+            }
+        }
+    }
 
     @JvmRecord
     data class Location @JvmOverloads constructor(
@@ -241,7 +272,48 @@ sealed interface WireMessage {
         val longitude: Float,
         val name: String? = null,
         val zoom: Int = 0
-    ) : WireMessage
+    ) : WireMessage {
+        companion object {
+            /**
+             * Creates a basic Location message with minimal required parameters.
+             *
+             * Usage from Kotlin:
+             * ```kotlin
+             * val message = Location.create(conversationId, latitude, longitude, name, zoom)
+             * ```
+             *
+             * Usage from Java:
+             * ```java
+             * Text message =
+             *      Location.Companion.create(conversationId, latitude, longitude, name, zoom)
+             * ```
+             *
+             * @param conversationId The qualified ID of the conversation
+             * @param latitude The Latitude of the Location
+             * @param longitude The Longitude of the Location
+             * @param name In case the location contains a name
+             * @param zoom The zoom value to be used when displaying the location on a map
+             * @return A new Location message with a random UUID
+             */
+            @JvmStatic
+            fun create(
+                conversationId: QualifiedId,
+                latitude: Float,
+                longitude: Float,
+                name: String? = null,
+                zoom: Int = 0
+            ): Location {
+                return Location(
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    latitude = latitude,
+                    longitude = longitude,
+                    name = name,
+                    zoom = zoom
+                )
+            }
+        }
+    }
 
     data object Unknown : WireMessage {
         override val id: UUID

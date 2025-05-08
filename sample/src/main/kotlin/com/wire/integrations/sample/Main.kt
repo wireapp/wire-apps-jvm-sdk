@@ -55,10 +55,7 @@ fun main() {
                     text = "${wireMessage.text} -- Sent from the SDK"
                 )
 
-                manager.sendMessageSuspending(
-                    conversationId = wireMessage.conversationId,
-                    message = message
-                )
+                manager.sendMessageSuspending(message = message)
             }
 
             override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
@@ -69,10 +66,7 @@ fun main() {
                     text = "Received Asset : ${wireMessage.name}"
                 )
 
-                manager.sendMessageSuspending(
-                    conversationId = wireMessage.conversationId,
-                    message = message
-                )
+                manager.sendMessageSuspending(message = message)
 
                 wireMessage.remoteData?.let { remoteData ->
                     val asset = manager.downloadAssetSuspending(remoteData)
@@ -103,6 +97,13 @@ fun main() {
 
             override suspend fun onKnockSuspending(wireMessage: WireMessage.Knock) {
                 logger.info("Received onKnockSuspending Message : $wireMessage")
+
+                val knock = WireMessage.Knock.create(
+                    conversationId = wireMessage.conversationId,
+                    hotKnock = true
+                )
+
+                manager.sendMessageSuspending(message = knock)
             }
 
             override suspend fun onLocationSuspending(wireMessage: WireMessage.Location) {
@@ -113,10 +114,7 @@ fun main() {
                     text = "Received Location\n\nLatitude: ${wireMessage.latitude}\n\nLongitude: ${wireMessage.longitude}\n\nName: ${wireMessage.name}\n\nZoom: ${wireMessage.zoom}"
                 )
 
-                manager.sendMessageSuspending(
-                    conversationId = wireMessage.conversationId,
-                    message = message
-                )
+                manager.sendMessageSuspending(message = message)
             }
         }
     )
