@@ -132,7 +132,15 @@ protobuf {
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 
-    signAllPublications()
+    /**
+     * Skip signing publication only when a skipping parameter is available
+     *
+     * Usage:
+     * ./gradlew publishToMavenLocal -PskipSigning=true
+     */
+    if (findProperty("skipSigning") != "true") {
+        signAllPublications()
+    }
 
     coordinates(group.toString(), artifactId, version.toString())
 
