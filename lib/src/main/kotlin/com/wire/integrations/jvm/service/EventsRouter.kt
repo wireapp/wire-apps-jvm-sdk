@@ -169,6 +169,16 @@ internal class EventsRouter internal constructor(
                                 wireMessage = wireMessage
                             )
 
+                        is WireMessage.Knock ->
+                            wireEventsHandler.onKnockSuspending(
+                                wireMessage = wireMessage
+                            )
+
+                        is WireMessage.Location ->
+                            wireEventsHandler.onLocationSuspending(
+                                wireMessage = wireMessage
+                            )
+
                         WireMessage.Unknown -> {
                             logger.warn("Unknown event received.")
                         }

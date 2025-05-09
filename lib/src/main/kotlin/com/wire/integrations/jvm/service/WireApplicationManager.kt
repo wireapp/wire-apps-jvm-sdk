@@ -108,12 +108,9 @@ class WireApplicationManager internal constructor(
      *
      * @throws WireException.EntityNotFound If the conversation cannot be found.
      */
-    fun sendMessage(
-        conversationId: QualifiedId,
-        message: WireMessage
-    ) {
+    fun sendMessage(message: WireMessage) {
         runBlocking {
-            sendMessageSuspending(conversationId, message)
+            sendMessageSuspending(message)
         }
     }
 
@@ -128,16 +125,12 @@ class WireApplicationManager internal constructor(
      *
      * Suspending method for Kotlin consumers.
      *
-     * @param conversationId The unique ID of the conversation where the message should be sent.
      * @param message The text of the message to be sent.
      *
      * @throws WireException.EntityNotFound If the conversation cannot be found.
      */
-    suspend fun sendMessageSuspending(
-        conversationId: QualifiedId,
-        message: WireMessage
-    ) {
-        val conversation = conversationStorage.getById(conversationId = conversationId)
+    suspend fun sendMessageSuspending(message: WireMessage) {
+        val conversation = conversationStorage.getById(conversationId = message.conversationId)
         conversation?.mlsGroupId?.let { mlsGroupId ->
             backendClient.sendMessage(
                 mlsMessage = cryptoClient.encryptMls(
@@ -269,7 +262,7 @@ class WireApplicationManager internal constructor(
         )
 
         // Send the asset
-        sendMessageSuspending(conversationId, assetMessage)
+        sendMessageSuspending(assetMessage)
         return EncryptionKey(newAesKey)
     }
 }

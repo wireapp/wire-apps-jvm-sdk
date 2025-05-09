@@ -128,11 +128,7 @@ For when you to send a message. It can be achieved when you have the conversatio
 ```kotlin
 val applicationManager = wireAppSdk.getApplicationManager()
 applicationManager.sendMessageSuspending(
-    conversationId = QualifiedId(
-        id = "conversation-id",
-        domain = "conversation-domain"
-    ),
-    message = "My custom message"
+    message = WireMessage // All WireMessage event types are supported through this method
 )
 ```
 > **_Java:_**  Use `applicationManager.sendMessage`
@@ -162,12 +158,13 @@ override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
     //   sending back another message, or triggering some workflow
 
     manager.sendMessageSuspending(
-        conversationId = wireMessage.conversationId,
-        message = "My event reaction message"
+        message = WireMessage // All WireMessage event types are supported through this method
     )
 }
 ```
 > **_Java:_**  Use `override fun onNewMessage(wireMessage: WireMessage.Text) { .. }`
+
+> **_Other Event Types:_** Other event types can be listened through `on[EventType]Suspending` or `on[EventType]`
 
 #### Asset
 

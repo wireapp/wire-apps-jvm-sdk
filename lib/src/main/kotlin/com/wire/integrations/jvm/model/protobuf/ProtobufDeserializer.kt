@@ -60,6 +60,18 @@ object ProtobufDeserializer {
                 sender = sender
             )
 
+            genericMessage.hasKnock() -> unpackKnock(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasLocation() -> unpackLocation(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
             else -> WireMessage.Unknown
         }
 
@@ -196,7 +208,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId
-    ): WireMessage =
+    ): WireMessage.ButtonAction =
         WireMessage.ButtonAction(
             id = UUID.fromString(genericMessage.messageId),
             conversationId = conversationId,
@@ -209,12 +221,39 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId
-    ): WireMessage =
+    ): WireMessage.ButtonActionConfirmation =
         WireMessage.ButtonActionConfirmation(
             id = UUID.fromString(genericMessage.messageId),
             conversationId = conversationId,
             sender = sender,
             referencedMessageId = genericMessage.buttonActionConfirmation.referenceMessageId,
             buttonId = genericMessage.buttonActionConfirmation.buttonId
+        )
+
+    private fun unpackKnock(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.Knock =
+        WireMessage.Knock(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            hotKnock = genericMessage.knock.hotKnock
+        )
+
+    private fun unpackLocation(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.Location =
+        WireMessage.Location(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            latitude = genericMessage.location.latitude,
+            longitude = genericMessage.location.longitude,
+            name = genericMessage.location.name,
+            zoom = genericMessage.location.zoom
         )
 }
