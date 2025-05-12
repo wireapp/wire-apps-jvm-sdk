@@ -18,6 +18,7 @@ package com.wire.integrations.jvm.service
 
 import com.wire.crypto.MLSGroupId
 import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.model.ConversationData
 import com.wire.integrations.jvm.model.ConversationMember
 import com.wire.integrations.jvm.model.QualifiedId
@@ -43,7 +44,7 @@ class WireEventsTest : KoinTest {
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingItsMethodsSucceeds() =
         runBlocking {
-            val wireEvents = get<WireEventsHandler>()
+            val wireEvents = get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onConversationJoin(
                 conversation = ConversationData(
@@ -55,7 +56,7 @@ class WireEventsTest : KoinTest {
                 members = emptyList()
             )
 
-            wireEvents.onNewMessage(
+            wireEvents.onMessage(
                 wireMessage = WireMessage.Text(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -71,9 +72,9 @@ class WireEventsTest : KoinTest {
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingNewAssetMethodItSucceeds() =
         runBlocking {
-            val wireEvents = get<WireEventsHandler>()
+            val wireEvents = get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onNewAsset(
+            wireEvents.onAsset(
                 wireMessage = WireMessage.Asset(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -97,9 +98,9 @@ class WireEventsTest : KoinTest {
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingNewKnockMethodItSucceeds() =
         runBlocking {
-            val wireEvents = get<WireEventsHandler>()
+            val wireEvents = get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onKnockSuspending(
+            wireEvents.onKnock(
                 wireMessage = WireMessage.Knock(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -111,9 +112,9 @@ class WireEventsTest : KoinTest {
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingNewLocationMethodItSucceeds() =
         runBlocking {
-            val wireEvents = get<WireEventsHandler>()
+            val wireEvents = get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onLocationSuspending(
+            wireEvents.onLocation(
                 wireMessage = WireMessage.Location(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -191,33 +192,33 @@ class WireEventsTest : KoinTest {
             """
 
         private val wireEventsHandler =
-            object : WireEventsHandler() {
-                override fun onConversationJoin(
+            object : WireEventsHandlerSuspending() {
+                override suspend fun onConversationJoin(
                     conversation: ConversationData,
                     members: List<ConversationMember>
                 ) {
                     assertEquals(CONVERSATION_ID, conversation.id)
                 }
 
-                override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
+                override suspend fun onMessage(wireMessage: WireMessage.Text) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE,
                         wireMessage.text
                     )
                 }
 
-                override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
+                override suspend fun onAsset(wireMessage: WireMessage.Asset) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
                         wireMessage.name
                     )
                 }
 
-                override suspend fun onKnockSuspending(wireMessage: WireMessage.Knock) {
+                override suspend fun onKnock(wireMessage: WireMessage.Knock) {
                     assertTrue { wireMessage.hotKnock }
                 }
 
-                override suspend fun onLocationSuspending(wireMessage: WireMessage.Location) {
+                override suspend fun onLocation(wireMessage: WireMessage.Location) {
                     assertEquals(EXPECTED_LOCATION_LATITUDE, wireMessage.latitude)
                     assertEquals(EXPECTED_LOCATION_LONGITUDE, wireMessage.longitude)
                 }

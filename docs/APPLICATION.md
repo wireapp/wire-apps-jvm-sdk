@@ -88,7 +88,7 @@ fun main() {
         apiHost = "https://your-wire-backend.example.com",
         cryptographyStoragePassword = "secure-password",
         object : WireEventsHandler() {
-            override fun onNewMessage(wireMessage: WireMessage) {
+            override fun onMessage(wireMessage: WireMessage) {
                 println("Message received: $wireMessage")
                 
                 // Add your message handling logic here, like storing the message,
@@ -107,7 +107,7 @@ especially if you handle events in a complex way:
 class MyWireEventsHandler : WireEventsHandler() {
     private val logger = LoggerFactory.getLogger(MyWireEventsHandler::class.java)
 
-    override fun onNewMessage(wireMessage: WireMessage.Text) {
+    override fun onMessage(wireMessage: WireMessage.Text) {
         logger.info("Message received: $wireMessage")
     }
 }
@@ -151,7 +151,7 @@ This is done inside the method override of `WireEventsHandler` using a local `ma
 
 #### Text
 ```kotlin
-override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
+override suspend fun onMessageSuspending(wireMessage: WireMessage.Text) {
     println("Message received: $wireMessage")
     
     // Add your message handling logic here, like storing the message,
@@ -162,7 +162,7 @@ override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
     )
 }
 ```
-> **_Java:_**  Use `override fun onNewMessage(wireMessage: WireMessage.Text) { .. }`
+> **_Java:_**  Use `override fun onMessage(wireMessage: WireMessage.Text) { .. }`
 
 > **_Other Event Types:_** Other event types can be listened through `on[EventType]Suspending` or `on[EventType]`
 
@@ -174,7 +174,7 @@ For simplicity, you can simply forward the `AssetRemoteData` to downloadAssetSus
 actually return the asset in byte array format.
 
 ```kotlin
-override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
+override suspend fun onAssetSuspending(wireMessage: WireMessage.Asset) {
     println("Asset received: $wireMessage")
     
     // Add your asset handling logic here, like downloading the asset,
@@ -191,7 +191,7 @@ override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
     }
 }
 ```
-> **_Java:_** Use `override fun onNewAsset(wireMessage: WireMessage.Asset) { .. }`
+> **_Java:_** Use `override fun onAsset(wireMessage: WireMessage.Asset) { .. }`
 
 ## Deploy example
 
