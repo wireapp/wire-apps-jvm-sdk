@@ -16,7 +16,7 @@
 package com.wire.integrations.sample
 
 import com.wire.integrations.jvm.WireAppSdk
-import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.model.AssetResource
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.asset.AssetRetention
@@ -32,8 +32,8 @@ fun main() {
         apiToken = "myApiToken",
         apiHost = "https://nginz-https.chala.wire.link",
         cryptographyStoragePassword = "myDummyPassword",
-        object : WireEventsHandler() {
-            override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
+        object : WireEventsHandlerSuspending() {
+            override suspend fun onMessage(wireMessage: WireMessage.Text) {
                 logger.info("Received Text Message : $wireMessage")
 
                 if (wireMessage.text?.contains("asset") ?: false) {
@@ -58,7 +58,7 @@ fun main() {
                 manager.sendMessageSuspending(message = message)
             }
 
-            override suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
+            override suspend fun onAsset(wireMessage: WireMessage.Asset) {
                 logger.info("Received Asset Message : $wireMessage")
 
                 val message = WireMessage.Text.create(
@@ -78,7 +78,7 @@ fun main() {
                 }
             }
 
-            override suspend fun onNewCompositeSuspending(wireMessage: WireMessage.Composite) {
+            override suspend fun onComposite(wireMessage: WireMessage.Composite) {
                 logger.info("Received Composite Message : $wireMessage")
 
                 logger.info("Received Composite Items:")
@@ -87,15 +87,15 @@ fun main() {
                 }
             }
 
-            override suspend fun onNewButtonActionSuspending(wireMessage: WireMessage.ButtonAction) {
+            override suspend fun onButtonAction(wireMessage: WireMessage.ButtonAction) {
                 logger.info("Received ButtonAction Message : $wireMessage")
             }
 
-            override suspend fun onNewButtonActionConfirmationSuspending(wireMessage: WireMessage.ButtonActionConfirmation) {
+            override suspend fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
                 logger.info("Received ButtonActionConfirmation Message : $wireMessage")
             }
 
-            override suspend fun onKnockSuspending(wireMessage: WireMessage.Knock) {
+            override suspend fun onKnock(wireMessage: WireMessage.Knock) {
                 logger.info("Received onKnockSuspending Message : $wireMessage")
 
                 val knock = WireMessage.Knock.create(
@@ -106,7 +106,7 @@ fun main() {
                 manager.sendMessageSuspending(message = knock)
             }
 
-            override suspend fun onLocationSuspending(wireMessage: WireMessage.Location) {
+            override suspend fun onLocation(wireMessage: WireMessage.Location) {
                 logger.info("Received onLocationSuspending Message : $wireMessage")
 
                 val message = WireMessage.Text.create(

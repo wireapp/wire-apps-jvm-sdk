@@ -40,7 +40,7 @@ sealed interface WireMessage {
     ) : WireMessage, Item {
         @JvmRecord
         data class Mention @JvmOverloads constructor(
-            val userId: QualifiedId? = null,
+            val userId: QualifiedId,
             val offset: Int = 0,
             val length: Int = 0
         )

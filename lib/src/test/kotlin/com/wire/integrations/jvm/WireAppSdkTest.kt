@@ -42,8 +42,8 @@ class WireAppSdkTest : KoinTest {
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-                object : WireEventsHandler() {
-                    override fun onNewMessage(wireMessage: WireMessage.Text) {
+                object : WireEventsHandlerDefault() {
+                    override fun onMessage(wireMessage: WireMessage.Text) {
                         println(wireMessage)
                     }
                 }
@@ -74,8 +74,8 @@ class WireAppSdkTest : KoinTest {
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-                object : WireEventsHandler() {
-                    override fun onNewMessage(wireMessage: WireMessage.Text) {
+                object : WireEventsHandlerDefault() {
+                    override fun onMessage(wireMessage: WireMessage.Text) {
                         println(wireMessage)
                     }
                 }

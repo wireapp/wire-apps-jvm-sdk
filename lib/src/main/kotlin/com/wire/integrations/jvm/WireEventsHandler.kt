@@ -16,129 +16,20 @@
 package com.wire.integrations.jvm
 
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.model.ConversationData
-import com.wire.integrations.jvm.model.ConversationMember
-import com.wire.integrations.jvm.model.QualifiedId
-import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.service.WireApplicationManager
-import org.slf4j.LoggerFactory
 
 /**
- * Abstract class exposed by the SDK, clients can override the methods in this class and pass it
- * during SDK initialization to handle Wire events.
+ * Abstract class exposed by the SDK to handle events. This subclasses cannot be subclassed
+ * directly, you should subclass [WireEventsHandlerDefault] or [WireEventsHandlerSuspending].
  */
-@Suppress("TooManyFunctions")
-abstract class WireEventsHandler {
-    private val logger = LoggerFactory.getLogger(this::class.java)
-
+sealed class WireEventsHandler {
     /**
      * The [WireApplicationManager] is used to manage the Wire application lifecycle and
      * communication with the backend.
      * NOTE: Do not use manager in the constructor of this class, as it will be null at that time.
      * Use it only inside the event handling methods.
      */
-    protected val manager: WireApplicationManager by lazy {
+    val manager: WireApplicationManager by lazy {
         IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
-    }
-
-    open fun onNewMessage(wireMessage: WireMessage.Text) {
-        logger.info("Received event: onNewMessage")
-    }
-
-    open suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
-        logger.info("Received event: onNewMessageSuspending")
-    }
-
-    /**
-     * The app has been added to a conversation.
-     *
-     * @param conversation the conversation id with some extra data
-     * @param members the members that got added, including the app and possibly other users
-     */
-    open fun onConversationJoin(
-        conversation: ConversationData,
-        members: List<ConversationMember>
-    ) {
-        logger.info("Received event: onConversationJoin")
-    }
-
-    /**
-     * A user deleted a conversation accessible by the Wire App.
-     */
-    open fun onConversationDelete(conversationId: QualifiedId) {
-        logger.info("Received event: onConversationDelete")
-    }
-
-    open fun onNewAsset(wireMessage: WireMessage.Asset) {
-        logger.info("Received event: onNewAsset")
-    }
-
-    open suspend fun onNewAssetSuspending(wireMessage: WireMessage.Asset) {
-        logger.info("Received event: onNewAssetSuspending")
-    }
-
-    open fun onNewComposite(wireMessage: WireMessage.Composite) {
-        logger.info("Received event: onNewComposite")
-    }
-
-    open suspend fun onNewCompositeSuspending(wireMessage: WireMessage.Composite) {
-        logger.info("Received event: onNewCompositeSuspending")
-    }
-
-    open suspend fun onNewButtonAction(wireMessage: WireMessage.ButtonAction) {
-        logger.info("Received event: onNewButtonAction")
-    }
-
-    open suspend fun onNewButtonActionSuspending(wireMessage: WireMessage.ButtonAction) {
-        logger.info("Received event: onNewButtonActionSuspending")
-    }
-
-    open suspend fun onNewButtonActionConfirmation(
-        wireMessage: WireMessage.ButtonActionConfirmation
-    ) {
-        logger.info("Received event: onNewButtonActionConfirmation")
-    }
-
-    open suspend fun onNewButtonActionConfirmationSuspending(
-        wireMessage: WireMessage.ButtonActionConfirmation
-    ) {
-        logger.info("Received event: onNewButtonActionConfirmationSuspending: $wireMessage")
-    }
-
-    open fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.info("Received event: onKnock: $wireMessage")
-    }
-
-    open suspend fun onKnockSuspending(wireMessage: WireMessage.Knock) {
-        logger.info("Received event: onKnockSuspending: $wireMessage")
-    }
-
-    open fun onLocation(wireMessage: WireMessage.Location) {
-        logger.info("Received event: onLocation: $wireMessage")
-    }
-
-    open suspend fun onLocationSuspending(wireMessage: WireMessage.Location) {
-        logger.info("Received event: onLocationSuspending: $wireMessage")
-    }
-
-    /**
-     * One or more users have joined a conversation accessible by the Wire App.
-     * This event is triggered when the App is already in the conversation and new users joins.
-     */
-    open fun onMemberJoin(
-        conversationId: QualifiedId,
-        members: List<ConversationMember>
-    ) {
-        logger.info("Received event: onMemberJoin")
-    }
-
-    /**
-     * One or more users have left a conversation accessible by the Wire App.
-     */
-    open fun onMemberLeave(
-        conversationId: QualifiedId,
-        members: List<QualifiedId>
-    ) {
-        logger.info("Received event: onMemberLeave")
     }
 }

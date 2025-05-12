@@ -26,7 +26,7 @@ import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
 import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.TestUtils.V
-import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.AppClientId
@@ -74,7 +74,7 @@ class WireEventsIntegrationTest : KoinTest {
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
         runBlocking {
             TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
-            val eventsHandler = object : WireEventsHandler() {}
+            val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
 
             val eventsRouter = get<EventsRouter>()
@@ -389,8 +389,8 @@ class WireEventsIntegrationTest : KoinTest {
             }
 
         private val wireEventsHandler =
-            object : WireEventsHandler() {
-                override suspend fun onNewMessageSuspending(wireMessage: WireMessage.Text) {
+            object : WireEventsHandlerSuspending() {
+                override suspend fun onMessage(wireMessage: WireMessage.Text) {
                     // Verify
                     assertEquals(
                         MOCK_DECRYPTED_MESSAGE,

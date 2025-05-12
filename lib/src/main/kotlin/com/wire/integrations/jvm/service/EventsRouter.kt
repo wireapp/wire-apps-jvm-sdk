@@ -22,6 +22,8 @@ import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
 import com.wire.integrations.jvm.WireEventsHandler
+import com.wire.integrations.jvm.WireEventsHandlerDefault
+import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
@@ -69,7 +71,14 @@ internal class EventsRouter internal constructor(
                 is EventContentDTO.Conversation.DeleteConversation -> {
                     logger.info("Delete conversation: $event")
                     conversationStorage.delete(event.qualifiedConversation)
-                    wireEventsHandler.onConversationDelete(event.qualifiedConversation)
+                    when (wireEventsHandler) {
+                        is WireEventsHandlerDefault -> wireEventsHandler.onConversationDelete(
+                            event.qualifiedConversation
+                        )
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onConversationDelete(
+                            event.qualifiedConversation
+                        )
+                    }
                 }
 
                 is EventContentDTO.Conversation.MemberJoin -> {
@@ -81,7 +90,16 @@ internal class EventsRouter internal constructor(
                         )
                     }
                     conversationStorage.saveMembers(event.qualifiedConversation, members)
-                    wireEventsHandler.onMemberJoin(event.qualifiedConversation, members)
+                    when (wireEventsHandler) {
+                        is WireEventsHandlerDefault -> wireEventsHandler.onMemberJoin(
+                            conversationId = event.qualifiedConversation,
+                            members = members
+                        )
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onMemberJoin(
+                            conversationId = event.qualifiedConversation,
+                            members = members
+                        )
+                    }
                 }
 
                 is EventContentDTO.Conversation.MemberLeave -> {
@@ -90,7 +108,16 @@ internal class EventsRouter internal constructor(
                         conversationId = event.qualifiedConversation,
                         users = event.data.users
                     )
-                    wireEventsHandler.onMemberLeave(event.qualifiedConversation, event.data.users)
+                    when (wireEventsHandler) {
+                        is WireEventsHandlerDefault -> wireEventsHandler.onMemberLeave(
+                            conversationId = event.qualifiedConversation,
+                            members = event.data.users
+                        )
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onMemberLeave(
+                            conversationId = event.qualifiedConversation,
+                            members = event.data.users
+                        )
+                    }
                 }
 
                 is EventContentDTO.Conversation.MlsWelcome -> {
@@ -112,6 +139,9 @@ internal class EventsRouter internal constructor(
                             role = it.conversationRole
                         )
                     }
+                    logger.debug("Conversation data: $conversationData")
+                    logger.debug("Conversation members: $members")
+
                     // Saves the conversation in the local database, used later to decrypt messages
                     conversationStorage.save(conversationData)
                     conversationStorage.saveMembers(event.qualifiedConversation, members)
@@ -123,7 +153,16 @@ internal class EventsRouter internal constructor(
                         )
                     }
 
-                    wireEventsHandler.onConversationJoin(conversationData, members)
+                    when (wireEventsHandler) {
+                        is WireEventsHandlerDefault -> wireEventsHandler.onConversationJoin(
+                            conversation = conversationData,
+                            members = members
+                        )
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onConversationJoin(
+                            conversation = conversationData,
+                            members = members
+                        )
+                    }
                 }
 
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
@@ -133,61 +172,63 @@ internal class EventsRouter internal constructor(
                         mlsGroupId = groupId,
                         encryptedMessage = event.message
                     )
+                    logger.debug("Decryption successful")
                     if (message == null) {
                         logger.debug("Decryption success but no message, probably epoch update")
                         return
                     }
 
-                    val genericMessage = GenericMessage.parseFrom(message)
-                    val wireMessage = ProtobufDeserializer.processGenericMessage(
-                        genericMessage = genericMessage,
+                    forwardMessage(
+                        message = message,
                         conversationId = event.qualifiedConversation,
                         sender = event.qualifiedFrom
                     )
-
-                    // TODO think about a better way to handle the same event in blocking/async
-                    when (wireMessage) {
-                        is WireMessage.Text -> wireEventsHandler.onNewMessageSuspending(
-                            wireMessage = wireMessage
-                        )
-
-                        is WireMessage.Asset -> wireEventsHandler.onNewAssetSuspending(
-                            wireMessage = wireMessage
-                        )
-
-                        is WireMessage.Composite -> wireEventsHandler.onNewCompositeSuspending(
-                            wireMessage = wireMessage
-                        )
-
-                        is WireMessage.ButtonAction ->
-                            wireEventsHandler.onNewButtonActionSuspending(
-                                wireMessage = wireMessage
-                            )
-
-                        is WireMessage.ButtonActionConfirmation ->
-                            wireEventsHandler.onNewButtonActionConfirmationSuspending(
-                                wireMessage = wireMessage
-                            )
-
-                        is WireMessage.Knock ->
-                            wireEventsHandler.onKnockSuspending(
-                                wireMessage = wireMessage
-                            )
-
-                        is WireMessage.Location ->
-                            wireEventsHandler.onLocationSuspending(
-                                wireMessage = wireMessage
-                            )
-
-                        WireMessage.Unknown -> {
-                            logger.warn("Unknown event received.")
-                        }
-                    }
                 }
 
                 is EventContentDTO.Unknown -> {
                     logger.warn("Unknown event type: {}", event)
                 }
+            }
+        }
+    }
+
+    /**
+     * Forwards the message to the appropriate handler (blocking or suspending) based on its type.
+     */
+    suspend fun forwardMessage(
+        message: ByteArray,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ) {
+        val genericMessage = GenericMessage.parseFrom(message)
+        val wireMessage = ProtobufDeserializer.processGenericMessage(
+            genericMessage = genericMessage,
+            conversationId = conversationId,
+            sender = sender
+        )
+
+        when (wireEventsHandler) {
+            is WireEventsHandlerDefault -> when (wireMessage) {
+                is WireMessage.Text -> wireEventsHandler.onMessage(wireMessage)
+                is WireMessage.Asset -> wireEventsHandler.onAsset(wireMessage)
+                is WireMessage.Composite -> wireEventsHandler.onComposite(wireMessage)
+                is WireMessage.ButtonAction -> wireEventsHandler.onButtonAction(wireMessage)
+                is WireMessage.ButtonActionConfirmation ->
+                    wireEventsHandler.onButtonActionConfirmation(wireMessage)
+                is WireMessage.Knock -> wireEventsHandler.onKnock(wireMessage)
+                is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
+                is WireMessage.Unknown -> logger.warn("Unknown event received.")
+            }
+            is WireEventsHandlerSuspending -> when (wireMessage) {
+                is WireMessage.Text -> wireEventsHandler.onMessage(wireMessage)
+                is WireMessage.Asset -> wireEventsHandler.onAsset(wireMessage)
+                is WireMessage.Composite -> wireEventsHandler.onComposite(wireMessage)
+                is WireMessage.ButtonAction -> wireEventsHandler.onButtonAction(wireMessage)
+                is WireMessage.ButtonActionConfirmation ->
+                    wireEventsHandler.onButtonActionConfirmation(wireMessage)
+                is WireMessage.Knock -> wireEventsHandler.onKnock(wireMessage)
+                is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
+                is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
         }
     }
@@ -228,6 +269,7 @@ internal class EventsRouter internal constructor(
         )
 
         val storedConversation = conversationStorage.getById(conversationId)
+        logger.debug("Found conversation: $storedConversation")
         return storedConversation?.mlsGroupId ?: throw WireException.EntityNotFound(
             "No local data for conversation $conversationId"
         )
