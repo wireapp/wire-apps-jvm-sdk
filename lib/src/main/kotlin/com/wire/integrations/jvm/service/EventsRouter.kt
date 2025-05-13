@@ -217,6 +217,9 @@ internal class EventsRouter internal constructor(
                     wireEventsHandler.onButtonActionConfirmation(wireMessage)
                 is WireMessage.Knock -> wireEventsHandler.onKnock(wireMessage)
                 is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
+                is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
+                is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
+                is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
             is WireEventsHandlerSuspending -> when (wireMessage) {
@@ -228,6 +231,9 @@ internal class EventsRouter internal constructor(
                     wireEventsHandler.onButtonActionConfirmation(wireMessage)
                 is WireMessage.Knock -> wireEventsHandler.onKnock(wireMessage)
                 is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
+                is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
+                is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
+                is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
         }

@@ -80,6 +80,14 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.info("Received event: onLocation: $wireMessage")
     }
 
+    open fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
+        logger.info("Received event: onDeletedMessage: $wireMessage")
+    }
+
+    open fun onReceiptConfirmation(wireMessage: WireMessage) {
+        logger.info("Received event: onReceiptConfirmation: $wireMessage")
+    }
+
     /**
      * One or more users have joined a conversation accessible by the Wire App.
      * This event is triggered when the App is already in the conversation and new users joins.

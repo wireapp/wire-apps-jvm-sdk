@@ -315,6 +315,99 @@ sealed interface WireMessage {
         }
     }
 
+    @JvmRecord
+    data class Deleted @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
+        val messageId: String
+    ) : WireMessage {
+        companion object {
+            /**
+             * Creates a basic Deleted message (a message was deleted).
+             *
+             * Usage from Kotlin:
+             * ```kotlin
+             * val deletedMessage = Deleted.create(conversationId, messageId)
+             * ```
+             *
+             * Usage from Java:
+             * ```java
+             * Deleted deletedMessage = Deleted.Companion.create(conversationId, messageId)
+             * ```
+             *
+             * @param conversationId The qualified ID of the conversation
+             * @param messageId The ID of the deleted message
+             * @return A new Deleted message with a random UUID
+             */
+            @JvmStatic
+            fun create(
+                conversationId: QualifiedId,
+                messageId: String
+            ): Deleted =
+                Deleted(
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    messageId = messageId
+                )
+        }
+    }
+
+    @JvmRecord
+    data class Receipt @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
+        val type: Type,
+        val messageIds: List<String>
+    ) : WireMessage {
+        enum class Type {
+            DELIVERED,
+            READ
+        }
+
+        companion object {
+            /**
+             * Creates a basic Receipt message.
+             *
+             * Usage from Kotlin:
+             * ```kotlin
+             * val receipt = Receipt.create(conversationId, messageId)
+             * ```
+             *
+             * Usage from Java:
+             * ```java
+             * Deleted deletedMessage = Deleted.Companion.create(conversationId, messageId)
+             * ```
+             *
+             * @param conversationId The qualified ID of the conversation
+             * @param messageId The ID of the deleted message
+             * @return A new Deleted message with a random UUID
+             */
+            @JvmStatic
+            fun create(
+                conversationId: QualifiedId,
+                type: Type,
+                messages: List<String> = listOf()
+            ): Receipt =
+                Receipt(
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    type = type,
+                    messageIds = messages
+                )
+        }
+    }
+
+    data object Ignored : WireMessage {
+        override val id: UUID
+            get() = throw WireException.InvalidParameter("Ignored message, no ID")
+        override val conversationId: QualifiedId
+            get() = throw WireException.InvalidParameter("Ignored message, no conversation")
+        override val sender: QualifiedId?
+            get() = throw WireException.InvalidParameter("Ignored message, no sender")
+    }
+
     data object Unknown : WireMessage {
         override val id: UUID
             get() = throw WireException.InvalidParameter("Unknown message, no ID")

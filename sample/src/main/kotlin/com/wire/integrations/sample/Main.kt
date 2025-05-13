@@ -56,6 +56,15 @@ fun main() {
                 )
 
                 manager.sendMessageSuspending(message = message)
+
+                // Sending a Read Receipt for the received message
+                val receipt = WireMessage.Receipt.create(
+                    conversationId = wireMessage.conversationId,
+                    type = WireMessage.Receipt.Type.READ,
+                    messages = listOf(wireMessage.id.toString())
+                )
+
+                manager.sendMessageSuspending(message = receipt)
             }
 
             override suspend fun onAsset(wireMessage: WireMessage.Asset) {
@@ -112,6 +121,17 @@ fun main() {
                 val message = WireMessage.Text.create(
                     conversationId = wireMessage.conversationId,
                     text = "Received Location\n\nLatitude: ${wireMessage.latitude}\n\nLongitude: ${wireMessage.longitude}\n\nName: ${wireMessage.name}\n\nZoom: ${wireMessage.zoom}"
+                )
+
+                manager.sendMessageSuspending(message = message)
+            }
+
+            override suspend fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
+                logger.info("Received onDeletedMessageSuspending Message: $wireMessage")
+
+                val message = WireMessage.Text.create(
+                    conversationId = wireMessage.conversationId,
+                    text = "Deleted Messaged with ID : ${wireMessage.messageId}"
                 )
 
                 manager.sendMessageSuspending(message = message)
