@@ -19,10 +19,21 @@ package com.wire.integrations.jvm.model.protobuf
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages.Composite
+import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
+import org.slf4j.LoggerFactory
 
+/**
+ * Object class mapper for mapping [GenericMessage] (Protobuf) to [WireMessage] returning
+ * a WireMessage.
+ *
+ * To be used when receiving a message from [EventsRouter]
+ */
+@Suppress("TooManyFunctions")
 object ProtobufDeserializer {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     @Suppress("ReturnCount", "LongMethod")
     fun processGenericMessage(
         genericMessage: GenericMessage,
@@ -67,6 +78,18 @@ object ProtobufDeserializer {
             )
 
             genericMessage.hasLocation() -> unpackLocation(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasDeleted() -> unpackDeletedMessage(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasConfirmation() -> unpackReceipt(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
                 sender = sender
@@ -256,4 +279,40 @@ object ProtobufDeserializer {
             name = genericMessage.location.name,
             zoom = genericMessage.location.zoom
         )
+
+    private fun unpackDeletedMessage(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.Deleted =
+        WireMessage.Deleted(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            messageId = genericMessage.deleted.messageId
+        )
+
+    private fun unpackReceipt(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage =
+        when (val type = genericMessage.confirmation.type) {
+            Confirmation.Type.DELIVERED -> WireMessage.Receipt.Type.DELIVERED
+            Confirmation.Type.READ -> WireMessage.Receipt.Type.READ
+            else -> {
+                logger.warn("Unrecognised receipt type received = ${type.number}:${type.name}")
+                null
+            }
+        }?.let { type ->
+            WireMessage.Receipt(
+                id = UUID.fromString(genericMessage.messageId),
+                conversationId = conversationId,
+                sender = sender,
+                type = type,
+                messageIds =
+                    listOf(genericMessage.confirmation.firstMessageId) +
+                        genericMessage.confirmation.moreMessageIdsList
+            )
+        } ?: WireMessage.Ignored
 }

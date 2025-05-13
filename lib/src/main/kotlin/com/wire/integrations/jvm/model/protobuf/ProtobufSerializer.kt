@@ -23,9 +23,11 @@ import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.ButtonAction
 import com.wire.integrations.protobuf.messages.Messages.ButtonActionConfirmation
 import com.wire.integrations.protobuf.messages.Messages.Composite
+import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import com.wire.integrations.protobuf.messages.Messages.Knock
 import com.wire.integrations.protobuf.messages.Messages.Location
+import com.wire.integrations.protobuf.messages.Messages.MessageDelete
 
 /**
  * Object class mapper for mapping [WireMessage] to [GenericMessage] (Protobuf) returning
@@ -34,6 +36,7 @@ import com.wire.integrations.protobuf.messages.Messages.Location
  * To be used when sending a message from [WireApplicationManager]
  * before reaching [CoreCryptoClient]
  */
+@Suppress("TooManyFunctions")
 object ProtobufSerializer {
     fun toGenericMessageByteArray(wireMessage: WireMessage): ByteArray {
         val genericMessage = GenericMessage
@@ -49,6 +52,10 @@ object ProtobufSerializer {
                 packButtonActionConfirmation(wireMessage, genericMessage)
             is WireMessage.Knock -> packKnock(wireMessage, genericMessage)
             is WireMessage.Location -> packLocation(wireMessage, genericMessage)
+            is WireMessage.Deleted -> packDeleted(wireMessage, genericMessage)
+            is WireMessage.Receipt -> packReceipt(wireMessage, genericMessage)
+
+            is WireMessage.Ignored,
             is WireMessage.Unknown -> throw WireException.CryptographicSystemError(
                 "Unexpected message content type: $wireMessage"
             )
@@ -183,5 +190,37 @@ object ProtobufSerializer {
                     .setLongitude(wireMessage.longitude)
                     .setName(wireMessage.name)
                     .setZoom(wireMessage.zoom)
+                    .build()
+            )
+
+    private fun packDeleted(
+        wireMessage: WireMessage.Deleted,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setDeleted(
+                MessageDelete
+                    .newBuilder()
+                    .setMessageId(wireMessage.messageId)
+                    .build()
+            )
+
+    private fun packReceipt(
+        wireMessage: WireMessage.Receipt,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setConfirmation(
+                Confirmation
+                    .newBuilder()
+                    .setType(
+                        when (wireMessage.type) {
+                            WireMessage.Receipt.Type.DELIVERED -> Confirmation.Type.DELIVERED
+                            WireMessage.Receipt.Type.READ -> Confirmation.Type.READ
+                        }
+                    )
+                    .setFirstMessageId(wireMessage.messageIds.first())
+                    .addAllMoreMessageIds(wireMessage.messageIds.drop(1))
+                    .build()
             )
 }
