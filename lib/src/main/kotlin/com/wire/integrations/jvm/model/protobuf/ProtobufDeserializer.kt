@@ -18,8 +18,6 @@ package com.wire.integrations.jvm.model.protobuf
 
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
-import com.wire.integrations.jvm.utils.obfuscateId
-import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
@@ -97,26 +95,13 @@ object ProtobufDeserializer {
                 sender = sender
             )
 
-            genericMessage.hasEdited() -> unpackEdited(
-                genericMessage = genericMessage,
-                conversationId = conversationId,
-                sender = sender
-            )
-
-            genericMessage.hasEphemeral() -> unpackEphemeral(
-                genericMessage = genericMessage,
-                conversationId = conversationId,
-                sender = sender
-            )
-
             else -> WireMessage.Unknown
         }
 
     private fun unpackText(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
-        sender: QualifiedId,
-        expiresAfterMillis: Long? = null
+        sender: QualifiedId
     ): WireMessage.Text {
         val text = genericMessage.text
 
@@ -136,16 +121,14 @@ object ProtobufDeserializer {
                 .mentionsList
                 .mapNotNull {
                     MessageMentionMapper.fromProtobuf(it)
-                },
-            expiresAfterMillis = expiresAfterMillis
+                }
         )
     }
 
     private fun unpackAsset(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
-        sender: QualifiedId,
-        expiresAfterMillis: Long? = null
+        sender: QualifiedId
     ): WireMessage.Asset {
         val asset = genericMessage.asset
         val original = asset.original
@@ -204,8 +187,7 @@ object ProtobufDeserializer {
             name = original?.name,
             mimeType = original?.mimeType ?: "*/*",
             metadata = metadata,
-            remoteData = remoteData,
-            expiresAfterMillis = expiresAfterMillis
+            remoteData = remoteData
         )
     }
 
@@ -274,22 +256,19 @@ object ProtobufDeserializer {
     private fun unpackKnock(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
-        sender: QualifiedId,
-        expiresAfterMillis: Long? = null
+        sender: QualifiedId
     ): WireMessage.Knock =
         WireMessage.Knock(
             id = UUID.fromString(genericMessage.messageId),
             conversationId = conversationId,
             sender = sender,
-            hotKnock = genericMessage.knock.hotKnock,
-            expiresAfterMillis = expiresAfterMillis
+            hotKnock = genericMessage.knock.hotKnock
         )
 
     private fun unpackLocation(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
-        sender: QualifiedId,
-        expiresAfterMillis: Long? = null
+        sender: QualifiedId
     ): WireMessage.Location =
         WireMessage.Location(
             id = UUID.fromString(genericMessage.messageId),
@@ -298,8 +277,7 @@ object ProtobufDeserializer {
             latitude = genericMessage.location.latitude,
             longitude = genericMessage.location.longitude,
             name = genericMessage.location.name,
-            zoom = genericMessage.location.zoom,
-            expiresAfterMillis = expiresAfterMillis
+            zoom = genericMessage.location.zoom
         )
 
     private fun unpackDeletedMessage(
@@ -337,122 +315,4 @@ object ProtobufDeserializer {
                         genericMessage.confirmation.moreMessageIdsList
             )
         } ?: WireMessage.Ignored
-
-    private fun unpackEdited(
-        genericMessage: GenericMessage,
-        conversationId: QualifiedId,
-        sender: QualifiedId
-    ): WireMessage {
-        val replacingMessageId = genericMessage.edited.replacingMessageId
-
-        return when {
-            genericMessage.edited.hasText() -> {
-                val mentions = genericMessage.edited.text.mentionsList.mapNotNull {
-                    MessageMentionMapper.fromProtobuf(it)
-                }
-                WireMessage.TextEdited(
-                    id = UUID.fromString(replacingMessageId),
-                    conversationId = conversationId,
-                    sender = sender,
-                    newContent = genericMessage.text.content,
-                    newMentions = mentions
-                )
-            }
-
-            genericMessage.edited.hasComposite() -> {
-                WireMessage.Unknown
-            }
-
-            else -> {
-                logger.warn(
-                    "Edit content is unexpected. " +
-                        "Message UUID = ${genericMessage.messageId.obfuscateId()}"
-                )
-                WireMessage.Ignored
-            }
-        }
-    }
-
-    @Suppress("LongMethod")
-    private fun unpackEphemeral(
-        genericMessage: GenericMessage,
-        conversationId: QualifiedId,
-        sender: QualifiedId
-    ): WireMessage {
-        val ephemeralMessage = genericMessage.ephemeral
-
-        val builtMessage = GenericMessage
-            .newBuilder()
-            .setMessageId(genericMessage.messageId)
-
-        return when {
-            ephemeralMessage.hasText() -> {
-                val textContent = ephemeralMessage.text
-                val textMessage = Messages.Text.newBuilder()
-                    .setContent(textContent.content)
-                    .addAllMentions(textContent.mentionsList)
-                    .addAllLinkPreview(textContent.linkPreviewList)
-                    .setExpectsReadConfirmation(textContent.expectsReadConfirmation)
-                    .setLegalHoldStatus(textContent.legalHoldStatus)
-                    .build()
-
-                unpackText(
-                    genericMessage = builtMessage
-                        .setText(textMessage)
-                        .build(),
-                    conversationId = conversationId,
-                    sender = sender,
-                    expiresAfterMillis = ephemeralMessage.expireAfterMillis
-                )
-            }
-
-            ephemeralMessage.hasAsset() -> {
-                val assetContent = ephemeralMessage.asset
-                val assetMessage = Messages.Asset.newBuilder()
-                    .setOriginal(assetContent.original)
-                    .setUploaded(assetContent.uploaded)
-                    .setNotUploaded(assetContent.notUploaded)
-                    .setExpectsReadConfirmation(assetContent.expectsReadConfirmation)
-
-                unpackAsset(
-                    genericMessage = builtMessage
-                        .setAsset(assetMessage)
-                        .build(),
-                    conversationId = conversationId,
-                    sender = sender,
-                    expiresAfterMillis = ephemeralMessage.expireAfterMillis
-                )
-            }
-
-            ephemeralMessage.hasKnock() -> {
-                WireMessage.Knock.create(
-                    conversationId = conversationId,
-                    hotKnock = ephemeralMessage.knock.hotKnock,
-                    expiresAfterMillis = ephemeralMessage.expireAfterMillis
-                )
-            }
-
-            ephemeralMessage.hasLocation() -> {
-                val locationContent = ephemeralMessage.location
-                val locationMessage = Messages.Location.newBuilder()
-                    .setLatitude(locationContent.latitude)
-                    .setLongitude(locationContent.longitude)
-                    .setName(locationContent.name)
-                    .setZoom(locationContent.zoom)
-                    .build()
-
-                unpackLocation(
-                    genericMessage = builtMessage
-                        .setLocation(locationMessage)
-                        .build(),
-                    conversationId = conversationId,
-                    sender = sender,
-                    expiresAfterMillis = ephemeralMessage.expireAfterMillis
-                )
-            }
-
-            ephemeralMessage.hasImage() -> WireMessage.Ignored
-            else -> WireMessage.Ignored
-        }
-    }
 }

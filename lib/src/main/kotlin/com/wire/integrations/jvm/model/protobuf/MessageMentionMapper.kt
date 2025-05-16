@@ -21,19 +21,10 @@ import com.wire.integrations.jvm.utils.toModel
 import com.wire.integrations.protobuf.messages.Messages
 
 object MessageMentionMapper {
-    fun fromProtobuf(mention: Messages.Mention): WireMessage.Mention =
-        WireMessage.Mention(
+    fun fromProtobuf(mention: Messages.Mention): WireMessage.Text.Mention =
+        WireMessage.Text.Mention(
             userId = mention.qualifiedUserId.toModel(),
             offset = mention.start,
             length = mention.length
         )
-
-    fun toProtobuf(mention: WireMessage.Mention): Messages.Mention =
-        Messages
-            .Mention
-            .newBuilder()
-            .setStart(mention.offset)
-            .setLength(mention.length)
-            .setQualifiedUserId(QualifiedIdMapper.toProtoUserId(mention.userId))
-            .build()
 }

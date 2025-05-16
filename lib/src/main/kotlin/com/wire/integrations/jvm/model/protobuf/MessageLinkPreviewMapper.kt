@@ -20,8 +20,8 @@ import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages
 
 object MessageLinkPreviewMapper {
-    fun fromProtobuf(linkPreview: Messages.LinkPreview): WireMessage.LinkPreview =
-        WireMessage.LinkPreview(
+    fun fromProtobuf(linkPreview: Messages.LinkPreview): WireMessage.Text.LinkPreview =
+        WireMessage.Text.LinkPreview(
             summary = linkPreview.summary,
             title = linkPreview.title,
             url = linkPreview.url,
