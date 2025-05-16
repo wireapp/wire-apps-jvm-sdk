@@ -35,7 +35,7 @@ class WireAppSdk(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val running = AtomicBoolean(false)
-    private var executor = Executors.newSingleThreadExecutor()
+    private val executor = Executors.newSingleThreadExecutor()
 
     init {
         IsolatedKoinContext.setApplicationId(applicationId)

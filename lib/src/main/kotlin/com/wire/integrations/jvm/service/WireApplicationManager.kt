@@ -16,6 +16,7 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
+import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.AssetResource
@@ -103,13 +104,12 @@ class WireApplicationManager internal constructor(
      *
      * Blocking method for Java interoperability
      *
-     * @param conversationId The unique ID of the conversation where the message should be sent.
      * @param message The text of the message to be sent.
-     *
      * @throws WireException.EntityNotFound If the conversation cannot be found.
+     * @return the id of the message sent, useful to edit/delete it later.
      */
-    fun sendMessage(message: WireMessage) {
-        runBlocking {
+    fun sendMessage(message: WireMessage): UUID {
+        return runBlocking {
             sendMessageSuspending(message)
         }
     }
@@ -126,10 +126,10 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers.
      *
      * @param message The text of the message to be sent.
-     *
      * @throws WireException.EntityNotFound If the conversation cannot be found.
+     * @return the id of the message sent, useful to edit/delete it later.
      */
-    suspend fun sendMessageSuspending(message: WireMessage) {
+    suspend fun sendMessageSuspending(message: WireMessage): UUID {
         val conversation = conversationStorage.getById(conversationId = message.conversationId)
         conversation?.mlsGroupId?.let { mlsGroupId ->
             backendClient.sendMessage(
@@ -139,6 +139,7 @@ class WireApplicationManager internal constructor(
                 )
             )
         } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
+        return message.id
     }
 
     /**
@@ -250,6 +251,7 @@ class WireApplicationManager internal constructor(
         val assetMessage = WireMessage.Asset(
             id = UUID.randomUUID(),
             conversationId = conversationId,
+            sender = IsolatedKoinContext.getApplicationQualifiedId(),
             sizeInBytes = encryptedAsset.size.toLong(),
             mimeType = mimeType,
             remoteData = AssetMetadata.RemoteData(

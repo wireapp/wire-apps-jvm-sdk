@@ -65,7 +65,11 @@ internal class CoreCryptoClient private constructor(
 
             coreCrypto.provideTransport(mlsTransport)
 
-            return CoreCryptoClient(appClientId, ciphersuite, coreCrypto)
+            return CoreCryptoClient(
+                appClientId = appClientId,
+                ciphersuite = ciphersuite,
+                coreCrypto = coreCrypto
+            )
         }
 
         private fun getMlsCipherSuiteName(code: Int): Ciphersuite {

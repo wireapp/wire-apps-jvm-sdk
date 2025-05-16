@@ -78,8 +78,9 @@ class WireEventsTest : KoinTest {
                 wireMessage = WireMessage.Asset(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
+                    sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
                     sizeInBytes = 1000L,
-                    name = EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
+                    name = EXPECTED_NEW_MLS_MESSAGE_VALUE,
                     mimeType = "*/*"
                 )
             )
@@ -104,6 +105,7 @@ class WireEventsTest : KoinTest {
                 wireMessage = WireMessage.Knock(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
+                    sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
                     hotKnock = true
                 )
             )
@@ -118,6 +120,7 @@ class WireEventsTest : KoinTest {
                 wireMessage = WireMessage.Location(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
+                    sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
                     latitude = EXPECTED_LOCATION_LATITUDE,
                     longitude = EXPECTED_LOCATION_LONGITUDE
                 )

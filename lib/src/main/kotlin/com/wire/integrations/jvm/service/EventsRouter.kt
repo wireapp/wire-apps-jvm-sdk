@@ -123,7 +123,11 @@ internal class EventsRouter internal constructor(
                 is EventContentDTO.Conversation.MlsWelcome -> {
                     logger.info("Joining MLS conversation: ${event.qualifiedConversation}")
                     val welcome = Welcome(Base64.getDecoder().decode(event.data))
-                    val groupId = fetchGroupIdFromWelcome(cryptoClient, welcome, event)
+                    val groupId = fetchGroupIdFromWelcome(
+                        cryptoClient = cryptoClient,
+                        welcome = welcome,
+                        event = event
+                    )
 
                     val conversation = backendClient.getConversation(event.qualifiedConversation)
                     val conversationData =
