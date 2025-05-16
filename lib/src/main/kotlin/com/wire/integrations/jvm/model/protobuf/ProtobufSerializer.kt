@@ -17,6 +17,7 @@
 package com.wire.integrations.jvm.model.protobuf
 
 import com.google.protobuf.ByteString
+import com.google.protobuf.kotlin.set
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages
@@ -24,10 +25,12 @@ import com.wire.integrations.protobuf.messages.Messages.ButtonAction
 import com.wire.integrations.protobuf.messages.Messages.ButtonActionConfirmation
 import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.Confirmation
+import com.wire.integrations.protobuf.messages.Messages.Ephemeral
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import com.wire.integrations.protobuf.messages.Messages.Knock
 import com.wire.integrations.protobuf.messages.Messages.Location
 import com.wire.integrations.protobuf.messages.Messages.MessageDelete
+import com.wire.integrations.protobuf.messages.Messages.MessageEdit
 
 /**
  * Object class mapper for mapping [WireMessage] to [GenericMessage] (Protobuf) returning
@@ -54,6 +57,7 @@ object ProtobufSerializer {
             is WireMessage.Location -> packLocation(wireMessage, genericMessage)
             is WireMessage.Deleted -> packDeleted(wireMessage, genericMessage)
             is WireMessage.Receipt -> packReceipt(wireMessage, genericMessage)
+            is WireMessage.TextEdited -> packTextEdited(wireMessage, genericMessage)
 
             is WireMessage.Ignored,
             is WireMessage.Unknown -> throw WireException.CryptographicSystemError(
@@ -69,6 +73,7 @@ object ProtobufSerializer {
     private fun packText(wireMessage: WireMessage.Text) =
         Messages.Text.newBuilder()
             .setContent(wireMessage.text)
+            .addAllMentions(wireMessage.mentions.map { MessageMentionMapper.toProtobuf(it) })
             .setExpectsReadConfirmation(false)
             .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
             .build()
@@ -78,17 +83,27 @@ object ProtobufSerializer {
         genericMessage: GenericMessage.Builder
     ): GenericMessage.Builder =
         genericMessage
-            .setText(
-                packText(wireMessage)
-            )
+            .apply {
+                val text = packText(wireMessage)
+
+                wireMessage.expiresAfterMillis?.let {
+                    setEphemeral(
+                        Ephemeral
+                            .newBuilder()
+                            .setText(text)
+                            .setExpireAfterMillis(it)
+                            .build()
+                    )
+                } ?: setText(text)
+            }
 
     private fun packAsset(
         wireMessage: WireMessage.Asset,
         genericMessage: GenericMessage.Builder
     ): GenericMessage.Builder =
         genericMessage
-            .setAsset(
-                Messages.Asset.newBuilder()
+            .apply {
+                val asset = Messages.Asset.newBuilder()
                     .setUploaded(
                         Messages.Asset.RemoteData.newBuilder()
                             .setAssetId(wireMessage.remoteData?.assetId)
@@ -98,7 +113,17 @@ object ProtobufSerializer {
                             .setSha256(ByteString.copyFrom(wireMessage.remoteData?.sha256))
                     )
                     .build()
-            )
+
+                wireMessage.expiresAfterMillis?.let {
+                    setEphemeral(
+                        Ephemeral
+                            .newBuilder()
+                            .setAsset(asset)
+                            .setExpireAfterMillis(it)
+                            .build()
+                    )
+                } ?: setAsset(asset)
+            }
 
     private fun packItemsList(itemsList: List<WireMessage.Item>): List<Composite.Item> =
         itemsList.map {
@@ -171,27 +196,47 @@ object ProtobufSerializer {
         genericMessage: GenericMessage.Builder
     ): GenericMessage.Builder =
         genericMessage
-            .setKnock(
-                Knock
+            .apply {
+                val knock = Knock
                     .newBuilder()
                     .setHotKnock(wireMessage.hotKnock)
                     .build()
-            )
+
+                wireMessage.expiresAfterMillis?.let {
+                    setEphemeral(
+                        Ephemeral
+                            .newBuilder()
+                            .setKnock(knock)
+                            .setExpireAfterMillis(it)
+                            .build()
+                    )
+                } ?: setKnock(knock)
+            }
 
     private fun packLocation(
         wireMessage: WireMessage.Location,
         genericMessage: GenericMessage.Builder
     ): GenericMessage.Builder =
         genericMessage
-            .setLocation(
-                Location
+            .apply {
+                val location = Location
                     .newBuilder()
                     .setLatitude(wireMessage.latitude)
                     .setLongitude(wireMessage.longitude)
                     .setName(wireMessage.name)
                     .setZoom(wireMessage.zoom)
                     .build()
-            )
+
+                wireMessage.expiresAfterMillis?.let {
+                    setEphemeral(
+                        Ephemeral
+                            .newBuilder()
+                            .setLocation(location)
+                            .setExpireAfterMillis(it)
+                            .build()
+                    )
+                } ?: setLocation(location)
+            }
 
     private fun packDeleted(
         wireMessage: WireMessage.Deleted,
@@ -222,5 +267,25 @@ object ProtobufSerializer {
                     .setFirstMessageId(wireMessage.messageIds.first())
                     .addAllMoreMessageIds(wireMessage.messageIds.drop(1))
                     .build()
+            )
+
+    private fun packTextEdited(
+        wireMessage: WireMessage.TextEdited,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setEdited(
+                MessageEdit
+                    .newBuilder()
+                    .setReplacingMessageId(wireMessage.id.toString())
+                    .setText(
+                        packText(
+                            wireMessage = WireMessage.Text.create(
+                                conversationId = wireMessage.conversationId,
+                                text = wireMessage.newContent,
+                                mentions = wireMessage.newMentions
+                            )
+                        )
+                    )
             )
 }
