@@ -27,78 +27,89 @@ sealed interface WireMessage {
 
     sealed interface Item
 
+    sealed interface Ephemeral {
+        val expiresAfterMillis: Long?
+    }
+
     @JvmRecord
     data class Text @JvmOverloads constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId? = null,
-        val text: String? = null,
+        override val expiresAfterMillis: Long? = null,
+        val text: String,
         val quotedMessageId: UUID? = null,
         val quotedMessageSha256: ByteArray? = null,
         val mentions: List<Mention> = emptyList(),
         val linkPreviews: List<LinkPreview> = emptyList()
-    ) : WireMessage, Item {
-        @JvmRecord
-        data class Mention @JvmOverloads constructor(
-            val userId: QualifiedId,
-            val offset: Int = 0,
-            val length: Int = 0
-        )
-
-        @JvmRecord
-        data class LinkPreview @JvmOverloads constructor(
-            val summary: String? = null,
-            val title: String? = null,
-            val url: String? = null,
-            val urlOffset: Int = 0,
-            val mimeType: String? = null,
-            val name: String? = null,
-            val size: Long = 0
-        )
-
+    ) : WireMessage, Item, Ephemeral {
         companion object {
             /**
              * Creates a basic text message with minimal required parameters.
              *
              * Usage from Kotlin:
              * ```kotlin
-             * val message = Text.create(conversationId, "Hello world")
+             * val message = Text.create(conversationId, "Hello world", mentionsList)
              * ```
              *
              * Usage from Java:
              * ```java
-             * Text message = Text.Companion.create(conversationId, "Hello world");
+             * Text message = Text.Companion.create(conversationId, "Hello world", mentionsList);
              * ```
              *
              * @param conversationId The qualified ID of the conversation
              * @param text The text content of the message
+             * @param mentions List of [Mention] included in the text
              * @return A new Text message with a random UUID
              */
             @JvmStatic
             fun create(
                 conversationId: QualifiedId,
-                text: String
+                text: String,
+                mentions: List<Mention> = listOf(),
+                expiresAfterMillis: Long? = null
             ): Text {
                 return Text(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
-                    text = text
+                    text = text,
+                    mentions = mentions,
+                    expiresAfterMillis = expiresAfterMillis
                 )
             }
         }
     }
 
     @JvmRecord
+    data class Mention @JvmOverloads constructor(
+        val userId: QualifiedId,
+        val offset: Int = 0,
+        val length: Int = 0
+    )
+
+    @JvmRecord
+    data class LinkPreview @JvmOverloads constructor(
+        val summary: String? = null,
+        val title: String? = null,
+        val url: String? = null,
+        val urlOffset: Int = 0,
+        val mimeType: String? = null,
+        val name: String? = null,
+        val size: Long = 0
+    )
+
+    @JvmRecord
     data class Asset @JvmOverloads constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId? = null,
+        override val expiresAfterMillis: Long? = null,
         val sizeInBytes: Long,
         val name: String? = null,
         val mimeType: String,
         val metadata: AssetMetadata? = null,
         val remoteData: AssetMetadata.RemoteData? = null
-    ) : WireMessage {
+    ) : WireMessage, Ephemeral {
         sealed class AssetMetadata {
             data class Image(val width: Int, val height: Int) : AssetMetadata()
 
@@ -229,8 +240,9 @@ sealed interface WireMessage {
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId? = null,
+        override val expiresAfterMillis: Long? = null,
         val hotKnock: Boolean
-    ) : WireMessage {
+    ) : WireMessage, Ephemeral {
         companion object {
             /**
              * Creates a basic Knock message with minimal required parameters.
@@ -252,12 +264,14 @@ sealed interface WireMessage {
             @JvmStatic
             fun create(
                 conversationId: QualifiedId,
-                hotKnock: Boolean
+                hotKnock: Boolean,
+                expiresAfterMillis: Long? = null
             ): Knock {
                 return Knock(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
-                    hotKnock = hotKnock
+                    hotKnock = hotKnock,
+                    expiresAfterMillis = expiresAfterMillis
                 )
             }
         }
@@ -268,11 +282,12 @@ sealed interface WireMessage {
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId? = null,
+        override val expiresAfterMillis: Long? = null,
         val latitude: Float,
         val longitude: Float,
         val name: String? = null,
         val zoom: Int = 0
-    ) : WireMessage {
+    ) : WireMessage, Ephemeral {
         companion object {
             /**
              * Creates a basic Location message with minimal required parameters.
@@ -295,13 +310,15 @@ sealed interface WireMessage {
              * @param zoom The zoom value to be used when displaying the location on a map
              * @return A new Location message with a random UUID
              */
+            @Suppress("LongParameterList")
             @JvmStatic
             fun create(
                 conversationId: QualifiedId,
                 latitude: Float,
                 longitude: Float,
                 name: String? = null,
-                zoom: Int = 0
+                zoom: Int = 0,
+                expiresAfterMillis: Long? = null
             ): Location {
                 return Location(
                     id = UUID.randomUUID(),
@@ -309,7 +326,8 @@ sealed interface WireMessage {
                     latitude = latitude,
                     longitude = longitude,
                     name = name,
-                    zoom = zoom
+                    zoom = zoom,
+                    expiresAfterMillis = expiresAfterMillis
                 )
             }
         }
@@ -396,6 +414,61 @@ sealed interface WireMessage {
                     type = type,
                     messageIds = messages
                 )
+        }
+    }
+
+    @JvmRecord
+    data class TextEdited @JvmOverloads constructor(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId? = null,
+        val newContent: String,
+        val newLinkPreviews: List<LinkPreview> = listOf(),
+        val newMentions: List<Mention> = listOf()
+    ) : WireMessage {
+        companion object {
+            /**
+             * Creates a TextEdited message with minimal required parameters.
+             *
+             * Usage from Kotlin:
+             * ```kotlin
+             * val message = TextEdited.create(
+             *                  <optional> messageId,
+             *                  conversationId,
+             *                  "Edited text",
+             *                  mentionsList
+             *               )
+             * ```
+             *
+             * Usage from Java:
+             * ```java
+             * Text message = TextEdited.Companion.create(
+             *                   <optional> messageId,
+             *                   conversationId,
+             *                   "Edited text",
+             *                   mentionsList
+             *                );
+             * ```
+             *
+             * @param conversationId The qualified ID of the conversation
+             * @param text The text content of the message
+             * @param mentions List of [Mention] included in the text
+             * @return A new TextEdited message with either a received ID or a random UUID
+             */
+            @JvmStatic
+            fun create(
+                id: UUID = UUID.randomUUID(),
+                conversationId: QualifiedId,
+                text: String,
+                mentions: List<Mention> = listOf()
+            ): Text {
+                return Text(
+                    id = id,
+                    conversationId = conversationId,
+                    text = text,
+                    mentions = mentions
+                )
+            }
         }
     }
 

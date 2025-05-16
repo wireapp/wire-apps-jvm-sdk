@@ -88,6 +88,10 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.info("Received event: onReceiptConfirmation: $wireMessage")
     }
 
+    open suspend fun onTextEdited(wireMessage: WireMessage.TextEdited) {
+        logger.info("Received event: onTextEdited: $wireMessage")
+    }
+
     /**
      * One or more users have joined a conversation accessible by the Wire App.
      * This event is triggered when the App is already in the conversation and new users joins.
