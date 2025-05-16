@@ -195,7 +195,8 @@ internal class EventsRouter internal constructor(
     /**
      * Forwards the message to the appropriate handler (blocking or suspending) based on its type.
      */
-    suspend fun forwardMessage(
+    @Suppress("CyclomaticComplexMethod")
+    private suspend fun forwardMessage(
         message: ByteArray,
         conversationId: QualifiedId,
         sender: QualifiedId
@@ -219,6 +220,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
                 is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
+                is WireMessage.TextEdited -> wireEventsHandler.onTextEdited(wireMessage)
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
@@ -233,6 +235,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
                 is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
+                is WireMessage.TextEdited -> wireEventsHandler.onTextEdited(wireMessage)
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }

@@ -16,24 +16,14 @@
 
 package com.wire.integrations.jvm.model.protobuf
 
-import com.wire.integrations.jvm.model.WireMessage
-import com.wire.integrations.jvm.utils.toModel
-import com.wire.integrations.protobuf.messages.Messages
+import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.protobuf.messages.Messages.QualifiedUserId
 
-object MessageMentionMapper {
-    fun fromProtobuf(mention: Messages.Mention): WireMessage.Mention =
-        WireMessage.Mention(
-            userId = mention.qualifiedUserId.toModel(),
-            offset = mention.start,
-            length = mention.length
-        )
-
-    fun toProtobuf(mention: WireMessage.Mention): Messages.Mention =
-        Messages
-            .Mention
+object QualifiedIdMapper {
+    fun toProtoUserId(userId: QualifiedId): QualifiedUserId =
+        QualifiedUserId
             .newBuilder()
-            .setStart(mention.offset)
-            .setLength(mention.length)
-            .setQualifiedUserId(QualifiedIdMapper.toProtoUserId(mention.userId))
+            .setId(userId.id.toString())
+            .setDomain(userId.domain)
             .build()
 }
