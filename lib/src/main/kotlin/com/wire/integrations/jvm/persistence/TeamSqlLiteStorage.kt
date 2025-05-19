@@ -23,7 +23,9 @@ import java.util.UUID
 internal class TeamSqlLiteStorage(db: AppsSdkDatabase) : TeamStorage {
     private val teamQueries: TeamQueries = db.teamQueries
 
-    override fun save(teamId: TeamId) = teamQueries.insert(teamId.value.toString())
+    override fun save(teamId: TeamId) {
+        teamQueries.insert(teamId.value.toString())
+    }
 
     override fun getAll(): List<TeamId> =
         teamQueries.selectAll().executeAsList().map { teamMapper(it) }
