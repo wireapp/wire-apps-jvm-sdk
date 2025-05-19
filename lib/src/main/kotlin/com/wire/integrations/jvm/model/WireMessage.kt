@@ -63,7 +63,7 @@ sealed interface WireMessage {
             fun create(
                 conversationId: QualifiedId,
                 text: String,
-                mentions: List<Mention> = listOf(),
+                mentions: List<Mention> = emptyList(),
                 expiresAfterMillis: Long? = null
             ): Text {
                 return Text(
@@ -359,7 +359,7 @@ sealed interface WireMessage {
             fun create(
                 conversationId: QualifiedId,
                 type: Type,
-                messages: List<String> = listOf()
+                messages: List<String> = emptyList()
             ): Receipt =
                 Receipt(
                     id = UUID.randomUUID(),
@@ -377,8 +377,8 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         val newContent: String,
-        val newLinkPreviews: List<LinkPreview> = listOf(),
-        val newMentions: List<Mention> = listOf()
+        val newLinkPreviews: List<LinkPreview> = emptyList(),
+        val newMentions: List<Mention> = emptyList()
     ) : WireMessage {
         companion object {
             /**
@@ -395,7 +395,7 @@ sealed interface WireMessage {
                 originalMessageId: UUID,
                 conversationId: QualifiedId,
                 text: String,
-                mentions: List<Mention> = listOf()
+                mentions: List<Mention> = emptyList()
             ): TextEdited {
                 return TextEdited(
                     id = originalMessageId,
