@@ -140,8 +140,8 @@ complexity:
     active: false
     threshold: 6
   NamedArguments:
-    active: false
-    threshold: 3
+    active: true
+    threshold: 2
     ignoreArgumentsMatchingNames: false
   NestedBlockDepth:
     active: true
@@ -630,7 +630,7 @@ style:
     maxChainedCalls: 5
   MaxLineLength:
     active: true
-    maxLineLength: 120
+    maxLineLength: 100
     excludePackageStatements: true
     excludeImportStatements: true
     excludeCommentStatements: false

@@ -15,6 +15,7 @@
 
 package com.wire.integrations.jvm.config
 
+import com.wire.integrations.jvm.model.QualifiedId
 import org.koin.dsl.koinApplication
 import org.koin.fileProperties
 import java.util.UUID
@@ -30,26 +31,32 @@ internal object IsolatedKoinContext {
         this.koinApp.koin.setProperty(APPLICATION_ID, value)
     }
 
-    fun getApplicationId() = this.koinApp.koin.getProperty<UUID>(APPLICATION_ID)
+    fun getApplicationId(): UUID? = this.koinApp.koin.getProperty(APPLICATION_ID)
 
     fun setApiHost(value: String) {
         this.koinApp.koin.setProperty(API_HOST, value)
     }
 
-    fun getApiHost(): String? = this.koinApp.koin.getProperty<String>(API_HOST)
+    fun getApiHost(): String? = this.koinApp.koin.getProperty(API_HOST)
 
     fun setApiToken(value: String) {
         this.koinApp.koin.setProperty(API_TOKEN, value)
     }
 
-    fun getApiToken() = this.koinApp.koin.getProperty<String>(API_TOKEN)
+    fun getApiToken(): String? = this.koinApp.koin.getProperty(API_TOKEN)
 
     fun setCryptographyStoragePassword(value: String) {
         this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_PASSWORD, value)
     }
 
-    fun getCryptographyStoragePassword() =
-        this.koinApp.koin.getProperty<String>(CRYPTOGRAPHY_STORAGE_PASSWORD)
+    fun getCryptographyStoragePassword(): String? =
+        this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_PASSWORD)
+
+    fun getApplicationQualifiedId(): QualifiedId =
+        QualifiedId(
+            checkNotNull(getApplicationId()),
+            checkNotNull(getApiHost())
+        )
 
     /**
      * Property Constants

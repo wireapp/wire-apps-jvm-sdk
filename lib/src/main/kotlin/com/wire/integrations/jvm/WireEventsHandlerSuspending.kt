@@ -72,6 +72,11 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.info("Received event: onButtonActionConfirmation: $wireMessage")
     }
 
+    /**
+     * A user has sent a knock (also called "ping") event to a conversation.
+     *
+     * @param wireMessage the message received
+     */
     open suspend fun onKnock(wireMessage: WireMessage.Knock) {
         logger.info("Received event: onKnock: $wireMessage")
     }
