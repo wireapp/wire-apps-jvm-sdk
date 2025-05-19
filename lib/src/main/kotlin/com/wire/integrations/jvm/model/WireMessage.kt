@@ -56,6 +56,7 @@ sealed interface WireMessage {
              * @param conversationId The qualified ID of the conversation
              * @param text The text content of the message
              * @param mentions List of [Mention] included in the text
+             * @param expiresAfterMillis The time in milliseconds for an ephemeral message
              * @return A new Text message with a random UUID
              */
             @JvmStatic
@@ -223,7 +224,7 @@ sealed interface WireMessage {
     ) : WireMessage
 
     @JvmRecord
-    data class Knock(
+    data class Knock @JvmOverloads constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
@@ -236,6 +237,7 @@ sealed interface WireMessage {
              *
              * @param conversationId The qualified ID of the conversation
              * @param hotKnock
+             * @param expiresAfterMillis The time in milliseconds for an ephemeral message
              * @return A new Knock message with a random UUID
              */
             @JvmStatic
@@ -275,6 +277,7 @@ sealed interface WireMessage {
              * @param longitude The Longitude of the Location
              * @param name In case the location contains a name
              * @param zoom The zoom value to be used when displaying the location on a map
+             * @param expiresAfterMillis The time in milliseconds for an ephemeral message
              * @return A new Location message with a random UUID
              */
             @Suppress("LongParameterList")
@@ -372,7 +375,7 @@ sealed interface WireMessage {
     data class TextEdited @JvmOverloads constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
-        override val sender: QualifiedId? = null,
+        override val sender: QualifiedId,
         val newContent: String,
         val newLinkPreviews: List<LinkPreview> = listOf(),
         val newMentions: List<Mention> = listOf()
@@ -381,43 +384,25 @@ sealed interface WireMessage {
             /**
              * Creates a TextEdited message with minimal required parameters.
              *
-             * Usage from Kotlin:
-             * ```kotlin
-             * val message = TextEdited.create(
-             *                  <optional> messageId,
-             *                  conversationId,
-             *                  "Edited text",
-             *                  mentionsList
-             *               )
-             * ```
-             *
-             * Usage from Java:
-             * ```java
-             * Text message = TextEdited.Companion.create(
-             *                   <optional> messageId,
-             *                   conversationId,
-             *                   "Edited text",
-             *                   mentionsList
-             *                );
-             * ```
-             *
+             * @param originalMessageId The UUID of the original message to be edited.
              * @param conversationId The qualified ID of the conversation
              * @param text The text content of the message
              * @param mentions List of [Mention] included in the text
-             * @return A new TextEdited message with either a received ID or a random UUID
+             * @return A new TextEdited message with the original received ID.
              */
             @JvmStatic
             fun create(
-                id: UUID = UUID.randomUUID(),
+                originalMessageId: UUID,
                 conversationId: QualifiedId,
                 text: String,
                 mentions: List<Mention> = listOf()
-            ): Text {
-                return Text(
-                    id = id,
+            ): TextEdited {
+                return TextEdited(
+                    id = originalMessageId,
                     conversationId = conversationId,
-                    text = text,
-                    mentions = mentions
+                    sender = IsolatedKoinContext.getApplicationQualifiedId(),
+                    newContent = text,
+                    newMentions = mentions
                 )
             }
         }
