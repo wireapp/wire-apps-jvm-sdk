@@ -36,7 +36,7 @@ fun main() {
             override suspend fun onMessage(wireMessage: WireMessage.Text) {
                 logger.info("Received Text Message : $wireMessage")
 
-                if (wireMessage.text?.contains("asset") ?: false) {
+                if (wireMessage.text.contains("asset")) {
                     val resourcePath = javaClass.classLoader.getResource("banana-icon.png")?.path
                         ?: throw IllegalStateException("Test resource 'banana-icon.png' not found")
                     val originalData = File(resourcePath).readBytes()
@@ -50,12 +50,24 @@ fun main() {
                     return
                 }
 
+                // Sends an Ephemeral message if received message is Ephemeral
+                wireMessage.expiresAfterMillis?.let {
+                    val ephemeralMessage = WireMessage.Text.create(
+                        conversationId = wireMessage.conversationId,
+                        text = "${wireMessage.text} -- Ephemeral Message sent from the SDK",
+                        mentions = wireMessage.mentions,
+                        expiresAfterMillis = 10_000
+                    )
+
+                    manager.sendMessageSuspending(message = ephemeralMessage)
+                    return
+                }
+
                 val message = WireMessage.Text.create(
                     conversationId = wireMessage.conversationId,
-                    text = "${wireMessage.text} -- Sent from the SDK"
+                    text = "${wireMessage.text} -- Sent from the SDK",
+                    mentions = wireMessage.mentions
                 )
-
-                manager.sendMessageSuspending(message = message)
 
                 // Sending a Read Receipt for the received message
                 val receipt = WireMessage.Receipt.create(
@@ -64,6 +76,7 @@ fun main() {
                     messages = listOf(wireMessage.id.toString())
                 )
 
+                manager.sendMessageSuspending(message = message)
                 manager.sendMessageSuspending(message = receipt)
             }
 
