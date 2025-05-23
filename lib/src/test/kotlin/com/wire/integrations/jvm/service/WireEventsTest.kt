@@ -51,7 +51,8 @@ class WireEventsTest : KoinTest {
                     id = CONVERSATION_ID,
                     name = "Test conversation",
                     teamId = null,
-                    mlsGroupId = MLSGroupId(ByteArray(32) { 1 })
+                    mlsGroupId = MLSGroupId(ByteArray(32) { 1 }),
+                    epoch = 0L
                 ),
                 members = emptyList()
             )

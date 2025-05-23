@@ -17,15 +17,15 @@ package com.wire.integrations.jvm.persistence
 
 import com.wire.crypto.MLSGroupId
 import com.wire.integrations.jvm.AppsSdkDatabase
-import com.wire.integrations.jvm.Conversation
 import com.wire.integrations.jvm.ConversationMemberQueries
 import com.wire.integrations.jvm.ConversationQueries
-import com.wire.integrations.jvm.Conversation_member
 import com.wire.integrations.jvm.model.ConversationData
 import com.wire.integrations.jvm.model.ConversationMember
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.conversation.ConversationRole
+import migrations.Conversation
+import migrations.Conversation_member
 import java.util.Base64
 import java.util.UUID
 
@@ -39,7 +39,8 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             domain = conversation.id.domain,
             name = conversation.name,
             mls_group_id = Base64.getEncoder().encodeToString(conversation.mlsGroupId.value),
-            team_id = conversation.teamId?.value?.toString()
+            team_id = conversation.teamId?.value?.toString(),
+            epoch = conversation.epoch
         )
     }
 
@@ -113,7 +114,8 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),
             name = conv.name,
             teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
-            mlsGroupId = MLSGroupId(Base64.getDecoder().decode(conv.mls_group_id))
+            mlsGroupId = MLSGroupId(Base64.getDecoder().decode(conv.mls_group_id)),
+            epoch = conv.epoch
         )
 
     private fun conversationMemberMapper(member: Conversation_member) =

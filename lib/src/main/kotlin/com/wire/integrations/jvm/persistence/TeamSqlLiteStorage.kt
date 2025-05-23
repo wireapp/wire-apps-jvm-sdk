@@ -30,5 +30,5 @@ internal class TeamSqlLiteStorage(db: AppsSdkDatabase) : TeamStorage {
     override fun getAll(): List<TeamId> =
         teamQueries.selectAll().executeAsList().map { teamMapper(it) }
 
-    private fun teamMapper(team: com.wire.integrations.jvm.Team) = TeamId(UUID.fromString(team.id))
+    private fun teamMapper(team: migrations.Team) = TeamId(UUID.fromString(team.id))
 }

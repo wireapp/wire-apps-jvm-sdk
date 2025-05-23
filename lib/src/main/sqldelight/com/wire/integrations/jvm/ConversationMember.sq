@@ -1,16 +1,3 @@
-CREATE TABLE IF NOT EXISTS conversation_member (
-  user_id TEXT NOT NULL,
-  user_domain TEXT NOT NULL,
-  conversation_id TEXT NOT NULL,
-  conversation_domain TEXT NOT NULL,
-  role TEXT NOT NULL,
-  creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, user_domain, conversation_id, conversation_domain),
-  FOREIGN KEY(conversation_id, conversation_domain) REFERENCES conversation(id, domain)
-  -- A 4 column primary key is not a good practice but this functions as a 2 entity key
-  -- (users and conversations).
-);
-
 selectAll:
 SELECT *
 FROM conversation_member;

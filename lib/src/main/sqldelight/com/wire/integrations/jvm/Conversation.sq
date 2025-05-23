@@ -1,13 +1,3 @@
-CREATE TABLE IF NOT EXISTS conversation (
-  id TEXT NOT NULL,
-  domain TEXT NOT NULL,
-  name TEXT,
-  team_id TEXT,
-  mls_group_id TEXT NOT NULL,
-  creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id, domain)
-);
-
 selectAll:
 SELECT *
 FROM conversation;
@@ -18,9 +8,9 @@ FROM conversation
 WHERE id = ? AND domain = ?;
 
 insert:
-INSERT INTO conversation(id, domain, name, team_id, mls_group_id)
-VALUES (?, ?, ?, ?, ?)
-ON CONFLICT(id, domain) DO UPDATE SET name=excluded.name, team_id=excluded.team_id, mls_group_id=excluded.mls_group_id;
+INSERT INTO conversation(id, domain, name, team_id, mls_group_id, epoch)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(id, domain) DO UPDATE SET name=excluded.name, team_id=excluded.team_id, mls_group_id=excluded.mls_group_id, epoch=excluded.epoch;
 
 delete:
 DELETE FROM conversation

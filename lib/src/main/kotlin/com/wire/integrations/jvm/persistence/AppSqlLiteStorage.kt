@@ -16,11 +16,11 @@
 
 package com.wire.integrations.jvm.persistence
 
-import com.wire.integrations.jvm.App
 import com.wire.integrations.jvm.AppQueries
 import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.AppData
+import migrations.App
 
 private const val CLIENT_ID = "client_id"
 
