@@ -132,40 +132,40 @@ internal class BackendClientDemo internal constructor(
      * because the new one is tied to client and has more permissions.
      * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
      */
-private var tokenTimestamp: Long? = null
+    private var tokenTimestamp: Long? = null
 
-private suspend fun loginUser(): String {
-    val currentTime = System.currentTimeMillis()
+    private suspend fun loginUser(): String {
+        val currentTime = System.currentTimeMillis()
 
-    // Check if token is valid (not null and not expired)
-    if (cachedAccessToken != null && tokenTimestamp != null) {
-        val timeSinceTokenIssued = currentTime - tokenTimestamp!!
-        if (timeSinceTokenIssued < TOKEN_EXPIRATION_MS) {
-            return cachedAccessToken as String
-        }
-        // Token has expired, will get a new one
-        logger.info("Access token expired, getting a new one")
-    }
-
-    val loginResponse = httpClient.post("/$API_VERSION/login") {
-        setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
-        contentType(ContentType.Application.Json)
-    }
-    val zuidCookie = loginResponse.setCookie()["zuid"]
-
-    val accessResponse =
-        httpClient.post("/$API_VERSION/access?client_id=$DEMO_USER_CLIENT") {
-            headers {
-                append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
+        // Check if token is valid (not null and not expired)
+        if (cachedAccessToken != null && tokenTimestamp != null) {
+            val timeSinceTokenIssued = currentTime - tokenTimestamp!!
+            if (timeSinceTokenIssued < TOKEN_EXPIRATION_MS) {
+                return cachedAccessToken as String
             }
-            accept(ContentType.Application.Json)
-        }.body<LoginResponse>()
+            // Token has expired, will get a new one
+            logger.info("Access token expired, getting a new one")
+        }
 
-    cachedAccessToken = accessResponse.accessToken
-    tokenTimestamp = currentTime
+        val loginResponse = httpClient.post("/$API_VERSION/login") {
+            setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
+            contentType(ContentType.Application.Json)
+        }
+        val zuidCookie = loginResponse.setCookie()["zuid"]
 
-    return accessResponse.accessToken
-}
+        val accessResponse =
+            httpClient.post("/$API_VERSION/access?client_id=$DEMO_USER_CLIENT") {
+                headers {
+                    append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
+                }
+                accept(ContentType.Application.Json)
+            }.body<LoginResponse>()
+
+        cachedAccessToken = accessResponse.accessToken
+        tokenTimestamp = currentTime
+
+        return accessResponse.accessToken
+    }
 
     override suspend fun updateClientWithMlsPublicKey(
         appClientId: AppClientId,
