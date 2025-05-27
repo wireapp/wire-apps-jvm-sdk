@@ -39,15 +39,16 @@ import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.ktor.client.plugins.ResponseException
-import org.slf4j.LoggerFactory
 import java.util.Base64
+import org.slf4j.LoggerFactory
 
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationStorage: ConversationStorage,
     private val backendClient: BackendClient,
     private val wireEventsHandler: WireEventsHandler,
-    private val cryptoClient: CryptoClient
+    private val cryptoClient: CryptoClient,
+    private val mlsFallbackStrategy: MlsFallbackStrategy
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -129,44 +130,10 @@ internal class EventsRouter internal constructor(
                         event = event
                     )
 
-                    val conversation = backendClient.getConversation(event.qualifiedConversation)
-                    val conversationData =
-                        ConversationData(
-                            id = event.qualifiedConversation,
-                            name = conversation.name,
-                            mlsGroupId = groupId,
-                            teamId = conversation.teamId?.let { TeamId(it) }
-                        )
-                    val members = conversation.members.others.map {
-                        ConversationMember(
-                            userId = it.id,
-                            role = it.conversationRole
-                        )
-                    }
-                    logger.debug("Conversation data: $conversationData")
-                    logger.debug("Conversation members: $members")
-
-                    // Saves the conversation in the local database, used later to decrypt messages
-                    conversationStorage.save(conversationData)
-                    conversationStorage.saveMembers(event.qualifiedConversation, members)
-
-                    if (cryptoClient.hasTooFewKeyPackageCount()) {
-                        backendClient.uploadMlsKeyPackages(
-                            appClientId = cryptoClient.getAppClientId(),
-                            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
-                        )
-                    }
-
-                    when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onConversationJoin(
-                            conversation = conversationData,
-                            members = members
-                        )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onConversationJoin(
-                            conversation = conversationData,
-                            members = members
-                        )
-                    }
+                    handleJoiningConversation(
+                        qualifiedConversation = event.qualifiedConversation,
+                        groupId = groupId
+                    )
                 }
 
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
@@ -194,6 +161,56 @@ internal class EventsRouter internal constructor(
                 }
             }
         }
+    }
+
+    private suspend fun handleJoiningConversation(
+        qualifiedConversation: QualifiedId,
+        groupId: MLSGroupId?
+    ): MLSGroupId {
+        val conversation = backendClient.getConversation(qualifiedConversation)
+        val mlsGroupId = groupId ?: MLSGroupId(Base64.getDecoder().decode(conversation.groupId))
+
+        val conversationData =
+            ConversationData(
+                id = qualifiedConversation,
+                name = conversation.name,
+                mlsGroupId = mlsGroupId,
+                teamId = conversation.teamId?.let { TeamId(it) }
+            )
+        val members = conversation.members.others.map {
+            ConversationMember(
+                userId = it.id,
+                role = it.conversationRole
+            )
+        }
+        logger.debug("Conversation data: $conversationData")
+        logger.debug("Conversation members: $members")
+
+        // Saves the conversation in the local database, used later to decrypt messages
+        conversationStorage.save(conversationData)
+        conversationStorage.saveMembers(qualifiedConversation, members)
+
+        if (cryptoClient.hasTooFewKeyPackageCount()) {
+            backendClient.uploadMlsKeyPackages(
+                appClientId = cryptoClient.getAppClientId(),
+                mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
+            )
+        }
+
+        groupId?.run {
+            when (wireEventsHandler) {
+                is WireEventsHandlerDefault -> wireEventsHandler.onConversationJoin(
+                    conversation = conversationData,
+                    members = members
+                )
+                is WireEventsHandlerSuspending -> wireEventsHandler.onConversationJoin(
+                    conversation = conversationData,
+                    members = members
+                )
+            }
+        }
+
+        return mlsGroupId
     }
 
     /**
@@ -274,18 +291,30 @@ internal class EventsRouter internal constructor(
     /**
      * Fetches the group ID of the conversation in the local database.
      */
-    private fun fetchGroupIdFromConversation(conversationId: QualifiedId): MLSGroupId {
+    private suspend fun fetchGroupIdFromConversation(conversationId: QualifiedId): MLSGroupId {
         logger.debug(
             "Searching for group ID of conversation: {}:{}",
             conversationId.id,
             conversationId.domain
         )
 
-        val storedConversation = conversationStorage.getById(conversationId)
-        logger.debug("Found conversation: $storedConversation")
-        return storedConversation?.mlsGroupId ?: throw WireException.EntityNotFound(
-            "No local data for conversation $conversationId"
+        val conversation = conversationStorage.getById(conversationId)
+        var mlsGroupId = conversation?.mlsGroupId
+
+        if (mlsGroupId == null) {
+            mlsGroupId = handleJoiningConversation(
+                qualifiedConversation = conversationId,
+                groupId = null
+            )
+        }
+
+        mlsFallbackStrategy.verifyConversationOutOfSync(
+            mlsGroupId = mlsGroupId,
+            conversationId = conversationId
         )
+
+        logger.debug("Returning mlsGroupId: $mlsGroupId")
+        return mlsGroupId
     }
 
     private suspend fun newTeamInvite(teamId: TeamId) {

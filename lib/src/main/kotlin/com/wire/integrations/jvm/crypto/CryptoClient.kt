@@ -42,11 +42,8 @@ internal interface CryptoClient : AutoCloseable {
         packageCount: UInt = DEFAULT_KEYPACKAGE_COUNT
     ): List<MLSKeyPackage>
 
-    suspend fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean
-
     /**
      * Create a request to join an MLS conversation.
-     * Needs to be followed by a call to markMlsConversationAsJoined() to complete the process.
      */
     suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId
 
@@ -71,6 +68,10 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId
 
     suspend fun hasTooFewKeyPackageCount(): Boolean
+
+    suspend fun conversationExists(mlsGroupId: MLSGroupId): Boolean
+
+    suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong
 
     companion object {
         const val DEFAULT_KEYPACKAGE_COUNT = 100u

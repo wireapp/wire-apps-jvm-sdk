@@ -81,7 +81,7 @@ class CoreCryptoClientTest : KoinTest {
                 mlsTransport = testMlsTransport
             )
             val groupIdGenerated: MLSGroupId = mlsClient.joinMlsConversationRequest(groupInfo)
-            assertTrue { mlsClient.mlsConversationExists(groupIdGenerated) }
+            assertTrue { mlsClient.conversationExists(groupIdGenerated) }
 
             // Encrypt a message for the joined conversation
             val plainMessage = UUID.randomUUID().toString()
@@ -126,9 +126,9 @@ class CoreCryptoClientTest : KoinTest {
             // Create a new conversation with Bob, then add Alice to it
             val groupId = "JfflcPtUivbg+1U3Iyrzsh5D2ui/OGS5Rvf52ipH5KY=".toGroupId()
             bobClient.createConversation(groupId)
-            assertTrue { bobClient.mlsConversationExists(groupId) }
+            assertTrue { bobClient.conversationExists(groupId) }
             val keyPackages: List<MLSKeyPackage> = aliceClient.mlsGenerateKeyPackages(1u)
-            assertFalse { aliceClient.mlsConversationExists(groupId) }
+            assertFalse { aliceClient.conversationExists(groupId) }
 
             assertNotEquals(bobClient.mlsGetPublicKey(), aliceClient.mlsGetPublicKey())
             bobClient.addMemberToMlsConversation(groupId, keyPackages)
@@ -136,7 +136,7 @@ class CoreCryptoClientTest : KoinTest {
             // Alice accepts joining the conversation
             val welcomeMessage = testMlsTransport.getLastWelcome()
             aliceClient.processWelcomeMessage(welcomeMessage)
-            assert(aliceClient.mlsConversationExists(groupId))
+            assert(aliceClient.conversationExists(groupId))
 
             // Alice encrypts a message for the joined conversation
             val plainMessage = "random_message" // UUID.randomUUID().toString()

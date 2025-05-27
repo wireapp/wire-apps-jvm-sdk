@@ -213,6 +213,8 @@ class WireEventsIntegrationTest : KoinTest {
                 eventResponse = NEW_WELCOME_EVENT
             )
 
+            // VERIFICAR OS MOCK DO CC + CONVERSATION EXISTE/EPOCH
+
             val encryptedBase64Message = Base64
                 .getEncoder()
                 .encodeToString(
@@ -329,6 +331,8 @@ class WireEventsIntegrationTest : KoinTest {
         // Replace the real crypto client with a mock one for MLS decryption
         private fun mockCryptoClient() =
             object : CryptoClient {
+                val conversationExist = mutableSetOf<MLSGroupId>()
+
                 override suspend fun decryptMls(
                     mlsGroupId: MLSGroupId,
                     encryptedMessage: String
@@ -366,10 +370,6 @@ class WireEventsIntegrationTest : KoinTest {
                     TODO("Not yet implemented")
                 }
 
-                override suspend fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean {
-                    TODO("Not yet implemented")
-                }
-
                 override suspend fun hasTooFewKeyPackageCount(): Boolean = false
 
                 override fun close() {
@@ -386,6 +386,13 @@ class WireEventsIntegrationTest : KoinTest {
                 ) {
                     TODO("Not yet implemented")
                 }
+
+                override suspend fun conversationExists(mlsGroupId: MLSGroupId): Boolean {
+                    val wasConversationAdded = conversationExist.add(mlsGroupId)
+                    return !wasConversationAdded
+                }
+
+                override suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong = 1UL
             }
 
         private val wireEventsHandler =

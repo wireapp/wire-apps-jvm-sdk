@@ -235,7 +235,9 @@ class WireEventsTest : KoinTest {
                 modules(
                     module {
                         single<WireEventsHandler> { wireEventsHandler }
-                        single<EventsRouter> { EventsRouter(get(), get(), get(), get(), get()) }
+                        single<EventsRouter> {
+                            EventsRouter(get(), get(), get(), get(), get(), get())
+                        }
                     }
                 )
             }
