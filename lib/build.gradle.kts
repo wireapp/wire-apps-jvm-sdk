@@ -23,15 +23,15 @@ plugins {
     id("com.gradleup.shadow") version "9.0.0-beta6"
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
     id("io.gitlab.arturbosch.detekt") version("1.23.7")
-    id("app.cash.sqldelight") version "2.0.2"
+    id("app.cash.sqldelight") version "2.1.0"
     id("com.google.protobuf") version "0.9.5"
 
     // Maven Central
-    id("com.vanniktech.maven.publish") version "0.31.0"
+    id("com.vanniktech.maven.publish") version "0.32.0"
 }
 
 group = "com.wire"
-version = "0.0.5"
+version = "0.0.7"
 val artifactId = "wire-apps-jvm-sdk"
 
 repositories {
@@ -61,13 +61,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
     implementation("com.wire:core-crypto-jvm:4.1.0")
     implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
-    implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
+    implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.0.2")
     implementation("org.zalando:logbook-core:3.12.0")
     implementation("org.zalando:logbook-ktor-client:3.12.0")
     implementation("org.zalando:logbook-json:3.12.0")
-    implementation("com.google.protobuf:protobuf-kotlin:4.30.0")
-    implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.4")
+    implementation("com.google.protobuf:protobuf-kotlin:4.31.0")
+    implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.5")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
@@ -126,7 +126,7 @@ protobuf {
         }
     }
     protoc {
-        artifact = "com.google.protobuf:protoc:3.24.0"
+        artifact = "com.google.protobuf:protoc:4.31.0"
     }
 }
 

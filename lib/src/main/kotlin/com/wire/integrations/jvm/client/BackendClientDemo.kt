@@ -132,25 +132,40 @@ internal class BackendClientDemo internal constructor(
      * because the new one is tied to client and has more permissions.
      * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
      */
-    private suspend fun loginUser(): String {
-        if (cachedAccessToken != null) return cachedAccessToken as String
+private var tokenTimestamp: Long? = null
 
-        val loginResponse = httpClient.post("/$API_VERSION/login") {
-            setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
-            contentType(ContentType.Application.Json)
+private suspend fun loginUser(): String {
+    val currentTime = System.currentTimeMillis()
+
+    // Check if token is valid (not null and not expired)
+    if (cachedAccessToken != null && tokenTimestamp != null) {
+        val timeSinceTokenIssued = currentTime - tokenTimestamp!!
+        if (timeSinceTokenIssued < TOKEN_EXPIRATION_MS) {
+            return cachedAccessToken as String
         }
-        val zuidCookie = loginResponse.setCookie()["zuid"]
-
-        val accessResponse =
-            httpClient.post("/$API_VERSION/access?client_id=$DEMO_USER_CLIENT") {
-                headers {
-                    append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
-                }
-                accept(ContentType.Application.Json)
-            }.body<LoginResponse>()
-        cachedAccessToken = accessResponse.accessToken
-        return accessResponse.accessToken
+        // Token has expired, will get a new one
+        logger.info("Access token expired, getting a new one")
     }
+
+    val loginResponse = httpClient.post("/$API_VERSION/login") {
+        setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
+        contentType(ContentType.Application.Json)
+    }
+    val zuidCookie = loginResponse.setCookie()["zuid"]
+
+    val accessResponse =
+        httpClient.post("/$API_VERSION/access?client_id=$DEMO_USER_CLIENT") {
+            headers {
+                append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
+            }
+            accept(ContentType.Application.Json)
+        }.body<LoginResponse>()
+
+    cachedAccessToken = accessResponse.accessToken
+    tokenTimestamp = currentTime
+
+    return accessResponse.accessToken
+}
 
     override suspend fun updateClientWithMlsPublicKey(
         appClientId: AppClientId,
@@ -338,6 +353,7 @@ internal class BackendClientDemo internal constructor(
         const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"
+        const val TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
 
         val DEMO_USER_EMAIL: String by lazy {
             DemoProperties.properties.getProperty(
