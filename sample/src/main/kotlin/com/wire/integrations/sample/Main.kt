@@ -18,6 +18,7 @@ package com.wire.integrations.sample
 import com.wire.integrations.jvm.WireAppSdk
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.model.AssetResource
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.asset.AssetRetention
 import org.slf4j.LoggerFactory
@@ -162,6 +163,11 @@ fun main() {
     applicationManager.getStoredConversations().forEach {
         logger.info("Conversation: $it")
     }
+    val selfUser = QualifiedId(
+        id = UUID.fromString("ee159b66-fd70-4739-9bae-23c96a02cb09"),
+        domain = "chala.wire.link"
+    )
+    logger.info(applicationManager.getUser(selfUser).toString())
     logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
 
     // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C

@@ -16,7 +16,6 @@
 
 package com.wire.integrations.jvm.model
 
-import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.WireException
 import java.util.UUID
 
@@ -69,7 +68,10 @@ sealed interface WireMessage {
                 return Text(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
-                    sender = IsolatedKoinContext.getApplicationQualifiedId(),
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
                     text = text,
                     mentions = mentions,
                     expiresAfterMillis = expiresAfterMillis
@@ -172,7 +174,10 @@ sealed interface WireMessage {
                 return Composite(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
-                    sender = IsolatedKoinContext.getApplicationQualifiedId(),
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
                     items = listOf(textItem) + buttonList
                 )
             }
@@ -249,7 +254,10 @@ sealed interface WireMessage {
                 return Knock(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
-                    sender = IsolatedKoinContext.getApplicationQualifiedId(),
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
                     hotKnock = hotKnock,
                     expiresAfterMillis = expiresAfterMillis
                 )
@@ -293,7 +301,10 @@ sealed interface WireMessage {
                 return Location(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
-                    sender = IsolatedKoinContext.getApplicationQualifiedId(),
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
                     latitude = latitude,
                     longitude = longitude,
                     name = name,
@@ -327,7 +338,10 @@ sealed interface WireMessage {
                 Deleted(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
-                    sender = IsolatedKoinContext.getApplicationQualifiedId(),
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
                     messageId = messageId
                 )
         }
@@ -364,7 +378,10 @@ sealed interface WireMessage {
                 Receipt(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
-                    sender = IsolatedKoinContext.getApplicationQualifiedId(),
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
                     type = type,
                     messageIds = messages
                 )
@@ -400,7 +417,10 @@ sealed interface WireMessage {
                 return TextEdited(
                     id = originalMessageId,
                     conversationId = conversationId,
-                    sender = IsolatedKoinContext.getApplicationQualifiedId(),
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
                     newContent = text,
                     newMentions = mentions
                 )

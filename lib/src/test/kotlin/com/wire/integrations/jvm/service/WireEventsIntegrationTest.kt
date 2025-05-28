@@ -24,6 +24,7 @@ import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
+import com.wire.crypto.toByteArray
 import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.TestUtils.V
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
@@ -51,10 +52,7 @@ import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.koin.core.Koin
 import org.koin.dsl.module
-import org.koin.test.KoinTest
-import org.koin.test.get
 import java.util.Base64
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -66,10 +64,7 @@ import kotlin.test.assertTrue
  * It mocks the CryptoClient and uses WireMock to send real http call to a temporary server.
  * All the other components are real and use the real Koin context.
  */
-class WireEventsIntegrationTest : KoinTest {
-    // Override the Koin instance as we use an isolated context
-    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
-
+class WireEventsIntegrationTest {
     @Test
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
         runBlocking {
@@ -77,7 +72,7 @@ class WireEventsIntegrationTest : KoinTest {
             val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
 
-            val eventsRouter = get<EventsRouter>()
+            val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
             eventsRouter.route(
                 eventResponse = NEW_TEAM_INVITE_EVENT
             )
@@ -85,8 +80,7 @@ class WireEventsIntegrationTest : KoinTest {
                 eventResponse = NEW_CONVERSATION_EVENT
             )
 
-            val teamStorage = get<TeamStorage>()
-            println("SIZE == ${teamStorage.getAll().size}")
+            val teamStorage = IsolatedKoinContext.koinApp.koin.get<TeamStorage>()
             assertTrue { teamStorage.getAll().size == 1 }
         }
     }
@@ -99,17 +93,27 @@ class WireEventsIntegrationTest : KoinTest {
         // Create SDK with our custom handler
         TestUtils.setupSdk(wireEventsHandler)
 
+        // Load Koin Modules
+        IsolatedKoinContext.koin.loadModules(
+            listOf(
+                module {
+                    single<CryptoClient> { mockCryptoClient() }
+                }
+            )
+        )
+
         val conversationId =
             QualifiedId(
                 id = UUID.randomUUID(),
                 domain = "wire.com"
             )
+
         // Execute
-        val conversationStorage = get<ConversationStorage>()
+        val conversationStorage = IsolatedKoinContext.koinApp.koin.get<ConversationStorage>()
         val conversationPrevious = conversationStorage.getById(conversationId)
         assertNull(conversationPrevious)
 
-        val eventsRouter = get<EventsRouter>()
+        val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
 
         runBlocking {
             eventsRouter.route(
@@ -198,12 +202,21 @@ class WireEventsIntegrationTest : KoinTest {
         // Create SDK with our custom handler
         TestUtils.setupSdk(wireEventsHandler)
 
+        // Load Koin Modules
+        IsolatedKoinContext.koin.loadModules(
+            listOf(
+                module {
+                    single<CryptoClient> { mockCryptoClient() }
+                }
+            )
+        )
+
         // Execute
-        val conversationStorage = get<ConversationStorage>()
+        val conversationStorage = IsolatedKoinContext.koinApp.koin.get<ConversationStorage>()
         val conversationPrevious = conversationStorage.getById(CONVERSATION_ID)
         assertNull(conversationPrevious)
 
-        val eventsRouter = get<EventsRouter>()
+        val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
 
         runBlocking {
             eventsRouter.route(
@@ -237,6 +250,7 @@ class WireEventsIntegrationTest : KoinTest {
         val conversation = conversationStorage.getById(CONVERSATION_ID)
         assertEquals(conversation?.id, CONVERSATION_ID)
         assertEquals(conversation?.teamId, TEAM_ID)
+
         val conversationMember = conversationStorage.getMembersByConversationId(CONVERSATION_ID)
         assertEquals(1, conversationMember.size)
     }
@@ -255,7 +269,7 @@ class WireEventsIntegrationTest : KoinTest {
                 domain = "wire.com"
             )
         private val TEAM_ID = TeamId(UUID.randomUUID())
-        private val MLS_GROUP_ID = MLSGroupId(ByteArray(32) { 1 })
+        private val MLS_GROUP_ID = MLSGroupId(UUID.randomUUID().toString().toByteArray())
 
         private val NEW_TEAM_INVITE_EVENT =
             EventResponse(
@@ -329,6 +343,8 @@ class WireEventsIntegrationTest : KoinTest {
         // Replace the real crypto client with a mock one for MLS decryption
         private fun mockCryptoClient() =
             object : CryptoClient {
+                val conversationExist = mutableSetOf<MLSGroupId>()
+
                 override suspend fun decryptMls(
                     mlsGroupId: MLSGroupId,
                     encryptedMessage: String
@@ -366,10 +382,6 @@ class WireEventsIntegrationTest : KoinTest {
                     TODO("Not yet implemented")
                 }
 
-                override suspend fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean {
-                    TODO("Not yet implemented")
-                }
-
                 override suspend fun hasTooFewKeyPackageCount(): Boolean = false
 
                 override fun close() {
@@ -386,6 +398,13 @@ class WireEventsIntegrationTest : KoinTest {
                 ) {
                     TODO("Not yet implemented")
                 }
+
+                override suspend fun conversationExists(mlsGroupId: MLSGroupId): Boolean {
+                    val wasConversationAdded = conversationExist.add(mlsGroupId)
+                    return !wasConversationAdded
+                }
+
+                override suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong = 0UL
             }
 
         private val wireEventsHandler =
@@ -402,6 +421,8 @@ class WireEventsIntegrationTest : KoinTest {
         @JvmStatic
         @BeforeAll
         fun before() {
+            IsolatedKoinContext.start()
+
             wireMockServer.start()
 
             // Mock conversation fetching
@@ -446,18 +467,13 @@ class WireEventsIntegrationTest : KoinTest {
                             .withBody(ByteArray(128) { 1 })
                     )
             )
-
-            // Load the full IsolatedKoinContext, then override just the crypto client
-            val module = module {
-                single<CryptoClient> { mockCryptoClient() }
-            }
-            IsolatedKoinContext.koinApp.koin.loadModules(listOf(module))
         }
 
         @JvmStatic
         @AfterAll
         fun after() {
             wireMockServer.stop()
+            IsolatedKoinContext.stop()
         }
     }
 }

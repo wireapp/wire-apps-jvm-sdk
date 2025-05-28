@@ -16,7 +16,6 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
-import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.AssetResource
@@ -31,12 +30,14 @@ import com.wire.integrations.jvm.model.asset.AssetRetention
 import com.wire.integrations.jvm.model.asset.AssetUploadData
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
+import com.wire.integrations.jvm.model.http.user.UserResponse
 import com.wire.integrations.jvm.model.protobuf.ProtobufSerializer
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.utils.AESDecrypt
 import com.wire.integrations.jvm.utils.AESEncrypt
 import com.wire.integrations.jvm.utils.MAX_DATA_SIZE
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
 
@@ -49,7 +50,8 @@ class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationStorage: ConversationStorage,
     private val backendClient: BackendClient,
-    private val cryptoClient: CryptoClient
+    private val cryptoClient: CryptoClient,
+    private val mlsFallbackStrategy: MlsFallbackStrategy
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
@@ -132,12 +134,26 @@ class WireApplicationManager internal constructor(
     suspend fun sendMessageSuspending(message: WireMessage): UUID {
         val conversation = conversationStorage.getById(conversationId = message.conversationId)
         conversation?.mlsGroupId?.let { mlsGroupId ->
-            backendClient.sendMessage(
-                mlsMessage = cryptoClient.encryptMls(
-                    mlsGroupId = mlsGroupId,
-                    message = ProtobufSerializer.toGenericMessageByteArray(wireMessage = message)
-                )
+            val encryptedMessage = cryptoClient.encryptMls(
+                mlsGroupId = mlsGroupId,
+                message = ProtobufSerializer
+                    .toGenericMessageByteArray(
+                        wireMessage = message
+                    )
             )
+
+            try {
+                backendClient.sendMessage(mlsMessage = encryptedMessage)
+            } catch (exception: WireException.ClientError) {
+                // TODO(WireException): Properly handle mls-stale-message exception type
+                if (exception.status == HttpStatusCode.Conflict) {
+                    mlsFallbackStrategy.verifyConversationOutOfSync(
+                        mlsGroupId = mlsGroupId,
+                        conversationId = message.conversationId
+                    )
+                    backendClient.sendMessage(mlsMessage = encryptedMessage)
+                }
+            }
         } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
         return message.id
     }
@@ -251,7 +267,10 @@ class WireApplicationManager internal constructor(
         val assetMessage = WireMessage.Asset(
             id = UUID.randomUUID(),
             conversationId = conversationId,
-            sender = IsolatedKoinContext.getApplicationQualifiedId(),
+            sender = QualifiedId(
+                id = UUID.randomUUID(),
+                domain = UUID.randomUUID().toString()
+            ),
             sizeInBytes = encryptedAsset.size.toLong(),
             mimeType = mimeType,
             remoteData = AssetMetadata.RemoteData(
@@ -267,4 +286,22 @@ class WireApplicationManager internal constructor(
         sendMessageSuspending(assetMessage)
         return EncryptionKey(newAesKey)
     }
+
+    /**
+     * Get a Wire user's data
+     * Blocking method for Java interoperability
+     */
+    @Throws(WireException::class)
+    fun getUser(userId: QualifiedId): UserResponse =
+        runBlocking {
+            getUserSuspending(userId)
+        }
+
+    /**
+     * Get a Wire user's data
+     * Suspending method for Kotlin consumers
+     */
+    @Throws(WireException::class)
+    suspend fun getUserSuspending(userId: QualifiedId): UserResponse =
+        backendClient.getUserData(userId)
 }

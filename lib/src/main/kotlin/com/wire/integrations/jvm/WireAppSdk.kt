@@ -38,6 +38,7 @@ class WireAppSdk(
     private val executor = Executors.newSingleThreadExecutor()
 
     init {
+        IsolatedKoinContext.start()
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
         IsolatedKoinContext.setApiToken(apiToken)

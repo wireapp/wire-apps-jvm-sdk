@@ -29,6 +29,7 @@ import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.websocket.webSocket
@@ -112,6 +113,10 @@ internal class BackendClientImpl internal constructor(
     }
 
     override suspend fun getConversation(conversationId: QualifiedId): ConversationResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getUserData(userId: QualifiedId): UserResponse {
         TODO("Not yet implemented")
     }
 
