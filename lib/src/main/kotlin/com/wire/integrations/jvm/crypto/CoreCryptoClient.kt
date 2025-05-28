@@ -157,10 +157,6 @@ internal class CoreCryptoClient private constructor(
         }
     }
 
-    override suspend fun mlsConversationExists(mlsGroupId: MLSGroupId): Boolean {
-        return coreCrypto.transaction { it.conversationExists(mlsGroupId) }
-    }
-
     override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId {
         return coreCrypto.transaction { it.joinByExternalCommit(groupInfo).id }
     }
@@ -192,6 +188,16 @@ internal class CoreCryptoClient private constructor(
         val packageCount = coreCrypto.transaction { it.validKeyPackageCount(ciphersuite) }
         return packageCount < DEFAULT_KEYPACKAGE_COUNT / 2u
     }
+
+    override suspend fun conversationExists(mlsGroupId: MLSGroupId): Boolean =
+        coreCrypto.transaction {
+            it.conversationExists(mlsGroupId)
+        }
+
+    override suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong =
+        coreCrypto.transaction {
+            it.conversationEpoch(mlsGroupId)
+        }
 
     override fun close() {
         runBlocking { coreCrypto.close() }

@@ -37,6 +37,7 @@ import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.utils.AESDecrypt
 import com.wire.integrations.jvm.utils.AESEncrypt
 import com.wire.integrations.jvm.utils.MAX_DATA_SIZE
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
 
@@ -49,7 +50,8 @@ class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationStorage: ConversationStorage,
     private val backendClient: BackendClient,
-    private val cryptoClient: CryptoClient
+    private val cryptoClient: CryptoClient,
+    private val mlsFallbackStrategy: MlsFallbackStrategy
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
@@ -132,12 +134,26 @@ class WireApplicationManager internal constructor(
     suspend fun sendMessageSuspending(message: WireMessage): UUID {
         val conversation = conversationStorage.getById(conversationId = message.conversationId)
         conversation?.mlsGroupId?.let { mlsGroupId ->
-            backendClient.sendMessage(
-                mlsMessage = cryptoClient.encryptMls(
-                    mlsGroupId = mlsGroupId,
-                    message = ProtobufSerializer.toGenericMessageByteArray(wireMessage = message)
-                )
+            val encryptedMessage = cryptoClient.encryptMls(
+                mlsGroupId = mlsGroupId,
+                message = ProtobufSerializer
+                    .toGenericMessageByteArray(
+                        wireMessage = message
+                    )
             )
+
+            try {
+                backendClient.sendMessage(mlsMessage = encryptedMessage)
+            } catch (exception: WireException.ClientError) {
+                // TODO(WireException): Properly handle mls-stale-message exception type
+                if (exception.status == HttpStatusCode.Conflict) {
+                    mlsFallbackStrategy.verifyConversationOutOfSync(
+                        mlsGroupId = mlsGroupId,
+                        conversationId = message.conversationId
+                    )
+                    backendClient.sendMessage(mlsMessage = encryptedMessage)
+                }
+            }
         } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
         return message.id
     }
