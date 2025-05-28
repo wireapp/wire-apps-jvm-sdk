@@ -137,26 +137,31 @@ internal class EventsRouter internal constructor(
                 }
 
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
-                    println("RECEIVING CV_E - NMLSMDTO - 1")
                     val groupId = fetchGroupIdFromConversation(event.qualifiedConversation)
-                    println("RECEIVING CV_E - NMLSMDTO - 2")
-                    val message = cryptoClient.decryptMls(
-                        mlsGroupId = groupId,
-                        encryptedMessage = event.message
-                    )
-                    println("RECEIVING CV_E - NMLSMDTO - 3")
-                    logger.debug("Decryption successful")
-                    if (message == null) {
-                        logger.debug("Decryption success but no message, probably epoch update")
-                        return
-                    }
-                    println("RECEIVING CV_E - NMLSMDTO - 4")
+                    try {
+                        val message = cryptoClient.decryptMls(
+                            mlsGroupId = groupId,
+                            encryptedMessage = event.message
+                        )
 
-                    forwardMessage(
-                        message = message,
-                        conversationId = event.qualifiedConversation,
-                        sender = event.qualifiedFrom
-                    )
+                        logger.debug("Decryption successful")
+                        if (message == null) {
+                            logger.debug("Decryption success but no message, probably epoch update")
+                            return
+                        }
+
+                        forwardMessage(
+                            message = message,
+                            conversationId = event.qualifiedConversation,
+                            sender = event.qualifiedFrom
+                        )
+                    } catch (exception: MlsException) {
+                        logger.debug("Message decryption failed", exception)
+                        mlsFallbackStrategy.verifyConversationOutOfSync(
+                            mlsGroupId = groupId,
+                            conversationId = event.qualifiedConversation
+                        )
+                    }
                 }
 
                 is EventContentDTO.Unknown -> {
@@ -225,9 +230,7 @@ internal class EventsRouter internal constructor(
         conversationId: QualifiedId,
         sender: QualifiedId
     ) {
-        println("RECEIVING CV_E - FRWD - 1")
         val genericMessage = GenericMessage.parseFrom(message)
-        println("RECEIVING CV_E - FRWD - 2")
         val wireMessage = ProtobufDeserializer.processGenericMessage(
             genericMessage = genericMessage,
             conversationId = conversationId,
@@ -312,12 +315,7 @@ internal class EventsRouter internal constructor(
                 groupId = null
             )
         }
-        println("RECEIVING CV_E - ER - 1")
-        mlsFallbackStrategy.verifyConversationOutOfSync(
-            mlsGroupId = mlsGroupId,
-            conversationId = conversationId
-        )
-        println("RECEIVING CV_E - ER - 2")
+
         logger.debug("Returning mlsGroupId: $mlsGroupId")
         return mlsGroupId
     }

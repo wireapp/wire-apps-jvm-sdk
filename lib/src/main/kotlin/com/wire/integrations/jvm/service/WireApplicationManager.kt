@@ -133,16 +133,16 @@ class WireApplicationManager internal constructor(
     suspend fun sendMessageSuspending(message: WireMessage): UUID {
         val conversation = conversationStorage.getById(conversationId = message.conversationId)
         conversation?.mlsGroupId?.let { mlsGroupId ->
-            try {
-                backendClient.sendMessage(
-                    mlsMessage = cryptoClient.encryptMls(
-                        mlsGroupId = mlsGroupId,
-                        message = ProtobufSerializer
-                            .toGenericMessageByteArray(
-                                wireMessage = message
-                            )
+            val encryptedMessage = cryptoClient.encryptMls(
+                mlsGroupId = mlsGroupId,
+                message = ProtobufSerializer
+                    .toGenericMessageByteArray(
+                        wireMessage = message
                     )
-                )
+            )
+
+            try {
+                backendClient.sendMessage(mlsMessage = encryptedMessage)
             } catch (exception: WireException.ClientError) {
                 // TODO(WireException): Properly handle mls-stale-message exception type
                 if (exception.status == HttpStatusCode.Conflict) {
@@ -150,7 +150,7 @@ class WireApplicationManager internal constructor(
                         mlsGroupId = mlsGroupId,
                         conversationId = message.conversationId
                     )
-                    // TODO(FallbackStrategy): Should we try sending the message again?
+                    backendClient.sendMessage(mlsMessage = encryptedMessage)
                 }
             }
         } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
