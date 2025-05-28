@@ -18,8 +18,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.koin.core.Koin
-import org.koin.test.KoinTest
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.Base64
@@ -29,10 +27,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.AfterAll
 
-class CoreCryptoClientTest : KoinTest {
-    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
-
+class CoreCryptoClientTest {
     private val testMlsTransport = MlsTransportLastWelcome()
 
     @Test
@@ -139,7 +136,7 @@ class CoreCryptoClientTest : KoinTest {
             assert(aliceClient.conversationExists(groupId))
 
             // Alice encrypts a message for the joined conversation
-            val plainMessage = "random_message" // UUID.randomUUID().toString()
+            val plainMessage = "random_message"
             val wireTextMessage = WireMessage.Text.create(
                 conversationId = CONVERSATION_ID,
                 text = plainMessage
@@ -186,6 +183,7 @@ class CoreCryptoClientTest : KoinTest {
         @BeforeAll
         fun before() {
             // Testing that full UTF-8 is accepted on storage password
+            IsolatedKoinContext.start()
             IsolatedKoinContext.setCryptographyStoragePassword("banana🍌")
         }
 
@@ -193,5 +191,11 @@ class CoreCryptoClientTest : KoinTest {
             id = UUID.randomUUID(),
             domain = UUID.randomUUID().toString()
         )
+
+        @JvmStatic
+        @AfterAll
+        fun after() {
+            IsolatedKoinContext.stop()
+        }
     }
 }

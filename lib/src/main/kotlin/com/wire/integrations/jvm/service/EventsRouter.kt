@@ -137,17 +137,20 @@ internal class EventsRouter internal constructor(
                 }
 
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
+                    println("RECEIVING CV_E - NMLSMDTO - 1")
                     val groupId = fetchGroupIdFromConversation(event.qualifiedConversation)
-
+                    println("RECEIVING CV_E - NMLSMDTO - 2")
                     val message = cryptoClient.decryptMls(
                         mlsGroupId = groupId,
                         encryptedMessage = event.message
                     )
+                    println("RECEIVING CV_E - NMLSMDTO - 3")
                     logger.debug("Decryption successful")
                     if (message == null) {
                         logger.debug("Decryption success but no message, probably epoch update")
                         return
                     }
+                    println("RECEIVING CV_E - NMLSMDTO - 4")
 
                     forwardMessage(
                         message = message,
@@ -222,7 +225,9 @@ internal class EventsRouter internal constructor(
         conversationId: QualifiedId,
         sender: QualifiedId
     ) {
+        println("RECEIVING CV_E - FRWD - 1")
         val genericMessage = GenericMessage.parseFrom(message)
+        println("RECEIVING CV_E - FRWD - 2")
         val wireMessage = ProtobufDeserializer.processGenericMessage(
             genericMessage = genericMessage,
             conversationId = conversationId,
@@ -282,7 +287,7 @@ internal class EventsRouter internal constructor(
                     backendClient.getConversationGroupInfo(event.qualifiedConversation)
                 cryptoClient.joinMlsConversationRequest(GroupInfo(groupInfo))
             } else {
-                logger.error("Cannot process welcome", ex)
+                logger.error("Cannot process welcome -- ${ex.exception}", ex)
                 throw WireException.CryptographicSystemError("Cannot process welcome")
             }
         }
@@ -307,12 +312,12 @@ internal class EventsRouter internal constructor(
                 groupId = null
             )
         }
-
+        println("RECEIVING CV_E - ER - 1")
         mlsFallbackStrategy.verifyConversationOutOfSync(
             mlsGroupId = mlsGroupId,
             conversationId = conversationId
         )
-
+        println("RECEIVING CV_E - ER - 2")
         logger.debug("Returning mlsGroupId: $mlsGroupId")
         return mlsGroupId
     }

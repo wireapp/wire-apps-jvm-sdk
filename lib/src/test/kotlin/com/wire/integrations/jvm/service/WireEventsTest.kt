@@ -19,6 +19,7 @@ package com.wire.integrations.jvm.service
 import com.wire.crypto.MLSGroupId
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
+import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.ConversationData
 import com.wire.integrations.jvm.model.ConversationMember
 import com.wire.integrations.jvm.model.QualifiedId
@@ -26,25 +27,24 @@ import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
-import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
-import org.koin.test.KoinTest
-import org.koin.test.get
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.koin.dsl.module
 
-class WireEventsTest : KoinTest {
+class WireEventsTest {
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingItsMethodsSucceeds() =
         runBlocking {
-            val wireEvents = get<WireEventsHandler>() as WireEventsHandlerSuspending
+            val wireEvents = IsolatedKoinContext
+                .koinApp
+                .koin
+                .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onConversationJoin(
                 conversation = ConversationData(
@@ -72,7 +72,10 @@ class WireEventsTest : KoinTest {
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingNewAssetMethodItSucceeds() =
         runBlocking {
-            val wireEvents = get<WireEventsHandler>() as WireEventsHandlerSuspending
+            val wireEvents = IsolatedKoinContext
+                .koinApp
+                .koin
+                .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onAsset(
                 wireMessage = WireMessage.Asset(
@@ -99,7 +102,10 @@ class WireEventsTest : KoinTest {
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingNewKnockMethodItSucceeds() =
         runBlocking {
-            val wireEvents = get<WireEventsHandler>() as WireEventsHandlerSuspending
+            val wireEvents = IsolatedKoinContext
+                .koinApp
+                .koin
+                .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onKnock(
                 wireMessage = WireMessage.Knock(
@@ -114,7 +120,10 @@ class WireEventsTest : KoinTest {
     @Test
     fun givenWireEventsHandlerIsInjectedThenCallingNewLocationMethodItSucceeds() =
         runBlocking {
-            val wireEvents = get<WireEventsHandler>() as WireEventsHandlerSuspending
+            val wireEvents = IsolatedKoinContext
+                .koinApp
+                .koin
+                .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onLocation(
                 wireMessage = WireMessage.Location(
@@ -230,23 +239,20 @@ class WireEventsTest : KoinTest {
         @JvmStatic
         @BeforeAll
         fun before() {
-            stopKoin()
-            startKoin {
-                modules(
-                    module {
-                        single<WireEventsHandler> { wireEventsHandler }
-                        single<EventsRouter> {
-                            EventsRouter(get(), get(), get(), get(), get(), get())
-                        }
-                    }
-                )
+            val modules = module {
+                single<WireEventsHandler> { wireEventsHandler }
+                single<EventsRouter> {
+                    EventsRouter(get(), get(), get(), get(), get(), get())
+                }
             }
+            IsolatedKoinContext.start()
+            IsolatedKoinContext.koin.loadModules(listOf(modules))
         }
 
         @JvmStatic
         @AfterAll
         fun after() {
-            stopKoin()
+            IsolatedKoinContext.stop()
         }
     }
 }

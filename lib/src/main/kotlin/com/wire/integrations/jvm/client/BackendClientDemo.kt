@@ -126,14 +126,14 @@ internal class BackendClientDemo internal constructor(
         logger.info("Confirming team invite")
     }
 
+    private var tokenTimestamp: Long? = null
+
     /**
      * Login DEMO user in the backend, get access_token for further requests.
      * After the login, the token is immediately refreshed by calling /access,
      * because the new one is tied to client and has more permissions.
      * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
      */
-    private var tokenTimestamp: Long? = null
-
     private suspend fun loginUser(): String {
         val currentTime = System.currentTimeMillis()
 

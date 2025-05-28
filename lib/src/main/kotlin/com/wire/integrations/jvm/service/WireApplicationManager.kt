@@ -16,7 +16,6 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
-import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.AssetResource
@@ -267,7 +266,10 @@ class WireApplicationManager internal constructor(
         val assetMessage = WireMessage.Asset(
             id = UUID.randomUUID(),
             conversationId = conversationId,
-            sender = IsolatedKoinContext.getApplicationQualifiedId(),
+            sender = QualifiedId(
+                id = UUID.randomUUID(),
+                domain = UUID.randomUUID().toString()
+            ),
             sizeInBytes = encryptedAsset.size.toLong(),
             mimeType = mimeType,
             remoteData = AssetMetadata.RemoteData(
