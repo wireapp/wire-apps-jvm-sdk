@@ -16,6 +16,8 @@
 
 package com.wire.integrations.jvm.exception
 
+import io.ktor.http.HttpStatusCode
+
 /**
  * Class containing all Wire Error Exceptions that are going to be thrown to the developer
  * who uses the SDK.
@@ -54,8 +56,11 @@ sealed class WireException @JvmOverloads constructor(
     /**
      * Client Error
      */
-    class ClientError(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    data class ClientError(
+        override val message: String? = null,
+        val throwable: Throwable? = null,
+        val status: HttpStatusCode
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Internal Error

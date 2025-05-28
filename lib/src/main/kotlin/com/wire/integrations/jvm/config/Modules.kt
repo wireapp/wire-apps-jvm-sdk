@@ -33,6 +33,7 @@ import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamSqlLiteStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.service.EventsRouter
+import com.wire.integrations.jvm.service.MlsFallbackStrategy
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
 import com.wire.integrations.jvm.utils.KtxSerializer
@@ -71,7 +72,8 @@ val sdkModule =
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
         single<BackendClient> { BackendClientDemo(get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
-        single { EventsRouter(get(), get(), get(), get(), get()) }
+        single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
+        single { EventsRouter(get(), get(), get(), get(), get(), get()) }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost())
         }
@@ -81,7 +83,7 @@ val sdkModule =
             }
         }
         single { WireTeamEventsListener(get(), get()) }
-        single { WireApplicationManager(get(), get(), get(), get()) }
+        single { WireApplicationManager(get(), get(), get(), get(), get()) }
     }
 
 @OptIn(ExperimentalLogbookKtorApi::class)
