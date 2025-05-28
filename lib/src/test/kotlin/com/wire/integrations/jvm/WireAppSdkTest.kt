@@ -24,15 +24,10 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.koin.core.Koin
-import org.koin.test.KoinTest
 import java.util.UUID
 import kotlin.test.assertEquals
 
-class WireAppSdkTest : KoinTest {
-    // Override the Koin instance as we use an isolated context
-    override fun getKoin(): Koin = IsolatedKoinContext.koinApp.koin
-
+class WireAppSdkTest {
     @Test
     fun koinModulesLoadCorrectly() {
         TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
@@ -96,12 +91,14 @@ class WireAppSdkTest : KoinTest {
         @BeforeAll
         fun before() {
             wireMockServer.start()
+            IsolatedKoinContext.start()
         }
 
         @JvmStatic
         @AfterAll
         fun after() {
             wireMockServer.stop()
+            IsolatedKoinContext.stop()
         }
     }
 }

@@ -15,17 +15,35 @@
 
 package com.wire.integrations.jvm.config
 
-import com.wire.integrations.jvm.model.QualifiedId
 import org.koin.dsl.koinApplication
 import org.koin.fileProperties
 import java.util.UUID
+import org.koin.core.Koin
+import org.koin.core.KoinApplication
 
 internal object IsolatedKoinContext {
-    val koinApp =
-        koinApplication {
+    private var _koinApp: KoinApplication? = null
+    val koinApp: KoinApplication
+        get() = _koinApp ?: error("Koin not started")
+
+    val koin: Koin
+        get() = koinApp.koin
+
+    fun start() {
+        // Ensure any old Koin instance is closed
+        _koinApp?.close()
+
+        // Start a new Koin instance
+        _koinApp = koinApplication {
             modules(sdkModule)
             fileProperties("/koin.properties")
         }
+    }
+
+    fun stop() {
+        _koinApp?.close()
+        _koinApp = null
+    }
 
     fun setApplicationId(value: UUID) {
         this.koinApp.koin.setProperty(APPLICATION_ID, value)
@@ -51,12 +69,6 @@ internal object IsolatedKoinContext {
 
     fun getCryptographyStoragePassword(): String? =
         this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_PASSWORD)
-
-    fun getApplicationQualifiedId(): QualifiedId =
-        QualifiedId(
-            checkNotNull(getApplicationId()),
-            checkNotNull(getApiHost())
-        )
 
     /**
      * Property Constants

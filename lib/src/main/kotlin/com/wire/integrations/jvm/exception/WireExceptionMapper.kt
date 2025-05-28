@@ -25,7 +25,10 @@ fun Exception.mapToWireException() =
     when (this) {
         is WireException -> this
         is InterruptedException -> WireException.InternalSystemError(throwable = this)
-        is ClientRequestException -> WireException.ClientError(throwable = this)
+        is ClientRequestException -> WireException.ClientError(
+            throwable = this,
+            status = this.response.status
+        )
         else -> WireException.UnknownError(throwable = this)
     }
 

@@ -31,6 +31,7 @@ import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsKeyPackageRequest
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.model.http.user.UserResponse
 import com.wire.integrations.jvm.utils.Mls
 import com.wire.integrations.jvm.utils.obfuscateId
 import io.ktor.client.HttpClient
@@ -126,46 +127,46 @@ internal class BackendClientDemo internal constructor(
         logger.info("Confirming team invite")
     }
 
+    private var tokenTimestamp: Long? = null
+
     /**
      * Login DEMO user in the backend, get access_token for further requests.
      * After the login, the token is immediately refreshed by calling /access,
      * because the new one is tied to client and has more permissions.
      * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
      */
-private var tokenTimestamp: Long? = null
+    private suspend fun loginUser(): String {
+        val currentTime = System.currentTimeMillis()
 
-private suspend fun loginUser(): String {
-    val currentTime = System.currentTimeMillis()
-
-    // Check if token is valid (not null and not expired)
-    if (cachedAccessToken != null && tokenTimestamp != null) {
-        val timeSinceTokenIssued = currentTime - tokenTimestamp!!
-        if (timeSinceTokenIssued < TOKEN_EXPIRATION_MS) {
-            return cachedAccessToken as String
-        }
-        // Token has expired, will get a new one
-        logger.info("Access token expired, getting a new one")
-    }
-
-    val loginResponse = httpClient.post("/$API_VERSION/login") {
-        setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
-        contentType(ContentType.Application.Json)
-    }
-    val zuidCookie = loginResponse.setCookie()["zuid"]
-
-    val accessResponse =
-        httpClient.post("/$API_VERSION/access?client_id=$DEMO_USER_CLIENT") {
-            headers {
-                append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
+        // Check if token is valid (not null and not expired)
+        if (cachedAccessToken != null && tokenTimestamp != null) {
+            val timeSinceTokenIssued = currentTime - tokenTimestamp!!
+            if (timeSinceTokenIssued < TOKEN_EXPIRATION_MS) {
+                return cachedAccessToken as String
             }
-            accept(ContentType.Application.Json)
-        }.body<LoginResponse>()
+            // Token has expired, will get a new one
+            logger.info("Access token expired, getting a new one")
+        }
 
-    cachedAccessToken = accessResponse.accessToken
-    tokenTimestamp = currentTime
+        val loginResponse = httpClient.post("/$API_VERSION/login") {
+            setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
+            contentType(ContentType.Application.Json)
+        }
+        val zuidCookie = loginResponse.setCookie()["zuid"]
 
-    return accessResponse.accessToken
-}
+        val accessResponse =
+            httpClient.post("/$API_VERSION/access?client_id=$DEMO_USER_CLIENT") {
+                headers {
+                    append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
+                }
+                accept(ContentType.Application.Json)
+            }.body<LoginResponse>()
+
+        cachedAccessToken = accessResponse.accessToken
+        tokenTimestamp = currentTime
+
+        return accessResponse.accessToken
+    }
 
     override suspend fun updateClientWithMlsPublicKey(
         appClientId: AppClientId,
@@ -244,6 +245,20 @@ private suspend fun loginUser(): String {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
             }.body<ConversationResponse>()
+        }
+    }
+
+    override suspend fun getUserData(userId: QualifiedId): UserResponse {
+        logger.info("Fetching user: $userId")
+        return runWithWireException {
+            val token = loginUser()
+            httpClient.get(
+                "/$API_VERSION/users/${userId.domain}/${userId.id}"
+            ) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }.body<UserResponse>()
         }
     }
 
