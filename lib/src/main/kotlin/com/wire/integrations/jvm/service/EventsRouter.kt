@@ -52,7 +52,7 @@ internal class EventsRouter internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "NestedBlockDepth", "CyclomaticComplexMethod")
     internal suspend fun route(eventResponse: EventResponse) {
         logger.debug("Event received: {}", eventResponse)
         eventResponse.payload?.forEach { event ->
