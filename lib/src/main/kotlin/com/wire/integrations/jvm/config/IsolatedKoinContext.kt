@@ -15,7 +15,6 @@
 
 package com.wire.integrations.jvm.config
 
-import com.wire.integrations.jvm.model.QualifiedId
 import org.koin.dsl.koinApplication
 import org.koin.fileProperties
 import java.util.UUID
@@ -51,12 +50,6 @@ internal object IsolatedKoinContext {
 
     fun getCryptographyStoragePassword(): String? =
         this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_PASSWORD)
-
-    fun getApplicationQualifiedId(): QualifiedId =
-        QualifiedId(
-            checkNotNull(getApplicationId()),
-            checkNotNull(getApiHost())
-        )
 
     /**
      * Property Constants

@@ -26,6 +26,7 @@ import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.channels.ReceiveChannel
 
@@ -55,6 +56,8 @@ interface BackendClient {
     suspend fun sendMessage(mlsMessage: ByteArray)
 
     suspend fun getConversation(conversationId: QualifiedId): ConversationResponse
+
+    suspend fun getUserData(userId: QualifiedId): UserResponse
 
     suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray
 

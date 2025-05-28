@@ -16,7 +16,6 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
-import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.AssetResource
@@ -31,6 +30,7 @@ import com.wire.integrations.jvm.model.asset.AssetRetention
 import com.wire.integrations.jvm.model.asset.AssetUploadData
 import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
+import com.wire.integrations.jvm.model.http.user.UserResponse
 import com.wire.integrations.jvm.model.protobuf.ProtobufSerializer
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
@@ -251,7 +251,10 @@ class WireApplicationManager internal constructor(
         val assetMessage = WireMessage.Asset(
             id = UUID.randomUUID(),
             conversationId = conversationId,
-            sender = IsolatedKoinContext.getApplicationQualifiedId(),
+            sender = QualifiedId(
+                id = UUID.randomUUID(),
+                domain = UUID.randomUUID().toString()
+            ),
             sizeInBytes = encryptedAsset.size.toLong(),
             mimeType = mimeType,
             remoteData = AssetMetadata.RemoteData(
@@ -267,4 +270,22 @@ class WireApplicationManager internal constructor(
         sendMessageSuspending(assetMessage)
         return EncryptionKey(newAesKey)
     }
+
+    /**
+     * Get a Wire user's data
+     * Blocking method for Java interoperability
+     */
+    @Throws(WireException::class)
+    fun getUser(userId: QualifiedId): UserResponse =
+        runBlocking {
+            getUserSuspending(userId)
+        }
+
+    /**
+     * Get a Wire user's data
+     * Suspending method for Kotlin consumers
+     */
+    @Throws(WireException::class)
+    suspend fun getUserSuspending(userId: QualifiedId): UserResponse =
+        backendClient.getUserData(userId)
 }
