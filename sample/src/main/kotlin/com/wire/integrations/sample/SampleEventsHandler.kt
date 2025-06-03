@@ -129,7 +129,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         val message = WireMessage.Text.create(
             conversationId = wireMessage.conversationId,
-            text = "Received Asset : ${wireMessage.name}"
+            text = "Received Asset : ${wireMessage.name}",
+            quotedMessageId = wireMessage.id,
+            quotedMessageSha256 = MessageContentEncoder.encodeMessageContent(
+                message = wireMessage
+            )?.sha256Digest
         )
 
         manager.sendMessageSuspending(message = message)
@@ -177,7 +181,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         val message = WireMessage.Text.create(
             conversationId = wireMessage.conversationId,
-            text = "Received Location\n\nLatitude: ${wireMessage.latitude}\n\nLongitude: ${wireMessage.longitude}\n\nName: ${wireMessage.name}\n\nZoom: ${wireMessage.zoom}"
+            text = "Received Location\n\nLatitude: ${wireMessage.latitude}\n\nLongitude: ${wireMessage.longitude}\n\nName: ${wireMessage.name}\n\nZoom: ${wireMessage.zoom}",
+            quotedMessageId = wireMessage.id,
+            quotedMessageSha256 = MessageContentEncoder.encodeMessageContent(
+                message = wireMessage
+            )?.sha256Digest
         )
 
         manager.sendMessageSuspending(message = message)
