@@ -24,9 +24,27 @@ import com.wire.integrations.jvm.utils.toUTF16BEByteArray
 import kotlin.math.roundToLong
 import org.slf4j.LoggerFactory
 
+/**
+ * Utility object responsible for encoding different types of messages into a byteArray.
+ * Supported message types:
+ * - Text
+ * - Asset (via asset ID)
+ * - Location (latitude and longitude)
+ */
 object MessageContentEncoder {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    /**
+     * Encodes a message into an [EncodedMessageContent], based on its type.
+     *
+     * @param message The SDK message to encode. Supported types:
+     * - [WireMessage.Text]
+     * - [WireMessage.Asset]
+     * - [WireMessage.Location]
+     *
+     * @return The encoded message as [EncodedMessageContent], or `null` if the message type
+     * is not supported.
+     */
     fun encodeMessageContent(message: WireMessage): EncodedMessageContent? =
         when (message) {
             is WireMessage.Asset ->
@@ -57,6 +75,13 @@ object MessageContentEncoder {
             }
         }
 
+    /**
+     * Encodes an asset message by combining the asset ID and message timestamp into a byteArray
+     *
+     * @param messageTimeStampInMillis Timestamp of the message in milliseconds.
+     * @param assetId ID of the referenced asset.
+     * @return [EncodedMessageContent] Encoded message content.
+     */
     private fun encodeMessageAsset(
         messageTimeStampInMillis: Long,
         assetId: String
@@ -68,6 +93,13 @@ object MessageContentEncoder {
             messageTextBodyUTF16BE = assetId.toUTF16BEByteArray()
         )
 
+    /**
+     * Encodes a text message with its content and timestamp.
+     *
+     * @param messageTimeStampInMillis Timestamp of the message in milliseconds.
+     * @param messageTextBody Text content of the message.
+     * @return [EncodedMessageContent] Encoded message content.
+     */
     private fun encodeMessageTextBody(
         messageTimeStampInMillis: Long,
         messageTextBody: String
@@ -79,12 +111,27 @@ object MessageContentEncoder {
             messageTextBodyUTF16BE = messageTextBody.toUTF16BEByteArray()
         )
 
+    /**
+     * Converts a timestamp from milliseconds to seconds and encodes it as a byte array.
+     *
+     * @param messageTimeStampInMillis Timestamp in milliseconds.
+     * @return [ByteArray] representing the timestamp in seconds.
+     */
     private fun encodeMessageTimeStampInMillis(messageTimeStampInMillis: Long): ByteArray {
         val messageTimeStampInSec = messageTimeStampInMillis / MILLIS_IN_SEC
 
         return messageTimeStampInSec.toByteArray()
     }
 
+    /**
+     * Encodes a location message with latitude, longitude, and timestamp.
+     * Coordinates are rounded and converted to byteArray before being combined.
+     *
+     * @param latitude Latitude in decimal degrees.
+     * @param longitude Longitude in decimal degrees.
+     * @param messageTimeStampInMillis Timestamp in milliseconds.
+     * @return [EncodedMessageContent] Encoded message content.
+     */
     private fun encodeLocationCoordinates(
         latitude: Float,
         longitude: Float,
@@ -100,6 +147,14 @@ object MessageContentEncoder {
         )
     }
 
+    /**
+     * Wraps the encoded timestamp and message body into a final byteArray,
+     * prepending a UTF-16BE BOM header.
+     *
+     * @param messageTimeStampByteArray Timestamp in byte array form.
+     * @param messageTextBodyUTF16BE UTF-16BE encoded text or asset ID.
+     * @return [EncodedMessageContent] Encoded message content.
+     */
     private fun wrapIntoResult(
         messageTimeStampByteArray: ByteArray,
         messageTextBodyUTF16BE: ByteArray
@@ -115,6 +170,13 @@ object MessageContentEncoder {
     private const val COORDINATES_ROUNDING = 1000
 }
 
+/**
+ * A container class representing an encoded message.
+ *
+ * @property byteArray Raw encoded byte content of the message.
+ * @property asHexString Hexadecimal string representation of the byteArray.
+ * @property sha256Digest SHA-256 hash of the byteArray.
+ */
 class EncodedMessageContent(val byteArray: ByteArray) {
     val asHexString = byteArray.toInternalHexString()
     val sha256Digest = AESEncrypt.calculateSha256Hash(byteArray)
