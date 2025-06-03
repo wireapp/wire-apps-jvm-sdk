@@ -24,6 +24,7 @@ import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
+import kotlinx.datetime.Instant
 import org.slf4j.LoggerFactory
 
 /**
@@ -40,19 +41,22 @@ object ProtobufDeserializer {
     fun processGenericMessage(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
-        sender: QualifiedId
+        sender: QualifiedId,
+        instant: Instant
     ): WireMessage =
         when {
             genericMessage.hasText() -> unpackText(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
-                sender = sender
+                sender = sender,
+                instant = instant
             )
 
             genericMessage.hasAsset() -> unpackAsset(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
-                sender = sender
+                sender = sender,
+                instant = instant
             )
 
             genericMessage.hasComposite() -> unpackComposite(
@@ -82,7 +86,8 @@ object ProtobufDeserializer {
             genericMessage.hasLocation() -> unpackLocation(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
-                sender = sender
+                sender = sender,
+                instant = instant
             )
 
             genericMessage.hasDeleted() -> unpackDeletedMessage(
@@ -106,7 +111,8 @@ object ProtobufDeserializer {
             genericMessage.hasEphemeral() -> unpackEphemeral(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
-                sender = sender
+                sender = sender,
+                instant = instant
             )
 
             else -> WireMessage.Unknown
@@ -116,6 +122,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        instant: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Text {
         val text = genericMessage.text
@@ -125,8 +132,11 @@ object ProtobufDeserializer {
             sender = sender,
             id = UUID.fromString(genericMessage.messageId),
             text = text.content,
+            instant = instant,
             quotedMessageId =
                 if (text.hasQuote()) UUID.fromString(text.quote.quotedMessageId) else null,
+            quotedMessageSha256 =
+                if (text.hasQuote()) text.quote.quotedMessageSha256.toByteArray() else null,
             linkPreviews = text
                 .linkPreviewList
                 .mapNotNull {
@@ -145,10 +155,11 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        instant: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Asset {
         val asset = genericMessage.asset
-        val original = asset.original
+        val original = if (asset.hasOriginal()) asset.original else null
 
         val metadata: WireMessage.Asset.AssetMetadata? = when {
             original?.hasImage() == true -> {
@@ -182,7 +193,7 @@ object ProtobufDeserializer {
         val remoteData = if (asset.hasUploaded()) {
             val uploadedAsset = asset.uploaded
 
-            WireMessage.Asset.AssetMetadata.RemoteData(
+            WireMessage.Asset.RemoteData(
                 otrKey = uploadedAsset.otrKey.toByteArray(),
                 sha256 = uploadedAsset.sha256.toByteArray(),
                 assetId = uploadedAsset.assetId,
@@ -205,6 +216,7 @@ object ProtobufDeserializer {
             mimeType = original?.mimeType ?: "*/*",
             metadata = metadata,
             remoteData = remoteData,
+            instant = instant,
             expiresAfterMillis = expiresAfterMillis
         )
     }
@@ -289,6 +301,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        instant: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Location =
         WireMessage.Location(
@@ -299,6 +312,7 @@ object ProtobufDeserializer {
             longitude = genericMessage.location.longitude,
             name = genericMessage.location.name,
             zoom = genericMessage.location.zoom,
+            instant = instant,
             expiresAfterMillis = expiresAfterMillis
         )
 
@@ -377,7 +391,8 @@ object ProtobufDeserializer {
     private fun unpackEphemeral(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
-        sender: QualifiedId
+        sender: QualifiedId,
+        instant: Instant
     ): WireMessage {
         val ephemeralMessage = genericMessage.ephemeral
 
@@ -402,6 +417,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
+                    instant = instant,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }
@@ -420,6 +436,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
+                    instant = instant,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }
@@ -447,6 +464,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
+                    instant = instant,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }

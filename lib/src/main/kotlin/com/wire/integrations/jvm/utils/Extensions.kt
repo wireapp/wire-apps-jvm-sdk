@@ -38,3 +38,31 @@ fun String.obfuscateClientId(): String {
 
 private fun String.obfuscateId(lastChar: Int): String =
     if (this.length < END_INDEX_ID) this else this.substring(START_INDEX, lastChar) + "***"
+
+fun String.toUTF16BEByteArray(): ByteArray = toByteArray(charset = Charsets.UTF_16BE)
+
+fun ByteArray.toStringFromUtf16BE(): String = toString(charset = Charsets.UTF_16BE)
+
+/**
+ * Converts a Long into a Byte Array Big Endian.
+ */
+@Suppress("MagicNumber")
+fun Long.toByteArray(): ByteArray {
+    val result = ByteArray(Long.SIZE_BYTES)
+
+    var longConvertedToByteArray = this
+
+    for (i in Long.SIZE_BYTES - 1 downTo 0) {
+        result[i] = (longConvertedToByteArray and 0xFFL).toByte()
+        longConvertedToByteArray = longConvertedToByteArray shr Long.SIZE_BYTES
+    }
+
+    return result
+}
+
+@Suppress("MagicNumber")
+fun ByteArray.toInternalHexString(): String {
+    return joinToString("") {
+        (0xFF and it.toInt()).toString(16).padStart(2, '0')
+    }
+}

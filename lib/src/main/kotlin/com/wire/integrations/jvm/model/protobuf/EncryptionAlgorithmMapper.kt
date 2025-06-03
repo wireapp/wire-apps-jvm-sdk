@@ -16,29 +16,20 @@
 
 package com.wire.integrations.jvm.model.protobuf
 
-import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages.EncryptionAlgorithm
 
 object EncryptionAlgorithmMapper {
-    fun fromProtobufModel(
-        encryptionAlgorithm: EncryptionAlgorithm?
-    ): WireMessage.Asset.AssetMetadata.MessageEncryptionAlgorithm? =
+    fun fromProtobufModel(encryptionAlgorithm: EncryptionAlgorithm?): MessageEncryptionAlgorithm? =
         when (encryptionAlgorithm) {
-            EncryptionAlgorithm.AES_CBC ->
-                WireMessage.Asset.AssetMetadata.MessageEncryptionAlgorithm.AES_CBC
-            EncryptionAlgorithm.AES_GCM ->
-                WireMessage.Asset.AssetMetadata.MessageEncryptionAlgorithm.AES_GCM
+            EncryptionAlgorithm.AES_CBC -> MessageEncryptionAlgorithm.AES_CBC
+            EncryptionAlgorithm.AES_GCM -> MessageEncryptionAlgorithm.AES_GCM
             else -> null
         }
 
-    fun toProtoBufModel(
-        messageEncryptionAlgorithm: WireMessage.Asset.AssetMetadata.MessageEncryptionAlgorithm?
-    ): EncryptionAlgorithm? =
-        when (messageEncryptionAlgorithm) {
-            WireMessage.Asset.AssetMetadata.MessageEncryptionAlgorithm.AES_CBC ->
-                EncryptionAlgorithm.AES_CBC
-            WireMessage.Asset.AssetMetadata.MessageEncryptionAlgorithm.AES_GCM ->
-                EncryptionAlgorithm.AES_GCM
+    fun toProtoBufModel(encryptionAlgorithm: MessageEncryptionAlgorithm?): EncryptionAlgorithm? =
+        when (encryptionAlgorithm) {
+            MessageEncryptionAlgorithm.AES_CBC -> EncryptionAlgorithm.AES_CBC
+            MessageEncryptionAlgorithm.AES_GCM -> EncryptionAlgorithm.AES_GCM
             else -> null
         }
 }

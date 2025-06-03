@@ -17,7 +17,11 @@
 package com.wire.integrations.jvm.model
 
 import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.model.protobuf.MessageEncryptionAlgorithm
+import java.nio.file.Path
 import java.util.UUID
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 @Suppress("ArrayInDataClass")
 sealed interface WireMessage {
@@ -42,6 +46,7 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
+        val instant: Instant,
         val text: String,
         val quotedMessageId: UUID? = null,
         val quotedMessageSha256: ByteArray? = null,
@@ -59,10 +64,15 @@ sealed interface WireMessage {
              * @return A new Text message with a random UUID
              */
             @JvmStatic
+            @Suppress("LongParameterList")
             fun create(
                 conversationId: QualifiedId,
                 text: String,
                 mentions: List<Mention> = emptyList(),
+                quotedMessageId: UUID? = null,
+                quotedMessageSha256: ByteArray? = null,
+                linkPreviews: List<LinkPreview> = emptyList(),
+                instant: Instant = Clock.System.now(),
                 expiresAfterMillis: Long? = null
             ): Text {
                 return Text(
@@ -74,6 +84,10 @@ sealed interface WireMessage {
                     ),
                     text = text,
                     mentions = mentions,
+                    quotedMessageId = quotedMessageId,
+                    quotedMessageSha256 = quotedMessageSha256,
+                    linkPreviews = linkPreviews,
+                    instant = instant,
                     expiresAfterMillis = expiresAfterMillis
                 )
             }
@@ -89,14 +103,31 @@ sealed interface WireMessage {
 
     @JvmRecord
     data class LinkPreview @JvmOverloads constructor(
-        val summary: String? = null,
+        val url: String,
+        val urlOffset: Int,
+        val permanentUrl: String? = null,
         val title: String? = null,
-        val url: String? = null,
-        val urlOffset: Int = 0,
-        val mimeType: String? = null,
-        val name: String? = null,
-        val size: Long = 0
-    )
+        val summary: String? = null,
+        val image: LinkPreviewAsset? = null
+    ) {
+        data class LinkPreviewAsset(
+            val name: String? = null,
+            val mimeType: String,
+            val metadata: Asset.AssetMetadata? = null,
+            val assetDataPath: Path?,
+            val assetDataSize: Long,
+            val assetHeight: Int,
+            val assetWidth: Int,
+            val assetName: String? = null,
+            var assetKey: String? = null,
+            var assetToken: String? = null,
+            var assetDomain: String? = null,
+            var otrKey: ByteArray = ByteArray(0),
+            var sha256Key: ByteArray = ByteArray(0),
+            var encryptionAlgorithm: MessageEncryptionAlgorithm =
+                MessageEncryptionAlgorithm.AES_CBC
+        )
+    }
 
     @JvmRecord
     data class Asset @JvmOverloads constructor(
@@ -104,11 +135,12 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
+        val instant: Instant = Clock.System.now(),
         val sizeInBytes: Long,
         val name: String? = null,
         val mimeType: String,
         val metadata: AssetMetadata? = null,
-        val remoteData: AssetMetadata.RemoteData? = null
+        val remoteData: RemoteData? = null
     ) : WireMessage, Ephemeral {
         sealed class AssetMetadata {
             data class Image(val width: Int, val height: Int) : AssetMetadata()
@@ -123,18 +155,42 @@ sealed interface WireMessage {
                 val durationMs: Long?,
                 val normalizedLoudness: ByteArray?
             ) : AssetMetadata()
+        }
 
-            enum class MessageEncryptionAlgorithm { AES_CBC, AES_GCM }
+        @JvmRecord
+        data class RemoteData @JvmOverloads constructor(
+            val otrKey: ByteArray,
+            val sha256: ByteArray,
+            val assetId: String,
+            val assetToken: String? = null,
+            val assetDomain: String,
+            val encryptionAlgorithm: MessageEncryptionAlgorithm? = null
+        )
 
-            @JvmRecord
-            data class RemoteData @JvmOverloads constructor(
-                val otrKey: ByteArray,
-                val sha256: ByteArray,
-                val assetId: String,
-                val assetToken: String? = null,
-                val assetDomain: String,
-                val encryptionAlgorithm: MessageEncryptionAlgorithm? = null
+        companion object {
+            private val SUPPORTED_IMAGE_ASSET_MIME_TYPES =
+                setOf("image/jpg", "image/jpeg", "image/png", "image/gif", "image/webp")
+            private val SUPPORTED_AUDIO_ASSET_MIME_TYPES = setOf(
+                "audio/mp3",
+                "audio/mp4",
+                "audio/mpeg",
+                "audio/ogg",
+                "audio/wav",
+                "audio/x-wav",
+                "audio/x-pn-wav",
+                "audio/x-m4a"
             )
+            private val SUPPORTED_VIDEO_ASSET_MIME_TYPES =
+                setOf("video/mp4", "video/webm", "video/3gpp", "video/mkv")
+
+            fun isImageMimeType(mimeType: String): Boolean =
+                mimeType in SUPPORTED_IMAGE_ASSET_MIME_TYPES
+
+            fun isAudioMimeType(mimeType: String): Boolean =
+                mimeType in SUPPORTED_AUDIO_ASSET_MIME_TYPES
+
+            fun isVideoMimeType(mimeType: String): Boolean =
+                mimeType in SUPPORTED_VIDEO_ASSET_MIME_TYPES
         }
     }
 
@@ -271,6 +327,7 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
+        val instant: Instant,
         val latitude: Float,
         val longitude: Float,
         val name: String? = null,
@@ -296,6 +353,7 @@ sealed interface WireMessage {
                 longitude: Float,
                 name: String? = null,
                 zoom: Int = 0,
+                instant: Instant = Clock.System.now(),
                 expiresAfterMillis: Long? = null
             ): Location {
                 return Location(
@@ -309,6 +367,7 @@ sealed interface WireMessage {
                     longitude = longitude,
                     name = name,
                     zoom = zoom,
+                    instant = instant,
                     expiresAfterMillis = expiresAfterMillis
                 )
             }

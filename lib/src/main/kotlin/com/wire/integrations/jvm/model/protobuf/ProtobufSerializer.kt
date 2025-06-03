@@ -17,7 +17,7 @@
 package com.wire.integrations.jvm.model.protobuf
 
 import com.google.protobuf.ByteString
-import com.google.protobuf.kotlin.set
+import com.google.protobuf.kotlin.toByteString
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages
@@ -73,7 +73,24 @@ object ProtobufSerializer {
     private fun packText(wireMessage: WireMessage.Text) =
         Messages.Text.newBuilder()
             .setContent(wireMessage.text)
+            .apply {
+                if (
+                    wireMessage.quotedMessageId != null && wireMessage.quotedMessageSha256 != null
+                ) {
+                    setQuote(
+                        Messages.Quote.newBuilder()
+                            .setQuotedMessageId(wireMessage.quotedMessageId.toString())
+                            .setQuotedMessageSha256(
+                                ByteString.copyFrom(wireMessage.quotedMessageSha256)
+                            )
+                            .build()
+                    )
+                }
+            }
             .addAllMentions(wireMessage.mentions.map { MessageMentionMapper.toProtobuf(it) })
+            .addAllLinkPreview(
+                wireMessage.linkPreviews.map { MessageLinkPreviewMapper.toProtobuf(it) }
+            )
             .setExpectsReadConfirmation(false)
             .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
             .build()
@@ -97,6 +114,7 @@ object ProtobufSerializer {
                 } ?: setText(text)
             }
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     private fun packAsset(
         wireMessage: WireMessage.Asset,
         genericMessage: GenericMessage.Builder
@@ -104,6 +122,51 @@ object ProtobufSerializer {
         genericMessage
             .apply {
                 val asset = Messages.Asset.newBuilder()
+                    .setOriginal(
+                        Messages.Asset.Original.newBuilder()
+                            .setMimeType(wireMessage.mimeType)
+                            .setSize(wireMessage.sizeInBytes)
+                            .setName(wireMessage.name)
+                            .apply {
+                                when (wireMessage.metadata) {
+                                    is WireMessage.Asset.AssetMetadata.Image -> setImage(
+                                        Messages.Asset.ImageMetaData.newBuilder()
+                                            .setWidth(wireMessage.metadata.width)
+                                            .setHeight(wireMessage.metadata.height)
+                                            .build()
+                                    )
+                                    is WireMessage.Asset.AssetMetadata.Audio -> setAudio(
+                                        Messages.Asset.AudioMetaData.newBuilder()
+                                            .apply {
+                                                wireMessage.metadata.durationMs?.let {
+                                                    setDurationInMillis(it)
+                                                }
+                                                wireMessage.metadata.normalizedLoudness?.let {
+                                                    setNormalizedLoudness(it.toByteString())
+                                                }
+                                            }
+                                            .build()
+                                    )
+                                    is WireMessage.Asset.AssetMetadata.Video -> setVideo(
+                                        Messages.Asset.VideoMetaData.newBuilder()
+                                            .apply {
+                                                wireMessage.metadata.width?.let {
+                                                    setWidth(it)
+                                                }
+                                                wireMessage.metadata.height?.let {
+                                                    setHeight(it)
+                                                }
+                                                wireMessage.metadata.durationMs?.let {
+                                                    setDurationInMillis(it)
+                                                }
+                                            }
+                                            .build()
+                                    )
+                                    else -> {}
+                                }
+                            }
+                            .build()
+                    )
                     .setUploaded(
                         Messages.Asset.RemoteData.newBuilder()
                             .setAssetId(wireMessage.remoteData?.assetId)

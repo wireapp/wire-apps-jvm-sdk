@@ -40,6 +40,7 @@ import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
+import kotlinx.datetime.Instant
 import org.slf4j.LoggerFactory
 
 internal class EventsRouter internal constructor(
@@ -153,7 +154,8 @@ internal class EventsRouter internal constructor(
                         forwardMessage(
                             message = message,
                             conversationId = event.qualifiedConversation,
-                            sender = event.qualifiedFrom
+                            sender = event.qualifiedFrom,
+                            instant = event.time
                         )
                     } catch (exception: MlsException) {
                         logger.debug("Message decryption failed", exception)
@@ -228,13 +230,15 @@ internal class EventsRouter internal constructor(
     private suspend fun forwardMessage(
         message: ByteArray,
         conversationId: QualifiedId,
-        sender: QualifiedId
+        sender: QualifiedId,
+        instant: Instant
     ) {
         val genericMessage = GenericMessage.parseFrom(message)
         val wireMessage = ProtobufDeserializer.processGenericMessage(
             genericMessage = genericMessage,
             conversationId = conversationId,
-            sender = sender
+            sender = sender,
+            instant = instant
         )
 
         when (wireEventsHandler) {

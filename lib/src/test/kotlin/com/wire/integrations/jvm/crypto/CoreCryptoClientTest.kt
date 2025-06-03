@@ -27,6 +27,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 
 class CoreCryptoClientTest {
@@ -162,7 +163,8 @@ class CoreCryptoClientTest {
                 sender = QualifiedId(
                     id = UUID.randomUUID(),
                     domain = "random_domain"
-                )
+                ),
+                instant = Instant.DISTANT_PAST
             )
 
             assertEquals((wireMessage as WireMessage.Text).text, plainMessage)
