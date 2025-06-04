@@ -77,8 +77,16 @@ fun main() {
                     messages = listOf(wireMessage.id.toString())
                 )
 
+                // Add a reaction emoji to the received message
+                val reaction = WireMessage.Reaction.create(
+                    conversationId = wireMessage.conversationId,
+                    messageId = wireMessage.id.toString(),
+                    emojiSet = setOf("🤝")
+                )
+
                 manager.sendMessageSuspending(message = message)
                 manager.sendMessageSuspending(message = receipt)
+                manager.sendMessageSuspending(message = reaction)
             }
 
             override suspend fun onAsset(wireMessage: WireMessage.Asset) {

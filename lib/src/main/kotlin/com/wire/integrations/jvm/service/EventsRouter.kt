@@ -250,6 +250,9 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
                 is WireMessage.TextEdited -> wireEventsHandler.onTextEdited(wireMessage)
+                is WireMessage.Reaction -> wireEventsHandler.onReaction(wireMessage)
+                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallEmoji(wireMessage)
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaise(wireMessage)
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
@@ -265,6 +268,9 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
                 is WireMessage.TextEdited -> wireEventsHandler.onTextEdited(wireMessage)
+                is WireMessage.Reaction -> wireEventsHandler.onReaction(wireMessage)
+                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallEmoji(wireMessage)
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaise(wireMessage)
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }

@@ -428,6 +428,56 @@ sealed interface WireMessage {
         }
     }
 
+    data class Reaction(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId,
+        val messageId: String,
+        val emojiSet: Set<String>
+    ) : WireMessage {
+        companion object {
+            /**
+             * Creates a Reaction message with minimal required parameters.
+             *
+             * @param conversationId The qualified ID of the conversation
+             * @param messageId The ID of the message that will receive the Reaction
+             * @param emojiSet A Set<String> of emojis to be sent
+             * @return A new TextEdited message with the original received ID.
+             */
+            @JvmStatic
+            fun create(
+                conversationId: QualifiedId,
+                messageId: String,
+                emojiSet: Set<String> = emptySet()
+            ): Reaction {
+                return Reaction(
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
+                    messageId = messageId,
+                    emojiSet = emojiSet
+                )
+            }
+        }
+    }
+
+    data class InCallEmoji(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId,
+        val emojis: Map<String, Int>
+    ) : WireMessage
+
+    data class InCallHandRaise(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId,
+        val isHandUp: Boolean
+    ) : WireMessage
+
     data object Ignored : WireMessage {
         override val id: UUID
             get() = throw WireException.InvalidParameter("Ignored message, no ID")
