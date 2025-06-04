@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory
 object ProtobufDeserializer {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Suppress("ReturnCount", "LongMethod")
+    @Suppress("ReturnCount", "LongMethod", "CyclomaticComplexMethod")
     fun processGenericMessage(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
@@ -113,6 +113,24 @@ object ProtobufDeserializer {
                 conversationId = conversationId,
                 sender = sender,
                 instant = instant
+            )
+
+            genericMessage.hasReaction() -> unpackReaction(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasInCallEmoji() -> unpackInCallEmoji(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasInCallHandRaise() -> unpackInCallHandRaise(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
             )
 
             else -> WireMessage.Unknown
@@ -473,4 +491,56 @@ object ProtobufDeserializer {
             else -> WireMessage.Ignored
         }
     }
+
+    private fun unpackReaction(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage {
+        val emoji = genericMessage.reaction.emoji
+        val emojiSet = emoji?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: emptySet()
+
+        return WireMessage.Reaction(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            messageId = genericMessage.reaction.messageId,
+            emojiSet = emojiSet
+        )
+    }
+
+    private fun unpackInCallEmoji(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.InCallEmoji =
+        WireMessage.InCallEmoji(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            // Map of emoji to senderId
+            emojis = genericMessage.inCallEmoji.emojisMap
+                .mapNotNull {
+                    val key = it.key ?: return@mapNotNull null
+                    val value = it.value ?: return@mapNotNull null
+                    key to value
+                }
+                .associateBy({ it.first }, { it.second })
+        )
+
+    private fun unpackInCallHandRaise(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.InCallHandRaise =
+        WireMessage.InCallHandRaise(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            isHandUp = genericMessage.inCallHandRaise.isHandUp
+        )
 }

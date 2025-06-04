@@ -27,10 +27,13 @@ import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.Ephemeral
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import com.wire.integrations.protobuf.messages.Messages.InCallEmoji
+import com.wire.integrations.protobuf.messages.Messages.InCallHandRaise
 import com.wire.integrations.protobuf.messages.Messages.Knock
 import com.wire.integrations.protobuf.messages.Messages.Location
 import com.wire.integrations.protobuf.messages.Messages.MessageDelete
 import com.wire.integrations.protobuf.messages.Messages.MessageEdit
+import com.wire.integrations.protobuf.messages.Messages.Reaction
 
 /**
  * Object class mapper for mapping [WireMessage] to [GenericMessage] (Protobuf) returning
@@ -39,7 +42,7 @@ import com.wire.integrations.protobuf.messages.Messages.MessageEdit
  * To be used when sending a message from [WireApplicationManager]
  * before reaching [CoreCryptoClient]
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "CyclomaticComplexMethod")
 object ProtobufSerializer {
     fun toGenericMessageByteArray(wireMessage: WireMessage): ByteArray {
         val genericMessage = GenericMessage
@@ -58,6 +61,9 @@ object ProtobufSerializer {
             is WireMessage.Deleted -> packDeleted(wireMessage, genericMessage)
             is WireMessage.Receipt -> packReceipt(wireMessage, genericMessage)
             is WireMessage.TextEdited -> packTextEdited(wireMessage, genericMessage)
+            is WireMessage.Reaction -> packReaction(wireMessage, genericMessage)
+            is WireMessage.InCallEmoji -> packInCallEmoji(wireMessage, genericMessage)
+            is WireMessage.InCallHandRaise -> packInCallHandRaise(wireMessage, genericMessage)
 
             is WireMessage.Ignored,
             is WireMessage.Unknown -> throw WireException.CryptographicSystemError(
@@ -351,4 +357,33 @@ object ProtobufSerializer {
                         )
                     )
             )
+
+    private fun packReaction(
+        wireMessage: WireMessage.Reaction,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setReaction(
+                Reaction.newBuilder()
+                    .setEmoji(
+                        wireMessage.emojiSet.map { it.trim() }.filter { it.isNotBlank() }
+                            .joinToString(separator = ",") { it }
+                    )
+                    .setMessageId(wireMessage.messageId)
+                    .build()
+            )
+
+    private fun packInCallEmoji(
+        wireMessage: WireMessage.InCallEmoji,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setInCallEmoji(InCallEmoji.newBuilder().putAllEmojis(wireMessage.emojis))
+
+    private fun packInCallHandRaise(
+        wireMessage: WireMessage.InCallHandRaise,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setInCallHandRaise(InCallHandRaise.newBuilder().setIsHandUp(wireMessage.isHandUp))
 }
