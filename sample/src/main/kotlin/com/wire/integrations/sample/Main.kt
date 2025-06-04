@@ -81,7 +81,7 @@ fun main() {
                 val reaction = WireMessage.Reaction.create(
                     conversationId = wireMessage.conversationId,
                     messageId = wireMessage.id.toString(),
-                    emojiSet = setOf("🤝")
+                    emojiSet = setOf("🧩")
                 )
 
                 manager.sendMessageSuspending(message = message)
