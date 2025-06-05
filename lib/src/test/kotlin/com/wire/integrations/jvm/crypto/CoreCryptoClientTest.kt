@@ -164,7 +164,7 @@ class CoreCryptoClientTest {
                     id = UUID.randomUUID(),
                     domain = "random_domain"
                 ),
-                instant = Instant.DISTANT_PAST
+                timestamp = Instant.DISTANT_PAST
             )
 
             assertEquals((wireMessage as WireMessage.Text).text, plainMessage)

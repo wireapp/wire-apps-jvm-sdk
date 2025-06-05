@@ -66,7 +66,7 @@ class WireEventsTest {
                         domain = "anta.wire.link"
                     ),
                     text = EXPECTED_NEW_MLS_MESSAGE_VALUE,
-                    instant = Instant.DISTANT_PAST
+                    timestamp = Instant.DISTANT_PAST
                 )
             )
         }
@@ -134,7 +134,7 @@ class WireEventsTest {
                     sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
                     latitude = EXPECTED_LOCATION_LATITUDE,
                     longitude = EXPECTED_LOCATION_LONGITUDE,
-                    instant = Instant.DISTANT_PAST
+                    timestamp = Instant.DISTANT_PAST
                 )
             )
         }

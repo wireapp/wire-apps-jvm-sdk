@@ -17,6 +17,7 @@
 package com.wire.integrations.jvm.model
 
 import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.model.protobuf.MessageContentEncoder
 import com.wire.integrations.jvm.model.protobuf.MessageEncryptionAlgorithm
 import java.nio.file.Path
 import java.util.UUID
@@ -46,7 +47,7 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
-        val instant: Instant,
+        val timestamp: Instant,
         val text: String,
         val quotedMessageId: UUID? = null,
         val quotedMessageSha256: ByteArray? = null,
@@ -60,21 +61,69 @@ sealed interface WireMessage {
              * @param conversationId The qualified ID of the conversation
              * @param text The text content of the message
              * @param mentions List of [Mention] included in the text
+             * @param linkPreviews List of [LinkPreview] to be displayed
+             * @param expiresAfterMillis The time in milliseconds for an ephemeral message
+             * @return A new Text message with a random UUID
+             */
+            @JvmStatic
+            fun create(
+                conversationId: QualifiedId,
+                text: String,
+                mentions: List<Mention> = emptyList(),
+                linkPreviews: List<LinkPreview> = emptyList(),
+                expiresAfterMillis: Long? = null
+            ): Text =
+                Text(
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
+                    text = text,
+                    mentions = mentions,
+                    linkPreviews = linkPreviews,
+                    timestamp = Clock.System.now(),
+                    expiresAfterMillis = expiresAfterMillis
+                )
+
+            /**
+             * Creates a reply message with minimal parameters.
+             *
+             * @param conversationId The qualified ID of the conversation
+             * @param text The text content of the message
+             * @param mentions List of [Mention] included in the text
+             * @param linkPreviews List of [LinkPreview] to be displayed
+             * @param originalMessage The WireMessage the quote will be relied on
+             *  Note: it only accepts WireMessage of Types:
+             *  - [WireMessage.Text]
+             *  - [WireMessage.Asset]
+             *  - [WireMessage.Location]
              * @param expiresAfterMillis The time in milliseconds for an ephemeral message
              * @return A new Text message with a random UUID
              */
             @JvmStatic
             @Suppress("LongParameterList")
-            fun create(
+            fun createReply(
                 conversationId: QualifiedId,
                 text: String,
                 mentions: List<Mention> = emptyList(),
-                quotedMessageId: UUID? = null,
-                quotedMessageSha256: ByteArray? = null,
                 linkPreviews: List<LinkPreview> = emptyList(),
-                instant: Instant = Clock.System.now(),
+                originalMessage: WireMessage,
                 expiresAfterMillis: Long? = null
             ): Text {
+                require(
+                    originalMessage is Text || originalMessage is Asset ||
+                        originalMessage is Location
+                ) { "Unsupported replied WireMessage: ${originalMessage::class.simpleName}" }
+
+                val timestamp = when (originalMessage) {
+                    is Text -> originalMessage.timestamp
+                    is Asset -> originalMessage.timestamp
+                    is Location -> originalMessage.timestamp
+                    else -> Clock.System.now()
+                }
+
                 return Text(
                     id = UUID.randomUUID(),
                     conversationId = conversationId,
@@ -84,10 +133,12 @@ sealed interface WireMessage {
                     ),
                     text = text,
                     mentions = mentions,
-                    quotedMessageId = quotedMessageId,
-                    quotedMessageSha256 = quotedMessageSha256,
+                    quotedMessageId = originalMessage.id,
+                    quotedMessageSha256 = MessageContentEncoder.encodeMessageContent(
+                        message = originalMessage
+                    )?.sha256Digest,
                     linkPreviews = linkPreviews,
-                    instant = instant,
+                    timestamp = timestamp,
                     expiresAfterMillis = expiresAfterMillis
                 )
             }
@@ -135,7 +186,7 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
-        val instant: Instant = Clock.System.now(),
+        val timestamp: Instant = Clock.System.now(),
         val sizeInBytes: Long,
         val name: String? = null,
         val mimeType: String,
@@ -327,7 +378,7 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
-        val instant: Instant,
+        val timestamp: Instant,
         val latitude: Float,
         val longitude: Float,
         val name: String? = null,
@@ -353,7 +404,7 @@ sealed interface WireMessage {
                 longitude: Float,
                 name: String? = null,
                 zoom: Int = 0,
-                instant: Instant = Clock.System.now(),
+                timestamp: Instant = Clock.System.now(),
                 expiresAfterMillis: Long? = null
             ): Location {
                 return Location(
@@ -367,7 +418,7 @@ sealed interface WireMessage {
                     longitude = longitude,
                     name = name,
                     zoom = zoom,
-                    instant = instant,
+                    timestamp = timestamp,
                     expiresAfterMillis = expiresAfterMillis
                 )
             }

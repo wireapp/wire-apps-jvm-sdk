@@ -219,7 +219,7 @@ class WireApplicationManager internal constructor(
      * download the file later, other clients will receive the same key automatically.
      */
     @Suppress("LongParameterList")
-    fun uploadAndSendMessage(
+    fun sendAsset(
         conversationId: QualifiedId,
         asset: AssetResource,
         metadata: AssetMetadata,
@@ -228,7 +228,7 @@ class WireApplicationManager internal constructor(
         retention: AssetRetention
     ): EncryptionKey {
         return runBlocking {
-            uploadAndSendMessageSuspending(
+            sendAssetSuspending(
                 conversationId = conversationId,
                 asset = asset,
                 metadata = metadata,
@@ -258,7 +258,7 @@ class WireApplicationManager internal constructor(
      * download the file later, other clients will receive the same key automatically.
      */
     @Suppress("LongParameterList")
-    suspend fun uploadAndSendMessageSuspending(
+    suspend fun sendAssetSuspending(
         conversationId: QualifiedId,
         asset: AssetResource,
         metadata: AssetMetadata? = null,

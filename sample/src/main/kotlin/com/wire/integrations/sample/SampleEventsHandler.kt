@@ -21,8 +21,6 @@ import com.wire.integrations.jvm.model.AssetResource
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.WireMessage.Asset.AssetMetadata
 import com.wire.integrations.jvm.model.asset.AssetRetention
-import com.wire.integrations.jvm.model.protobuf.MessageContentEncoder
-import com.wire.integrations.jvm.utils.AESEncrypt
 import java.io.File
 import java.util.*
 import org.slf4j.LoggerFactory
@@ -39,7 +37,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             val asset = File(resourcePath)
             val originalData = asset.readBytes()
 
-            manager.uploadAndSendMessageSuspending(
+            manager.sendAssetSuspending(
                 conversationId = wireMessage.conversationId,
                 asset = AssetResource(originalData),
                 name = asset.name,
@@ -56,7 +54,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             val asset = File(resourcePath)
             val originalData = asset.readBytes()
 
-            manager.uploadAndSendMessageSuspending(
+            manager.sendAssetSuspending(
                 conversationId = wireMessage.conversationId,
                 asset = AssetResource(originalData),
                 metadata = getSampleAudioMetadata(),
@@ -74,7 +72,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             val asset = File(resourcePath)
             val originalData = asset.readBytes()
 
-            manager.uploadAndSendMessageSuspending(
+            manager.sendAssetSuspending(
                 conversationId = wireMessage.conversationId,
                 asset = AssetResource(originalData),
                 metadata = AssetMetadata.Video(
@@ -103,14 +101,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             return
         }
 
-        val message = WireMessage.Text.create(
+        val message = WireMessage.Text.createReply(
             conversationId = wireMessage.conversationId,
             text = "${wireMessage.text} -- Sent from the SDK",
             mentions = wireMessage.mentions,
-            quotedMessageId = wireMessage.id,
-            quotedMessageSha256 = MessageContentEncoder.encodeMessageContent(
-                message = wireMessage
-            )?.sha256Digest
+            originalMessage = wireMessage
         )
 
         // Sending a Read Receipt for the received message
@@ -120,20 +115,25 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             messages = listOf(wireMessage.id.toString())
         )
 
+        // Add a reaction emoji to the received message
+        val reaction = WireMessage.Reaction.create(
+            conversationId = wireMessage.conversationId,
+            messageId = wireMessage.id.toString(),
+            emojiSet = setOf("🧩")
+        )
+
         manager.sendMessageSuspending(message = message)
         manager.sendMessageSuspending(message = receipt)
+        manager.sendMessageSuspending(message = reaction)
     }
 
     override suspend fun onAsset(wireMessage: WireMessage.Asset) {
         logger.info("Received Asset Message : $wireMessage")
 
-        val message = WireMessage.Text.create(
+        val message = WireMessage.Text.createReply(
             conversationId = wireMessage.conversationId,
             text = "Received Asset : ${wireMessage.name}",
-            quotedMessageId = wireMessage.id,
-            quotedMessageSha256 = MessageContentEncoder.encodeMessageContent(
-                message = wireMessage
-            )?.sha256Digest
+            originalMessage = wireMessage
         )
 
         manager.sendMessageSuspending(message = message)
@@ -179,13 +179,10 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     override suspend fun onLocation(wireMessage: WireMessage.Location) {
         logger.info("Received onLocationSuspending Message : $wireMessage")
 
-        val message = WireMessage.Text.create(
+        val message = WireMessage.Text.createReply(
             conversationId = wireMessage.conversationId,
             text = "Received Location\n\nLatitude: ${wireMessage.latitude}\n\nLongitude: ${wireMessage.longitude}\n\nName: ${wireMessage.name}\n\nZoom: ${wireMessage.zoom}",
-            quotedMessageId = wireMessage.id,
-            quotedMessageSha256 = MessageContentEncoder.encodeMessageContent(
-                message = wireMessage
-            )?.sha256Digest
+            originalMessage = wireMessage
         )
 
         manager.sendMessageSuspending(message = message)

@@ -42,21 +42,21 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
-        instant: Instant
+        timestamp: Instant
     ): WireMessage =
         when {
             genericMessage.hasText() -> unpackText(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
                 sender = sender,
-                instant = instant
+                timestamp = timestamp
             )
 
             genericMessage.hasAsset() -> unpackAsset(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
                 sender = sender,
-                instant = instant
+                timestamp = timestamp
             )
 
             genericMessage.hasComposite() -> unpackComposite(
@@ -87,7 +87,7 @@ object ProtobufDeserializer {
                 genericMessage = genericMessage,
                 conversationId = conversationId,
                 sender = sender,
-                instant = instant
+                timestamp = timestamp
             )
 
             genericMessage.hasDeleted() -> unpackDeletedMessage(
@@ -112,7 +112,7 @@ object ProtobufDeserializer {
                 genericMessage = genericMessage,
                 conversationId = conversationId,
                 sender = sender,
-                instant = instant
+                timestamp = timestamp
             )
 
             genericMessage.hasReaction() -> unpackReaction(
@@ -140,7 +140,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
-        instant: Instant,
+        timestamp: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Text {
         val text = genericMessage.text
@@ -150,7 +150,7 @@ object ProtobufDeserializer {
             sender = sender,
             id = UUID.fromString(genericMessage.messageId),
             text = text.content,
-            instant = instant,
+            timestamp = timestamp,
             quotedMessageId =
                 if (text.hasQuote()) UUID.fromString(text.quote.quotedMessageId) else null,
             quotedMessageSha256 =
@@ -173,7 +173,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
-        instant: Instant,
+        timestamp: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Asset {
         val asset = genericMessage.asset
@@ -234,7 +234,7 @@ object ProtobufDeserializer {
             mimeType = original?.mimeType ?: "*/*",
             metadata = metadata,
             remoteData = remoteData,
-            instant = instant,
+            timestamp = timestamp,
             expiresAfterMillis = expiresAfterMillis
         )
     }
@@ -319,7 +319,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
-        instant: Instant,
+        timestamp: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Location =
         WireMessage.Location(
@@ -330,7 +330,7 @@ object ProtobufDeserializer {
             longitude = genericMessage.location.longitude,
             name = genericMessage.location.name,
             zoom = genericMessage.location.zoom,
-            instant = instant,
+            timestamp = timestamp,
             expiresAfterMillis = expiresAfterMillis
         )
 
@@ -410,7 +410,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
-        instant: Instant
+        timestamp: Instant
     ): WireMessage {
         val ephemeralMessage = genericMessage.ephemeral
 
@@ -435,7 +435,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
-                    instant = instant,
+                    timestamp = timestamp,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }
@@ -454,7 +454,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
-                    instant = instant,
+                    timestamp = timestamp,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }
@@ -482,7 +482,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
-                    instant = instant,
+                    timestamp = timestamp,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }

@@ -155,7 +155,7 @@ internal class EventsRouter internal constructor(
                             message = message,
                             conversationId = event.qualifiedConversation,
                             sender = event.qualifiedFrom,
-                            instant = event.time
+                            timestamp = event.time
                         )
                     } catch (exception: MlsException) {
                         logger.debug("Message decryption failed", exception)
@@ -231,14 +231,14 @@ internal class EventsRouter internal constructor(
         message: ByteArray,
         conversationId: QualifiedId,
         sender: QualifiedId,
-        instant: Instant
+        timestamp: Instant
     ) {
         val genericMessage = GenericMessage.parseFrom(message)
         val wireMessage = ProtobufDeserializer.processGenericMessage(
             genericMessage = genericMessage,
             conversationId = conversationId,
             sender = sender,
-            instant = instant
+            timestamp = timestamp
         )
 
         when (wireEventsHandler) {

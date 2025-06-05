@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory
  * - Asset (via asset ID)
  * - Location (latitude and longitude)
  */
-object MessageContentEncoder {
+internal object MessageContentEncoder {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
@@ -50,14 +50,14 @@ object MessageContentEncoder {
             is WireMessage.Asset ->
                 message.remoteData?.assetId?.let { assetId ->
                     encodeMessageAsset(
-                        messageTimeStampInMillis = message.instant.toEpochMilliseconds(),
+                        messageTimeStampInMillis = message.timestamp.toEpochMilliseconds(),
                         assetId = assetId
                     )
                 }
 
             is WireMessage.Text ->
                 encodeMessageTextBody(
-                    messageTimeStampInMillis = message.instant.toEpochMilliseconds(),
+                    messageTimeStampInMillis = message.timestamp.toEpochMilliseconds(),
                     messageTextBody = message.text
                 )
 
@@ -65,7 +65,7 @@ object MessageContentEncoder {
                 encodeLocationCoordinates(
                     latitude = message.latitude,
                     longitude = message.longitude,
-                    messageTimeStampInMillis = message.instant.toEpochMilliseconds()
+                    messageTimeStampInMillis = message.timestamp.toEpochMilliseconds()
                 )
             }
 
@@ -177,7 +177,7 @@ object MessageContentEncoder {
  * @property asHexString Hexadecimal string representation of the byteArray.
  * @property sha256Digest SHA-256 hash of the byteArray.
  */
-class EncodedMessageContent(val byteArray: ByteArray) {
+internal class EncodedMessageContent(val byteArray: ByteArray) {
     val asHexString = byteArray.toInternalHexString()
     val sha256Digest = AESEncrypt.calculateSha256Hash(byteArray)
 }

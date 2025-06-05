@@ -6,6 +6,7 @@ import com.wire.integrations.jvm.utils.toInternalHexString
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import org.junit.jupiter.api.Test
@@ -15,129 +16,202 @@ class MessageContentEncoderTest {
     fun givenAMessageBodyWithEmoji_whenEncoding_ThenResultHasExpectedHexResult() =
         runTest {
             // given / when
-            val result = MessageContentEncoder.encodeMessageContent(
-                message = WireMessage.Text.create(
-                    conversationId = CONVERSATION_ID,
-                    text = textWithEmoji.first.first,
-                    instant = textWithEmoji.first.second
-                )
+            val originalMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = textWithEmoji.first.first
+            ).copy(timestamp = textWithEmoji.first.second)
+
+            val replyMessage = WireMessage.Text.createReply(
+                conversationId = CONVERSATION_ID,
+                text = DEFAULT_REPLY_TEXT,
+                originalMessage = originalMessage
             )
+
+            val result = MessageContentEncoder.encodeMessageContent(
+                message = originalMessage
+            )
+
             // then
+            assertNotNull(replyMessage.quotedMessageSha256)
             assertNotNull(result)
             assertEquals(result.asHexString, textWithEmoji.second.first)
+            assertTrue(replyMessage.quotedMessageSha256.contentEquals(result.sha256Digest))
         }
 
     @Test
     fun givenAMessageBodyWithUrl_whenEncoding_ThenResultHasExpectedHexResult() =
         runTest {
+            val originalMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = url.first.first
+            ).copy(timestamp = url.first.second)
+
+            val replyMessage = WireMessage.Text.createReply(
+                conversationId = CONVERSATION_ID,
+                text = DEFAULT_REPLY_TEXT,
+                originalMessage = originalMessage
+            )
+
             val result = MessageContentEncoder.encodeMessageContent(
-                message = WireMessage.Text.create(
-                    conversationId = CONVERSATION_ID,
-                    text = url.first.first,
-                    instant = url.first.second
-                )
+                message = originalMessage
             )
 
             // then
+            assertNotNull(replyMessage.quotedMessageSha256)
             assertNotNull(result)
             assertEquals(result.asHexString, url.second.first)
+            assertTrue(replyMessage.quotedMessageSha256.contentEquals(result.sha256Digest))
         }
 
     @Test
     fun givenAMessageBodyWithArabic_whenEncoding_ThenResultHasExpectedHexResult() =
         runTest {
+            val originalMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = arabic.first.first
+            ).copy(timestamp = arabic.first.second)
+
+            val replyMessage = WireMessage.Text.createReply(
+                conversationId = CONVERSATION_ID,
+                text = DEFAULT_REPLY_TEXT,
+                originalMessage = originalMessage
+            )
+
             val result = MessageContentEncoder.encodeMessageContent(
-                message = WireMessage.Text.create(
-                    conversationId = CONVERSATION_ID,
-                    text = arabic.first.first,
-                    instant = arabic.first.second
-                )
+                message = originalMessage
             )
 
             // then
+            assertNotNull(replyMessage.quotedMessageSha256)
             assertNotNull(result)
             assertEquals(result.asHexString, arabic.second.first)
+            assertTrue(replyMessage.quotedMessageSha256.contentEquals(result.sha256Digest))
         }
 
     @Test
     fun givenAMessageBodyWithMarkDown_whenEncoding_ThenResultHasExpectedHexResult() =
         runTest {
+            val originalMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = markDown.first.first
+            ).copy(timestamp = markDown.first.second)
+
+            val replyMessage = WireMessage.Text.createReply(
+                conversationId = CONVERSATION_ID,
+                text = DEFAULT_REPLY_TEXT,
+                originalMessage = originalMessage
+            )
+
             val result = MessageContentEncoder.encodeMessageContent(
-                message = WireMessage.Text.create(
-                    conversationId = CONVERSATION_ID,
-                    text = markDown.first.first,
-                    instant = markDown.first.second
-                )
+                message = originalMessage
             )
 
             // then
+            assertNotNull(replyMessage.quotedMessageSha256)
             assertNotNull(result)
             assertEquals(result.asHexString, markDown.second.first)
+            assertTrue(replyMessage.quotedMessageSha256.contentEquals(result.sha256Digest))
         }
 
     @Test
     fun givenAMessageBodyWithEmoji_whenEncoding_ThenResultHasExpectedSHA256HashResult() =
         runTest {
+            val originalMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = textWithEmoji.first.first
+            ).copy(timestamp = textWithEmoji.first.second)
+
+            val replyMessage = WireMessage.Text.createReply(
+                conversationId = CONVERSATION_ID,
+                text = DEFAULT_REPLY_TEXT,
+                originalMessage = originalMessage
+            )
+
             // given / when
             val result = MessageContentEncoder.encodeMessageContent(
-                message = WireMessage.Text.create(
-                    conversationId = CONVERSATION_ID,
-                    text = textWithEmoji.first.first,
-                    instant = textWithEmoji.first.second
-                )
+                message = originalMessage
             )
 
             // then
+            assertNotNull(replyMessage.quotedMessageSha256)
             assertNotNull(result)
             assertEquals(result.sha256Digest.toInternalHexString(), textWithEmoji.second.second)
+            assertTrue(replyMessage.quotedMessageSha256.contentEquals(result.sha256Digest))
         }
 
     @Test
     fun givenAMessageBodyWithUrl_whenEncoding_ThenResultHasExpectedSHA256HashResult() =
         runTest {
+            val originalMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = url.first.first
+            ).copy(timestamp = url.first.second)
+
+            val replyMessage = WireMessage.Text.createReply(
+                conversationId = CONVERSATION_ID,
+                text = DEFAULT_REPLY_TEXT,
+                originalMessage = originalMessage
+            )
+
             val result = MessageContentEncoder.encodeMessageContent(
-                message = WireMessage.Text.create(
-                    conversationId = CONVERSATION_ID,
-                    text = url.first.first,
-                    instant = url.first.second
-                )
+                message = originalMessage
             )
 
             // then
+            assertNotNull(replyMessage.quotedMessageSha256)
             assertNotNull(result)
             assertEquals(result.sha256Digest.toInternalHexString(), url.second.second)
+            assertTrue(replyMessage.quotedMessageSha256.contentEquals(result.sha256Digest))
         }
 
     @Test
     fun givenAMessageBodyWithArabic_whenEncoding_ThenResultHasExpectedSHA256HashResult() =
         runTest {
+            val originalMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = arabic.first.first
+            ).copy(timestamp = arabic.first.second)
+
+            val replyMessage = WireMessage.Text.createReply(
+                conversationId = CONVERSATION_ID,
+                text = DEFAULT_REPLY_TEXT,
+                originalMessage = originalMessage
+            )
+
             val result = MessageContentEncoder.encodeMessageContent(
-                message = WireMessage.Text.create(
-                    conversationId = CONVERSATION_ID,
-                    text = arabic.first.first,
-                    instant = arabic.first.second
-                )
+                message = originalMessage
             )
 
             // then
+            assertNotNull(replyMessage.quotedMessageSha256)
             assertNotNull(result)
             assertEquals(result.sha256Digest.toInternalHexString(), arabic.second.second)
+            assertTrue(replyMessage.quotedMessageSha256.contentEquals(result.sha256Digest))
         }
 
     @Test
     fun givenAMessageBodyWithMarkDown_whenEncoding_ThenResultHasExpectedSHA256HashResult() =
         runTest {
+            val originalMessage = WireMessage.Text.create(
+                conversationId = CONVERSATION_ID,
+                text = markDown.first.first
+            ).copy(timestamp = markDown.first.second)
+
+            val replyMessage = WireMessage.Text.createReply(
+                conversationId = CONVERSATION_ID,
+                text = DEFAULT_REPLY_TEXT,
+                originalMessage = originalMessage
+            )
+
             val result = MessageContentEncoder.encodeMessageContent(
-                message = WireMessage.Text.create(
-                    conversationId = CONVERSATION_ID,
-                    text = markDown.first.first,
-                    instant = markDown.first.second
-                )
+                message = originalMessage
             )
 
             // then
+            assertNotNull(replyMessage.quotedMessageSha256)
             assertNotNull(result)
             assertEquals(result.sha256Digest.toInternalHexString(), markDown.second.second)
+            assertTrue(replyMessage.quotedMessageSha256.contentEquals(result.sha256Digest))
         }
 
     @Test
@@ -146,7 +220,7 @@ class MessageContentEncoderTest {
             val (locationMessage, messageDate, expectedHash) = location
             val result = MessageContentEncoder.encodeMessageContent(
                 message = locationMessage.copy(
-                    instant = messageDate
+                    timestamp = messageDate
                 )
             )
 
@@ -156,6 +230,7 @@ class MessageContentEncoderTest {
         }
 
     private companion object {
+        const val DEFAULT_REPLY_TEXT = "Default reply text"
         val CONVERSATION_ID = QualifiedId(
             id = UUID.randomUUID(),
             domain = UUID.randomUUID().toString()
