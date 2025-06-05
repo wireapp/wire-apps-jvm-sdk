@@ -16,6 +16,7 @@
 
 package com.wire.integrations.jvm.model.protobuf
 
+import com.google.protobuf.kotlin.toByteString
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages
 
@@ -26,7 +27,73 @@ object MessageLinkPreviewMapper {
             title = linkPreview.title,
             url = linkPreview.url,
             urlOffset = linkPreview.urlOffset,
-            size = if (linkPreview.hasImage()) linkPreview.image.original.size else 0,
-            mimeType = if (linkPreview.hasImage()) linkPreview.image.original.mimeType else null
+            permanentUrl = linkPreview.permanentUrl,
+            image = if (linkPreview.hasImage()) {
+                WireMessage.LinkPreview.LinkPreviewAsset(
+                    assetDataSize = linkPreview.image?.original?.size ?: 0,
+                    mimeType = linkPreview.image?.original?.mimeType ?: "*/*",
+                    assetName = linkPreview.image?.original?.name,
+                    assetHeight = if (linkPreview.hasImage()) {
+                        linkPreview.image.original.image.height
+                    } else {
+                        0
+                    },
+                    assetWidth = if (linkPreview.hasImage()) {
+                        linkPreview.image.original.image.width
+                    } else {
+                        0
+                    },
+                    assetDataPath = null,
+                    assetToken = linkPreview.image?.uploaded?.assetToken,
+                    assetDomain = linkPreview.image?.uploaded?.assetDomain,
+                    assetKey = linkPreview.image?.uploaded?.assetId
+                )
+            } else {
+                null
+            }
         )
+
+    fun toProtobuf(linkPreview: WireMessage.LinkPreview): Messages.LinkPreview =
+        Messages.LinkPreview.newBuilder()
+            .setUrl(linkPreview.url)
+            .setUrlOffset(linkPreview.urlOffset)
+            .setPermanentUrl(linkPreview.permanentUrl)
+            .setTitle(linkPreview.title)
+            .setSummary(linkPreview.summary)
+            .apply {
+                linkPreview.image?.let { image ->
+                    val original = Messages.Asset.Original.newBuilder()
+                        .setMimeType(image.mimeType)
+                        .setSize(image.assetDataSize)
+                        .setImage(
+                            Messages.Asset.ImageMetaData.newBuilder()
+                                .setWidth(image.assetWidth)
+                                .setHeight(image.assetHeight)
+                                .build()
+                        )
+                        .setName(image.name)
+                        .build()
+
+                    val remoteData = Messages.Asset.RemoteData.newBuilder()
+                        .setOtrKey(image.otrKey.toByteString())
+                        .setSha256(image.sha256Key.toByteString())
+                        .setAssetId(image.assetKey)
+                        .setAssetToken(image.assetToken)
+                        .setAssetDomain(image.assetDomain)
+                        .setEncryption(
+                            EncryptionAlgorithmMapper.toProtoBufModel(
+                                encryptionAlgorithm = image.encryptionAlgorithm
+                            )
+                        )
+                        .build()
+
+                    setImage(
+                        Messages.Asset.newBuilder()
+                            .setOriginal(original)
+                            .setUploaded(remoteData)
+                            .build()
+                    )
+                }
+            }
+            .build()
 }

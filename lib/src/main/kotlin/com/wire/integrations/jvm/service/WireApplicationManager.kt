@@ -38,8 +38,12 @@ import com.wire.integrations.jvm.utils.AESDecrypt
 import com.wire.integrations.jvm.utils.AESEncrypt
 import com.wire.integrations.jvm.utils.MAX_DATA_SIZE
 import io.ktor.http.HttpStatusCode
-import kotlinx.coroutines.runBlocking
+import java.io.ByteArrayInputStream
 import java.util.UUID
+import javax.imageio.ImageIO
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 /**
  * Allows fetching common data and interacting with each Team instance invited to the Application.
@@ -170,7 +174,7 @@ class WireApplicationManager internal constructor(
      *
      * @throws [WireException] If the request fails or an error occurs while fetching the asset.
      */
-    fun downloadAsset(assetRemoteData: AssetMetadata.RemoteData): AssetResource {
+    fun downloadAsset(assetRemoteData: WireMessage.Asset.RemoteData): AssetResource {
         return runBlocking {
             downloadAssetSuspending(assetRemoteData)
         }
@@ -188,7 +192,9 @@ class WireApplicationManager internal constructor(
      *
      * @throws [WireException] If the request fails or an error occurs while fetching the asset.
      */
-    suspend fun downloadAssetSuspending(assetRemoteData: AssetMetadata.RemoteData): AssetResource {
+    suspend fun downloadAssetSuspending(
+        assetRemoteData: WireMessage.Asset.RemoteData
+    ): AssetResource {
         val encryptedAsset = backendClient.downloadAsset(
             assetId = assetRemoteData.assetId,
             assetDomain = assetRemoteData.assetDomain,
@@ -212,16 +218,21 @@ class WireApplicationManager internal constructor(
      * @return The encryption key used to encrypt the asset. Might be useful if you want to
      * download the file later, other clients will receive the same key automatically.
      */
-    fun uploadAndSendMessage(
+    @Suppress("LongParameterList")
+    fun sendAsset(
         conversationId: QualifiedId,
         asset: AssetResource,
+        metadata: AssetMetadata,
+        name: String,
         mimeType: String,
         retention: AssetRetention
     ): EncryptionKey {
         return runBlocking {
-            uploadAndSendMessageSuspending(
+            sendAssetSuspending(
                 conversationId = conversationId,
                 asset = asset,
+                metadata = metadata,
+                name = name,
                 mimeType = mimeType,
                 retention = retention
             )
@@ -233,15 +244,31 @@ class WireApplicationManager internal constructor(
      *
      * Suspending method for Kotlin consumers.
      *
+     * This method currently only handles the retrieval of an Image Asset, so for now we are also
+     * receiving a metadata [AssetMetadata] object for other types (Audio | Video).
+     *
+     * @param conversationId The qualified ID of the conversation
+     * @param asset [AssetResource] containing the ByteArray of the asset File
+     * @param metadata [AssetMetadata] Metadata to display the asset in the UI
+     * @param name Name of the asset
+     * @param mimeType MimeType of the asset
+     * @param retention [AssetRetention] What should be the retantion of the asset remotely
+     *
      * @return The encryption key used to encrypt the asset. Might be useful if you want to
      * download the file later, other clients will receive the same key automatically.
      */
-    suspend fun uploadAndSendMessageSuspending(
+    @Suppress("LongParameterList")
+    suspend fun sendAssetSuspending(
         conversationId: QualifiedId,
         asset: AssetResource,
+        metadata: AssetMetadata? = null,
+        name: String,
         mimeType: String,
         retention: AssetRetention
     ): EncryptionKey {
+        // TODO: In a future implementation this method will be removed in order for the metadata
+        //  to be retrieved internally and not received from external parameters.
+
         // Determine max size
         if (asset.value.size > MAX_DATA_SIZE) {
             throw WireException.InvalidParameter("Asset size exceeds the maximum limit")
@@ -263,6 +290,19 @@ class WireApplicationManager internal constructor(
             assetUploadData = assetUploadData
         )
 
+        // Verify if Asset is an Image and get metadata
+        val assetMetadata = if (WireMessage.Asset.isImageMimeType(mimeType = mimeType)) {
+            withContext(Dispatchers.IO) {
+                val image = ImageIO.read(ByteArrayInputStream(asset.value))
+                AssetMetadata.Image(
+                    width = image.width,
+                    height = image.height
+                )
+            }
+        } else {
+            metadata
+        }
+
         // Build WireMessage.Asset
         val assetMessage = WireMessage.Asset(
             id = UUID.randomUUID(),
@@ -271,9 +311,11 @@ class WireApplicationManager internal constructor(
                 id = UUID.randomUUID(),
                 domain = UUID.randomUUID().toString()
             ),
+            name = name,
             sizeInBytes = encryptedAsset.size.toLong(),
             mimeType = mimeType,
-            remoteData = AssetMetadata.RemoteData(
+            metadata = assetMetadata,
+            remoteData = WireMessage.Asset.RemoteData(
                 assetId = assetUploadResponse.key,
                 assetDomain = assetUploadResponse.domain,
                 assetToken = assetUploadResponse.token,

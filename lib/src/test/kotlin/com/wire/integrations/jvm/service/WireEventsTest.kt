@@ -32,6 +32,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -64,7 +65,8 @@ class WireEventsTest {
                         id = UUID.randomUUID(),
                         domain = "anta.wire.link"
                     ),
-                    text = EXPECTED_NEW_MLS_MESSAGE_VALUE
+                    text = EXPECTED_NEW_MLS_MESSAGE_VALUE,
+                    timestamp = Instant.DISTANT_PAST
                 )
             )
         }
@@ -131,7 +133,8 @@ class WireEventsTest {
                     conversationId = CONVERSATION_ID,
                     sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
                     latitude = EXPECTED_LOCATION_LATITUDE,
-                    longitude = EXPECTED_LOCATION_LONGITUDE
+                    longitude = EXPECTED_LOCATION_LONGITUDE,
+                    timestamp = Instant.DISTANT_PAST
                 )
             )
         }

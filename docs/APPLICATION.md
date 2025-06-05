@@ -134,15 +134,28 @@ applicationManager.sendMessageSuspending(
 > **_Java:_**  Use `applicationManager.sendMessage`
 
 For when you upload and send an asset (file) to a conversation.
+
+Nots: When sending an asset message, you need to provide the file, name and mime type, while we take
+care of the encryption and metadata based on file mime type.
 ```kotlin
-applicationManager.uploadAndSendMessageSuspending(
-    conversationId = conversationId,
+// Get local File
+val resourcePath = javaClass.classLoader.getResource("my-file.png")?.path
+    ?: throw IllegalStateException("Test resource 'my-file.png' not found")
+val asset = File(resourcePath)
+
+// Get File data in ByteArray
+val originalData = asset.readBytes()
+
+// Send File with necessary parameters
+applicationManager.sendAssetSuspending(
+    conversationId = wireMessage.conversationId,
     asset = AssetResource(originalData),
+    name = asset.name,
     mimeType = "image/png",
     retention = AssetRetention.ETERNAL
 )
 ```
-> **_Java:_**  Use `applicationManager.uploadAndSendMessage`
+> **_Java:_**  Use `applicationManager.sendAsset`
 
 
 ### Reacting to events
