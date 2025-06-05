@@ -41,19 +41,26 @@ sealed interface WireMessage {
         val expiresAfterMillis: Long?
     }
 
+    /**
+     * Extra sealed interface for data classes that can be used to reply.
+     */
+    sealed interface Replyable {
+        val timestamp: Instant
+    }
+
     @JvmRecord
     data class Text @JvmOverloads constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
-        val timestamp: Instant,
+        override val timestamp: Instant,
         val text: String,
         val quotedMessageId: UUID? = null,
         val quotedMessageSha256: ByteArray? = null,
         val mentions: List<Mention> = emptyList(),
         val linkPreviews: List<LinkPreview> = emptyList()
-    ) : WireMessage, Item, Ephemeral {
+    ) : WireMessage, Item, Ephemeral, Replyable {
         companion object {
             /**
              * Creates a basic text message with minimal required parameters.
@@ -94,11 +101,8 @@ sealed interface WireMessage {
              * @param text The text content of the message
              * @param mentions List of [Mention] included in the text
              * @param linkPreviews List of [LinkPreview] to be displayed
-             * @param originalMessage The WireMessage the quote will be relied on
-             *  Note: it only accepts WireMessage of Types:
-             *  - [WireMessage.Text]
-             *  - [WireMessage.Asset]
-             *  - [WireMessage.Location]
+             * @param originalMessage The Original message a reply will be set on.
+             *  Note: it only accepts WireMessage that extends [Replyable]
              * @param expiresAfterMillis The time in milliseconds for an ephemeral message
              * @return A new Text message with a random UUID
              */
@@ -112,16 +116,8 @@ sealed interface WireMessage {
                 originalMessage: WireMessage,
                 expiresAfterMillis: Long? = null
             ): Text {
-                require(
-                    originalMessage is Text || originalMessage is Asset ||
-                        originalMessage is Location
-                ) { "Unsupported replied WireMessage: ${originalMessage::class.simpleName}" }
-
-                val timestamp = when (originalMessage) {
-                    is Text -> originalMessage.timestamp
-                    is Asset -> originalMessage.timestamp
-                    is Location -> originalMessage.timestamp
-                    else -> Clock.System.now()
+                require(originalMessage is Replyable) {
+                    "Unsupported replied WireMessage: ${originalMessage::class.simpleName}"
                 }
 
                 return Text(
@@ -138,7 +134,7 @@ sealed interface WireMessage {
                         message = originalMessage
                     )?.sha256Digest,
                     linkPreviews = linkPreviews,
-                    timestamp = timestamp,
+                    timestamp = originalMessage.timestamp,
                     expiresAfterMillis = expiresAfterMillis
                 )
             }
@@ -186,13 +182,13 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
-        val timestamp: Instant = Clock.System.now(),
+        override val timestamp: Instant = Clock.System.now(),
         val sizeInBytes: Long,
         val name: String? = null,
         val mimeType: String,
         val metadata: AssetMetadata? = null,
         val remoteData: RemoteData? = null
-    ) : WireMessage, Ephemeral {
+    ) : WireMessage, Ephemeral, Replyable {
         sealed class AssetMetadata {
             data class Image(val width: Int, val height: Int) : AssetMetadata()
 
@@ -378,12 +374,12 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
-        val timestamp: Instant,
+        override val timestamp: Instant,
         val latitude: Float,
         val longitude: Float,
         val name: String? = null,
         val zoom: Int = 0
-    ) : WireMessage, Ephemeral {
+    ) : WireMessage, Ephemeral, Replyable {
         companion object {
             /**
              * Creates a basic Location message with minimal required parameters.
