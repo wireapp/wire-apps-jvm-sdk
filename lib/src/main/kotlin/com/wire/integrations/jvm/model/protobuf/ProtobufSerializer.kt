@@ -17,7 +17,6 @@
 package com.wire.integrations.jvm.model.protobuf
 
 import com.google.protobuf.ByteString
-import com.google.protobuf.kotlin.set
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages

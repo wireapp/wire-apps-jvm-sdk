@@ -69,6 +69,8 @@ internal class WireTeamEventsListener internal constructor(
             val error = e.message ?: "Error connecting to WebSocket or establishing MLS client"
             logger.error(error, e)
             throw InterruptedException(error)
+        } finally {
+            logger.warn("WebSocket connection closed, stopping Wire Team Events Listener")
         }
     }
 }
