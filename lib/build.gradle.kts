@@ -59,7 +59,7 @@ dependencies {
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-    implementation("com.wire:core-crypto-jvm:4.1.0")
+    implementation("com.wire:core-crypto-jvm:7.0.1")
     implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
     implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.1.0")
