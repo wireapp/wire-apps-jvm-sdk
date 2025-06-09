@@ -17,6 +17,7 @@
 package com.wire.integrations.jvm.model.protobuf
 
 import com.google.protobuf.ByteString
+import com.google.protobuf.kotlin.toByteString
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.protobuf.messages.Messages
@@ -26,10 +27,13 @@ import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.Ephemeral
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import com.wire.integrations.protobuf.messages.Messages.InCallEmoji
+import com.wire.integrations.protobuf.messages.Messages.InCallHandRaise
 import com.wire.integrations.protobuf.messages.Messages.Knock
 import com.wire.integrations.protobuf.messages.Messages.Location
 import com.wire.integrations.protobuf.messages.Messages.MessageDelete
 import com.wire.integrations.protobuf.messages.Messages.MessageEdit
+import com.wire.integrations.protobuf.messages.Messages.Reaction
 
 /**
  * Object class mapper for mapping [WireMessage] to [GenericMessage] (Protobuf) returning
@@ -38,7 +42,7 @@ import com.wire.integrations.protobuf.messages.Messages.MessageEdit
  * To be used when sending a message from [WireApplicationManager]
  * before reaching [CoreCryptoClient]
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "CyclomaticComplexMethod")
 object ProtobufSerializer {
     fun toGenericMessageByteArray(wireMessage: WireMessage): ByteArray {
         val genericMessage = GenericMessage
@@ -57,6 +61,9 @@ object ProtobufSerializer {
             is WireMessage.Deleted -> packDeleted(wireMessage, genericMessage)
             is WireMessage.Receipt -> packReceipt(wireMessage, genericMessage)
             is WireMessage.TextEdited -> packTextEdited(wireMessage, genericMessage)
+            is WireMessage.Reaction -> packReaction(wireMessage, genericMessage)
+            is WireMessage.InCallEmoji -> packInCallEmoji(wireMessage, genericMessage)
+            is WireMessage.InCallHandRaise -> packInCallHandRaise(wireMessage, genericMessage)
 
             is WireMessage.Ignored,
             is WireMessage.Unknown -> throw WireException.CryptographicSystemError(
@@ -72,7 +79,24 @@ object ProtobufSerializer {
     private fun packText(wireMessage: WireMessage.Text) =
         Messages.Text.newBuilder()
             .setContent(wireMessage.text)
+            .apply {
+                if (
+                    wireMessage.quotedMessageId != null && wireMessage.quotedMessageSha256 != null
+                ) {
+                    setQuote(
+                        Messages.Quote.newBuilder()
+                            .setQuotedMessageId(wireMessage.quotedMessageId.toString())
+                            .setQuotedMessageSha256(
+                                ByteString.copyFrom(wireMessage.quotedMessageSha256)
+                            )
+                            .build()
+                    )
+                }
+            }
             .addAllMentions(wireMessage.mentions.map { MessageMentionMapper.toProtobuf(it) })
+            .addAllLinkPreview(
+                wireMessage.linkPreviews.map { MessageLinkPreviewMapper.toProtobuf(it) }
+            )
             .setExpectsReadConfirmation(false)
             .setLegalHoldStatus(Messages.LegalHoldStatus.DISABLED)
             .build()
@@ -96,6 +120,7 @@ object ProtobufSerializer {
                 } ?: setText(text)
             }
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     private fun packAsset(
         wireMessage: WireMessage.Asset,
         genericMessage: GenericMessage.Builder
@@ -103,6 +128,51 @@ object ProtobufSerializer {
         genericMessage
             .apply {
                 val asset = Messages.Asset.newBuilder()
+                    .setOriginal(
+                        Messages.Asset.Original.newBuilder()
+                            .setMimeType(wireMessage.mimeType)
+                            .setSize(wireMessage.sizeInBytes)
+                            .setName(wireMessage.name)
+                            .apply {
+                                when (wireMessage.metadata) {
+                                    is WireMessage.Asset.AssetMetadata.Image -> setImage(
+                                        Messages.Asset.ImageMetaData.newBuilder()
+                                            .setWidth(wireMessage.metadata.width)
+                                            .setHeight(wireMessage.metadata.height)
+                                            .build()
+                                    )
+                                    is WireMessage.Asset.AssetMetadata.Audio -> setAudio(
+                                        Messages.Asset.AudioMetaData.newBuilder()
+                                            .apply {
+                                                wireMessage.metadata.durationMs?.let {
+                                                    setDurationInMillis(it)
+                                                }
+                                                wireMessage.metadata.normalizedLoudness?.let {
+                                                    setNormalizedLoudness(it.toByteString())
+                                                }
+                                            }
+                                            .build()
+                                    )
+                                    is WireMessage.Asset.AssetMetadata.Video -> setVideo(
+                                        Messages.Asset.VideoMetaData.newBuilder()
+                                            .apply {
+                                                wireMessage.metadata.width?.let {
+                                                    setWidth(it)
+                                                }
+                                                wireMessage.metadata.height?.let {
+                                                    setHeight(it)
+                                                }
+                                                wireMessage.metadata.durationMs?.let {
+                                                    setDurationInMillis(it)
+                                                }
+                                            }
+                                            .build()
+                                    )
+                                    else -> {}
+                                }
+                            }
+                            .build()
+                    )
                     .setUploaded(
                         Messages.Asset.RemoteData.newBuilder()
                             .setAssetId(wireMessage.remoteData?.assetId)
@@ -287,4 +357,33 @@ object ProtobufSerializer {
                         )
                     )
             )
+
+    private fun packReaction(
+        wireMessage: WireMessage.Reaction,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setReaction(
+                Reaction.newBuilder()
+                    .setEmoji(
+                        wireMessage.emojiSet.map { it.trim() }.filter { it.isNotBlank() }
+                            .joinToString(separator = ",") { it }
+                    )
+                    .setMessageId(wireMessage.messageId)
+                    .build()
+            )
+
+    private fun packInCallEmoji(
+        wireMessage: WireMessage.InCallEmoji,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setInCallEmoji(InCallEmoji.newBuilder().putAllEmojis(wireMessage.emojis))
+
+    private fun packInCallHandRaise(
+        wireMessage: WireMessage.InCallHandRaise,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setInCallHandRaise(InCallHandRaise.newBuilder().setIsHandUp(wireMessage.isHandUp))
 }

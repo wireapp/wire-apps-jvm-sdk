@@ -24,6 +24,7 @@ import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
+import kotlinx.datetime.Instant
 import org.slf4j.LoggerFactory
 
 /**
@@ -36,23 +37,26 @@ import org.slf4j.LoggerFactory
 object ProtobufDeserializer {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Suppress("ReturnCount", "LongMethod")
+    @Suppress("ReturnCount", "LongMethod", "CyclomaticComplexMethod")
     fun processGenericMessage(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
-        sender: QualifiedId
+        sender: QualifiedId,
+        timestamp: Instant
     ): WireMessage =
         when {
             genericMessage.hasText() -> unpackText(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
-                sender = sender
+                sender = sender,
+                timestamp = timestamp
             )
 
             genericMessage.hasAsset() -> unpackAsset(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
-                sender = sender
+                sender = sender,
+                timestamp = timestamp
             )
 
             genericMessage.hasComposite() -> unpackComposite(
@@ -82,7 +86,8 @@ object ProtobufDeserializer {
             genericMessage.hasLocation() -> unpackLocation(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
-                sender = sender
+                sender = sender,
+                timestamp = timestamp
             )
 
             genericMessage.hasDeleted() -> unpackDeletedMessage(
@@ -106,6 +111,25 @@ object ProtobufDeserializer {
             genericMessage.hasEphemeral() -> unpackEphemeral(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
+                sender = sender,
+                timestamp = timestamp
+            )
+
+            genericMessage.hasReaction() -> unpackReaction(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasInCallEmoji() -> unpackInCallEmoji(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender
+            )
+
+            genericMessage.hasInCallHandRaise() -> unpackInCallHandRaise(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
                 sender = sender
             )
 
@@ -116,6 +140,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        timestamp: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Text {
         val text = genericMessage.text
@@ -125,8 +150,11 @@ object ProtobufDeserializer {
             sender = sender,
             id = UUID.fromString(genericMessage.messageId),
             text = text.content,
+            timestamp = timestamp,
             quotedMessageId =
                 if (text.hasQuote()) UUID.fromString(text.quote.quotedMessageId) else null,
+            quotedMessageSha256 =
+                if (text.hasQuote()) text.quote.quotedMessageSha256.toByteArray() else null,
             linkPreviews = text
                 .linkPreviewList
                 .mapNotNull {
@@ -145,10 +173,11 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        timestamp: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Asset {
         val asset = genericMessage.asset
-        val original = asset.original
+        val original = if (asset.hasOriginal()) asset.original else null
 
         val metadata: WireMessage.Asset.AssetMetadata? = when {
             original?.hasImage() == true -> {
@@ -182,7 +211,7 @@ object ProtobufDeserializer {
         val remoteData = if (asset.hasUploaded()) {
             val uploadedAsset = asset.uploaded
 
-            WireMessage.Asset.AssetMetadata.RemoteData(
+            WireMessage.Asset.RemoteData(
                 otrKey = uploadedAsset.otrKey.toByteArray(),
                 sha256 = uploadedAsset.sha256.toByteArray(),
                 assetId = uploadedAsset.assetId,
@@ -205,6 +234,7 @@ object ProtobufDeserializer {
             mimeType = original?.mimeType ?: "*/*",
             metadata = metadata,
             remoteData = remoteData,
+            timestamp = timestamp,
             expiresAfterMillis = expiresAfterMillis
         )
     }
@@ -289,6 +319,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        timestamp: Instant,
         expiresAfterMillis: Long? = null
     ): WireMessage.Location =
         WireMessage.Location(
@@ -299,6 +330,7 @@ object ProtobufDeserializer {
             longitude = genericMessage.location.longitude,
             name = genericMessage.location.name,
             zoom = genericMessage.location.zoom,
+            timestamp = timestamp,
             expiresAfterMillis = expiresAfterMillis
         )
 
@@ -377,7 +409,8 @@ object ProtobufDeserializer {
     private fun unpackEphemeral(
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
-        sender: QualifiedId
+        sender: QualifiedId,
+        timestamp: Instant
     ): WireMessage {
         val ephemeralMessage = genericMessage.ephemeral
 
@@ -402,6 +435,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
+                    timestamp = timestamp,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }
@@ -420,6 +454,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
+                    timestamp = timestamp,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }
@@ -447,6 +482,7 @@ object ProtobufDeserializer {
                         .build(),
                     conversationId = conversationId,
                     sender = sender,
+                    timestamp = timestamp,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }
@@ -455,4 +491,56 @@ object ProtobufDeserializer {
             else -> WireMessage.Ignored
         }
     }
+
+    private fun unpackReaction(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage {
+        val emoji = genericMessage.reaction.emoji
+        val emojiSet = emoji?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: emptySet()
+
+        return WireMessage.Reaction(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            messageId = genericMessage.reaction.messageId,
+            emojiSet = emojiSet
+        )
+    }
+
+    private fun unpackInCallEmoji(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.InCallEmoji =
+        WireMessage.InCallEmoji(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            // Map of emoji to senderId
+            emojis = genericMessage.inCallEmoji.emojisMap
+                .mapNotNull {
+                    val key = it.key ?: return@mapNotNull null
+                    val value = it.value ?: return@mapNotNull null
+                    key to value
+                }
+                .associateBy({ it.first }, { it.second })
+        )
+
+    private fun unpackInCallHandRaise(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId
+    ): WireMessage.InCallHandRaise =
+        WireMessage.InCallHandRaise(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            isHandUp = genericMessage.inCallHandRaise.isHandUp
+        )
 }

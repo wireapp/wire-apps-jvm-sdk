@@ -40,6 +40,7 @@ import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
+import kotlinx.datetime.Instant
 import org.slf4j.LoggerFactory
 
 internal class EventsRouter internal constructor(
@@ -153,7 +154,8 @@ internal class EventsRouter internal constructor(
                         forwardMessage(
                             message = message,
                             conversationId = event.qualifiedConversation,
-                            sender = event.qualifiedFrom
+                            sender = event.qualifiedFrom,
+                            timestamp = event.time
                         )
                     } catch (exception: MlsException) {
                         logger.debug("Message decryption failed", exception)
@@ -228,13 +230,15 @@ internal class EventsRouter internal constructor(
     private suspend fun forwardMessage(
         message: ByteArray,
         conversationId: QualifiedId,
-        sender: QualifiedId
+        sender: QualifiedId,
+        timestamp: Instant
     ) {
         val genericMessage = GenericMessage.parseFrom(message)
         val wireMessage = ProtobufDeserializer.processGenericMessage(
             genericMessage = genericMessage,
             conversationId = conversationId,
-            sender = sender
+            sender = sender,
+            timestamp = timestamp
         )
 
         when (wireEventsHandler) {
@@ -250,6 +254,9 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
                 is WireMessage.TextEdited -> wireEventsHandler.onTextEdited(wireMessage)
+                is WireMessage.Reaction -> wireEventsHandler.onReaction(wireMessage)
+                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallEmoji(wireMessage)
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaise(wireMessage)
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
@@ -265,6 +272,9 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
                 is WireMessage.TextEdited -> wireEventsHandler.onTextEdited(wireMessage)
+                is WireMessage.Reaction -> wireEventsHandler.onReaction(wireMessage)
+                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallEmoji(wireMessage)
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaise(wireMessage)
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }

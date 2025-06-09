@@ -31,7 +31,7 @@ plugins {
 }
 
 group = "com.wire"
-version = "0.0.8"
+version = "0.0.9"
 val artifactId = "wire-apps-jvm-sdk"
 
 repositories {
@@ -62,10 +62,10 @@ dependencies {
     implementation("com.wire:core-crypto-jvm:4.1.0")
     implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
     implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
-    implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.0.2")
-    implementation("org.zalando:logbook-core:3.12.0")
-    implementation("org.zalando:logbook-ktor-client:3.12.0")
-    implementation("org.zalando:logbook-json:3.12.0")
+    implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.1.0")
+    implementation("org.zalando:logbook-core:3.12.1")
+    implementation("org.zalando:logbook-ktor-client:3.12.1")
+    implementation("org.zalando:logbook-json:3.12.1")
     implementation("com.google.protobuf:protobuf-kotlin:4.31.0")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.5")
 
@@ -87,7 +87,7 @@ sqldelight {
     databases {
         create("AppsSdkDatabase") {
             packageName.set("com.wire.integrations.jvm")
-            dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.0.2")
+            dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.1.0")
         }
     }
 }
