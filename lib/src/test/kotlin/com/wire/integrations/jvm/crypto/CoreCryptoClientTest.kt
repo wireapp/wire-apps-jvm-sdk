@@ -56,7 +56,7 @@ class CoreCryptoClientTest {
             )
             cryptoClient.close()
 
-            IsolatedKoinContext.setCryptographyStoragePassword("apple🍎")
+            IsolatedKoinContext.setCryptographyStoragePassword("anotherPasswordOfRandom32BytesCH")
             assertThrows<com.wire.crypto.uniffi.CoreCryptoException.Mls> {
                 CoreCryptoClient.create(
                     appClientId = appClientId,
@@ -186,7 +186,7 @@ class CoreCryptoClientTest {
         fun before() {
             // Testing that full UTF-8 is accepted on storage password
             IsolatedKoinContext.start()
-            IsolatedKoinContext.setCryptographyStoragePassword("banana🍌")
+            IsolatedKoinContext.setCryptographyStoragePassword("myDummyPasswordOfRandom32BytesCH")
         }
 
         val CONVERSATION_ID = QualifiedId(

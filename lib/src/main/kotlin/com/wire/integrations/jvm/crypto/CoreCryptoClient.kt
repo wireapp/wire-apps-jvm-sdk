@@ -4,6 +4,7 @@ import com.wire.crypto.Ciphersuite
 import com.wire.crypto.Ciphersuites
 import com.wire.crypto.ClientId
 import com.wire.crypto.CoreCrypto
+import com.wire.crypto.DatabaseKey
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
@@ -53,6 +54,7 @@ internal class CoreCryptoClient private constructor(
             val coreCrypto = CoreCrypto.invoke(
                 keystore = keystorePath,
                 databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
+                    ?.let { DatabaseKey(it) }
                     ?: throw InvalidParameter("Cryptography password missing")
             )
 

@@ -27,7 +27,7 @@ fun main() {
         applicationId = UUID.randomUUID(),
         apiToken = "myApiToken",
         apiHost = "https://nginz-https.chala.wire.link",
-        cryptographyStoragePassword = "myDummyPassword",
+        cryptographyStoragePassword = "myDummyPasswordOfRandom32BytesCH",
         wireEventsHandler = SampleEventsHandler()
     )
 

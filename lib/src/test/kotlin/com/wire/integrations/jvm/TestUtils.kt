@@ -121,5 +121,5 @@ object TestUtils {
     private val APPLICATION_ID = UUID.randomUUID()
     private const val API_TOKEN = "dummyToken"
     private const val API_HOST = "http://localhost:8086"
-    private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "dummyPassword"
+    const val CRYPTOGRAPHY_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH"
 }
