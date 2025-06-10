@@ -48,7 +48,7 @@ class MlsFallbackStrategy internal constructor(
         val currentEpoch = cryptoClient.conversationEpoch(mlsGroupId = mlsGroupId)
 
         logger.info(
-            "Verifying Fallback Strategy for conversationId: ${conversationId}, " +
+            "Verifying Fallback Strategy for conversationId: $conversationId, " +
                 "exists: $conversationExists " +
                 "epoch: local[$currentEpoch] < remote[${fetchedConversation.epoch}]"
         )
