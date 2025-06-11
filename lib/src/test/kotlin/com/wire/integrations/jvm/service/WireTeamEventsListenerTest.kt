@@ -23,6 +23,7 @@ import com.wire.integrations.jvm.model.http.EventDataDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.NotificationCount
 import com.wire.integrations.jvm.utils.KtxSerializer
+import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSocketException
 import io.ktor.websocket.Frame
@@ -129,7 +130,7 @@ class WireTeamEventsListenerTest {
             val eventsRouter = mockk<EventsRouter>()
 
             coEvery { backendClient.connectWebSocket(any()) } throws
-                RuntimeException("Some other error")
+                ConnectTimeoutException("Some other error")
 
             val listener = WireTeamEventsListener(backendClient, eventsRouter)
 
