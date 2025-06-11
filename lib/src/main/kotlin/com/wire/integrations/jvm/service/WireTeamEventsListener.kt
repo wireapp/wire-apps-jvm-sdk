@@ -19,9 +19,11 @@ import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.model.EventAcknowledgeRequest
 import com.wire.integrations.jvm.model.http.ConsumableNotificationResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import io.ktor.client.plugins.websocket.WebSocketException
 import io.ktor.websocket.Frame
+import kotlinx.io.IOException
 import org.slf4j.LoggerFactory
 
 /**
@@ -47,13 +49,16 @@ internal class WireTeamEventsListener internal constructor(
                     }
                 }
             }
-        } catch (e: WebSocketException) {
-            // Catch WebSocket specific exceptions and re-throw as InterruptedException
+        } catch (e: SocketTimeoutException) {
+            logger.error("WebSocket timeout, log exception but close gracefully", e)
+        } catch (e: ConnectTimeoutException) {
+            logger.error("WebSocket connection timeout, log exception but close gracefully", e)
+        } catch (e: IOException) {
+            logger.error("WebSocket IO issue, log exception but close gracefully", e)
+        } catch (e: Exception) {
             val error = e.message ?: "Error connecting to WebSocket or establishing MLS client"
             logger.error(error, e)
             throw InterruptedException(error)
-        } catch (e: Exception) {
-            logger.error("WebSocket issue, log exception but close gracefully", e)
         } finally {
             logger.warn("WebSocket connection closed, stopping Wire Team Events Listener")
         }
