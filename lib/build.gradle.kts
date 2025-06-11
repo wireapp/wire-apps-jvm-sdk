@@ -48,7 +48,7 @@ dependencies {
     }
 
     implementation(platform("io.insert-koin:koin-bom:4.1.0"))
-    implementation("io.insert-koin:koin-core")
+    implementation("io.insert-koin:koin-core:4.1.0")
     implementation("ch.qos.logback:logback-classic:1.5.18")
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
@@ -59,8 +59,8 @@ dependencies {
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
-    implementation("com.wire:core-crypto-jvm:4.1.0")
-    implementation("com.wire:core-crypto-uniffi-jvm:4.1.0")
+    implementation("com.wire:core-crypto-jvm:7.0.1")
+    implementation("com.wire:core-crypto-uniffi-jvm:7.0.1")
     implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.1.0")
     implementation("org.zalando:logbook-core:3.12.1")

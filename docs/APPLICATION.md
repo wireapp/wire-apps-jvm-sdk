@@ -36,12 +36,12 @@ dependencies {
 
 The SDK needs to be initialized with your application's credentials, the backend host, a password for the cryptographic material and your event handler implementation:
 
-| Parameter                     | Description                                                                                       |
-|-------------------------------|---------------------------------------------------------------------------------------------------|
-| `applicationId` + `apiToken`  | Retrieved from the backend during onboarding, when you register a new Application                |
-| `apiHost`                     | The target backend, should be production for normal operations: https://prod-nginz-https.wire.com |
-| `cryptographyStoragePassword` | The password you choose to let the SDK encrypt the cryptographic material at rest. It is recommended to be generated randomly and stored in a secure place |
-| `wireEventsHandler`           | Your implementation (extending the `WireEventsHandler` abstract class)                            |
+| Parameter                     | Description                                                                                                                                                                                |
+|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `applicationId` + `apiToken`  | Retrieved from the backend during onboarding, when you register a new Application                                                                                                          |
+| `apiHost`                     | The target backend, should be production for normal operations: https://prod-nginz-https.wire.com                                                                                          |
+| `cryptographyStoragePassword` | The password you choose to let the SDK encrypt the cryptographic material at rest. It is recommended to be generated randomly and stored in a secure place. It must be 32 characters long. |
+| `wireEventsHandler`           | Your implementation (extending the `WireEventsHandler` abstract class)                                                                                                                     |
 
 Initializing an instance of WireAppSdk is enough to get access to local stored teams and conversations and to send messages or similar actions.
 

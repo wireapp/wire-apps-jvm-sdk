@@ -64,10 +64,11 @@ internal object IsolatedKoinContext {
     fun getApiToken(): String? = this.koinApp.koin.getProperty(API_TOKEN)
 
     fun setCryptographyStoragePassword(value: String) {
-        this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_PASSWORD, value)
+        val cryptoPassword = value.toByteArray()
+        this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_PASSWORD, cryptoPassword)
     }
 
-    fun getCryptographyStoragePassword(): String? =
+    fun getCryptographyStoragePassword(): ByteArray? =
         this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_PASSWORD)
 
     /**

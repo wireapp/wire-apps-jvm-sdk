@@ -24,7 +24,6 @@ import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
-import com.wire.crypto.toByteArray
 import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.TestUtils.V
 import com.wire.integrations.jvm.WireEventsHandlerSuspending

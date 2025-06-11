@@ -16,16 +16,21 @@
 
 package com.wire.integrations.jvm.crypto
 
+import com.wire.crypto.CommitBundle
 import com.wire.crypto.MlsTransport
-import com.wire.crypto.uniffi.CommitBundle
-import com.wire.crypto.uniffi.MlsTransportResponse
+import com.wire.crypto.MlsTransportResponse
 import com.wire.integrations.jvm.client.BackendClient
 
 internal class MlsTransportImpl(
     private val backendClient: BackendClient
 ) : MlsTransport {
     override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
-        backendClient.uploadCommitBundle(parseBundleIntoSingleByteArray(commitBundle))
+        backendClient.uploadCommitBundle(
+            commitBundle = parseBundleIntoSingleByteArray(
+                bundle = commitBundle
+            )
+        )
+
         return MlsTransportResponse.Success
     }
 
@@ -42,6 +47,8 @@ internal class MlsTransportImpl(
      * @param bundle the CommitBundle to parse
      */
     private fun parseBundleIntoSingleByteArray(bundle: CommitBundle): ByteArray {
-        return bundle.commit + bundle.groupInfo.payload + (bundle.welcome ?: ByteArray(0))
+        return bundle.commit.value +
+            bundle.groupInfoBundle.payload.value +
+            (bundle.welcome?.value ?: ByteArray(0))
     }
 }

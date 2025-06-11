@@ -38,6 +38,11 @@ class WireAppSdk(
     private val executor = Executors.newSingleThreadExecutor()
 
     init {
+        require(cryptographyStoragePassword.length == CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH) {
+            "cryptographyStoragePassword must be exactly $CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH " +
+                "characters long."
+        }
+
         IsolatedKoinContext.start()
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
@@ -88,5 +93,9 @@ class WireAppSdk(
         }
 
         IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
+    }
+
+    private companion object {
+        const val CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH = 32
     }
 }

@@ -18,8 +18,8 @@ package com.wire.integrations.jvm.utils
 
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
-import com.wire.crypto.uniffi.CommitBundle
-import com.wire.crypto.uniffi.MlsTransportResponse
+import com.wire.crypto.CommitBundle
+import com.wire.crypto.MlsTransportResponse
 
 /**
  * A simple implementation of [MlsTransport] that stores the last welcome message,
@@ -30,7 +30,7 @@ class MlsTransportLastWelcome : MlsTransport {
 
     override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
         commitBundle.welcome?.let {
-            groupWelcomeMap = Welcome(it)
+            groupWelcomeMap = Welcome(it.value)
         }
 
         return MlsTransportResponse.Success

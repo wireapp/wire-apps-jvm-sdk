@@ -17,6 +17,7 @@ package com.wire.integrations.jvm
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.wire.integrations.jvm.TestUtils.CRYPTOGRAPHY_STORAGE_PASSWORD
 import com.wire.integrations.jvm.TestUtils.V
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.WireMessage
@@ -83,7 +84,6 @@ class WireAppSdkTest {
         private val APPLICATION_ID = UUID.randomUUID()
         private const val API_TOKEN = "dummyToken"
         private const val API_HOST = "http://localhost:8086"
-        private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "dummyPassword"
 
         private val wireMockServer = WireMockServer(8086)
 

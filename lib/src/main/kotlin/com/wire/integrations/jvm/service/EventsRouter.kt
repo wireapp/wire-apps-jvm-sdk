@@ -158,7 +158,16 @@ internal class EventsRouter internal constructor(
                             timestamp = event.time
                         )
                     } catch (exception: MlsException) {
-                        logger.debug("Message decryption failed", exception)
+                        logger.debug("Message decryption failed, MlsException: ", exception)
+                        mlsFallbackStrategy.verifyConversationOutOfSync(
+                            mlsGroupId = groupId,
+                            conversationId = event.qualifiedConversation
+                        )
+                    } catch (exception: CoreCryptoException.Mls) {
+                        logger.debug(
+                            "Message decryption failed, CoreCryptoException.Mls:",
+                            exception
+                        )
                         mlsFallbackStrategy.verifyConversationOutOfSync(
                             mlsGroupId = groupId,
                             conversationId = event.qualifiedConversation

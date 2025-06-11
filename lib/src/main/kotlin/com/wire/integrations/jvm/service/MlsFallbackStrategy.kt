@@ -21,11 +21,14 @@ import com.wire.crypto.MLSGroupId
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
+import org.slf4j.LoggerFactory
 
 class MlsFallbackStrategy internal constructor(
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     /**
      * Verifies if a conversation is out of sync and re-syncs (re-joining or updating the epoch)
      *
@@ -43,6 +46,12 @@ class MlsFallbackStrategy internal constructor(
         val conversationExists = cryptoClient.conversationExists(mlsGroupId = mlsGroupId)
         val fetchedConversation = backendClient.getConversation(conversationId = conversationId)
         val currentEpoch = cryptoClient.conversationEpoch(mlsGroupId = mlsGroupId)
+
+        logger.info(
+            "Verifying Fallback Strategy for conversationId: $conversationId, " +
+                "exists: $conversationExists " +
+                "epoch: local[$currentEpoch] < remote[${fetchedConversation.epoch}]"
+        )
 
         if (!conversationExists || currentEpoch.toLong() < fetchedConversation.epoch) {
             val groupInfo = backendClient.getConversationGroupInfo(
