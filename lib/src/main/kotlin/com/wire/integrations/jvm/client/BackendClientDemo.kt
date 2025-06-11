@@ -59,7 +59,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 import java.util.Base64
-import java.util.Properties
 import java.util.UUID
 
 /**
@@ -370,38 +369,23 @@ internal class BackendClientDemo internal constructor(
         const val HEADER_ASSET_TOKEN = "Asset-Token"
         const val TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
 
-        val DEMO_USER_EMAIL: String by lazy {
-            DemoProperties.properties.getProperty(
-                "demo.user.email",
-                "integrations-admin@wire.com"
-            )
-        }
-        val DEMO_USER_ID: UUID by lazy {
+        val DEMO_USER_ID: UUID =
             UUID.fromString(
-                DemoProperties.properties.getProperty(
-                    "demo.user.id",
-                    "ee159b66-fd70-4739-9bae-23c96a02cb09"
-                )
+                System.getenv("WIRE_SDK_USER_ID")
+                    ?: "ee159b66-fd70-4739-9bae-23c96a02cb09"
             )
-        }
-        val DEMO_USER_PASSWORD: String by lazy {
-            DemoProperties.properties.getProperty(
-                "demo.user.password",
-                "Aqa123456!"
-            )
-        }
-        val DEMO_USER_CLIENT: String by lazy {
-            DemoProperties.properties.getProperty(
-                "demo.user.client",
-                "fc088e7f958fb833"
-            )
-        }
-        val DEMO_ENVIRONMENT: String by lazy {
-            DemoProperties.properties.getProperty(
-                "demo.environment",
-                "chala.wire.link"
-            )
-        }
+
+        val DEMO_USER_EMAIL: String =
+            System.getenv("WIRE_SDK_EMAIL") ?: "integrations-admin@wire.com"
+
+        val DEMO_USER_PASSWORD: String =
+            System.getenv("WIRE_SDK_PASSWORD") ?: "Aqa123456!"
+
+        val DEMO_USER_CLIENT: String =
+            System.getenv("WIRE_SDK_CLIENT") ?: "fc088e7f958fb833"
+
+        val DEMO_ENVIRONMENT: String =
+            System.getenv("WIRE_SDK_ENVIRONMENT") ?: "chala.wire.link"
     }
 }
 
@@ -416,16 +400,3 @@ data class LoginResponse(
     @SerialName("access_token") val accessToken: String,
     @SerialName("expires_in") val expiresIn: Int
 )
-
-/**
- * Loads demo properties from 'demo.properties' file in the project root (git ignored)
- * If the file is missing, default values are used.
- */
-internal object DemoProperties {
-    internal val properties = Properties()
-
-    init {
-        DemoProperties::class.java.getResourceAsStream("/demo.properties")
-            ?.use { properties.load(it) }
-    }
-}

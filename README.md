@@ -58,6 +58,15 @@ dependencies {
 </dependency>
 ```
 
+## Environment Variables
+```dotenv
+WIRE_SDK_USER_ID=abcd-1234-efgh-5678
+WIRE_SDK_EMAIL=your_email@domain.com
+WIRE_SDK_PASSWORD=randomPassword
+WIRE_SDK_CLIENT=dd228f6343d3916
+WIRE_SDK_ENVIRONMENT=my.domain.link
+```
+
 ## Build the project
 
 ```shell
@@ -74,7 +83,7 @@ and later you want to switch to another, you may need to move/delete the `apps.d
 You can define the implementation of BackendClient to use, by changing it in the Modules.kt file.
 
 * BackendClientDemo targets the Wire backend for development purposes, it uses the Client API for
-  testing instead of the Application API
+  testing instead of the Application API and also some environment variables specified above.
 * BackendClientImpl is the real implementation of the SDK, targeting the Wire backend as an
   Application
 
