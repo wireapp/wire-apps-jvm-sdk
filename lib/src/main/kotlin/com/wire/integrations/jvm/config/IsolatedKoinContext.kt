@@ -15,11 +15,11 @@
 
 package com.wire.integrations.jvm.config
 
+import org.koin.core.Koin
+import org.koin.core.KoinApplication
 import org.koin.dsl.koinApplication
 import org.koin.fileProperties
 import java.util.UUID
-import org.koin.core.Koin
-import org.koin.core.KoinApplication
 
 internal object IsolatedKoinContext {
     private var _koinApp: KoinApplication? = null
@@ -36,7 +36,7 @@ internal object IsolatedKoinContext {
         // Start a new Koin instance
         _koinApp = koinApplication {
             modules(sdkModule)
-            fileProperties("/koin.properties")
+            fileProperties("/koin-sdk.properties")
         }
     }
 
