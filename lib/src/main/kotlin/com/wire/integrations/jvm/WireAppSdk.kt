@@ -55,18 +55,15 @@ class WireAppSdk(
         }
         running.set(true)
 
-        executor.submit {
+        executor.execute {
             val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
             logger.info("Start listening to WebSocket events...")
+            // Connect and reconnect if connection closes and the listener function completes
             while (running.get()) {
-                try {
-                    runBlocking(Dispatchers.IO) {
-                        eventsListener.connect()
-                    }
-                    logger.info("Connection ended, attempting to reconnect...")
-                } catch (e: Exception) {
-                    logger.error("Connection error: ${e.message}. Reconnecting...", e)
+                runBlocking(Dispatchers.IO) {
+                    eventsListener.connect()
                 }
+                logger.info("Connection ended, attempting to reconnect...")
             }
         }
     }

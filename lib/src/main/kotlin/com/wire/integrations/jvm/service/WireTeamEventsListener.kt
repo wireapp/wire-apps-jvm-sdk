@@ -16,16 +16,16 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.integrations.jvm.client.BackendClient
-import com.wire.integrations.jvm.crypto.CoreCryptoClient
-import com.wire.integrations.jvm.model.http.EventResponse
+import com.wire.integrations.jvm.model.EventAcknowledgeRequest
+import com.wire.integrations.jvm.model.http.ConsumableNotificationResponse
 import com.wire.integrations.jvm.utils.KtxSerializer
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import io.ktor.client.plugins.websocket.WebSocketException
 import io.ktor.websocket.Frame
 import org.slf4j.LoggerFactory
 
 /**
  * Opens the webSocket receiving events from all registered teams.
- *
- * Initializes the [CoreCryptoClient] used for any message on the first startup.
  */
 internal class WireTeamEventsListener internal constructor(
     private val backendClient: BackendClient,
@@ -34,43 +34,81 @@ internal class WireTeamEventsListener internal constructor(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
-     * Keeps the connection open and listens for incoming events, provides deserialization and
-     * basic error handling. Delegates event handling to [EventsRouter].
+     * Keeps the webSocket connection open and listens for incoming events, while handling errors
      */
     suspend fun connect() {
         try {
-            // TODO Change endpoint to /events and add consumable-notifications client
-            //  capability once v8 is released
-            backendClient.connectWebSocket { incoming ->
-                for (frame in incoming) {
-                    when (frame) {
-                        is Frame.Binary -> {
-                            // Assuming byteArray is a UTF-8 character set
-                            val jsonString = frame.data.decodeToString(0, frame.data.size)
-                            logger.debug("Binary frame content: '$jsonString'")
-                            val event =
-                                KtxSerializer.json.decodeFromString<EventResponse>(jsonString)
-
-                            try {
-                                eventsRouter.route(event)
-                                // Send back ACK event
-                            } catch (e: Exception) {
-                                logger.error("Error processing event: $event", e)
-                            }
-                        }
-
-                        else -> {
-                            logger.error("Received unsupported frame type: $frame")
-                        }
+            backendClient.connectWebSocket { session ->
+                for (frame in session.incoming) {
+                    if (frame is Frame.Binary) {
+                        handleEvent(frame, session)
+                    } else {
+                        logger.error("Received unsupported frame type: $frame")
                     }
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: WebSocketException) {
+            // Catch WebSocket specific exceptions and re-throw as InterruptedException
             val error = e.message ?: "Error connecting to WebSocket or establishing MLS client"
             logger.error(error, e)
             throw InterruptedException(error)
+        } catch (e: Exception) {
+            logger.error("WebSocket issue, log exception but close gracefully", e)
         } finally {
             logger.warn("WebSocket connection closed, stopping Wire Team Events Listener")
+        }
+    }
+
+    /**
+     * Handles incoming binary frames, deserializes them into [ConsumableNotificationResponse],
+     * and routes the events to the [EventsRouter]. Acknowledges the event by sending an
+     * [EventAcknowledgeRequest] back to the server.
+     */
+    private suspend fun handleEvent(
+        frame: Frame.Binary,
+        session: DefaultClientWebSocketSession
+    ) {
+        // Assuming byteArray is a UTF-8 character set
+        val jsonString = frame.data.decodeToString(0, frame.data.size)
+        logger.debug("Binary frame content: '$jsonString'")
+        val notification =
+            KtxSerializer.json.decodeFromString<ConsumableNotificationResponse>(jsonString)
+        when (notification) {
+            is ConsumableNotificationResponse.EventNotification -> {
+                try {
+                    eventsRouter.route(notification.data.event)
+                    val ackRequest = EventAcknowledgeRequest.basicAck(notification.data.deliveryTag)
+                    ackEvent(ackRequest, session)
+                } catch (e: Exception) {
+                    logger.error("Error processing event: $notification", e)
+                }
+            }
+
+            is ConsumableNotificationResponse.MessageCount -> {
+                logger.info("Websocket back online, ${notification.data.count} events to fetch")
+                val ackRequest = EventAcknowledgeRequest.countAck()
+                ackEvent(ackRequest, session)
+            }
+
+            is ConsumableNotificationResponse.MissedNotification -> {
+                logger.warn("App was offline for too long, missed some notifications")
+                val ackRequest = EventAcknowledgeRequest.notificationMissedAck()
+                ackEvent(ackRequest, session)
+            }
+        }
+    }
+
+    private fun ackEvent(
+        ackRequest: EventAcknowledgeRequest,
+        session: DefaultClientWebSocketSession
+    ) {
+        KtxSerializer.json.encodeToString(ackRequest).let { json ->
+            val result = session.outgoing.trySend(Frame.Text(json))
+            if (result.isSuccess) {
+                logger.debug("Acknowledge event sent successfully $json")
+            } else {
+                logger.error("Failed to send acknowledge event $json", result.exceptionOrNull())
+            }
         }
     }
 }

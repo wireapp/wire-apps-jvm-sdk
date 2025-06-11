@@ -38,6 +38,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.cookies.get
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
@@ -53,8 +54,6 @@ import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
 import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
-import io.ktor.websocket.Frame
-import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
@@ -80,16 +79,18 @@ internal class BackendClientDemo internal constructor(
     private var cachedFeatures: FeaturesResponse? = null
     private var cachedAccessToken: String? = null
 
-    override suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit) {
+    override suspend fun connectWebSocket(
+        handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
+    ) {
         logger.info("Connecting to the webSocket, waiting for events")
 
         val token = loginUser()
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
                 ?.replace("-https", "-ssl"),
-            path = "/await?access_token=$token"
+            path = "/$API_VERSION/events?client=$DEMO_USER_CLIENT&access_token=$token"
         ) {
-            handleFrames(incoming)
+            handleFrames(this)
         }
     }
 

@@ -20,11 +20,20 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.wire.integrations.jvm.TestUtils.V
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.jvm.service.WireTeamEventsListener
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.koin.dsl.module
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 
 class WireAppSdkTest {
@@ -48,6 +57,7 @@ class WireAppSdkTest {
 
     @Test
     fun fetchingApiVersionWithWireMockReturnsDummyData() {
+        TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
         wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/$V/api-version")).willReturn(
                 WireMock.okJson(
@@ -78,6 +88,62 @@ class WireAppSdkTest {
         val appMetadata = wireAppSdk.getApplicationManager().getBackendConfiguration()
         assertEquals("host.com", appMetadata.domain)
     }
+
+    @Test
+    fun `connect is called multiple times after exceptions`() =
+        runTest {
+            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
+
+            // Create the SDK instance
+            val wireAppSdk = WireAppSdk(
+                applicationId = APPLICATION_ID,
+                apiToken = API_TOKEN,
+                apiHost = API_HOST,
+                cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
+                wireEventsHandler = object : WireEventsHandlerDefault() {
+                    override fun onMessage(wireMessage: WireMessage.Text) {
+                        println(wireMessage)
+                    }
+                }
+            )
+
+            val mockEventsListener = mockk<WireTeamEventsListener>()
+            // Load our mock into Koin
+            IsolatedKoinContext.koinApp.koin.loadModules(
+                listOf(
+                    module {
+                        single { mockEventsListener }
+                    }
+                )
+            )
+            var callCount = 0
+            val latch = CountDownLatch(1)
+
+            // Update the mock to count connections and signal the latch
+            coEvery { mockEventsListener.connect() } coAnswers {
+                callCount++
+                when (callCount) {
+                    1 -> delay(100)
+                    2 -> delay(100)
+                    else -> {
+                        latch.countDown()
+                        throw InterruptedException("Simulated network error")
+                    }
+                }
+            }
+
+            // Start listening
+            wireAppSdk.startListening()
+
+            // Wait for the the last reconnect attempt to complete (with exception)
+            val completed = latch.await(5, TimeUnit.SECONDS)
+            assert(completed) { "Timed out waiting for connection attempts" }
+
+            // Verify connect was called the expected number of times
+            coVerify(atLeast = 3) { mockEventsListener.connect() }
+
+            wireAppSdk.stopListening()
+        }
 
     companion object {
         private val APPLICATION_ID = UUID.randomUUID()
