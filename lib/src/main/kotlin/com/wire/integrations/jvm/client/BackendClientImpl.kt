@@ -32,13 +32,12 @@ import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.http.HttpHeaders
-import io.ktor.websocket.Frame
-import kotlinx.coroutines.channels.ReceiveChannel
 import org.slf4j.LoggerFactory
 
 /**
@@ -49,7 +48,9 @@ internal class BackendClientImpl internal constructor(
 ) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    override suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit) {
+    override suspend fun connectWebSocket(
+        handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
+    ) {
         logger.info("Connecting to the webSocket, waiting for events")
 
         httpClient.webSocket(
@@ -58,7 +59,7 @@ internal class BackendClientImpl internal constructor(
                 header(HttpHeaders.Authorization, "Bearer ${IsolatedKoinContext.getApiToken()}")
             }
         ) {
-            handleFrames(incoming)
+            handleFrames(this)
         }
     }
 

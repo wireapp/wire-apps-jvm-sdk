@@ -27,11 +27,10 @@ import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
-import io.ktor.websocket.Frame
-import kotlinx.coroutines.channels.ReceiveChannel
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 
 interface BackendClient {
-    suspend fun connectWebSocket(handleFrames: suspend (ReceiveChannel<Frame>) -> Unit)
+    suspend fun connectWebSocket(handleFrames: suspend (DefaultClientWebSocketSession) -> Unit)
 
     suspend fun getAvailableApiVersions(): ApiVersionResponse
 

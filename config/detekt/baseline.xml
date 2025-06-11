@@ -2,13 +2,12 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>CyclomaticComplexMethod:EventsRouter.kt$EventsRouter$@Suppress("LongMethod") internal suspend fun route(eventResponse: EventResponse)</ID>
-    <ID>CyclomaticComplexMethod:EventsRouter.kt$EventsRouter$suspend fun forwardMessage( message: ByteArray, conversationId: QualifiedId, sender: QualifiedId )</ID>
     <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$3</ID>
     <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$4</ID>
     <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$5</ID>
     <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$6</ID>
     <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$7</ID>
+    <ID>TooGenericExceptionCaught:WireAppSdk.kt$WireAppSdk$e: Exception</ID>
     <ID>TooGenericExceptionCaught:WireExceptionMapper.kt$exception: Exception</ID>
     <ID>TooGenericExceptionCaught:WireTeamEventsListener.kt$WireTeamEventsListener$e: Exception</ID>
     <ID>TooManyFunctions:BackendClient.kt$BackendClient</ID>

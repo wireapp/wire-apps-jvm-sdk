@@ -59,11 +59,16 @@ class WireAppSdk(
             return
         }
         running.set(true)
-        executor.submit {
+
+        executor.execute {
             val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
             logger.info("Start listening to WebSocket events...")
-            runBlocking(Dispatchers.IO) {
-                eventsListener.connect()
+            // Connect and reconnect if connection closes and the listener function completes
+            while (running.get()) {
+                runBlocking(Dispatchers.IO) {
+                    eventsListener.connect()
+                }
+                logger.info("Connection ended, attempting to reconnect...")
             }
         }
     }
@@ -75,8 +80,8 @@ class WireAppSdk(
             return
         }
         logger.info("Wire Apps SDK shutting down")
-        executor.shutdownNow()
         running.set(false)
+        executor.shutdownNow()
     }
 
     fun isRunning(): Boolean = running.get()

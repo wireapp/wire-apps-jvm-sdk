@@ -46,13 +46,13 @@ import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
+import org.koin.dsl.onClose
 import org.slf4j.LoggerFactory
 import org.zalando.logbook.client.LogbookClient
 import org.zalando.logbook.common.ExperimentalLogbookKtorApi
@@ -66,7 +66,7 @@ val sdkModule =
             val driver: SqlDriver = JdbcSqliteDriver(getProperty("database-jdbc-url"))
             AppsSdkDatabase.Schema.create(driver)
             driver
-        }
+        } onClose { it?.close() }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
@@ -76,12 +76,12 @@ val sdkModule =
         single { EventsRouter(get(), get(), get(), get(), get(), get()) }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost())
-        }
+        } onClose { it?.close() }
         single<CryptoClient> {
             runBlocking {
                 getOrInitCryptoClient(get(), get(), get())
             }
-        }
+        } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get()) }
         single { WireApplicationManager(get(), get(), get(), get(), get()) }
     }
@@ -91,7 +91,6 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
     return HttpClient(CIO) {
         expectSuccess = true
         followRedirects = true
-
         install(LogbookClient) {
             logbook = LoggingConfiguration.logbook
         }
@@ -106,8 +105,6 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
             contentConverter = KotlinxWebsocketSerializationConverter(Json)
             pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
         }
-
-        install(SSE)
 
         install(UserAgent) {
             agent = "Ktor JVM SDK client"
