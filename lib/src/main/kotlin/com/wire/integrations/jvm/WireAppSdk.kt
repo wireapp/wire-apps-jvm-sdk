@@ -40,7 +40,7 @@ class WireAppSdk(
     init {
         require(cryptographyStoragePassword.length == CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH) {
             "cryptographyStoragePassword must be exactly $CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH " +
-                    "characters long."
+                "characters long."
         }
 
         IsolatedKoinContext.start()
