@@ -32,12 +32,26 @@ data class ConversationResponse(
     @SerialName("group_id")
     val groupId: String,
     @SerialName("name")
-    val name: String,
+    val name: String?,
     @SerialName("epoch")
     val epoch: Long,
     @SerialName("members")
-    val members: ConversationMembers
-)
+    val members: ConversationMembers,
+    @SerialName("type")
+    val type: Type
+) {
+    @Serializable
+    enum class Type {
+        @SerialName("0")
+        GROUP,
+
+        @SerialName("1")
+        SELF,
+
+        @SerialName("2")
+        ONE_TO_ONE
+    }
+}
 
 @Serializable
 data class ConversationMembers(
