@@ -21,11 +21,6 @@ import com.wire.integrations.jvm.utils.UUIDSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
 @Serializable
 data class ConversationResponse(
@@ -42,17 +37,19 @@ data class ConversationResponse(
     val epoch: Long,
     @SerialName("members")
     val members: ConversationMembers,
-    @Serializable(with = ConversationTypeSerializer::class)
+    @SerialName("type")
     val type: Type
 ) {
-    enum class Type(val id: Int) {
-        GROUP(0),
-        SELF(1),
-        ONE_TO_ONE(2);
+    @Serializable
+    enum class Type {
+        @SerialName("0")
+        GROUP,
 
-        companion object {
-            fun fromId(id: Int): Type = entries.first { type -> type.id == id }
-        }
+        @SerialName("1")
+        SELF,
+
+        @SerialName("2")
+        ONE_TO_ONE
     }
 }
 
@@ -69,17 +66,3 @@ data class ConversationMemberOther(
     @SerialName("conversation_role")
     val conversationRole: ConversationRole
 )
-
-class ConversationTypeSerializer : KSerializer<ConversationResponse.Type> {
-    override val descriptor = PrimitiveSerialDescriptor("type", PrimitiveKind.INT)
-
-    override fun serialize(
-        encoder: Encoder,
-        value: ConversationResponse.Type
-    ): Unit = encoder.encodeInt(value.id)
-
-    override fun deserialize(decoder: Decoder): ConversationResponse.Type {
-        val rawValue = decoder.decodeInt()
-        return ConversationResponse.Type.fromId(rawValue)
-    }
-}
