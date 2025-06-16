@@ -89,6 +89,39 @@ class WireEventsIntegrationTest {
         // Setup
         TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
 
+        wireMockServer.stubFor(
+            WireMock.get(
+                WireMock.urlPathTemplate("/$V/conversations/{conversationDomain}/{conversationId}")
+            ).willReturn(
+                WireMock.okJson(
+                    """
+                        {
+                            "qualified_id": {
+                                "id": "${CONVERSATION_ID.id}",
+                                "domain": "${CONVERSATION_ID.domain}"
+                            },
+                            "name": "Test conversation",
+                            "epoch": 0,
+                            "members": {
+                                "others": [
+                                    {
+                                        "qualified_id": {
+                                            "id": "${UUID.randomUUID()}",
+                                            "domain": "${CONVERSATION_ID.domain}"
+                                        },
+                                        "conversation_role": "wire_admin"
+                                    }
+                                ]
+                            },
+                            "group_id": "${Base64.getEncoder().encodeToString(MLS_GROUP_ID.value)}",
+                            "team": "${TEAM_ID.value}",
+                            "type": 0
+                        }
+                    """.trimIndent()
+                )
+            )
+        )
+
         // Create SDK with our custom handler
         TestUtils.setupSdk(wireEventsHandler)
 
@@ -197,6 +230,38 @@ class WireEventsIntegrationTest {
     fun givenNewMLSMessageEventWhenRouterProcessesItThenMessageIsDecryptedAndHandled() {
         // Setup
         TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
+        wireMockServer.stubFor(
+            WireMock.get(
+                WireMock.urlPathTemplate("/$V/conversations/{conversationDomain}/{conversationId}")
+            ).willReturn(
+                WireMock.okJson(
+                    """
+                        {
+                            "qualified_id": {
+                                "id": "${CONVERSATION_ID.id}",
+                                "domain": "${CONVERSATION_ID.domain}"
+                            },
+                            "name": "Test conversation",
+                            "epoch": 0,
+                            "members": {
+                                "others": [
+                                    {
+                                        "qualified_id": {
+                                            "id": "${UUID.randomUUID()}",
+                                            "domain": "${CONVERSATION_ID.domain}"
+                                        },
+                                        "conversation_role": "wire_admin"
+                                    }
+                                ]
+                            },
+                            "group_id": "${Base64.getEncoder().encodeToString(MLS_GROUP_ID.value)}",
+                            "team": "${TEAM_ID.value}",
+                            "type": 0
+                        }
+                    """.trimIndent()
+                )
+            )
+        )
 
         // Create SDK with our custom handler
         TestUtils.setupSdk(wireEventsHandler)

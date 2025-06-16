@@ -34,6 +34,7 @@ import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
+import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.protobuf.ProtobufDeserializer
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
@@ -189,10 +190,16 @@ internal class EventsRouter internal constructor(
         val conversation = backendClient.getConversation(qualifiedConversation)
         val mlsGroupId = groupId ?: MLSGroupId(Base64.getDecoder().decode(conversation.groupId))
 
+        val conversationName = if (conversation.type == ConversationResponse.Type.ONE_TO_ONE) {
+            backendClient.getUserData(userId = conversation.members.others.first().id).name
+        } else {
+            conversation.name
+        }
+
         val conversationData =
             ConversationData(
                 id = qualifiedConversation,
-                name = conversation.name,
+                name = conversationName,
                 mlsGroupId = mlsGroupId,
                 teamId = conversation.teamId?.let { TeamId(it) }
             )
@@ -202,8 +209,8 @@ internal class EventsRouter internal constructor(
                 role = it.conversationRole
             )
         }
-        logger.debug("Conversation data: $conversationData")
-        logger.debug("Conversation members: $members")
+        logger.debug("Conversation data: {}", conversationData)
+        logger.debug("Conversation members: {}", members)
 
         // Saves the conversation in the local database, used later to decrypt messages
         conversationStorage.save(conversationData)

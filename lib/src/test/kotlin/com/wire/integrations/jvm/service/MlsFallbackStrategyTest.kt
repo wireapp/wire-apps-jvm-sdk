@@ -160,7 +160,8 @@ class MlsFallbackStrategyTest {
             groupId = MLS_GROUP_ID.toString(),
             name = "Random Conversation",
             epoch = 0L,
-            members = ConversationMembers(others = emptyList())
+            members = ConversationMembers(others = emptyList()),
+            type = ConversationResponse.Type.GROUP
         )
     }
 }
