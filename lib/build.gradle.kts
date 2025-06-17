@@ -39,7 +39,7 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.1.3"
+val ktorVersion = "3.2.0"
 val wireMockVersion = "3.13.1"
 
 dependencies {
