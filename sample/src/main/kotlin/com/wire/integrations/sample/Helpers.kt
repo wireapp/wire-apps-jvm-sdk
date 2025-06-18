@@ -44,7 +44,8 @@ internal fun formatWhisperSegments(responseBody: String): String {
         val start = seg.getDouble("start")
         val end = seg.getDouble("end")
         val text = seg.getString("text")
-        sb.append("${formatTime(start)}-${formatTime(end)} - $text\n")
+        val speaker = seg.optString("speaker", "Unknown")
+        sb.append("${formatTime(start)}-${formatTime(end)} | $speaker: $text\n")
     }
     return sb.toString().trim()
 }
