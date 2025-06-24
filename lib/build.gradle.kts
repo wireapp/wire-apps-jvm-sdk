@@ -13,7 +13,6 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import com.vanniktech.maven.publish.SonatypeHost
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
