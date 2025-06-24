@@ -13,7 +13,6 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import com.vanniktech.maven.publish.SonatypeHost
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -27,7 +26,7 @@ plugins {
     id("com.google.protobuf") version "0.9.5"
 
     // Maven Central
-    id("com.vanniktech.maven.publish") version "0.32.0"
+    id("com.vanniktech.maven.publish") version "0.33.0"
 }
 
 group = "com.wire"
@@ -131,7 +130,7 @@ protobuf {
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
 
     /**
      * Skip signing publication only when a skipping parameter is available
