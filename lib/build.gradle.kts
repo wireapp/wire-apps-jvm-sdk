@@ -131,7 +131,7 @@ protobuf {
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
 
     /**
      * Skip signing publication only when a skipping parameter is available
