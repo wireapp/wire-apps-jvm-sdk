@@ -89,12 +89,6 @@ internal class WireTeamEventsListener internal constructor(
                 }
             }
 
-            is ConsumableNotificationResponse.MessageCount -> {
-                logger.info("Websocket back online, ${notification.data.count} events to fetch")
-                val ackRequest = EventAcknowledgeRequest.countAck()
-                ackEvent(ackRequest, session)
-            }
-
             is ConsumableNotificationResponse.MissedNotification -> {
                 logger.warn("App was offline for too long, missed some notifications")
                 val ackRequest = EventAcknowledgeRequest.notificationMissedAck()

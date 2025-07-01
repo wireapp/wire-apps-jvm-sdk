@@ -35,12 +35,6 @@ data class EventAcknowledgeRequest(
             )
         }
 
-        fun countAck(): EventAcknowledgeRequest {
-            return EventAcknowledgeRequest(
-                type = AcknowledgeType.ACK_MESSAGE_COUNT
-            )
-        }
-
         fun notificationMissedAck(): EventAcknowledgeRequest {
             return EventAcknowledgeRequest(
                 type = AcknowledgeType.ACK_FULL_SYNC
@@ -61,9 +55,6 @@ data class AcknowledgeData(
 enum class AcknowledgeType {
     @SerialName("ack")
     ACK,
-
-    @SerialName("ack_message_count")
-    ACK_MESSAGE_COUNT,
 
     @SerialName("ack_full_sync")
     ACK_FULL_SYNC;

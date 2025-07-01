@@ -31,12 +31,6 @@ sealed class ConsumableNotificationResponse {
     ) : ConsumableNotificationResponse()
 
     @Serializable
-    @SerialName("message_count")
-    data class MessageCount(
-        @SerialName("data") val data: NotificationCount
-    ) : ConsumableNotificationResponse()
-
-    @Serializable
     @SerialName("notifications_missed")
     data object MissedNotification : ConsumableNotificationResponse()
 }
