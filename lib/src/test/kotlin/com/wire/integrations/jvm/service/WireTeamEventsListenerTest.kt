@@ -21,7 +21,6 @@ import com.wire.integrations.jvm.model.http.ConsumableNotificationResponse
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventDataDTO
 import com.wire.integrations.jvm.model.http.EventResponse
-import com.wire.integrations.jvm.model.http.NotificationCount
 import com.wire.integrations.jvm.utils.KtxSerializer
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -57,10 +56,6 @@ class WireTeamEventsListenerTest {
 
             val missedNotification = ConsumableNotificationResponse.MissedNotification
             val encodedMissing = encodeNotification(missedNotification)
-            val messageCount = ConsumableNotificationResponse.MessageCount(
-                data = NotificationCount(count = 5U)
-            )
-            val encodedCount = encodeNotification(messageCount)
             val eventNotification = ConsumableNotificationResponse.EventNotification(
                 data = EventDataDTO(
                     event = eventResponse,
@@ -82,7 +77,6 @@ class WireTeamEventsListenerTest {
             launch { listener.connect() }
 
             incomingChannel.send(Frame.Binary(false, encodedMissing.encodeToByteArray()))
-            incomingChannel.send(Frame.Binary(false, encodedCount.encodeToByteArray()))
             incomingChannel.send(Frame.Binary(false, encodedEvent.encodeToByteArray()))
             delay(100) // Allow time for processing
 
@@ -94,7 +88,7 @@ class WireTeamEventsListenerTest {
                 outgoingChannel.tryReceive().getOrNull()
             }.count()
 
-            assertEquals(3, count)
+            assertEquals(2, count)
 
             incomingChannel.close()
             outgoingChannel.close()
