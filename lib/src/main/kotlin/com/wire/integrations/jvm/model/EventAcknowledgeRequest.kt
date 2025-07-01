@@ -56,9 +56,6 @@ enum class AcknowledgeType {
     @SerialName("ack")
     ACK,
 
-    @SerialName("ack_message_count")
-    ACK_MESSAGE_COUNT,
-
     @SerialName("ack_full_sync")
     ACK_FULL_SYNC;
 
