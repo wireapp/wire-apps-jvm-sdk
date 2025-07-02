@@ -73,6 +73,6 @@ interface BackendClient {
     ): AssetUploadResponse
 
     companion object {
-        const val API_VERSION = "v8"
+        const val API_VERSION = "v9"
     }
 }
