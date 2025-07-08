@@ -499,6 +499,7 @@ sealed interface WireMessage {
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
+        val replacingMessageId: UUID,
         val newContent: String,
         val newLinkPreviews: List<LinkPreview> = emptyList(),
         val newMentions: List<Mention> = emptyList()
@@ -507,7 +508,7 @@ sealed interface WireMessage {
             /**
              * Creates a TextEdited message with minimal required parameters.
              *
-             * @param originalMessageId The UUID of the original message to be edited.
+             * @param replacingMessageId The UUID of the original message to be edited.
              * @param conversationId The qualified ID of the conversation
              * @param text The text content of the message
              * @param mentions List of [Mention] included in the text
@@ -515,13 +516,14 @@ sealed interface WireMessage {
              */
             @JvmStatic
             fun create(
-                originalMessageId: UUID,
+                replacingMessageId: UUID,
                 conversationId: QualifiedId,
                 text: String,
                 mentions: List<Mention> = emptyList()
             ): TextEdited {
                 return TextEdited(
-                    id = originalMessageId,
+                    id = UUID.randomUUID(),
+                    replacingMessageId = replacingMessageId,
                     conversationId = conversationId,
                     sender = QualifiedId(
                         id = UUID.randomUUID(),

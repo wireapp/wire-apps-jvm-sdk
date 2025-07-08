@@ -346,7 +346,7 @@ object ProtobufSerializer {
             .setEdited(
                 MessageEdit
                     .newBuilder()
-                    .setReplacingMessageId(wireMessage.id.toString())
+                    .setReplacingMessageId(wireMessage.replacingMessageId.toString())
                     .setText(
                         packText(
                             wireMessage = WireMessage.Text.create(
@@ -356,6 +356,7 @@ object ProtobufSerializer {
                             )
                         )
                     )
+                    .build()
             )
 
     private fun packReaction(
