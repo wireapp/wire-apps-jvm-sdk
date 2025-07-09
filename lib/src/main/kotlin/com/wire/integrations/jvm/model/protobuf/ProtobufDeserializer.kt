@@ -383,7 +383,8 @@ object ProtobufDeserializer {
                     MessageMentionMapper.fromProtobuf(it)
                 }
                 WireMessage.TextEdited(
-                    id = UUID.fromString(replacingMessageId),
+                    id = UUID.fromString(genericMessage.messageId),
+                    replacingMessageId = UUID.fromString(replacingMessageId),
                     conversationId = conversationId,
                     sender = sender,
                     newContent = genericMessage.text.content,
