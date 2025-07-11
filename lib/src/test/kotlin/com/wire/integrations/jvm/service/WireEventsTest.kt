@@ -52,7 +52,8 @@ class WireEventsTest {
                     id = CONVERSATION_ID,
                     name = "Test conversation",
                     teamId = null,
-                    mlsGroupId = MLSGroupId(ByteArray(32) { 1 })
+                    mlsGroupId = MLSGroupId(ByteArray(32) { 1 }),
+                    type = ConversationData.Type.GROUP
                 ),
                 members = emptyList()
             )
