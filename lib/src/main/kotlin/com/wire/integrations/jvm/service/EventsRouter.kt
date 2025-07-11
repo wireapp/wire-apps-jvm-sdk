@@ -201,7 +201,8 @@ internal class EventsRouter internal constructor(
                 id = qualifiedConversation,
                 name = conversationName,
                 mlsGroupId = mlsGroupId,
-                teamId = conversation.teamId?.let { TeamId(it) }
+                teamId = conversation.teamId?.let { TeamId(it) },
+                type = ConversationData.Type.fromApi(value = conversation.type)
             )
         val members = conversation.members.others.map {
             ConversationMember(

@@ -39,7 +39,8 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             domain = conversation.id.domain,
             name = conversation.name,
             mls_group_id = Base64.getEncoder().encodeToString(conversation.mlsGroupId.value),
-            team_id = conversation.teamId?.value?.toString()
+            team_id = conversation.teamId?.value?.toString(),
+            type = conversation.type.toString()
         )
     }
 
@@ -113,7 +114,8 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),
             name = conv.name,
             teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
-            mlsGroupId = MLSGroupId(Base64.getDecoder().decode(conv.mls_group_id))
+            mlsGroupId = MLSGroupId(Base64.getDecoder().decode(conv.mls_group_id)),
+            type = ConversationData.Type.fromString(value = conv.type)
         )
 
     private fun conversationMemberMapper(member: Conversation_member) =
