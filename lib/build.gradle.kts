@@ -20,7 +20,7 @@ plugins {
     kotlin("plugin.serialization")
     `java-library`
     id("com.gradleup.shadow") version "9.0.0-beta6"
-    id("org.jlleitschuh.gradle.ktlint") version "12.3.0"
+    id("org.jlleitschuh.gradle.ktlint") version "13.0.0"
     id("io.gitlab.arturbosch.detekt") version("1.23.7")
     id("app.cash.sqldelight") version "2.1.0"
     id("com.google.protobuf") version "0.9.5"
