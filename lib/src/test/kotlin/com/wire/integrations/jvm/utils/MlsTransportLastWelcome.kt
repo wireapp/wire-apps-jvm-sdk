@@ -36,9 +36,8 @@ class MlsTransportLastWelcome : MlsTransport {
         return MlsTransportResponse.Success
     }
 
-    override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse {
-        return MlsTransportResponse.Success
-    }
+    override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse =
+        MlsTransportResponse.Success
 
     fun getLastWelcome(): Welcome =
         groupWelcomeMap ?: throw IllegalArgumentException("No welcome for group")

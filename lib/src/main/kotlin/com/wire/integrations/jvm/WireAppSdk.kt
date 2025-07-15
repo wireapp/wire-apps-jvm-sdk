@@ -86,9 +86,7 @@ class WireAppSdk(
 
     fun isRunning(): Boolean = running.get()
 
-    fun getApplicationManager(): WireApplicationManager {
-        return IsolatedKoinContext.koinApp.koin.get()
-    }
+    fun getApplicationManager(): WireApplicationManager = IsolatedKoinContext.koinApp.koin.get()
 
     private fun initDynamicModules(wireEventsHandler: WireEventsHandler) {
         val dynamicModule = module {

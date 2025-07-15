@@ -21,9 +21,7 @@ import com.wire.crypto.MlsTransport
 import com.wire.crypto.MlsTransportResponse
 import com.wire.integrations.jvm.client.BackendClient
 
-internal class MlsTransportImpl(
-    private val backendClient: BackendClient
-) : MlsTransport {
+internal class MlsTransportImpl(private val backendClient: BackendClient) : MlsTransport {
     override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
         backendClient.uploadCommitBundle(
             commitBundle = parseBundleIntoSingleByteArray(

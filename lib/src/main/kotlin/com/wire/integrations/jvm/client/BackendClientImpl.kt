@@ -42,9 +42,7 @@ import org.slf4j.LoggerFactory
 /**
  * Backend client implementation targeting the Wire APIs specific to Applications
  */
-internal class BackendClientImpl internal constructor(
-    private val httpClient: HttpClient
-) : BackendClient {
+internal class BackendClientImpl(private val httpClient: HttpClient) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     override suspend fun connectWebSocket(

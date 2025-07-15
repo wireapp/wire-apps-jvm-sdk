@@ -412,14 +412,11 @@ class WireEventsIntegrationTest {
                 override suspend fun decryptMls(
                     mlsGroupId: MLSGroupId,
                     encryptedMessage: String
-                ): ByteArray {
-                    return GENERIC_TEXT_MESSAGE.toByteArray()
-                }
+                ): ByteArray = GENERIC_TEXT_MESSAGE.toByteArray()
 
                 // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
-                override suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId {
+                override suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId =
                     throw CoreCryptoException.Mls(MlsException.OrphanWelcome())
-                }
 
                 // Mock joining the conversation, assume the backend accepts the invitation
                 override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId =
