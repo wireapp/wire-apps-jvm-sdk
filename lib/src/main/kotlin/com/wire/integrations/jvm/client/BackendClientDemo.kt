@@ -364,7 +364,7 @@ internal class BackendClientDemo internal constructor(
             openingData.toByteArray() + assetContent + closingData.toByteArray()
     }
 
-    private companion object {
+    companion object {
         const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"

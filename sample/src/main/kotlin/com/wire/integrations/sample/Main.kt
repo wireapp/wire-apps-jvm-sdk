@@ -16,6 +16,7 @@
 package com.wire.integrations.sample
 
 import com.wire.integrations.jvm.WireAppSdk
+import com.wire.integrations.jvm.calling.GlobalCallManager
 import com.wire.integrations.jvm.model.QualifiedId
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -47,6 +48,7 @@ fun main() {
     )
     logger.info(applicationManager.getUser(selfUser).toString())
     logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
-
+    val globalCallManager = GlobalCallManager()
+    val callingClient = globalCallManager.calling
     // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }
