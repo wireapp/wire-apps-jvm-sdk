@@ -46,8 +46,6 @@ data class ConversationData(
                     ConversationResponse.Type.SELF -> SELF
                     ConversationResponse.Type.ONE_TO_ONE -> ONE_TO_ONE
                 }
-
-            fun toString(type: Type): String? = type.name
         }
     }
 }
