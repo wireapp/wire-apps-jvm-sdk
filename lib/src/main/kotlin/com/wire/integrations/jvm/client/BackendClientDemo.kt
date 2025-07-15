@@ -18,7 +18,7 @@ package com.wire.integrations.jvm.client
 
 import com.wire.integrations.jvm.client.BackendClient.Companion.API_VERSION
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.exception.runWithWireException
+import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
@@ -36,7 +36,6 @@ import com.wire.integrations.jvm.utils.Mls
 import com.wire.integrations.jvm.utils.obfuscateId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.cookies.get
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
@@ -95,25 +94,21 @@ internal class BackendClientDemo internal constructor(
 
     override suspend fun getAvailableApiVersions(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
-        return runWithWireException {
-            httpClient.get("/$API_VERSION/api-version").body()
-        }
+        return httpClient.get("/$API_VERSION/api-version").body()
     }
 
     override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
-        return runWithWireException {
-            AppDataResponse(
-                appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
-                appType = "FULL",
-                appCommand = "demo"
-            )
-        }
+        return AppDataResponse(
+            appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
+            appType = "FULL",
+            appCommand = "demo"
+        )
     }
 
     override suspend fun getApplicationFeatures(): FeaturesResponse {
         logger.info("Fetching application enabled features")
-        return cachedFeatures ?: runWithWireException {
+        return cachedFeatures ?: run {
             val token = loginUser()
             httpClient.get("/$API_VERSION/feature-configs") {
                 headers {
@@ -172,27 +167,25 @@ internal class BackendClientDemo internal constructor(
         appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
-        return runWithWireException {
-            val token = loginUser()
-            try {
-                httpClient.put("/$API_VERSION/clients/$DEMO_USER_CLIENT") {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
-                    }
-                    setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
-                    contentType(ContentType.Application.Json)
+        val token = loginUser()
+        try {
+            httpClient.put("/$API_VERSION/clients/$DEMO_USER_CLIENT") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
                 }
-            } catch (ex: ClientRequestException) {
-                logger.info("MLS public key already set for DEMO user: $appClientId", ex)
+                setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
+                contentType(ContentType.Application.Json)
             }
-            logger.info("Updated client with mls info for client: $appClientId")
+        } catch (ex: WireException.ClientError) {
+            logger.info("MLS public key already set for DEMO user: $appClientId", ex)
         }
+        logger.info("Updated client with mls info for client: $appClientId")
     }
 
     override suspend fun uploadMlsKeyPackages(
         appClientId: AppClientId,
         mlsKeyPackages: List<ByteArray>
-    ) = runWithWireException {
+    ) {
         val token = loginUser()
         val mlsKeyPackageRequest =
             MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
@@ -204,78 +197,70 @@ internal class BackendClientDemo internal constructor(
                 setBody(mlsKeyPackageRequest)
                 contentType(ContentType.Application.Json)
             }
-        } catch (ex: ClientRequestException) {
+        } catch (ex: WireException.ClientError) {
             logger.info("MLS public key already set for DEMO user: $appClientId", ex)
         }
         logger.info("Updated client with mls key packages for client: $appClientId")
     }
 
-    override suspend fun uploadCommitBundle(commitBundle: ByteArray): Unit =
-        runWithWireException {
-            val token = loginUser()
-            httpClient.post("/$API_VERSION/mls/commit-bundles") {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                }
-                setBody(commitBundle)
-                contentType(Mls)
+    override suspend fun uploadCommitBundle(commitBundle: ByteArray) {
+        val token = loginUser()
+        httpClient.post("/$API_VERSION/mls/commit-bundles") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
             }
+            setBody(commitBundle)
+            contentType(Mls)
         }
+    }
 
-    override suspend fun sendMessage(mlsMessage: ByteArray): Unit =
-        runWithWireException {
-            val token = loginUser()
-            httpClient.post("/$API_VERSION/mls/messages") {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                }
-                setBody(mlsMessage)
-                contentType(Mls)
+    override suspend fun sendMessage(mlsMessage: ByteArray) {
+        val token = loginUser()
+        httpClient.post("/$API_VERSION/mls/messages") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
             }
+            setBody(mlsMessage)
+            contentType(Mls)
         }
+    }
 
     override suspend fun getConversation(conversationId: QualifiedId): ConversationResponse {
         logger.info("Fetching conversation: $conversationId")
-        return runWithWireException {
-            val token = loginUser()
-            httpClient.get(
-                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}"
-            ) {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                }
-            }.body<ConversationResponse>()
-        }
+        val token = loginUser()
+        return httpClient.get(
+            "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}"
+        ) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }.body<ConversationResponse>()
     }
 
     override suspend fun getUserData(userId: QualifiedId): UserResponse {
         logger.info("Fetching user: $userId")
-        return runWithWireException {
-            val token = loginUser()
-            httpClient.get(
-                "/$API_VERSION/users/${userId.domain}/${userId.id}"
-            ) {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                }
-            }.body<UserResponse>()
-        }
+        val token = loginUser()
+        return httpClient.get(
+            "/$API_VERSION/users/${userId.domain}/${userId.id}"
+        ) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }.body<UserResponse>()
     }
 
     override suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
         logger.info("Fetching conversation groupInfo: $conversationId")
-        return runWithWireException {
-            val token = loginUser()
-            httpClient.get(
-                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
-                    "/groupinfo"
-            ) {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                }
-                accept(Mls)
-            }.body<ByteArray>()
-        }
+        val token = loginUser()
+        return httpClient.get(
+            "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+                "/groupinfo"
+        ) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            accept(Mls)
+        }.body<ByteArray>()
     }
 
     override suspend fun downloadAsset(
@@ -285,18 +270,16 @@ internal class BackendClientDemo internal constructor(
     ): ByteArray {
         logger.info("Downloading asset ${assetId.obfuscateId()}")
 
-        return runWithWireException {
-            val token = loginUser()
-            httpClient.prepareGet("$PATH_PUBLIC_ASSETS_V4/$assetDomain/$assetId") {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                    if (!assetToken.isNullOrBlank()) {
-                        append(HEADER_ASSET_TOKEN, assetToken)
-                    }
+        val token = loginUser()
+        return httpClient.prepareGet("$PATH_PUBLIC_ASSETS_V4/$assetDomain/$assetId") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+                if (!assetToken.isNullOrBlank()) {
+                    append(HEADER_ASSET_TOKEN, assetToken)
                 }
-            }.execute { httpResponse ->
-                httpResponse.readRawBytes()
             }
+        }.execute { httpResponse ->
+            httpResponse.readRawBytes()
         }
     }
 
@@ -307,22 +290,20 @@ internal class BackendClientDemo internal constructor(
     ): AssetUploadResponse {
         logger.info("Uploading new asset")
 
-        return runWithWireException {
-            val token = loginUser()
-            httpClient.post(PATH_PUBLIC_ASSETS_V3) {
-                headers {
-                    append(HttpHeaders.Authorization, "Bearer $token")
-                }
-                setBody(
-                    AssetBody(
-                        assetContent = encryptedFile,
-                        assetSize = encryptedFileLength,
-                        metadata = assetUploadData
-                    )
+        val token = loginUser()
+        return httpClient.post(PATH_PUBLIC_ASSETS_V3) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(
+                AssetBody(
+                    assetContent = encryptedFile,
+                    assetSize = encryptedFileLength,
+                    metadata = assetUploadData
                 )
-                contentType(ContentType.MultiPart.Mixed)
-            }.body<AssetUploadResponse>()
-        }
+            )
+            contentType(ContentType.MultiPart.Mixed)
+        }.body<AssetUploadResponse>()
     }
 
     internal class AssetBody internal constructor(

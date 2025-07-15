@@ -18,7 +18,6 @@ package com.wire.integrations.jvm.client
 
 import com.wire.integrations.jvm.client.BackendClient.Companion.API_VERSION
 import com.wire.integrations.jvm.config.IsolatedKoinContext
-import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
@@ -65,30 +64,22 @@ internal class BackendClientImpl internal constructor(
 
     override suspend fun getAvailableApiVersions(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
-        return runWithWireException {
-            httpClient.get("/$API_VERSION/api-version").body()
-        }
+        return httpClient.get("/$API_VERSION/api-version").body()
     }
 
     override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
-        return runWithWireException {
-            httpClient.get("/$API_VERSION/apps").body()
-        }
+        return httpClient.get("/$API_VERSION/apps").body()
     }
 
     override suspend fun getApplicationFeatures(): FeaturesResponse {
         logger.info("Fetching application enabled features")
-        return runWithWireException {
-            httpClient.get("/$API_VERSION/apps/feature-configs").body()
-        }
+        return httpClient.get("/$API_VERSION/apps/feature-configs").body()
     }
 
     override suspend fun confirmTeam(teamId: TeamId) {
         logger.info("Confirming team invite")
-        runWithWireException {
-            httpClient.post("/$API_VERSION/apps/teams/${teamId.value}/confirm")
-        }
+        httpClient.post("/$API_VERSION/apps/teams/${teamId.value}/confirm")
     }
 
     override suspend fun updateClientWithMlsPublicKey(
