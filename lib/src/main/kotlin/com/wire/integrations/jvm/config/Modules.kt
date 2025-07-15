@@ -24,10 +24,9 @@ import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.crypto.MlsTransportImpl
-import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.exception.mapToWireException
 import com.wire.integrations.jvm.logging.LoggingConfiguration
 import com.wire.integrations.jvm.model.AppClientId
-import com.wire.integrations.jvm.model.ErrorResponse
 import com.wire.integrations.jvm.persistence.AppSqlLiteStorage
 import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.persistence.ConversationSqlLiteStorage
@@ -42,19 +41,14 @@ import com.wire.integrations.jvm.utils.KtxSerializer
 import com.wire.integrations.jvm.utils.mls
 import com.wire.integrations.jvm.utils.xprotobuf
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
-import io.ktor.client.plugins.ResponseException
-import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.serialization.JsonConvertException
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
@@ -100,26 +94,7 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
         expectSuccess = true
         HttpResponseValidator {
             handleResponseExceptionWithRequest { exception, _ ->
-                if (exception !is ResponseException) return@handleResponseExceptionWithRequest
-                logger.warn("Error occurred", exception)
-                val wireException = try {
-                    val errorResponse = exception.response.body<ErrorResponse>()
-                    when (exception) {
-                        is ClientRequestException -> {
-                            WireException.ClientError(errorResponse, exception)
-                        }
-                        is ServerResponseException -> {
-                            WireException.InternalSystemError(errorResponse, exception)
-                        }
-                        else -> WireException.UnknownError(
-                            message = exception.message,
-                            throwable = exception
-                        )
-                    }
-                } catch (_: JsonConvertException) {
-                    WireException.UnknownError(throwable = exception)
-                }
-                throw wireException
+                exception.mapToWireException()
             }
         }
         followRedirects = true
