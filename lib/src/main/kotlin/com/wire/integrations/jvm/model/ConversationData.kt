@@ -16,11 +16,36 @@
 package com.wire.integrations.jvm.model
 
 import com.wire.crypto.MLSGroupId
+import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 
 @JvmRecord
 data class ConversationData(
     val id: QualifiedId,
     val name: String?,
     val teamId: TeamId?,
-    val mlsGroupId: MLSGroupId
-)
+    val mlsGroupId: MLSGroupId,
+    val type: Type
+) {
+    enum class Type {
+        GROUP,
+        SELF,
+        ONE_TO_ONE;
+
+        companion object {
+            fun fromString(value: String): Type =
+                when (value) {
+                    SELF.name -> SELF
+                    ONE_TO_ONE.name -> ONE_TO_ONE
+                    GROUP.name -> GROUP
+                    else -> GROUP
+                }
+
+            fun fromApi(value: ConversationResponse.Type): Type =
+                when (value) {
+                    ConversationResponse.Type.GROUP -> GROUP
+                    ConversationResponse.Type.SELF -> SELF
+                    ConversationResponse.Type.ONE_TO_ONE -> ONE_TO_ONE
+                }
+        }
+    }
+}
