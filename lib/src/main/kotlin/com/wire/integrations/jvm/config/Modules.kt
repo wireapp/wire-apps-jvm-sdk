@@ -24,6 +24,7 @@ import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.crypto.MlsTransportImpl
+import com.wire.integrations.jvm.exception.mapToWireException
 import com.wire.integrations.jvm.logging.LoggingConfiguration
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.persistence.AppSqlLiteStorage
@@ -42,6 +43,7 @@ import com.wire.integrations.jvm.utils.xprotobuf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -90,6 +92,11 @@ val sdkModule =
 internal fun createHttpClient(apiHost: String?): HttpClient {
     return HttpClient(CIO) {
         expectSuccess = true
+        HttpResponseValidator {
+            handleResponseExceptionWithRequest { exception, _ ->
+                exception.mapToWireException()
+            }
+        }
         followRedirects = true
         install(LogbookClient) {
             logbook = LoggingConfiguration.logbook

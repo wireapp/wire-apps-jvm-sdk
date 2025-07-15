@@ -16,7 +16,8 @@
 
 package com.wire.integrations.jvm.exception
 
-import io.ktor.http.HttpStatusCode
+import com.wire.integrations.jvm.exception.NetworkErrorLabel.MLS_STALE_MESSAGE
+import com.wire.integrations.jvm.model.ErrorResponse
 
 /**
  * Class containing all Wire Error Exceptions that are going to be thrown to the developer
@@ -69,18 +70,19 @@ sealed class WireException @JvmOverloads constructor(
      * Client Error
      */
     data class ClientError(
-        override val message: String? = null,
-        val throwable: Throwable? = null,
-        val status: HttpStatusCode
-    ) : WireException(message ?: throwable?.localizedMessage, throwable)
+        val errorResponse: ErrorResponse,
+        val throwable: Throwable?
+    ) : WireException(errorResponse.message) {
+        fun isMlsStaleMessage(): Boolean = errorResponse.label == MLS_STALE_MESSAGE
+    }
 
     /**
      * Internal Error
      */
-    class InternalSystemError(
-        message: String? = null,
-        throwable: Throwable? = null
-    ) : WireException(message ?: throwable?.localizedMessage, throwable)
+    data class InternalSystemError(
+        val errorResponse: ErrorResponse,
+        val throwable: Throwable?
+    ) : WireException(errorResponse.message)
 
     /**
      * Cryptographic Error

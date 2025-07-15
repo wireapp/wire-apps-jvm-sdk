@@ -16,28 +16,37 @@
 
 package com.wire.integrations.jvm.exception
 
+import com.wire.integrations.jvm.model.ErrorResponse
+import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.plugins.ServerResponseException
+import io.ktor.serialization.JsonConvertException
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("ExceptionMapper")
 
-fun Exception.mapToWireException() =
-    when (this) {
-        is WireException -> this
-        is InterruptedException -> WireException.InternalSystemError(throwable = this)
-        is ClientRequestException -> WireException.ClientError(
-            throwable = this,
-            status = this.response.status
-        )
-        else -> WireException.UnknownError(throwable = this)
-    }
+suspend fun Throwable.mapToWireException() {
+    if (this !is ResponseException) return
+    logger.warn("Error occurred", this)
+    val wireException = try {
+        val errorResponse = this.response.body<ErrorResponse>()
+        when (this) {
+            is ClientRequestException -> {
+                WireException.ClientError(errorResponse, this)
+            }
 
-@Throws(WireException::class)
-internal inline fun <T> runWithWireException(block: () -> T): T {
-    return try {
-        block().also { logger.debug(it.toString()) }
-    } catch (exception: Exception) {
-        logger.warn("Error occurred", exception)
-        throw exception.mapToWireException()
+            is ServerResponseException -> {
+                WireException.InternalSystemError(errorResponse, this)
+            }
+
+            else -> WireException.UnknownError(
+                message = this.message,
+                throwable = this
+            )
+        }
+    } catch (_: JsonConvertException) {
+        WireException.UnknownError(throwable = this)
     }
+    throw wireException
 }

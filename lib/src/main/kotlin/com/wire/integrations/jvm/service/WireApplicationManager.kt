@@ -37,7 +37,6 @@ import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.utils.AESDecrypt
 import com.wire.integrations.jvm.utils.AESEncrypt
 import com.wire.integrations.jvm.utils.MAX_DATA_SIZE
-import io.ktor.http.HttpStatusCode
 import java.io.ByteArrayInputStream
 import java.util.UUID
 import javax.imageio.ImageIO
@@ -149,8 +148,7 @@ class WireApplicationManager internal constructor(
             try {
                 backendClient.sendMessage(mlsMessage = encryptedMessage)
             } catch (exception: WireException.ClientError) {
-                // TODO(WireException): Properly handle mls-stale-message exception type
-                if (exception.status == HttpStatusCode.Conflict) {
+                if (exception.isMlsStaleMessage()) {
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
                         conversationId = message.conversationId
