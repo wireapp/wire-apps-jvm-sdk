@@ -16,7 +16,9 @@
 
 package com.wire.integrations.jvm.model
 
-@kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ErrorResponse(
     val code: Int,
     val label: String,
