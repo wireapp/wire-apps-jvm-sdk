@@ -94,9 +94,8 @@ class WireTeamEventsListenerTest {
             outgoingChannel.close()
         }
 
-    private fun encodeNotification(notification: ConsumableNotificationResponse): String {
-        return KtxSerializer.json.encodeToString(notification)
-    }
+    private fun encodeNotification(notification: ConsumableNotificationResponse): String =
+        KtxSerializer.json.encodeToString(notification)
 
     @Test
     fun webSocketExceptionIsRethrown() =

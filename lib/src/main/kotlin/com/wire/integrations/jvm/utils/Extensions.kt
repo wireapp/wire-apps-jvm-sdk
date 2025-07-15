@@ -24,17 +24,11 @@ private const val START_INDEX = 0
 private const val END_INDEX_ID = 7
 private const val END_INDEX_CLIENT_ID = 3
 
-fun UUID.obfuscateId(): String {
-    return this.toString().obfuscateId(END_INDEX_ID)
-}
+fun UUID.obfuscateId(): String = this.toString().obfuscateId(END_INDEX_ID)
 
-fun String.obfuscateId(): String {
-    return obfuscateId(END_INDEX_ID)
-}
+fun String.obfuscateId(): String = obfuscateId(END_INDEX_ID)
 
-fun String.obfuscateClientId(): String {
-    return obfuscateId(END_INDEX_CLIENT_ID)
-}
+fun String.obfuscateClientId(): String = obfuscateId(END_INDEX_CLIENT_ID)
 
 private fun String.obfuscateId(lastChar: Int): String =
     if (this.length < END_INDEX_ID) this else this.substring(START_INDEX, lastChar) + "***"

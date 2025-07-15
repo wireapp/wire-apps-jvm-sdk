@@ -74,8 +74,8 @@ internal class CoreCryptoClient private constructor(
             )
         }
 
-        private fun getMlsCipherSuiteName(code: Int): Ciphersuite {
-            return when (code) {
+        private fun getMlsCipherSuiteName(code: Int): Ciphersuite =
+            when (code) {
                 DEFAULT_CIPHERSUITE_IDENTIFIER -> Ciphersuite.DEFAULT
                 2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
                 3 -> Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519
@@ -85,7 +85,6 @@ internal class CoreCryptoClient private constructor(
                 7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
                 else -> Ciphersuite.DEFAULT
             }
-        }
     }
 
     override fun getAppClientId(): AppClientId = appClientId

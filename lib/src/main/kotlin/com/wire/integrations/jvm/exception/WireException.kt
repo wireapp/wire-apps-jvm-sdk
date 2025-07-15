@@ -29,29 +29,41 @@ sealed class WireException @JvmOverloads constructor(
     /**
      * Authorization Error
      */
-    class Unauthorized(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class Unauthorized(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
-    class Forbidden(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class Forbidden(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Arguments / Parameter Error
      */
-    class MissingParameter(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class MissingParameter(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
-    class InvalidParameter(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class InvalidParameter(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Database Error
      */
-    class DatabaseError(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class DatabaseError(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
-    class EntityNotFound(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class EntityNotFound(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Client Error
@@ -65,18 +77,24 @@ sealed class WireException @JvmOverloads constructor(
     /**
      * Internal Error
      */
-    class InternalSystemError(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class InternalSystemError(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Cryptographic Error
      */
-    class CryptographicSystemError(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class CryptographicSystemError(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     /**
      * Unknown Error
      */
-    class UnknownError(message: String? = null, throwable: Throwable? = null) :
-        WireException(message ?: throwable?.localizedMessage, throwable)
+    class UnknownError(
+        message: String? = null,
+        throwable: Throwable? = null
+    ) : WireException(message ?: throwable?.localizedMessage, throwable)
 }

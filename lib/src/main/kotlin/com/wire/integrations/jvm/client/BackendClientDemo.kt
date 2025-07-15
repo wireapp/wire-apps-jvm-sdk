@@ -68,9 +68,7 @@ import java.util.UUID
  * - localhost:8086 - reaching the local Demo events producer
  * - some Wire Backend evn - emulate Apps API calls by using the Client API with a DEMO user
  */
-internal class BackendClientDemo internal constructor(
-    private val httpClient: HttpClient
-) : BackendClient {
+internal class BackendClientDemo(private val httpClient: HttpClient) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     // Simple cache of the Backend features, as the MLS values we care about
@@ -172,7 +170,7 @@ internal class BackendClientDemo internal constructor(
         appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
-        return runWithWireException {
+        runWithWireException {
             val token = loginUser()
             try {
                 httpClient.put("/$API_VERSION/clients/$DEMO_USER_CLIENT") {

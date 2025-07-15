@@ -60,7 +60,10 @@ sealed interface WireMessage {
         val quotedMessageSha256: ByteArray? = null,
         val mentions: List<Mention> = emptyList(),
         val linkPreviews: List<LinkPreview> = emptyList()
-    ) : WireMessage, Item, Ephemeral, Replyable {
+    ) : WireMessage,
+        Item,
+        Ephemeral,
+        Replyable {
         companion object {
             /**
              * Creates a basic text message with minimal required parameters.
@@ -188,9 +191,14 @@ sealed interface WireMessage {
         val mimeType: String,
         val metadata: AssetMetadata? = null,
         val remoteData: RemoteData? = null
-    ) : WireMessage, Ephemeral, Replyable {
+    ) : WireMessage,
+        Ephemeral,
+        Replyable {
         sealed class AssetMetadata {
-            data class Image(val width: Int, val height: Int) : AssetMetadata()
+            data class Image(
+                val width: Int,
+                val height: Int
+            ) : AssetMetadata()
 
             data class Video(
                 val width: Int?,
@@ -338,7 +346,8 @@ sealed interface WireMessage {
         override val sender: QualifiedId,
         override val expiresAfterMillis: Long? = null,
         val hotKnock: Boolean
-    ) : WireMessage, Ephemeral {
+    ) : WireMessage,
+        Ephemeral {
         companion object {
             /**
              * Creates a basic Knock message with minimal required parameters.
@@ -353,18 +362,16 @@ sealed interface WireMessage {
                 conversationId: QualifiedId,
                 hotKnock: Boolean,
                 expiresAfterMillis: Long? = null
-            ): Knock {
-                return Knock(
+            ) = Knock(
+                id = UUID.randomUUID(),
+                conversationId = conversationId,
+                sender = QualifiedId(
                     id = UUID.randomUUID(),
-                    conversationId = conversationId,
-                    sender = QualifiedId(
-                        id = UUID.randomUUID(),
-                        domain = UUID.randomUUID().toString()
-                    ),
-                    hotKnock = hotKnock,
-                    expiresAfterMillis = expiresAfterMillis
-                )
-            }
+                    domain = UUID.randomUUID().toString()
+                ),
+                hotKnock = hotKnock,
+                expiresAfterMillis = expiresAfterMillis
+            )
         }
     }
 
@@ -379,7 +386,9 @@ sealed interface WireMessage {
         val longitude: Float,
         val name: String? = null,
         val zoom: Int = 0
-    ) : WireMessage, Ephemeral, Replyable {
+    ) : WireMessage,
+        Ephemeral,
+        Replyable {
         companion object {
             /**
              * Creates a basic Location message with minimal required parameters.
@@ -402,22 +411,20 @@ sealed interface WireMessage {
                 zoom: Int = 0,
                 timestamp: Instant = Clock.System.now(),
                 expiresAfterMillis: Long? = null
-            ): Location {
-                return Location(
+            ) = Location(
+                id = UUID.randomUUID(),
+                conversationId = conversationId,
+                sender = QualifiedId(
                     id = UUID.randomUUID(),
-                    conversationId = conversationId,
-                    sender = QualifiedId(
-                        id = UUID.randomUUID(),
-                        domain = UUID.randomUUID().toString()
-                    ),
-                    latitude = latitude,
-                    longitude = longitude,
-                    name = name,
-                    zoom = zoom,
-                    timestamp = timestamp,
-                    expiresAfterMillis = expiresAfterMillis
-                )
-            }
+                    domain = UUID.randomUUID().toString()
+                ),
+                latitude = latitude,
+                longitude = longitude,
+                name = name,
+                zoom = zoom,
+                timestamp = timestamp,
+                expiresAfterMillis = expiresAfterMillis
+            )
         }
     }
 
@@ -520,19 +527,17 @@ sealed interface WireMessage {
                 conversationId: QualifiedId,
                 text: String,
                 mentions: List<Mention> = emptyList()
-            ): TextEdited {
-                return TextEdited(
+            ) = TextEdited(
+                id = UUID.randomUUID(),
+                replacingMessageId = replacingMessageId,
+                conversationId = conversationId,
+                sender = QualifiedId(
                     id = UUID.randomUUID(),
-                    replacingMessageId = replacingMessageId,
-                    conversationId = conversationId,
-                    sender = QualifiedId(
-                        id = UUID.randomUUID(),
-                        domain = UUID.randomUUID().toString()
-                    ),
-                    newContent = text,
-                    newMentions = mentions
-                )
-            }
+                    domain = UUID.randomUUID().toString()
+                ),
+                newContent = text,
+                newMentions = mentions
+            )
         }
     }
 
@@ -557,18 +562,16 @@ sealed interface WireMessage {
                 conversationId: QualifiedId,
                 messageId: String,
                 emojiSet: Set<String> = emptySet()
-            ): Reaction {
-                return Reaction(
+            ) = Reaction(
+                id = UUID.randomUUID(),
+                conversationId = conversationId,
+                sender = QualifiedId(
                     id = UUID.randomUUID(),
-                    conversationId = conversationId,
-                    sender = QualifiedId(
-                        id = UUID.randomUUID(),
-                        domain = UUID.randomUUID().toString()
-                    ),
-                    messageId = messageId,
-                    emojiSet = emojiSet
-                )
-            }
+                    domain = UUID.randomUUID().toString()
+                ),
+                messageId = messageId,
+                emojiSet = emojiSet
+            )
         }
     }
 

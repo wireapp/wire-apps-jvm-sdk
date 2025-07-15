@@ -20,7 +20,6 @@ package com.wire.integrations.jvm.utils
 
 import io.ktor.http.ContentType
 import io.ktor.http.content.ByteArrayContent
-import io.ktor.http.content.OutgoingContent
 import io.ktor.serialization.Configuration
 import io.ktor.serialization.ContentConverter
 import io.ktor.util.reflect.TypeInfo
@@ -38,18 +37,14 @@ class ByteArrayConverter : ContentConverter {
         charset: Charset,
         typeInfo: TypeInfo,
         content: ByteReadChannel
-    ): Any? {
-        return content.toByteArray()
-    }
+    ) = content.toByteArray()
 
     override suspend fun serialize(
         contentType: ContentType,
         charset: Charset,
         typeInfo: TypeInfo,
         value: Any?
-    ): OutgoingContent? {
-        return ByteArrayContent(value as ByteArray, contentType)
-    }
+    ) = ByteArrayContent(value as ByteArray, contentType)
 }
 
 val Mls: ContentType

@@ -59,7 +59,5 @@ enum class AcknowledgeType {
     @SerialName("ack_full_sync")
     ACK_FULL_SYNC;
 
-    override fun toString(): String {
-        return this.name.lowercase()
-    }
+    override fun toString() = this.name.lowercase()
 }
