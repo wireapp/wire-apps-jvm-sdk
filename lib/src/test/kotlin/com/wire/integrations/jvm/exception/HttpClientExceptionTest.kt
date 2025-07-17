@@ -87,7 +87,7 @@ class HttpClientExceptionTest {
     }
 
     @Test
-    fun whenErrorResponseDoesNotContainLabelThenThrowUnknowException() {
+    fun whenErrorResponseDoesNotContainLabelThenThrowUnknownException() {
         val stubMlsMessagePath = "/$V/mls/messages"
 
         wireMockServer.stubFor(
