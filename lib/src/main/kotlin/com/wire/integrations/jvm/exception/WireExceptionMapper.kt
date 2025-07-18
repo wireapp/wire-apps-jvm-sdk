@@ -16,7 +16,7 @@
 
 package com.wire.integrations.jvm.exception
 
-import com.wire.integrations.jvm.model.ErrorResponse
+import com.wire.integrations.jvm.model.ApiError
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.ResponseException
@@ -29,24 +29,25 @@ private val logger = LoggerFactory.getLogger("ExceptionMapper")
 suspend fun Throwable.mapToWireException() {
     if (this !is ResponseException) return
     logger.warn("Error occurred", this)
-    val wireException = try {
-        val errorResponse = this.response.body<ErrorResponse>()
-        when (this) {
-            is ClientRequestException -> {
-                WireException.ClientError(errorResponse, this)
-            }
 
-            is ServerResponseException -> {
-                WireException.InternalSystemError(errorResponse, this)
-            }
-
-            else -> WireException.UnknownError(
-                message = this.message,
-                throwable = this
-            )
-        }
-    } catch (_: JsonConvertException) {
-        WireException.UnknownError(throwable = this)
+    val errorResponse = try {
+        this.response.body<ApiError>()
+    } catch (e: JsonConvertException) {
+        throw WireException.UnknownError(e.cause?.message, e)
     }
-    throw wireException
+
+    throw when (this) {
+        is ClientRequestException -> {
+            WireException.ClientError(errorResponse, this)
+        }
+
+        is ServerResponseException -> {
+            WireException.InternalSystemError(errorResponse, this)
+        }
+
+        else -> WireException.UnknownError(
+            message = this.message,
+            throwable = this
+        )
+    }
 }
