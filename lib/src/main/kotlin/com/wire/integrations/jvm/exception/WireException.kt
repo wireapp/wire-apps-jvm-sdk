@@ -16,9 +16,7 @@
 
 package com.wire.integrations.jvm.exception
 
-import com.wire.integrations.jvm.exception.NetworkErrorLabel.MLS_STALE_MESSAGE
-import com.wire.integrations.jvm.model.ApiError
-import com.wire.integrations.jvm.model.ApiError.Standard
+import com.wire.integrations.jvm.model.StandardError
 
 /**
  * Class containing all Wire Error Exceptions that are going to be thrown to the developer
@@ -71,19 +69,17 @@ sealed class WireException @JvmOverloads constructor(
      * Client Error
      */
     data class ClientError(
-        val apiError: ApiError,
+        val response: StandardError,
         val throwable: Throwable?
-    ) : WireException(apiError.getExceptionMessage(), throwable) {
-        fun isMlsStaleMessage(): Boolean = (apiError as? Standard)?.label == MLS_STALE_MESSAGE
-    }
+    ) : WireException(response.message, throwable)
 
     /**
      * Internal Error
      */
     data class InternalSystemError(
-        val apiError: ApiError,
+        val response: StandardError,
         val throwable: Throwable?
-    ) : WireException(apiError.getExceptionMessage(), throwable)
+    ) : WireException(response.message, throwable)
 
     /**
      * Cryptographic Error

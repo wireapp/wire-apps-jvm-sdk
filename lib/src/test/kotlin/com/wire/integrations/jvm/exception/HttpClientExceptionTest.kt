@@ -65,7 +65,7 @@ class HttpClientExceptionTest {
                     contentType(Mls)
                 }
             }
-            assertTrue(exception.isMlsStaleMessage())
+            assertTrue(exception.response.isMlsStaleMessage())
         }
     }
 
