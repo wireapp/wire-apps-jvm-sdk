@@ -16,11 +16,14 @@
 
 package com.wire.integrations.jvm.model
 
+import com.wire.integrations.jvm.exception.NetworkErrorLabel.MLS_STALE_MESSAGE
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ErrorResponse(
+data class StandardError(
     val code: Int,
     val label: String,
     val message: String
-)
+) {
+    fun isMlsStaleMessage(): Boolean = (label == MLS_STALE_MESSAGE)
+}
