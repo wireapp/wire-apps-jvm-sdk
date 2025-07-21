@@ -33,6 +33,11 @@ suspend fun Throwable.mapToWireException() {
     val errorResponse = try {
         this.response.body<ApiError>()
     } catch (e: JsonConvertException) {
+        logger.error(
+            "HttpResponseValidator exception could not be mapped to any ApiError type; " +
+                "mapped as WireException.UnknownError. To handle this exception, " +
+                "extend the ApiError interface and update the mapper."
+        )
         throw WireException.UnknownError(e.cause?.message, e)
     }
 
