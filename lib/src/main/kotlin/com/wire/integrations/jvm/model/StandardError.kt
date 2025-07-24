@@ -27,5 +27,6 @@ data class StandardError(
     val message: String
 ) {
     fun isMlsStaleMessage(): Boolean = (label == MLS_STALE_MESSAGE)
+
     fun isTooManyClients(): Boolean = (label == TOO_MANY_CLIENTS)
 }
