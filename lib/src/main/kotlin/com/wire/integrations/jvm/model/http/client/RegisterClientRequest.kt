@@ -14,9 +14,26 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.exception
+package com.wire.integrations.jvm.model.http.client
 
-internal object NetworkErrorLabel {
-    const val MLS_STALE_MESSAGE = "mls-stale-message"
-    const val TOO_MANY_CLIENTS = "too-many-clients"
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class RegisterClientRequest(
+    val password: String,
+    val type: String = "permanent",
+    val model: String = "App Client",
+    @SerialName("lastkey")
+    val lastKey: PreKeyRequest,
+    @SerialName("prekeys")
+    val preKeys: List<PreKeyRequest>,
+    val capabilities: List<CapabilitiesRequest>
+) {
+    companion object {
+        val DEFAULT_CAPABILITIES = listOf<CapabilitiesRequest>(
+            CapabilitiesRequest.LEGALHOLD_IMPLICIT_CONSENT,
+            CapabilitiesRequest.CONSUMABLE_NOTIFICATIONS
+        )
+    }
 }

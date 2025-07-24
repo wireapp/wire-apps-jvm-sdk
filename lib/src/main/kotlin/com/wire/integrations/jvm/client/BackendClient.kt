@@ -25,6 +25,8 @@ import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
+import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -44,6 +46,8 @@ interface BackendClient {
         appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     )
+
+    suspend fun registerClient(registerClientRequest: RegisterClientRequest): RegisterClientResponse
 
     suspend fun uploadMlsKeyPackages(
         appClientId: AppClientId,

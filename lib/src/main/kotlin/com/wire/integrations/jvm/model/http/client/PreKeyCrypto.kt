@@ -14,9 +14,16 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.exception
+package com.wire.integrations.jvm.model.http.client
 
-internal object NetworkErrorLabel {
-    const val MLS_STALE_MESSAGE = "mls-stale-message"
-    const val TOO_MANY_CLIENTS = "too-many-clients"
-}
+import com.wire.crypto.PreKey
+import io.ktor.util.encodeBase64
+
+data class PreKeyCrypto(
+    val id: Int,
+    val encodedData: String
+)
+
+fun PreKeyCrypto.toApi(): PreKeyRequest = PreKeyRequest(id, encodedData)
+
+fun PreKey.toCryptography(): PreKeyCrypto = PreKeyCrypto(id.toInt(), data.encodeBase64())

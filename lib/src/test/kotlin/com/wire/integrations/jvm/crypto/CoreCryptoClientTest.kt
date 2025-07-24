@@ -36,10 +36,16 @@ class CoreCryptoClientTest {
     @Test
     fun whenCryptoStoragePasswordIsSet_thenClientWorks() {
         runBlocking {
+            val userId = UUID.randomUUID().toString()
             val cryptoClient = CoreCryptoClient.create(
-                appClientId = AppClientId("app:${UUID.randomUUID()}"),
+                userId = userId,
+                ciphersuiteCode = 1
+            )
+            cryptoClient.initializeMlsClient(
+                appClientId = AppClientId("user_$userId"),
                 mlsTransport = testMlsTransport
             )
+
             assertNotNull(cryptoClient.mlsGetPublicKey())
             val keyPackages = cryptoClient.mlsGenerateKeyPackages(10u)
             assertEquals(10, keyPackages.size)
@@ -49,18 +55,20 @@ class CoreCryptoClientTest {
     @Test
     fun testMlsClientFailOnDifferentPassword() {
         runBlocking {
-            val appClientId = AppClientId("app:${UUID.randomUUID()}")
+            val userId = UUID.randomUUID().toString()
+            val ciphersuiteCode = 1
+
             val cryptoClient = CoreCryptoClient.create(
-                appClientId = appClientId,
-                mlsTransport = testMlsTransport
+                userId = userId,
+                ciphersuiteCode = ciphersuiteCode
             )
             cryptoClient.close()
 
             IsolatedKoinContext.setCryptographyStoragePassword("anotherPasswordOfRandom32BytesCH")
             assertThrows<com.wire.crypto.uniffi.CoreCryptoException.Mls> {
                 CoreCryptoClient.create(
-                    appClientId = appClientId,
-                    mlsTransport = testMlsTransport
+                    userId = userId,
+                    ciphersuiteCode = ciphersuiteCode
                 )
             }
         }
@@ -74,10 +82,16 @@ class CoreCryptoClientTest {
             val groupInfo = GroupInfo(inputStream.readAllBytes())
 
             // Create a new client and join the conversation
+            val userId = UUID.randomUUID().toString()
             val mlsClient = CoreCryptoClient.create(
-                appClientId = AppClientId(UUID.randomUUID().toString()),
+                userId = userId,
+                ciphersuiteCode = 1
+            )
+            mlsClient.initializeMlsClient(
+                appClientId = AppClientId("user_$userId"),
                 mlsTransport = testMlsTransport
             )
+
             val groupIdGenerated: MLSGroupId = mlsClient.joinMlsConversationRequest(groupInfo)
             assertTrue { mlsClient.conversationExists(groupIdGenerated) }
 
@@ -111,13 +125,27 @@ class CoreCryptoClientTest {
     fun testMlsClientsEncryptAndDecrypt() {
         runBlocking {
             // Create two clients, Bob and Alice
+            val bobUserId = UUID.randomUUID().toString()
             val bobClient = CoreCryptoClient.create(
-                appClientId = AppClientId("bob_" + UUID.randomUUID()),
+                userId = bobUserId,
+                ciphersuiteCode = 1
+            )
+            bobClient.initializeMlsClient(
+                appClientId = AppClientId(
+                    value = "bob_$bobUserId"
+                ),
                 mlsTransport = testMlsTransport
             )
 
+            val aliceUserId = UUID.randomUUID().toString()
             val aliceClient = CoreCryptoClient.create(
-                appClientId = AppClientId("alice_" + UUID.randomUUID()),
+                userId = aliceUserId,
+                ciphersuiteCode = 1
+            )
+            aliceClient.initializeMlsClient(
+                appClientId = AppClientId(
+                    value = "alice_$aliceUserId"
+                ),
                 mlsTransport = testMlsTransport
             )
 

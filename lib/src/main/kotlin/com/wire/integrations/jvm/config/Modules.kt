@@ -24,9 +24,12 @@ import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.crypto.MlsTransportImpl
+import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.exception.mapToWireException
 import com.wire.integrations.jvm.logging.LoggingConfiguration
 import com.wire.integrations.jvm.model.AppClientId
+import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
+import com.wire.integrations.jvm.model.http.client.toApi
 import com.wire.integrations.jvm.persistence.AppSqlLiteStorage
 import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.persistence.ConversationSqlLiteStorage
@@ -60,6 +63,8 @@ import org.zalando.logbook.client.LogbookClient
 import org.zalando.logbook.common.ExperimentalLogbookKtorApi
 
 private const val WEBSOCKET_PING_INTERVAL_MILLIS = 20_000L
+private const val PROTEUS_PREKEYS_FROM_COUNT = 0
+private const val PROTEUS_PREKEYS_MAX_COUNT = 10
 private val logger = LoggerFactory.getLogger(object {}::class.java.`package`.name)
 
 val sdkModule =
@@ -72,7 +77,7 @@ val sdkModule =
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
-        single<BackendClient> { BackendClientDemo(get()) }
+        single<BackendClient> { BackendClientDemo(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get(), get()) }
@@ -137,6 +142,7 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
  *
  * The following times the SDK is started, the client will be loaded from the storage.
  */
+@Suppress("LongMethod")
 internal suspend fun getOrInitCryptoClient(
     backendClient: BackendClient,
     appStorage: AppStorage,
@@ -144,38 +150,71 @@ internal suspend fun getOrInitCryptoClient(
 ): CryptoClient {
     val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
         .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
-    logger.debug("Current ciphersuite: $mlsCipherSuiteCode")
+
+    val userId = System.getenv("WIRE_SDK_USER_ID")
+    val cryptoClient = CoreCryptoClient.create(
+        userId = userId,
+        ciphersuiteCode = mlsCipherSuiteCode
+    )
 
     val storedClientId = appStorage.getClientId()
-    return if (storedClientId != null) {
-        logger.info("App has a client already, loading it")
-        logger.debug("Stored client id: ${storedClientId.value}")
-        CoreCryptoClient.create(
-            appClientId = AppClientId(storedClientId.value),
-            ciphersuiteCode = mlsCipherSuiteCode,
+    if (storedClientId != null) {
+        logger.info("Loading MLS Client for: $storedClientId")
+        // App has a client, load MLS client
+        cryptoClient.initializeMlsClient(
+            appClientId = storedClientId,
             mlsTransport = mlsTransport
         )
+        cryptoClient.setAppClientId(storedClientId)
     } else {
-        logger.info("App does not have a client yet, initializing it")
-        val appData = backendClient.getApplicationData()
-        val appClientId = AppClientId(appData.appClientId)
+        // App doesn't have a client, create one
+        logger.info("Creating Proteus Client")
+        cryptoClient.createProteusClient()
+        val preKeys = cryptoClient.generateProteusPreKeys(
+            from = PROTEUS_PREKEYS_FROM_COUNT,
+            count = PROTEUS_PREKEYS_MAX_COUNT
+        )
+        val lastKey = cryptoClient.generateProteusLastPreKey()
 
-        val cryptoClient = CoreCryptoClient.create(
+        val clientResponse = try {
+            backendClient.registerClient(
+                registerClientRequest = RegisterClientRequest(
+                    password = System.getenv("WIRE_SDK_PASSWORD"),
+                    lastKey = lastKey.toApi(),
+                    preKeys = preKeys.map { it.toApi() },
+                    capabilities = RegisterClientRequest.DEFAULT_CAPABILITIES
+                )
+            )
+        } catch (exception: WireException.ClientError) {
+            throw IllegalStateException(
+                "Error when registering client",
+                exception
+            )
+        }
+
+        val userDomain = System.getenv("WIRE_SDK_ENVIRONMENT")
+        val appClientId = AppClientId(value = "$userId:${clientResponse.id}@$userDomain")
+        appStorage.saveDeviceId(clientResponse.id)
+
+        logger.info("Creating MLS Client")
+        cryptoClient.initializeMlsClient(
             appClientId = appClientId,
-            ciphersuiteCode = mlsCipherSuiteCode,
             mlsTransport = mlsTransport
         )
+
         backendClient.updateClientWithMlsPublicKey(
             appClientId = appClientId,
             mlsPublicKeys = cryptoClient.mlsGetPublicKey()
         )
+
         backendClient.uploadMlsKeyPackages(
             appClientId = appClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
         )
-        logger.info("MLS client for $appClientId fully initialized")
 
+        cryptoClient.setAppClientId(appClientId)
         appStorage.saveClientId(appClientId.value)
-        cryptoClient
     }
+
+    return cryptoClient
 }

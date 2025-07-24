@@ -22,6 +22,7 @@ import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.AppData
 
+private const val DEVICE_ID = "device_id"
 private const val CLIENT_ID = "client_id"
 
 class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
@@ -47,6 +48,10 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
         runCatching { AppClientId(getById(CLIENT_ID).value) }.getOrNull()
 
     override fun saveClientId(appClientId: String) = save(CLIENT_ID, appClientId)
+
+    override fun getDeviceId(): String? = runCatching { getById(DEVICE_ID).value }.getOrNull()
+
+    override fun saveDeviceId(deviceId: String) = save(DEVICE_ID, deviceId)
 
     private fun appMapper(app: App) =
         AppData(

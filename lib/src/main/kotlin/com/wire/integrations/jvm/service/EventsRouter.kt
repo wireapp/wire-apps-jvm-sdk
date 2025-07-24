@@ -218,10 +218,12 @@ internal class EventsRouter internal constructor(
         conversationStorage.saveMembers(qualifiedConversation, members)
 
         if (cryptoClient.hasTooFewKeyPackageCount()) {
-            backendClient.uploadMlsKeyPackages(
-                appClientId = cryptoClient.getAppClientId(),
-                mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
-            )
+            cryptoClient.getAppClientId()?.let { appClientId ->
+                backendClient.uploadMlsKeyPackages(
+                    appClientId = appClientId,
+                    mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
+                )
+            }
         }
 
         groupId?.run {
