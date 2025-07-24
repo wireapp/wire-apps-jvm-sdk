@@ -148,7 +148,7 @@ class WireApplicationManager internal constructor(
             try {
                 backendClient.sendMessage(mlsMessage = encryptedMessage)
             } catch (exception: WireException.ClientError) {
-                if (exception.isMlsStaleMessage()) {
+                if (exception.response.isMlsStaleMessage()) {
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
                         conversationId = message.conversationId
