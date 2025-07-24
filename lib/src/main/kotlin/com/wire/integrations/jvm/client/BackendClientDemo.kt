@@ -30,8 +30,11 @@ import com.wire.integrations.jvm.model.http.ClientUpdateRequest
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsKeyPackageRequest
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
+import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
+import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.utils.Mls
 import com.wire.integrations.jvm.utils.obfuscateId
 import io.ktor.client.HttpClient
@@ -67,13 +70,17 @@ import java.util.UUID
  * - localhost:8086 - reaching the local Demo events producer
  * - some Wire Backend evn - emulate Apps API calls by using the Client API with a DEMO user
  */
-internal class BackendClientDemo(private val httpClient: HttpClient) : BackendClient {
+internal class BackendClientDemo(
+    private val httpClient: HttpClient,
+    private val appStorage: AppStorage
+) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     // Simple cache of the Backend features, as the MLS values we care about
     // will be the same for all teams, so we can make the API call only once.
     private var cachedFeatures: FeaturesResponse? = null
     private var cachedAccessToken: String? = null
+    private var cachedDeviceId: String? = null
 
     override suspend fun connectWebSocket(
         handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
@@ -84,7 +91,7 @@ internal class BackendClientDemo(private val httpClient: HttpClient) : BackendCl
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
                 ?.replace("-https", "-ssl"),
-            path = "/$API_VERSION/events?client=$DEMO_USER_CLIENT&access_token=$token"
+            path = "/$API_VERSION/events?client=$cachedDeviceId&access_token=$token"
         ) {
             handleFrames(this)
         }
@@ -98,7 +105,7 @@ internal class BackendClientDemo(private val httpClient: HttpClient) : BackendCl
     override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
         return AppDataResponse(
-            appClientId = "$DEMO_USER_ID:$DEMO_USER_CLIENT@$DEMO_ENVIRONMENT",
+            appClientId = "$DEMO_USER_ID:$cachedDeviceId@$DEMO_ENVIRONMENT",
             appType = "FULL",
             appCommand = "demo"
         )
@@ -128,6 +135,7 @@ internal class BackendClientDemo(private val httpClient: HttpClient) : BackendCl
      * because the new one is tied to client and has more permissions.
      * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
      */
+    @Suppress("ReturnCount")
     private suspend fun loginUser(): String {
         val currentTime = System.currentTimeMillis()
 
@@ -145,20 +153,26 @@ internal class BackendClientDemo(private val httpClient: HttpClient) : BackendCl
             setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
             contentType(ContentType.Application.Json)
         }
-        val zuidCookie = loginResponse.setCookie()["zuid"]
 
-        val accessResponse =
-            httpClient.post("/$API_VERSION/access?client_id=$DEMO_USER_CLIENT") {
-                headers {
-                    append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
-                }
-                accept(ContentType.Application.Json)
-            }.body<LoginResponse>()
+        cachedDeviceId = appStorage.getDeviceId()
+        if (cachedDeviceId != null) {
+            val zuidCookie = loginResponse.setCookie()["zuid"]
 
-        cachedAccessToken = accessResponse.accessToken
-        tokenTimestamp = currentTime
+            val accessResponse =
+                httpClient.post("/$API_VERSION/access?client_id=$cachedDeviceId") {
+                    headers {
+                        append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
+                    }
+                    accept(ContentType.Application.Json)
+                }.body<LoginResponse>()
 
-        return accessResponse.accessToken
+            cachedAccessToken = accessResponse.accessToken
+            tokenTimestamp = currentTime
+
+            return accessResponse.accessToken
+        } else {
+            return loginResponse.body<LoginResponse>().accessToken
+        }
     }
 
     override suspend fun updateClientWithMlsPublicKey(
@@ -167,7 +181,7 @@ internal class BackendClientDemo(private val httpClient: HttpClient) : BackendCl
     ) {
         val token = loginUser()
         try {
-            httpClient.put("/$API_VERSION/clients/$DEMO_USER_CLIENT") {
+            httpClient.put("/$API_VERSION/clients/$cachedDeviceId") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
@@ -180,6 +194,19 @@ internal class BackendClientDemo(private val httpClient: HttpClient) : BackendCl
         logger.info("Updated client with mls info for client: $appClientId")
     }
 
+    override suspend fun registerClient(
+        registerClientRequest: RegisterClientRequest
+    ): RegisterClientResponse {
+        val token = loginUser()
+        return httpClient.post("/$API_VERSION/clients") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(registerClientRequest)
+            contentType(ContentType.Application.Json)
+        }.body<RegisterClientResponse>()
+    }
+
     override suspend fun uploadMlsKeyPackages(
         appClientId: AppClientId,
         mlsKeyPackages: List<ByteArray>
@@ -188,7 +215,7 @@ internal class BackendClientDemo(private val httpClient: HttpClient) : BackendCl
         val mlsKeyPackageRequest =
             MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
         try {
-            httpClient.post("/$API_VERSION/mls/key-packages/self/$DEMO_USER_CLIENT") {
+            httpClient.post("/$API_VERSION/mls/key-packages/self/$cachedDeviceId") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
@@ -360,9 +387,6 @@ internal class BackendClientDemo(private val httpClient: HttpClient) : BackendCl
 
         val DEMO_USER_PASSWORD: String =
             System.getenv("WIRE_SDK_PASSWORD") ?: "Aqa123456!"
-
-        val DEMO_USER_CLIENT: String =
-            System.getenv("WIRE_SDK_CLIENT") ?: "fc088e7f958fb833"
 
         val DEMO_ENVIRONMENT: String =
             System.getenv("WIRE_SDK_ENVIRONMENT") ?: "chala.wire.link"

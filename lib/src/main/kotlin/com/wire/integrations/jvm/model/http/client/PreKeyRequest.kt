@@ -14,9 +14,12 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.exception
+package com.wire.integrations.jvm.model.http.client
 
-internal object NetworkErrorLabel {
-    const val MLS_STALE_MESSAGE = "mls-stale-message"
-    const val TOO_MANY_CLIENTS = "too-many-clients"
-}
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class PreKeyRequest(
+    val id: Int,
+    val key: String
+)

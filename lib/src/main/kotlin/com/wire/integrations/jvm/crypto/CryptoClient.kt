@@ -19,12 +19,16 @@ package com.wire.integrations.jvm.crypto
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
+import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.model.http.client.PreKeyCrypto
 
 internal interface CryptoClient : AutoCloseable {
-    fun getAppClientId(): AppClientId
+    fun setAppClientId(appClientId: AppClientId)
+
+    fun getAppClientId(): AppClientId?
 
     suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
@@ -35,6 +39,26 @@ internal interface CryptoClient : AutoCloseable {
         mlsGroupId: MLSGroupId,
         encryptedMessage: String
     ): ByteArray?
+
+    /**
+     * Proteus Configuration
+     */
+    suspend fun createProteusClient()
+
+    suspend fun generateProteusPreKeys(
+        from: Int,
+        count: Int
+    ): ArrayList<PreKeyCrypto>
+
+    suspend fun generateProteusLastPreKey(): PreKeyCrypto
+
+    /**
+     * MLS Configuration
+     */
+    suspend fun initializeMlsClient(
+        appClientId: AppClientId,
+        mlsTransport: MlsTransport
+    )
 
     suspend fun mlsGetPublicKey(): MlsPublicKeys
 

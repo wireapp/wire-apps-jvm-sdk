@@ -61,7 +61,12 @@ object TestUtils {
                         "expires_in" : 3600
                     }
                     """.trimIndent()
-                ).withHeaders(HttpHeaders(HttpHeader("set-cookie", "zuid=demoCookie")))
+                ).withHeaders(
+                    HttpHeaders(
+                        HttpHeader("set-cookie", "zuid=demoCookie"),
+                        HttpHeader("Content-Type", "application/json")
+                    )
+                )
             )
         )
         wireMockServer.stubFor(
