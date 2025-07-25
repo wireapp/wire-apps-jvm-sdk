@@ -267,7 +267,7 @@ object ProtobufDeserializer {
                 }
             } else {
                 it.button?.let { button ->
-                    WireMessage.Composite.Button(
+                    WireMessage.Button(
                         text = button.text,
                         id = button.id
                     )
