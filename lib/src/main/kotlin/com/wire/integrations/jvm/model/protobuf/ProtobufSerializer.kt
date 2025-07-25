@@ -61,6 +61,7 @@ object ProtobufSerializer {
             is WireMessage.Deleted -> packDeleted(wireMessage, genericMessage)
             is WireMessage.Receipt -> packReceipt(wireMessage, genericMessage)
             is WireMessage.TextEdited -> packTextEdited(wireMessage, genericMessage)
+            is WireMessage.CompositeEdited -> packCompositeEdited(wireMessage, genericMessage)
             is WireMessage.Reaction -> packReaction(wireMessage, genericMessage)
             is WireMessage.InCallEmoji -> packInCallEmoji(wireMessage, genericMessage)
             is WireMessage.InCallHandRaise -> packInCallHandRaise(wireMessage, genericMessage)
@@ -197,7 +198,7 @@ object ProtobufSerializer {
     private fun packItemsList(itemsList: List<WireMessage.Item>): List<Composite.Item> =
         itemsList.map {
             when (it) {
-                is WireMessage.Composite.Button -> {
+                is WireMessage.Button -> {
                     val button = Composite.Item.newBuilder().buttonBuilder
                     button.id = it.id
                     button.text = it.text
@@ -358,6 +359,32 @@ object ProtobufSerializer {
                     )
                     .build()
             )
+
+    private fun packCompositeEdited(
+        wireMessage: WireMessage.CompositeEdited,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder {
+        val items: MutableList<Composite.Item> = mutableListOf()
+
+        items.addAll(
+            packItemsList(
+                itemsList = wireMessage.newItems
+            )
+        )
+        return genericMessage
+            .setEdited(
+                MessageEdit
+                    .newBuilder()
+                    .setReplacingMessageId(wireMessage.replacingMessageId.toString())
+                    .setComposite(
+                        Composite
+                            .newBuilder()
+                            .addAllItems(items)
+                            .build()
+                    )
+                    .build()
+            )
+    }
 
     private fun packReaction(
         wireMessage: WireMessage.Reaction,
