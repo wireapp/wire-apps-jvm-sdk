@@ -43,7 +43,7 @@ val wireMockVersion = "3.13.1"
 
 dependencies {
     constraints {
-        api("commons-io:commons-io:2.19.0")
+        api("commons-io:commons-io:2.20.0")
     }
 
     implementation(platform("io.insert-koin:koin-bom:4.1.0"))
