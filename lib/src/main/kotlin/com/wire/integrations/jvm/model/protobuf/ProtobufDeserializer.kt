@@ -267,7 +267,7 @@ object ProtobufDeserializer {
                 }
             } else {
                 it.button?.let { button ->
-                    WireMessage.Composite.Button(
+                    WireMessage.Button(
                         text = button.text,
                         id = button.id
                     )
@@ -393,7 +393,16 @@ object ProtobufDeserializer {
             }
 
             genericMessage.edited.hasComposite() -> {
-                WireMessage.Unknown
+                WireMessage.CompositeEdited(
+                    id = UUID.fromString(genericMessage.messageId),
+                    replacingMessageId = UUID.fromString(replacingMessageId),
+                    conversationId = conversationId,
+                    sender = sender,
+                    newItems = unpackItemList(
+                        conversationId = conversationId,
+                        compositeItemList = genericMessage.edited.composite.itemsList
+                    )
+                )
             }
 
             else -> {

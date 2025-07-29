@@ -250,18 +250,18 @@ sealed interface WireMessage {
     }
 
     @JvmRecord
+    data class Button @JvmOverloads constructor(
+        val text: String,
+        val id: String = UUID.randomUUID().toString()
+    ) : Item
+
+    @JvmRecord
     data class Composite(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         val items: List<Item>
     ) : WireMessage {
-        @JvmRecord
-        data class Button @JvmOverloads constructor(
-            val text: String,
-            val id: String = UUID.randomUUID().toString()
-        ) : Item
-
         companion object {
             /**
              * Creates a Composite message with a single text first, followed by a list of buttons.
@@ -538,6 +538,41 @@ sealed interface WireMessage {
                 newContent = text,
                 newMentions = mentions
             )
+        }
+    }
+
+    @JvmRecord
+    data class CompositeEdited(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId,
+        val replacingMessageId: UUID,
+        val newItems: List<Item>
+    ) : WireMessage {
+        companion object {
+            @JvmStatic
+            fun create(
+                replacingMessageId: UUID,
+                conversationId: QualifiedId,
+                text: String,
+                buttonList: List<Button>
+            ): CompositeEdited {
+                val textItem = Text.create(
+                    conversationId = conversationId,
+                    text = text
+                )
+
+                return CompositeEdited(
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
+                    replacingMessageId = replacingMessageId,
+                    newItems = listOf(textItem) + buttonList
+                )
+            }
         }
     }
 

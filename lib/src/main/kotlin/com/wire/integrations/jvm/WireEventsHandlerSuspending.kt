@@ -97,6 +97,10 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.info("Received event: onTextEdited: $wireMessage")
     }
 
+    open suspend fun onCompositeEdited(wireMessage: WireMessage.CompositeEdited) {
+        logger.info("Received event: onCompositeEdited: $wireMessage")
+    }
+
     open suspend fun onReaction(wireMessage: WireMessage.Reaction) {
         logger.info("Received event: onReaction: $wireMessage")
     }
