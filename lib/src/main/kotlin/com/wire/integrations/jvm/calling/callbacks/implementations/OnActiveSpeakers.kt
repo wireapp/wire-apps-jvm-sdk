@@ -15,12 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
-package com.wire.integrations.jvm.calling.callbacks
 
-import com.sun.jna.Callback
+package com.wire.integrations.jvm.calling.callbacks.implementations
+
 import com.sun.jna.Pointer
+import com.wire.integrations.jvm.calling.callbacks.ActiveSpeakersHandler
 import com.wire.integrations.jvm.calling.types.Handle
+import org.slf4j.LoggerFactory
 
-interface RequestNewEpochHandler : Callback {
-    fun onRequestNewEpoch(inst: Handle, conversationId: String, arg: Pointer?)
+class OnActiveSpeakers() : ActiveSpeakersHandler {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+    override fun onActiveSpeakersChanged(inst: Handle, conversationId: String, data: String, arg: Pointer?) {
+        logger.info("[Calling] OnActiveSpeakers $data")
+    }
 }

@@ -16,24 +16,16 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.calling.callbacks
+package com.wire.integrations.jvm.calling.callbacks.implementations
 
-import com.sun.jna.Callback
 import com.sun.jna.Pointer
+import com.wire.integrations.jvm.calling.callbacks.ClientsRequestHandler
+import com.wire.integrations.jvm.calling.types.Handle
+import org.slf4j.LoggerFactory
 
-interface ParticipantChangedHandler : Callback {
-    /**Example of `data`
-     {
-         "convid": "df371578-65cf-4f07-9f49-c72a49877ae7",
-         "members": [
-             {
-                 "userid": "3f49da1d-0d52-4696-9ef3-0dd181383e8a",
-                 "clientid": "24cc758f602fb1f4",
-                 "aestab": 1,
-                 "vrecv": 0,
-                 "muted": 0
-             }
-         ]
-   }**/
-    fun onParticipantChanged(remoteConversationId: String, data: String, arg: Pointer?)
+internal class OnClientsRequest() : ClientsRequestHandler {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+    override fun onClientsRequest(inst: Handle, conversationId: String, arg: Pointer?) {
+        logger.info("[Calling] OnClientsRequest: $conversationId")
+    }
 }

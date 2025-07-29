@@ -68,6 +68,8 @@ interface CallingClient : Library {
 
     fun wcall_answer(inst: Handle, conversationId: String, callType: Int, cbrEnabled: Boolean)
 
+    fun wcall_audio_record(inst: Handle, userId: String, filePath: String)
+
     fun wcall_reject(inst: Handle, conversationId: String)
 
     fun wcall_config_update(inst: Handle, error: Int, jsonString: String)
@@ -118,20 +120,6 @@ interface CallingClient : Library {
         json: String
     )
 
-//    fun wcall_set_participant_changed_handler(
-//        inst: Handle,
-//        wcall_participant_changed_h: ParticipantChangedHandler,
-//        arg: Pointer?
-//    )
-//
-//    @Suppress("FunctionNaming", "FunctionParameterNaming")
-//    fun wcall_set_network_quality_handler(
-//        inst: Handle,
-//        wcall_network_quality_h: NetworkQualityChangedHandler,
-//        intervalInSeconds: Int,
-//        arg: Pointer?
-//    )
-
     @Suppress("FunctionNaming")
     fun wcall_set_video_send_state(inst: Handle, conversationId: String, state: Int)
 
@@ -168,13 +156,6 @@ interface CallingClient : Library {
 //        inst: Handle,
 //        requestNewEpochHandler: RequestNewEpochHandler
 //    )
-//
-//    @Suppress("FunctionNaming")
-//    fun wcall_set_mute_handler(
-//        inst: Handle,
-//        selfUserMuteHandler: SelfUserMuteHandler,
-//        arg: Pointer?
-//    )
 
     @Suppress("FunctionNaming")
     fun wcall_process_notifications(
@@ -205,6 +186,6 @@ interface CallingClient : Library {
     )
 
     companion object {
-        val INSTANCE: CallingClient by lazy { Native.load("/native/libavs.so", CallingClient::class.java)!! }
+        val INSTANCE: CallingClient by lazy { Native.load("avs", CallingClient::class.java)!! }
     }
 }

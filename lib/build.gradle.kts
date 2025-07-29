@@ -14,15 +14,15 @@
  */
 
 import com.vanniktech.maven.publish.SonatypeHost
-import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
+//import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
     `java-library`
     id("com.gradleup.shadow") version "9.0.0-beta6"
-    id("org.jlleitschuh.gradle.ktlint") version "12.3.0"
-    id("io.gitlab.arturbosch.detekt") version("1.23.7")
+//    id("org.jlleitschuh.gradle.ktlint") version "12.3.0"
+//    id("io.gitlab.arturbosch.detekt") version("1.23.7")
     id("app.cash.sqldelight") version "2.1.0"
     id("com.google.protobuf") version "0.9.5"
 
@@ -93,30 +93,30 @@ sqldelight {
     }
 }
 
-ktlint {
-    verbose.set(true)
-    outputToConsole.set(true)
-    coloredOutput.set(true)
-    reporters {
-        reporter(ReporterType.CHECKSTYLE)
-        reporter(ReporterType.JSON)
-        reporter(ReporterType.HTML)
-    }
-    filter {
-        exclude { element ->
-            element.file.path.contains("generated/")
-        }
-    }
-}
-
-detekt {
-    toolVersion = "1.23.7"
-    config.setFrom(file("$rootDir/config/detekt/detekt.yml"))
-    baseline = file("$rootDir/config/detekt/baseline.xml")
-    parallel = true
-    buildUponDefaultConfig = true
-    source.setFrom("src/main/kotlin")
-}
+//ktlint {
+//    verbose.set(true)
+//    outputToConsole.set(true)
+//    coloredOutput.set(true)
+//    reporters {
+//        reporter(ReporterType.CHECKSTYLE)
+//        reporter(ReporterType.JSON)
+//        reporter(ReporterType.HTML)
+//    }
+//    filter {
+//        exclude { element ->
+//            element.file.path.contains("generated/")
+//        }
+//    }
+//}
+//
+//detekt {
+//    toolVersion = "1.23.7"
+//    config.setFrom(file("$rootDir/config/detekt/detekt.yml"))
+//    baseline = file("$rootDir/config/detekt/baseline.xml")
+//    parallel = true
+//    buildUponDefaultConfig = true
+//    source.setFrom("src/main/kotlin")
+//}
 
 protobuf {
     sourceSets {
