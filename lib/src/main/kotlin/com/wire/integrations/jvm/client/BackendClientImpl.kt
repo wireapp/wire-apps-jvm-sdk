@@ -27,6 +27,8 @@ import com.wire.integrations.jvm.model.http.ApiVersionResponse
 import com.wire.integrations.jvm.model.http.AppDataResponse
 import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
+import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
+import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.HttpClient
@@ -84,6 +86,12 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         appClientId: AppClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun registerClient(
+        registerClientRequest: RegisterClientRequest
+    ): RegisterClientResponse {
         TODO("Not yet implemented")
     }
 

@@ -17,6 +17,7 @@
 package com.wire.integrations.jvm.model
 
 import com.wire.integrations.jvm.exception.NetworkErrorLabel.MLS_STALE_MESSAGE
+import com.wire.integrations.jvm.exception.NetworkErrorLabel.TOO_MANY_CLIENTS
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -26,4 +27,6 @@ data class StandardError(
     val message: String
 ) {
     fun isMlsStaleMessage(): Boolean = (label == MLS_STALE_MESSAGE)
+
+    fun isTooManyClients(): Boolean = (label == TOO_MANY_CLIENTS)
 }
