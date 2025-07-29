@@ -19,11 +19,9 @@ package com.wire.integrations.jvm.persistence
 import com.wire.integrations.jvm.App
 import com.wire.integrations.jvm.AppQueries
 import com.wire.integrations.jvm.AppsSdkDatabase
-import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.AppData
 
 private const val DEVICE_ID = "device_id"
-private const val CLIENT_ID = "client_id"
 
 class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     private val appQueries: AppQueries = db.appQueries
@@ -43,11 +41,6 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
 
     override fun getById(key: String): AppData =
         appQueries.selectByKey(key).executeAsOne().let { appMapper(it) }
-
-    override fun getClientId(): AppClientId? =
-        runCatching { AppClientId(getById(CLIENT_ID).value) }.getOrNull()
-
-    override fun saveClientId(appClientId: String) = save(CLIENT_ID, appClientId)
 
     override fun getDeviceId(): String? = runCatching { getById(DEVICE_ID).value }.getOrNull()
 

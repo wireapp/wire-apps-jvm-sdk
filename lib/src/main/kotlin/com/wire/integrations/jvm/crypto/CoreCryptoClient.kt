@@ -31,53 +31,13 @@ internal class CoreCryptoClient private constructor(
     private val ciphersuite: Ciphersuite,
     private var coreCrypto: CoreCrypto
 ) : CryptoClient {
-    companion object {
-        private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
-        private const val KEYSTORE_NAME = "keystore"
+    private var appClientId: AppClientId? = null
 
-        suspend fun create(
-            userId: String,
-            ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
-        ): CoreCryptoClient {
-            val clientDirectoryPath = "cryptography/$userId"
-            val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
-            val ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
-
-            File(clientDirectoryPath).mkdirs()
-
-            val coreCrypto = CoreCrypto.invoke(
-                keystore = keystorePath,
-                databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
-                    ?.let { DatabaseKey(it) }
-                    ?: throw InvalidParameter("Cryptography password missing")
-            )
-
-            return CoreCryptoClient(
-                ciphersuite = ciphersuite,
-                coreCrypto = coreCrypto
-            )
-        }
-
-        private fun getMlsCipherSuiteName(code: Int): Ciphersuite =
-            when (code) {
-                DEFAULT_CIPHERSUITE_IDENTIFIER -> Ciphersuite.DEFAULT
-                2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
-                3 -> Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519
-                4 -> Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448
-                5 -> Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521
-                6 -> Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448
-                7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
-                else -> Ciphersuite.DEFAULT
-            }
+    private fun setAppClientId(appClientId: AppClientId) {
+        this@CoreCryptoClient.appClientId = appClientId
     }
 
-    private var _appClientId: AppClientId? = null
-
-    override fun setAppClientId(appClientId: AppClientId) {
-        _appClientId = appClientId
-    }
-
-    override fun getAppClientId(): AppClientId? = _appClientId
+    override fun getAppClientId(): AppClientId? = appClientId
 
     override suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
@@ -108,7 +68,7 @@ internal class CoreCryptoClient private constructor(
         return decryptedMessage.message
     }
 
-    override suspend fun createProteusClient() =
+    override suspend fun initializeProteusClient() =
         coreCrypto.transaction {
             it.proteusInit()
         }
@@ -140,6 +100,8 @@ internal class CoreCryptoClient private constructor(
         }
 
         coreCrypto.provideTransport(mlsTransport)
+
+        setAppClientId(appClientId = appClientId)
     }
 
     override suspend fun mlsGetPublicKey(): MlsPublicKeys {
@@ -226,5 +188,45 @@ internal class CoreCryptoClient private constructor(
 
     override fun close() {
         runBlocking { coreCrypto.close() }
+    }
+
+    companion object {
+        private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
+        private const val KEYSTORE_NAME = "keystore"
+
+        suspend fun create(
+            userId: String,
+            ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
+        ): CoreCryptoClient {
+            val clientDirectoryPath = "cryptography/$userId"
+            val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
+            val ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
+
+            File(clientDirectoryPath).mkdirs()
+
+            val coreCrypto = CoreCrypto.invoke(
+                keystore = keystorePath,
+                databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
+                    ?.let { DatabaseKey(it) }
+                    ?: throw InvalidParameter("Cryptography password missing")
+            )
+
+            return CoreCryptoClient(
+                ciphersuite = ciphersuite,
+                coreCrypto = coreCrypto
+            )
+        }
+
+        private fun getMlsCipherSuiteName(code: Int): Ciphersuite =
+            when (code) {
+                DEFAULT_CIPHERSUITE_IDENTIFIER -> Ciphersuite.DEFAULT
+                2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
+                3 -> Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519
+                4 -> Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448
+                5 -> Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521
+                6 -> Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448
+                7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
+                else -> Ciphersuite.DEFAULT
+            }
     }
 }

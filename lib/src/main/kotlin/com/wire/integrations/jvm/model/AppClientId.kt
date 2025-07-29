@@ -23,4 +23,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 value class AppClientId(val value: String) {
     override fun toString(): String = value.obfuscateClientId()
+
+    companion object {
+        fun create(
+            userId: String,
+            deviceId: String,
+            userDomain: String
+        ): AppClientId =
+            AppClientId(
+                value = "$userId:$deviceId@$userDomain"
+            )
+    }
 }

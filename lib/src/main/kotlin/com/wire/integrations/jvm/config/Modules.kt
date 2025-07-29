@@ -42,6 +42,8 @@ import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
 import com.wire.integrations.jvm.utils.KtxSerializer
 import com.wire.integrations.jvm.utils.mls
+import com.wire.integrations.jvm.utils.obfuscateClientId
+import com.wire.integrations.jvm.utils.obfuscateId
 import com.wire.integrations.jvm.utils.xprotobuf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -64,8 +66,6 @@ import org.zalando.logbook.client.LogbookClient
 import org.zalando.logbook.common.ExperimentalLogbookKtorApi
 
 private const val WEBSOCKET_PING_INTERVAL_MILLIS = 20_000L
-private const val PROTEUS_PREKEYS_FROM_COUNT = 0
-private const val PROTEUS_PREKEYS_MAX_COUNT = 10
 private val logger = LoggerFactory.getLogger(object {}::class.java.`package`.name)
 
 val sdkModule =
@@ -153,34 +153,43 @@ internal suspend fun getOrInitCryptoClient(
         .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
 
     val userId = System.getenv("WIRE_SDK_USER_ID")
+    val userDomain = System.getenv("WIRE_SDK_ENVIRONMENT")
+
+    requireNotNull(userId)
+    requireNotNull(userDomain)
+
     val cryptoClient = CoreCryptoClient.create(
         userId = userId,
         ciphersuiteCode = mlsCipherSuiteCode
     )
 
-    val storedClientId = appStorage.getClientId()
-    if (storedClientId != null) {
-        logger.info("Loading MLS Client for: $storedClientId")
+    val storedDeviceId = appStorage.getDeviceId()
+    if (storedDeviceId != null) {
+        logger.info("Loading MLS Client for: ${storedDeviceId.obfuscateClientId()}")
+        val appClientId = AppClientId.create(
+            userId = userId,
+            deviceId = storedDeviceId,
+            userDomain = userDomain
+        )
         // App has a client, load MLS client
         cryptoClient.initializeMlsClient(
-            appClientId = storedClientId,
+            appClientId = appClientId,
             mlsTransport = mlsTransport
         )
-        cryptoClient.setAppClientId(storedClientId)
     } else {
+        val userPassword = System.getenv("WIRE_SDK_PASSWORD")
+        requireNotNull(userPassword)
+
         // App doesn't have a client, create one
-        logger.info("Creating Proteus Client")
-        cryptoClient.createProteusClient()
-        val preKeys = cryptoClient.generateProteusPreKeys(
-            from = PROTEUS_PREKEYS_FROM_COUNT,
-            count = PROTEUS_PREKEYS_MAX_COUNT
-        )
+        logger.info("Initializing Proteus Client")
+        cryptoClient.initializeProteusClient()
+        val preKeys = cryptoClient.generateProteusPreKeys()
         val lastKey = cryptoClient.generateProteusLastPreKey()
 
         val clientResponse = try {
             backendClient.registerClient(
                 registerClientRequest = RegisterClientRequest(
-                    password = System.getenv("WIRE_SDK_PASSWORD"),
+                    password = userPassword,
                     lastKey = lastKey.toApi(),
                     preKeys = preKeys.map { it.toApi() },
                     capabilities = RegisterClientRequest.DEFAULT_CAPABILITIES
@@ -193,11 +202,19 @@ internal suspend fun getOrInitCryptoClient(
             )
         }
 
-        val userDomain = System.getenv("WIRE_SDK_ENVIRONMENT")
-        val appClientId = AppClientId(value = "$userId:${clientResponse.id}@$userDomain")
-        appStorage.saveDeviceId(clientResponse.id)
+        val deviceId = clientResponse.id
+        val appClientId = AppClientId.create(
+            userId = userId,
+            deviceId = deviceId,
+            userDomain = userDomain
+        )
+        appStorage.saveDeviceId(deviceId = deviceId)
 
-        logger.info("Creating MLS Client")
+        logger.info(
+            "Initializing MLS Client for {} on device: {}",
+            userId.obfuscateId(),
+            deviceId.obfuscateClientId()
+        )
         cryptoClient.initializeMlsClient(
             appClientId = appClientId,
             mlsTransport = mlsTransport
@@ -212,9 +229,6 @@ internal suspend fun getOrInitCryptoClient(
             appClientId = appClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
         )
-
-        cryptoClient.setAppClientId(appClientId)
-        appStorage.saveClientId(appClientId.value)
     }
 
     return cryptoClient

@@ -26,8 +26,6 @@ import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.client.PreKeyCrypto
 
 internal interface CryptoClient : AutoCloseable {
-    fun setAppClientId(appClientId: AppClientId)
-
     fun getAppClientId(): AppClientId?
 
     suspend fun encryptMls(
@@ -43,11 +41,11 @@ internal interface CryptoClient : AutoCloseable {
     /**
      * Proteus Configuration
      */
-    suspend fun createProteusClient()
+    suspend fun initializeProteusClient()
 
     suspend fun generateProteusPreKeys(
-        from: Int,
-        count: Int
+        from: Int = PROTEUS_PREKEYS_FROM_COUNT,
+        count: Int = PROTEUS_PREKEYS_MAX_COUNT
     ): ArrayList<PreKeyCrypto>
 
     suspend fun generateProteusLastPreKey(): PreKeyCrypto
@@ -99,5 +97,7 @@ internal interface CryptoClient : AutoCloseable {
 
     companion object {
         const val DEFAULT_KEYPACKAGE_COUNT = 100u
+        const val PROTEUS_PREKEYS_FROM_COUNT = 0
+        const val PROTEUS_PREKEYS_MAX_COUNT = 10
     }
 }

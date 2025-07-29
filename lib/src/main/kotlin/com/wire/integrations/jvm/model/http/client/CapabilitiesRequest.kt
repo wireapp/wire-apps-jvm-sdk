@@ -16,38 +16,14 @@
 
 package com.wire.integrations.jvm.model.http.client
 
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = CapabilitiesRequestSerializer::class)
-enum class CapabilitiesRequest(val value: String) {
-    LEGALHOLD_IMPLICIT_CONSENT("legalhold-implicit-consent"),
-    CONSUMABLE_NOTIFICATIONS("consumable-notifications")
-}
+@Serializable
+enum class CapabilitiesRequest {
+    @SerialName("legalhold-implicit-consent")
+    LEGALHOLD_IMPLICIT_CONSENT,
 
-object CapabilitiesRequestSerializer : KSerializer<CapabilitiesRequest> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor(
-            "CapabilitiesRequest",
-            PrimitiveKind.STRING
-        )
-
-    override fun serialize(
-        encoder: Encoder,
-        value: CapabilitiesRequest
-    ) {
-        encoder.encodeString(value.value)
-    }
-
-    override fun deserialize(decoder: Decoder): CapabilitiesRequest {
-        val value = decoder.decodeString()
-        return CapabilitiesRequest.entries.find { it.value == value }
-            ?: throw SerializationException("Unknown capability: $value")
-    }
+    @SerialName("consumable-notifications")
+    CONSUMABLE_NOTIFICATIONS
 }

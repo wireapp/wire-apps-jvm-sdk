@@ -15,7 +15,6 @@
 
 package com.wire.integrations.jvm.persistence
 
-import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.AppData
 
 interface AppStorage {
@@ -30,10 +29,6 @@ interface AppStorage {
     fun getAll(): List<AppData>
 
     fun getById(key: String): AppData
-
-    fun getClientId(): AppClientId?
-
-    fun saveClientId(appClientId: String)
 
     fun getDeviceId(): String?
 
