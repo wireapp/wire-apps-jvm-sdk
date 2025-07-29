@@ -16,28 +16,15 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.calling.callbacks
+package com.wire.integrations.jvm.calling.callbacks.implementations
 
-import com.sun.jna.Callback
 import com.sun.jna.Pointer
+import com.wire.integrations.jvm.calling.callbacks.EstablishedCallHandler
+import org.slf4j.LoggerFactory
 
-/**
- * QUALITY_NORMAL          = 1
- * QUALITY_MEDIUM          = 2
- * QUALITY_POOR            = 3
- * QUALITY_NETWORK_PROBLEM = 4
- */
-interface NetworkQualityChangedHandler : Callback {
-
-    @Suppress("LongParameterList")
-    fun onNetworkQualityChanged(
-        conversationId: String,
-        userId: String?,
-        clientId: String?,
-        quality: Int,
-        roundTripTimeInMilliseconds: Int,
-        upstreamPacketLossPercentage: Int,
-        downstreamPacketLossPercentage: Int,
-        arg: Pointer?
-    )
+class OnEstablishedCall() : EstablishedCallHandler {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+    override fun onEstablishedCall(remoteConversationId: String, userId: String, clientId: String, arg: Pointer?) {
+        logger.info("[Calling] OnEstablishedCall: $remoteConversationId - $userId - $clientId")
+    }
 }

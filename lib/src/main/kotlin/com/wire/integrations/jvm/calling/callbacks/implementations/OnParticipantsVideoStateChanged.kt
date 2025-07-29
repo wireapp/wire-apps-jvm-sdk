@@ -15,11 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
-package com.wire.integrations.jvm.calling.callbacks
 
-import com.sun.jna.Callback
+package com.wire.integrations.jvm.calling.callbacks.implementations
+
 import com.sun.jna.Pointer
+import com.wire.integrations.jvm.calling.callbacks.VideoReceiveStateHandler
+import org.slf4j.LoggerFactory
 
-interface SelfUserMuteHandler : Callback {
-    fun onMuteStateChanged(isMuted: Int, arg: Pointer?)
+class OnParticipantsVideoStateChanged : VideoReceiveStateHandler {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+    override fun onVideoReceiveStateChanged(conversationId: String, userId: String, clientId: String, state: Int, arg: Pointer?) {
+        logger.info("[Calling] onVideoReceiveStateChanged: $conversationId - $userId - $clientId - state: $state")
+    }
 }
