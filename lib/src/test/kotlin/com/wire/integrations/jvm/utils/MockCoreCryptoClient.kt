@@ -26,6 +26,7 @@ import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
+import com.wire.crypto.toGroupId
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException.InvalidParameter
@@ -35,6 +36,7 @@ import com.wire.integrations.jvm.model.http.client.PreKeyCrypto
 import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.io.File
+import java.util.Base64
 import java.util.UUID
 
 internal class MockCoreCryptoClient private constructor(
@@ -173,7 +175,8 @@ internal class MockCoreCryptoClient private constructor(
 
         private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
         private const val KEYSTORE_NAME = "keystore"
-        val MLS_GROUP_ID = MLSGroupId(UUID.randomUUID().toString().toByteArray())
+        val MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
+        val MLS_GROUP_ID_BASE64 = Base64.getEncoder().encodeToString(MLS_GROUP_ID.copyBytes())
         val GENERIC_TEXT_MESSAGE: GenericMessage = GenericMessage
             .newBuilder()
             .setMessageId(UUID.randomUUID().toString())

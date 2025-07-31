@@ -16,7 +16,7 @@
 
 package com.wire.integrations.jvm.service
 
-import com.wire.crypto.MLSGroupId
+import com.wire.crypto.toGroupId
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.config.IsolatedKoinContext
@@ -52,7 +52,7 @@ class WireEventsTest {
                     id = CONVERSATION_ID,
                     name = "Test conversation",
                     teamId = null,
-                    mlsGroupId = MLSGroupId(ByteArray(32) { 1 }),
+                    mlsGroupId = ByteArray(32) { 1 }.toGroupId(),
                     type = ConversationData.Type.GROUP
                 ),
                 members = emptyList()

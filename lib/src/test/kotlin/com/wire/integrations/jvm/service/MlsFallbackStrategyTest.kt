@@ -16,8 +16,8 @@
 
 package com.wire.integrations.jvm.service
 
-import com.wire.crypto.GroupInfo
-import com.wire.crypto.MLSGroupId
+import com.wire.crypto.toGroupId
+import com.wire.crypto.toGroupInfo
 import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
@@ -39,7 +39,7 @@ class MlsFallbackStrategyTest {
                 coEvery { conversationExists(mlsGroupId = MLS_GROUP_ID) } returns false
                 coEvery { conversationEpoch(mlsGroupId = MLS_GROUP_ID) } returns 0UL
                 coEvery {
-                    joinMlsConversationRequest(groupInfo = GroupInfo(MLS_GROUP_ID.value))
+                    joinMlsConversationRequest(groupInfo = any())
                 } returns MLS_GROUP_ID
             }
 
@@ -49,7 +49,7 @@ class MlsFallbackStrategyTest {
                 } returns CONVERSATION_RESPONSE
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)
-                } returns MLS_GROUP_ID.value
+                } returns MLS_GROUP_ID.copyBytes()
             }
 
             val fallbackStrategy = MlsFallbackStrategy(
@@ -64,7 +64,7 @@ class MlsFallbackStrategyTest {
 
             coVerify(exactly = 1) {
                 cryptoClient.joinMlsConversationRequest(
-                    groupInfo = GroupInfo(value = MLS_GROUP_ID.value)
+                    groupInfo = any()
                 )
             }
         }
@@ -76,7 +76,7 @@ class MlsFallbackStrategyTest {
                 coEvery { conversationExists(mlsGroupId = MLS_GROUP_ID) } returns true
                 coEvery { conversationEpoch(mlsGroupId = MLS_GROUP_ID) } returns 1UL
                 coEvery {
-                    joinMlsConversationRequest(groupInfo = GroupInfo(MLS_GROUP_ID.value))
+                    joinMlsConversationRequest(groupInfo = any())
                 } returns MLS_GROUP_ID
             }
 
@@ -86,7 +86,7 @@ class MlsFallbackStrategyTest {
                 } returns CONVERSATION_RESPONSE.copy(epoch = 2L)
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)
-                } returns MLS_GROUP_ID.value
+                } returns MLS_GROUP_ID.copyBytes()
             }
 
             val fallbackStrategy = MlsFallbackStrategy(
@@ -101,7 +101,7 @@ class MlsFallbackStrategyTest {
 
             coVerify(exactly = 1) {
                 cryptoClient.joinMlsConversationRequest(
-                    groupInfo = GroupInfo(value = MLS_GROUP_ID.value)
+                    groupInfo = any()
                 )
             }
         }
@@ -113,7 +113,7 @@ class MlsFallbackStrategyTest {
                 coEvery { conversationExists(mlsGroupId = MLS_GROUP_ID) } returns true
                 coEvery { conversationEpoch(mlsGroupId = MLS_GROUP_ID) } returns 1UL
                 coEvery {
-                    joinMlsConversationRequest(groupInfo = GroupInfo(MLS_GROUP_ID.value))
+                    joinMlsConversationRequest(groupInfo = MLS_GROUP_ID.copyBytes().toGroupInfo())
                 } returns MLS_GROUP_ID
             }
 
@@ -123,7 +123,7 @@ class MlsFallbackStrategyTest {
                 } returns CONVERSATION_RESPONSE.copy(epoch = 1L)
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)
-                } returns MLS_GROUP_ID.value
+                } returns MLS_GROUP_ID.copyBytes()
             }
 
             val fallbackStrategy = MlsFallbackStrategy(
@@ -138,7 +138,7 @@ class MlsFallbackStrategyTest {
 
             coVerify(exactly = 0) {
                 cryptoClient.joinMlsConversationRequest(
-                    groupInfo = GroupInfo(value = MLS_GROUP_ID.value)
+                    groupInfo = MLS_GROUP_ID.copyBytes().toGroupInfo()
                 )
                 backendClient.getConversationGroupInfo(
                     conversationId = CONVERSATION_ID
@@ -153,7 +153,7 @@ class MlsFallbackStrategyTest {
                 domain = "wire.com"
             )
         private val TEAM_ID = TeamId(UUID.randomUUID())
-        private val MLS_GROUP_ID = MLSGroupId(ByteArray(32) { 1 })
+        private val MLS_GROUP_ID = ByteArray(32) { 1 }.toGroupId()
         private val CONVERSATION_RESPONSE = ConversationResponse(
             id = CONVERSATION_ID,
             teamId = TEAM_ID.value,

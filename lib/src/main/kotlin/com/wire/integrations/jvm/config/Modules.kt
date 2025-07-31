@@ -227,7 +227,7 @@ internal suspend fun getOrInitCryptoClient(
 
         backendClient.uploadMlsKeyPackages(
             appClientId = appClientId,
-            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
+            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value.copyBytes() }
         )
     }
 

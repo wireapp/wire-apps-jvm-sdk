@@ -17,7 +17,9 @@
 package com.wire.integrations.jvm.crypto
 
 import com.wire.crypto.CommitBundle
+import com.wire.crypto.HistorySecret
 import com.wire.crypto.MlsTransport
+import com.wire.crypto.MlsTransportData
 import com.wire.crypto.MlsTransportResponse
 import com.wire.integrations.jvm.client.BackendClient
 
@@ -45,8 +47,12 @@ internal class MlsTransportImpl(private val backendClient: BackendClient) : MlsT
      * @param bundle the CommitBundle to parse
      */
     private fun parseBundleIntoSingleByteArray(bundle: CommitBundle): ByteArray {
-        return bundle.commit.value +
-            bundle.groupInfoBundle.payload.value +
-            (bundle.welcome?.value ?: ByteArray(0))
+        return bundle.commit +
+            bundle.groupInfoBundle.payload.copyBytes() +
+            (bundle.welcome?.copyBytes() ?: ByteArray(0))
+    }
+
+    override suspend fun prepareForTransport(historySecret: HistorySecret): MlsTransportData {
+        TODO("Not yet implemented")
     }
 }

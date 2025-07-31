@@ -17,10 +17,12 @@
 package com.wire.integrations.jvm.service
 
 import com.wire.crypto.CoreCryptoException
-import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
+import com.wire.crypto.toGroupInfo
+import com.wire.crypto.toWelcome
+import com.wire.crypto.uniffi.ConversationId
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.WireEventsHandlerDefault
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
@@ -125,7 +127,7 @@ internal class EventsRouter internal constructor(
 
                 is EventContentDTO.Conversation.MlsWelcome -> {
                     logger.info("Joining MLS conversation: ${event.qualifiedConversation}")
-                    val welcome = Welcome(Base64.getDecoder().decode(event.data))
+                    val welcome = Base64.getDecoder().decode(event.data).toWelcome()
                     val groupId = fetchGroupIdFromWelcome(
                         cryptoClient = cryptoClient,
                         welcome = welcome,
@@ -188,7 +190,9 @@ internal class EventsRouter internal constructor(
         groupId: MLSGroupId?
     ): MLSGroupId {
         val conversation = backendClient.getConversation(qualifiedConversation)
-        val mlsGroupId = groupId ?: MLSGroupId(Base64.getDecoder().decode(conversation.groupId))
+        val mlsGroupId = groupId ?: MLSGroupId(
+            ConversationId(Base64.getDecoder().decode(conversation.groupId))
+        )
 
         val conversationName = if (conversation.type == ConversationResponse.Type.ONE_TO_ONE) {
             backendClient.getUserData(userId = conversation.members.others.first().id).name
@@ -221,7 +225,8 @@ internal class EventsRouter internal constructor(
             cryptoClient.getAppClientId()?.let { appClientId ->
                 backendClient.uploadMlsKeyPackages(
                     appClientId = appClientId,
-                    mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value }
+                    mlsKeyPackages =
+                        cryptoClient.mlsGenerateKeyPackages().map { it.value.copyBytes() }
                 )
             }
         }
@@ -319,7 +324,7 @@ internal class EventsRouter internal constructor(
                 logger.info("Cannot process welcome, ask to join the conversation")
                 val groupInfo =
                     backendClient.getConversationGroupInfo(event.qualifiedConversation)
-                cryptoClient.joinMlsConversationRequest(GroupInfo(groupInfo))
+                cryptoClient.joinMlsConversationRequest(groupInfo.toGroupInfo())
             } else {
                 logger.error("Cannot process welcome -- ${ex.exception}", ex)
                 throw WireException.CryptographicSystemError("Cannot process welcome")

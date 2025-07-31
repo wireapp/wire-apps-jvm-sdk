@@ -1,11 +1,11 @@
 package com.wire.integrations.jvm.crypto
 
 import com.wire.crypto.CoreCryptoException
-import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupId
+import com.wire.crypto.toGroupInfo
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.model.AppClientId
 import com.wire.integrations.jvm.model.QualifiedId
@@ -79,7 +79,7 @@ class CoreCryptoClientTest {
         runBlocking {
             // GroupInfo of a real conversation, stored in a binary test file
             val inputStream: InputStream = FileInputStream("src/test/resources/groupInfo.bin")
-            val groupInfo = GroupInfo(inputStream.readAllBytes())
+            val groupInfo = inputStream.readAllBytes().toGroupInfo()
 
             // Create a new client and join the conversation
             val userId = UUID.randomUUID().toString()
