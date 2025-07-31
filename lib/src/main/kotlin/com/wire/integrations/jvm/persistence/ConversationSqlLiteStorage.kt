@@ -15,7 +15,7 @@
 
 package com.wire.integrations.jvm.persistence
 
-import com.wire.crypto.MLSGroupId
+import com.wire.crypto.toGroupId
 import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.Conversation
 import com.wire.integrations.jvm.ConversationMemberQueries
@@ -38,7 +38,8 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             id = conversation.id.id.toString(),
             domain = conversation.id.domain,
             name = conversation.name,
-            mls_group_id = Base64.getEncoder().encodeToString(conversation.mlsGroupId.value),
+            mls_group_id =
+                Base64.getEncoder().encodeToString(conversation.mlsGroupId.copyBytes()),
             team_id = conversation.teamId?.value?.toString(),
             type = conversation.type.name
         )
@@ -114,7 +115,7 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),
             name = conv.name,
             teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
-            mlsGroupId = MLSGroupId(Base64.getDecoder().decode(conv.mls_group_id)),
+            mlsGroupId = Base64.getDecoder().decode(conv.mls_group_id).toGroupId(),
             type = ConversationData.Type.fromString(value = conv.type)
         )
 

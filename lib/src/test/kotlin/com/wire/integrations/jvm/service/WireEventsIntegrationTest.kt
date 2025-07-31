@@ -48,7 +48,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.MLS_GROUP_ID
+import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64
 import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.GENERIC_TEXT_MESSAGE
 import kotlinx.coroutines.test.runTest
 
@@ -369,7 +369,7 @@ class WireEventsIntegrationTest {
                             }
                         ]
                     },
-                    "group_id": "${Base64.getEncoder().encodeToString(MLS_GROUP_ID.value)}",
+                    "group_id": "$MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",
                     "type": 0
                 }
@@ -394,7 +394,7 @@ class WireEventsIntegrationTest {
                             }
                         ]
                     },
-                    "group_id": "${Base64.getEncoder().encodeToString(MLS_GROUP_ID.value)}",
+                    "group_id": "$MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",
                     "type": 0
                 }
@@ -444,7 +444,7 @@ class WireEventsIntegrationTest {
                                     }
                                 ]
                             },
-                            "group_id": "${Base64.getEncoder().encodeToString(MLS_GROUP_ID.value)}",
+                            "group_id": "$MLS_GROUP_ID_BASE64",
                             "team": "${TEAM_ID.value}"
                         }
                         """.trimIndent()

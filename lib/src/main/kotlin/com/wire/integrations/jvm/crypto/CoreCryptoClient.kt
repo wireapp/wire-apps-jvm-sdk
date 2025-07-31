@@ -2,16 +2,14 @@ package com.wire.integrations.jvm.crypto
 
 import com.wire.crypto.Ciphersuite
 import com.wire.crypto.Ciphersuites
-import com.wire.crypto.ClientId
 import com.wire.crypto.CoreCrypto
 import com.wire.crypto.DatabaseKey
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
-import com.wire.crypto.MlsMessage
 import com.wire.crypto.MlsTransport
-import com.wire.crypto.PlaintextMessage
 import com.wire.crypto.Welcome
+import com.wire.crypto.toClientId
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient.Companion.DEFAULT_KEYPACKAGE_COUNT
 import com.wire.integrations.jvm.exception.WireException
@@ -47,10 +45,10 @@ internal class CoreCryptoClient private constructor(
             coreCrypto.transaction {
                 it.encryptMessage(
                     mlsGroupId,
-                    PlaintextMessage(value = message)
+                    message
                 )
             }
-        return encryptedMessage.value
+        return encryptedMessage
     }
 
     override suspend fun decryptMls(
@@ -62,7 +60,7 @@ internal class CoreCryptoClient private constructor(
             coreCrypto.transaction {
                 it.decryptMessage(
                     id = mlsGroupId,
-                    message = MlsMessage(encryptedMessageBytes)
+                    message = encryptedMessageBytes
                 )
             }
         return decryptedMessage.message
@@ -94,7 +92,7 @@ internal class CoreCryptoClient private constructor(
     ) {
         coreCrypto.transaction {
             it.mlsInit(
-                ClientId(appClientId.value),
+                appClientId.value.toClientId(),
                 Ciphersuites(setOf(ciphersuite))
             )
         }
@@ -107,7 +105,7 @@ internal class CoreCryptoClient private constructor(
     override suspend fun mlsGetPublicKey(): MlsPublicKeys {
         val key =
             coreCrypto.transaction {
-                it.getPublicKey(ciphersuite = ciphersuite).value
+                it.getPublicKey(ciphersuite = ciphersuite)
             }
         val encodedKey = Base64.getEncoder().encodeToString(key)
         return when (ciphersuite) {

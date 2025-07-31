@@ -16,8 +16,8 @@
 
 package com.wire.integrations.jvm.service
 
-import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
+import com.wire.crypto.toGroupInfo
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
@@ -58,7 +58,7 @@ class MlsFallbackStrategy internal constructor(
                 conversationId = conversationId
             )
             cryptoClient.joinMlsConversationRequest(
-                groupInfo = GroupInfo(value = groupInfo)
+                groupInfo = groupInfo.toGroupInfo()
             )
         }
     }

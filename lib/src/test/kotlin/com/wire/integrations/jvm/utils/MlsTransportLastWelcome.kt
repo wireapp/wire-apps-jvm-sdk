@@ -19,6 +19,8 @@ package com.wire.integrations.jvm.utils
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
 import com.wire.crypto.CommitBundle
+import com.wire.crypto.HistorySecret
+import com.wire.crypto.MlsTransportData
 import com.wire.crypto.MlsTransportResponse
 
 /**
@@ -41,4 +43,8 @@ class MlsTransportLastWelcome : MlsTransport {
 
     fun getLastWelcome(): Welcome =
         groupWelcomeMap ?: throw IllegalArgumentException("No welcome for group")
+
+    override suspend fun prepareForTransport(historySecret: HistorySecret): MlsTransportData {
+        TODO("Not yet implemented")
+    }
 }
