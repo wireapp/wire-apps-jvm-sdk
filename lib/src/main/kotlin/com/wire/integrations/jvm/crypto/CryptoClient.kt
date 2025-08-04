@@ -72,7 +72,14 @@ internal interface CryptoClient : AutoCloseable {
     /**
      * Create an MLS conversation, adding the client as the first member.
      */
-    suspend fun createConversation(groupId: MLSGroupId)
+    suspend fun createConversation(
+        groupId: MLSGroupId,
+        externalSenders: ByteArray
+    )
+
+    suspend fun commitPendingProposals(mlsGroupId: MLSGroupId)
+
+    suspend fun updateKeyingMaterial(mlsGroupId: MLSGroupId)
 
     /**
      * Alternative way to add a member to an MLS conversation.

@@ -27,9 +27,13 @@ import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
 import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
+import com.wire.integrations.jvm.model.http.conversation.ClaimedKeyPackageList
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
+import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import java.util.UUID
 
 interface BackendClient {
     suspend fun connectWebSocket(handleFrames: suspend (DefaultClientWebSocketSession) -> Unit)
@@ -54,6 +58,14 @@ interface BackendClient {
         mlsKeyPackages: List<ByteArray>
     )
 
+    suspend fun claimKeyPackages(
+        userDomain: String,
+        userId: UUID,
+        cipherSuite: String
+    ): ClaimedKeyPackageList
+
+    suspend fun getPublicKeys(): MlsPublicKeysResponse
+
     suspend fun uploadCommitBundle(commitBundle: ByteArray)
 
     suspend fun sendMessage(mlsMessage: ByteArray)
@@ -75,6 +87,10 @@ interface BackendClient {
         encryptedFileLength: Long,
         assetUploadData: AssetUploadData
     ): AssetUploadResponse
+
+    suspend fun createGroupConversation(
+        createConversationRequest: CreateConversationRequest
+    ): ConversationResponse
 
     companion object {
         const val API_VERSION = "v9"

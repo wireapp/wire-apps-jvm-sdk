@@ -4,6 +4,7 @@ import com.wire.crypto.Ciphersuite
 import com.wire.crypto.Ciphersuites
 import com.wire.crypto.CoreCrypto
 import com.wire.crypto.DatabaseKey
+import com.wire.crypto.ExternalSenderKey
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
@@ -146,12 +147,34 @@ internal class CoreCryptoClient private constructor(
         return coreCrypto.transaction { it.joinByExternalCommit(groupInfo).id }
     }
 
-    override suspend fun createConversation(groupId: MLSGroupId) {
+    override suspend fun createConversation(
+        groupId: MLSGroupId,
+        externalSenders: ByteArray
+    ) {
         return coreCrypto.transaction {
             it.createConversation(
                 id = groupId,
-                ciphersuite = ciphersuite
+                ciphersuite = ciphersuite,
+                externalSenders = listOf(
+                    ExternalSenderKey(
+                        value = com.wire.crypto.uniffi.ExternalSenderKey(
+                            bytes = externalSenders
+                        )
+                    )
+                )
             )
+        }
+    }
+
+    override suspend fun commitPendingProposals(mlsGroupId: MLSGroupId) {
+        coreCrypto.transaction {
+            it.commitPendingProposals(mlsGroupId)
+        }
+    }
+
+    override suspend fun updateKeyingMaterial(mlsGroupId: MLSGroupId) {
+        coreCrypto.transaction {
+            it.updateKeyingMaterial(mlsGroupId)
         }
     }
 
@@ -215,7 +238,7 @@ internal class CoreCryptoClient private constructor(
             )
         }
 
-        private fun getMlsCipherSuiteName(code: Int): Ciphersuite =
+        fun getMlsCipherSuiteName(code: Int): Ciphersuite =
             when (code) {
                 DEFAULT_CIPHERSUITE_IDENTIFIER -> Ciphersuite.DEFAULT
                 2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256

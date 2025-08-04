@@ -20,9 +20,9 @@ import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
+import com.wire.crypto.toGroupId
 import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toWelcome
-import com.wire.crypto.uniffi.ConversationId
 import com.wire.integrations.jvm.WireEventsHandler
 import com.wire.integrations.jvm.WireEventsHandlerDefault
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
@@ -40,6 +40,7 @@ import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.protobuf.ProtobufDeserializer
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
+import com.wire.integrations.jvm.utils.obfuscateGroupId
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
@@ -190,9 +191,10 @@ internal class EventsRouter internal constructor(
         groupId: MLSGroupId?
     ): MLSGroupId {
         val conversation = backendClient.getConversation(qualifiedConversation)
-        val mlsGroupId = groupId ?: MLSGroupId(
-            ConversationId(Base64.getDecoder().decode(conversation.groupId))
-        )
+        val mlsGroupId = groupId ?: Base64
+            .getDecoder()
+            .decode(conversation.groupId)
+            .toGroupId()
 
         val conversationName = if (conversation.type == ConversationResponse.Type.ONE_TO_ONE) {
             backendClient.getUserData(userId = conversation.members.others.first().id).name
@@ -352,7 +354,7 @@ internal class EventsRouter internal constructor(
             )
         }
 
-        logger.debug("Returning mlsGroupId: $mlsGroupId")
+        logger.debug("Returning mlsGroupId: ${mlsGroupId.obfuscateGroupId()}")
         return mlsGroupId
     }
 

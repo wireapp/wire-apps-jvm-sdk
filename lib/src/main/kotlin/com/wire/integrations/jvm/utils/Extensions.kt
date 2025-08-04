@@ -18,6 +18,7 @@
 
 package com.wire.integrations.jvm.utils
 
+import com.wire.crypto.MLSGroupId
 import java.util.UUID
 
 private const val START_INDEX = 0
@@ -30,12 +31,19 @@ fun String.obfuscateId(): String = obfuscateId(END_INDEX_ID)
 
 fun String.obfuscateClientId(): String = obfuscateId(END_INDEX_CLIENT_ID)
 
+fun MLSGroupId.obfuscateGroupId(): String = this.toString().obfuscateId(END_INDEX_ID)
+
 private fun String.obfuscateId(lastChar: Int): String =
     if (this.length < END_INDEX_ID) this else this.substring(START_INDEX, lastChar) + "***"
 
 internal fun String.toUTF16BEByteArray(): ByteArray = toByteArray(charset = Charsets.UTF_16BE)
 
 internal fun ByteArray.toStringFromUtf16BE(): String = toString(charset = Charsets.UTF_16BE)
+
+@Suppress("MagicNumber")
+fun Int.toHexString(minDigits: Int = 4): String {
+    return "0x" + this.toString(16).padStart(minDigits, '0')
+}
 
 /**
  * Converts a Long into a Byte Array Big Endian.
