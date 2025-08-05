@@ -4,13 +4,13 @@ import com.wire.crypto.Ciphersuite
 import com.wire.crypto.Ciphersuites
 import com.wire.crypto.CoreCrypto
 import com.wire.crypto.DatabaseKey
-import com.wire.crypto.ExternalSenderKey
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
 import com.wire.crypto.toClientId
+import com.wire.crypto.toExternalSenderKey
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient.Companion.DEFAULT_KEYPACKAGE_COUNT
 import com.wire.integrations.jvm.exception.WireException
@@ -156,11 +156,7 @@ internal class CoreCryptoClient private constructor(
                 id = groupId,
                 ciphersuite = ciphersuite,
                 externalSenders = listOf(
-                    ExternalSenderKey(
-                        value = com.wire.crypto.uniffi.ExternalSenderKey(
-                            bytes = externalSenders
-                        )
-                    )
+                    externalSenders.toExternalSenderKey()
                 )
             )
         }
