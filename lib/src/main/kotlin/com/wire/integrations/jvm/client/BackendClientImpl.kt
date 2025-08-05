@@ -39,6 +39,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.http.HttpHeaders
+import java.util.UUID
 import org.slf4j.LoggerFactory
 
 /**
@@ -46,6 +47,8 @@ import org.slf4j.LoggerFactory
  */
 internal class BackendClientImpl(private val httpClient: HttpClient) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    override fun getCurrentSyncMarker(): UUID? = null
 
     override suspend fun connectWebSocket(
         handleFrames: suspend (DefaultClientWebSocketSession) -> Unit

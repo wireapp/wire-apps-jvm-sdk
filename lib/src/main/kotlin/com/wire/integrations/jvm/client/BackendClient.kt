@@ -30,8 +30,11 @@ import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
+import java.util.UUID
 
 interface BackendClient {
+    fun getCurrentSyncMarker(): UUID?
+
     suspend fun connectWebSocket(handleFrames: suspend (DefaultClientWebSocketSession) -> Unit)
 
     suspend fun getAvailableApiVersions(): ApiVersionResponse
