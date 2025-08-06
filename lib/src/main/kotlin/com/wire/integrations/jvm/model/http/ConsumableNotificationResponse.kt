@@ -31,14 +31,14 @@ sealed class ConsumableNotificationResponse {
     ) : ConsumableNotificationResponse()
 
     @Serializable
-    @SerialName("message_count")
-    data class MessageCount(
-        @SerialName("data") val data: NotificationCount
-    ) : ConsumableNotificationResponse()
-
-    @Serializable
     @SerialName("notifications_missed")
     data object MissedNotification : ConsumableNotificationResponse()
+
+    @Serializable
+    @SerialName("synchronization")
+    data class SynchronizationNotification(
+        @SerialName("data") val data: SynchronizationDataDTO
+    ) : ConsumableNotificationResponse()
 }
 
 @Serializable
@@ -50,7 +50,9 @@ data class EventDataDTO(
 )
 
 @Serializable
-data class NotificationCount(
-    @SerialName("count")
-    val count: ULong
+data class SynchronizationDataDTO(
+    @SerialName("delivery_tag")
+    val deliveryTag: ULong?,
+    @SerialName("marker_id")
+    val markerId: String
 )

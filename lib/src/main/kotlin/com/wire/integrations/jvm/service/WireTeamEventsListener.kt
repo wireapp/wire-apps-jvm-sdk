@@ -89,14 +89,26 @@ internal class WireTeamEventsListener internal constructor(
                 }
             }
 
-            is ConsumableNotificationResponse.MessageCount -> {
-                logger.info("Websocket back online, ${notification.data.count} events to fetch")
-            }
-
             is ConsumableNotificationResponse.MissedNotification -> {
                 logger.warn("App was offline for too long, missed some notifications")
                 val ackRequest = EventAcknowledgeRequest.notificationMissedAck()
                 ackEvent(ackRequest, session)
+            }
+
+            is ConsumableNotificationResponse.SynchronizationNotification -> {
+                notification.data.deliveryTag?.let { deliveryTag ->
+                    val ackRequest = EventAcknowledgeRequest.basicAck(deliveryTag)
+                    ackEvent(ackRequest, session)
+                }
+                val notificationSyncMarker = backendClient.getNotificationSyncMarker()
+                if (notification.data.markerId == notificationSyncMarker.toString()) {
+                    logger.info("Notifications are up to date since last sync marker.")
+                } else {
+                    logger.info(
+                        "Skipping sync marker [${notification.data.markerId}], " +
+                            "as it is not valid for this session."
+                    )
+                }
             }
         }
     }
