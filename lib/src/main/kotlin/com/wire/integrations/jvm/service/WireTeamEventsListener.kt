@@ -100,11 +100,11 @@ internal class WireTeamEventsListener internal constructor(
                     val ackRequest = EventAcknowledgeRequest.basicAck(deliveryTag)
                     ackEvent(ackRequest, session)
                 }
-                val currentSyncMarker = backendClient.getCurrentSyncMarker()
-                if (notification.data.markerId == currentSyncMarker.toString()) {
+                val notificationSyncMarker = backendClient.getNotificationSyncMarker()
+                if (notification.data.markerId == notificationSyncMarker.toString()) {
                     logger.info("Notifications are up to date since last sync marker.")
                 } else {
-                    logger.debug(
+                    logger.info(
                         "Skipping sync marker [${notification.data.markerId}], " +
                             "as it is not valid for this session."
                     )

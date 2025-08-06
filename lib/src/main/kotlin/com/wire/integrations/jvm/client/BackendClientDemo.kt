@@ -81,24 +81,22 @@ internal class BackendClientDemo(
     private var cachedFeatures: FeaturesResponse? = null
     private var cachedAccessToken: String? = null
     private var cachedDeviceId: String? = null
-    private var currentSyncMarker: UUID? = null
+    private var notificationSyncMarker: UUID? = null
 
-    override fun getCurrentSyncMarker(): UUID? = currentSyncMarker
+    override fun getNotificationSyncMarker(): UUID? = notificationSyncMarker
 
     override suspend fun connectWebSocket(
         handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
     ) {
         logger.info("Connecting to the webSocket, waiting for events")
 
-        currentSyncMarker = UUID.randomUUID()
+        notificationSyncMarker = UUID.randomUUID()
         val token = loginUser()
 
-        val url = StringBuilder().apply {
-            append("/$API_VERSION/events")
-            append("?client=$cachedDeviceId")
-            append("&access_token=$token")
-            append("&sync_marker=$currentSyncMarker")
-        }.toString()
+        val url = "/$API_VERSION/events" +
+            "?client=$cachedDeviceId" +
+            "&access_token=$token" +
+            "&sync_marker=$notificationSyncMarker"
 
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost()?.replace("https://", "")

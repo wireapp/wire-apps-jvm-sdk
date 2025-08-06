@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory
 internal class BackendClientImpl(private val httpClient: HttpClient) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    override fun getCurrentSyncMarker(): UUID? = null
+    override fun getNotificationSyncMarker(): UUID? = TODO("Not yet implemented")
 
     override suspend fun connectWebSocket(
         handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
