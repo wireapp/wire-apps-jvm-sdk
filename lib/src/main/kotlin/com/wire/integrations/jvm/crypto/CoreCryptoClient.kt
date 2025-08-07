@@ -10,6 +10,7 @@ import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
 import com.wire.crypto.toClientId
+import com.wire.crypto.toExternalSenderKey
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient.Companion.DEFAULT_KEYPACKAGE_COUNT
 import com.wire.integrations.jvm.exception.WireException
@@ -146,12 +147,36 @@ internal class CoreCryptoClient private constructor(
         return coreCrypto.transaction { it.joinByExternalCommit(groupInfo).id }
     }
 
-    override suspend fun createConversation(groupId: MLSGroupId) {
+    /**
+     * Creates a conversation in CoreCrypto.
+     *
+     * @param MLSGroupId Group ID from creating the conversation on the backend
+     * @param externalSenders Keys fetched from backend for validating external remove proposals
+     */
+    override suspend fun createConversation(
+        groupId: MLSGroupId,
+        externalSenders: ByteArray
+    ) {
         return coreCrypto.transaction {
             it.createConversation(
                 id = groupId,
-                ciphersuite = ciphersuite
+                ciphersuite = ciphersuite,
+                externalSenders = listOf(
+                    externalSenders.toExternalSenderKey()
+                )
             )
+        }
+    }
+
+    override suspend fun commitPendingProposals(mlsGroupId: MLSGroupId) {
+        coreCrypto.transaction {
+            it.commitPendingProposals(mlsGroupId)
+        }
+    }
+
+    override suspend fun updateKeyingMaterial(mlsGroupId: MLSGroupId) {
+        coreCrypto.transaction {
+            it.updateKeyingMaterial(mlsGroupId)
         }
     }
 
@@ -215,7 +240,7 @@ internal class CoreCryptoClient private constructor(
             )
         }
 
-        private fun getMlsCipherSuiteName(code: Int): Ciphersuite =
+        fun getMlsCipherSuiteName(code: Int): Ciphersuite =
             when (code) {
                 DEFAULT_CIPHERSUITE_IDENTIFIER -> Ciphersuite.DEFAULT
                 2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
@@ -226,5 +251,10 @@ internal class CoreCryptoClient private constructor(
                 7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
                 else -> Ciphersuite.DEFAULT
             }
+
+        @Suppress("MagicNumber")
+        fun Int.toHexString(minDigits: Int = 4): String {
+            return "0x" + this.toString(16).padStart(minDigits, '0')
+        }
     }
 }

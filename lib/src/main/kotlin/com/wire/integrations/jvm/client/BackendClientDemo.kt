@@ -32,7 +32,10 @@ import com.wire.integrations.jvm.model.http.MlsKeyPackageRequest
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
 import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
+import com.wire.integrations.jvm.model.http.conversation.ClaimedKeyPackageList
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
+import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.utils.Mls
@@ -45,6 +48,7 @@ import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.put
@@ -238,6 +242,33 @@ internal class BackendClientDemo(
         logger.info("Updated client with mls key packages for client: $appClientId")
     }
 
+    override suspend fun claimKeyPackages(
+        user: QualifiedId,
+        cipherSuite: String
+    ): ClaimedKeyPackageList {
+        val token = loginUser()
+        val url = "$API_VERSION/mls/key-packages/claim/${user.domain}/${user.id}"
+        return httpClient.post(url) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            parameter("ciphersuite", cipherSuite)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<ClaimedKeyPackageList>()
+    }
+
+    override suspend fun getPublicKeys(): MlsPublicKeysResponse {
+        val token = loginUser()
+        return httpClient.get("$API_VERSION/mls/public-keys") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<MlsPublicKeysResponse>()
+    }
+
     override suspend fun uploadCommitBundle(commitBundle: ByteArray) {
         val token = loginUser()
         httpClient.post("/$API_VERSION/mls/commit-bundles") {
@@ -339,6 +370,20 @@ internal class BackendClientDemo(
             )
             contentType(ContentType.MultiPart.Mixed)
         }.body<AssetUploadResponse>()
+    }
+
+    override suspend fun createGroupConversation(
+        createConversationRequest: CreateConversationRequest
+    ): ConversationResponse {
+        val token = loginUser()
+        return httpClient.post("/$API_VERSION/conversations") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(createConversationRequest)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<ConversationResponse>()
     }
 
     internal class AssetBody internal constructor(

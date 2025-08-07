@@ -111,6 +111,24 @@ object TestUtils {
                 WireMock.urlPathTemplate("/$V/mls/key-packages/self/{appClientId}")
             ).willReturn(ok())
         )
+        wireMockServer.stubFor(
+            WireMock.get(
+                WireMock.urlPathTemplate(
+                    "/$V/mls/public-keys"
+                )
+            ).willReturn(
+                WireMock.okJson(MLS_PUBLIC_KEYS_RESPONSE)
+            )
+        )
+        wireMockServer.stubFor(
+            WireMock.post(
+                WireMock.urlPathTemplate(
+                    "/$V/mls/commit-bundles"
+                )
+            ).willReturn(
+                WireMock.ok()
+            )
+        )
     }
 
     fun setupSdk(eventsHandler: WireEventsHandler) {
@@ -127,4 +145,15 @@ object TestUtils {
     private const val API_TOKEN = "dummyToken"
     private const val API_HOST = "http://localhost:8086"
     const val CRYPTOGRAPHY_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH"
+    private val MLS_PUBLIC_KEYS_RESPONSE =
+        """
+            {
+                "removal": {
+                    "ecdsa_secp256r1_sha256": "BGBbuHvwWYBrTru7sFzzcK/oT9XVzGkdNv/6iBHNtEo9QVDmYKbtW2FA+f+iNoOBgvhjp6mYQKmypa+z63u5/Qs=",
+                    "ecdsa_secp384r1_sha384": "BMW56MVt4zR1oCHv40t/Q9VDqMBPsetBzESkCY3lXhyQmEMaJRO293D4v94qTrSwSFNHG9859anU03OtQo2CXz5Tsgr2HTL7cNBpGWrROPSmS+dx/mKx4sugHn2zakM9hA==",
+                    "ecdsa_secp521r1_sha512": "BACrVVw3tK68GL8F7FP05mUp5y2zSV5eofS48BVoYNLdcNOBlKokO0f3mtGqLEiKPbgVncKeMskaZap2wL/kc1v/1wFCBdoSx5lS+efz1Fe3sx+lwjuhwkGW891lsjpbXzdkWGsM0yHY83DCgGT3XGaITURmL4I+EqEiMqtgi4VWo26+Nw==",
+                    "ed25519": "3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw="
+                }
+            }
+        """.trimIndent()
 }

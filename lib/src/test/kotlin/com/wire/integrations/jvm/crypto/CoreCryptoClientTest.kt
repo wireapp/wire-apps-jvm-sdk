@@ -151,7 +151,9 @@ class CoreCryptoClientTest {
 
             // Create a new conversation with Bob, then add Alice to it
             val groupId = "JfflcPtUivbg+1U3Iyrzsh5D2ui/OGS5Rvf52ipH5KY=".toGroupId()
-            bobClient.createConversation(groupId)
+            val externalSenders: ByteArray =
+                Base64.getDecoder().decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
+            bobClient.createConversation(groupId, externalSenders)
             assertTrue { bobClient.conversationExists(groupId) }
             val keyPackages: List<MLSKeyPackage> = aliceClient.mlsGenerateKeyPackages(1u)
             assertFalse { aliceClient.conversationExists(groupId) }

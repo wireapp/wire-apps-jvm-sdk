@@ -18,6 +18,7 @@ package com.wire.integrations.sample
 
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.model.AssetResource
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.WireMessage.Asset.AssetMetadata
 import com.wire.integrations.jvm.model.asset.AssetRetention
@@ -30,6 +31,24 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     override suspend fun onMessage(wireMessage: WireMessage.Text) {
         logger.info("Received Text Message : $wireMessage")
+
+        if (wireMessage.text.contains("create-conversation")) {
+            // Expected message: `create-conversation [NAME] [USER_ID] [DOMAIN]`
+            val split = wireMessage.text.split(" ")
+
+            logger.info("conversation_name: ${split[1]}")
+            manager.createGroupConversation(
+                name = split[1],
+                userIds = listOf(
+                    QualifiedId(
+                        id = UUID.fromString(split[2]),
+                        domain = split[3]
+                    )
+                )
+            )
+
+            return
+        }
 
         if (wireMessage.text.contains("asset-image")) {
             val resourcePath = javaClass.classLoader.getResource("banana-icon.png")?.path

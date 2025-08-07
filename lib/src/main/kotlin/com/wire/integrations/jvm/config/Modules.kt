@@ -40,6 +40,7 @@ import com.wire.integrations.jvm.service.EventsRouter
 import com.wire.integrations.jvm.service.MlsFallbackStrategy
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
+import com.wire.integrations.jvm.service.conversation.ConversationService
 import com.wire.integrations.jvm.utils.KtxSerializer
 import com.wire.integrations.jvm.utils.mls
 import com.wire.integrations.jvm.utils.obfuscateClientId
@@ -91,7 +92,12 @@ val sdkModule =
             }
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get()) }
-        single { WireApplicationManager(get(), get(), get(), get(), get()) }
+
+        // Services
+        single { ConversationService(get(), get()) }
+
+        // Manager
+        single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
     }
 
 @OptIn(ExperimentalLogbookKtorApi::class)

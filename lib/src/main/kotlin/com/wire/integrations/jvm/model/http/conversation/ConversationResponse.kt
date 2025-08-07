@@ -38,7 +38,9 @@ data class ConversationResponse(
     @SerialName("members")
     val members: ConversationMembers,
     @SerialName("type")
-    val type: Type
+    val type: Type,
+    @SerialName("public_keys")
+    val publicKeys: MlsPublicKeysResponse? = null
 ) {
     @Serializable
     enum class Type {

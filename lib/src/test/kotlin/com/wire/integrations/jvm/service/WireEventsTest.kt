@@ -225,7 +225,7 @@ class WireEventsTest {
 
                 override suspend fun onAsset(wireMessage: WireMessage.Asset) {
                     assertEquals(
-                        EXPECTED_NEW_MLS_MESSAGE_VALUE.toString(),
+                        EXPECTED_NEW_MLS_MESSAGE_VALUE,
                         wireMessage.name
                     )
                 }

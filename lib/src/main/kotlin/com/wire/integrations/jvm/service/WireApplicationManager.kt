@@ -34,6 +34,7 @@ import com.wire.integrations.jvm.model.http.user.UserResponse
 import com.wire.integrations.jvm.model.protobuf.ProtobufSerializer
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
+import com.wire.integrations.jvm.service.conversation.ConversationService
 import com.wire.integrations.jvm.utils.AESDecrypt
 import com.wire.integrations.jvm.utils.AESEncrypt
 import com.wire.integrations.jvm.utils.MAX_DATA_SIZE
@@ -54,7 +55,8 @@ class WireApplicationManager internal constructor(
     private val conversationStorage: ConversationStorage,
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient,
-    private val mlsFallbackStrategy: MlsFallbackStrategy
+    private val mlsFallbackStrategy: MlsFallbackStrategy,
+    private val conversationService: ConversationService
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
@@ -344,4 +346,23 @@ class WireApplicationManager internal constructor(
     @Throws(WireException::class)
     suspend fun getUserSuspending(userId: QualifiedId): UserResponse =
         backendClient.getUserData(userId)
+
+    fun createGroupConversation(
+        name: String,
+        userIds: List<QualifiedId>
+    ) = runBlocking {
+        createGroupConversationSuspending(
+            name = name,
+            userIds = userIds
+        )
+    }
+
+    suspend fun createGroupConversationSuspending(
+        name: String,
+        userIds: List<QualifiedId>
+    ): QualifiedId =
+        conversationService.createGroup(
+            name = name,
+            userIds = userIds
+        )
 }

@@ -29,7 +29,10 @@ import com.wire.integrations.jvm.model.http.FeaturesResponse
 import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
 import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
+import com.wire.integrations.jvm.model.http.conversation.ClaimedKeyPackageList
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
+import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -105,6 +108,17 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         TODO("Not yet implemented")
     }
 
+    override suspend fun claimKeyPackages(
+        user: QualifiedId,
+        cipherSuite: String
+    ): ClaimedKeyPackageList {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPublicKeys(): MlsPublicKeysResponse {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun uploadCommitBundle(commitBundle: ByteArray) {
         TODO("Not yet implemented")
     }
@@ -138,6 +152,12 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         encryptedFileLength: Long,
         assetUploadData: AssetUploadData
     ): AssetUploadResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun createGroupConversation(
+        createConversationRequest: CreateConversationRequest
+    ): ConversationResponse {
         TODO("Not yet implemented")
     }
 }
