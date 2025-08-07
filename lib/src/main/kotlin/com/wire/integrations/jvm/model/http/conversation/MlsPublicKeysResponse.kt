@@ -17,6 +17,8 @@
 package com.wire.integrations.jvm.model.http.conversation
 
 import com.wire.crypto.Ciphersuite
+import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import io.ktor.util.decodeBase64Bytes
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -24,52 +26,29 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MlsPublicKeysResponse(
     @SerialName("removal")
-    val removal: Map<String, String>?
+    val removal: MlsPublicKeys
 )
 
 fun MlsPublicKeysResponse.getRemovalKey(cipherSuite: Ciphersuite): ByteArray? {
-    val keySignature = MlsPublicKeysMapper.fromCipherSuite(cipherSuite)
-    val key = this.removal?.let { removalKeys ->
-        removalKeys[keySignature.value]
-    } ?: return null
-    return key.decodeBase64Bytes()
-}
+    val key = when (cipherSuite) {
+        Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256 ->
+            this.removal.ecdsaSecp256r1Sha256
 
-@Suppress("ClassName")
-sealed interface MlsPublicKeyType {
-    val value: String?
+        Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384 ->
+            this.removal.ecdsaSecp384r1Sha384
 
-    data object ECDSA_SECP256R1_SHA256 : MlsPublicKeyType {
-        override val value: String = "ecdsa_secp256r1_sha256"
+        Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521 ->
+            this.removal.ecdsaSecp521r1Sha512
+
+        Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519,
+        Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519 ->
+            this.removal.ed25519
+
+        Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448,
+        Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448 -> {
+            throw WireException.CryptographicSystemError("Unsupported ciphersuite")
+        }
     }
 
-    data object ECDSA_SECP384R1_SHA384 : MlsPublicKeyType {
-        override val value: String = "ecdsa_secp384r1_sha384"
-    }
-
-    data object ECDSA_SECP521R1_SHA512 : MlsPublicKeyType {
-        override val value: String = "ecdsa_secp521r1_sha512"
-    }
-
-    data object ED448 : MlsPublicKeyType {
-        override val value: String = "ed448"
-    }
-
-    data object ED25519 : MlsPublicKeyType {
-        override val value: String = "ed25519"
-    }
-
-    data class Unknown(override val value: String?) : MlsPublicKeyType
-
-    companion object {
-        fun from(value: String) =
-            when (value) {
-                ECDSA_SECP256R1_SHA256.value -> ECDSA_SECP256R1_SHA256
-                ECDSA_SECP384R1_SHA384.value -> ECDSA_SECP384R1_SHA384
-                ECDSA_SECP521R1_SHA512.value -> ECDSA_SECP521R1_SHA512
-                ED448.value -> ED448
-                ED25519.value -> ED25519
-                else -> Unknown(value)
-            }
-    }
+    return key?.decodeBase64Bytes()
 }

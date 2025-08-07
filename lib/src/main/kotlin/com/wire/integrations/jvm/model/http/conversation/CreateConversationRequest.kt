@@ -16,12 +16,13 @@
 
 package com.wire.integrations.jvm.model.http.conversation
 
+import com.wire.integrations.jvm.model.CryptoProtocol
 import com.wire.integrations.jvm.model.QualifiedId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CreateConversationRequest(
+data class CreateConversationRequest private constructor(
     @SerialName("qualified_users")
     val qualifiedUsers: List<QualifiedId> = emptyList(),
     @SerialName("name")
@@ -32,8 +33,6 @@ data class CreateConversationRequest(
     val accessRole: List<ConversationAccessRole> = DEFAULT_ACCESS_ROLE_LIST,
     @SerialName("group_conv_type")
     val groupConversationType: GroupConversationType? = GroupConversationType.REGULAR_GROUP,
-    @SerialName("team")
-    val conversationTeamInfo: ConversationTeamInfo?,
     @SerialName("message_timer")
     val messageTimer: Long? = null,
     @SerialName("receipt_mode")
@@ -41,7 +40,7 @@ data class CreateConversationRequest(
     @SerialName("conversation_role")
     val conversationRole: String = DEFAULT_MEMBER_ROLE,
     @SerialName("protocol")
-    val protocol: ConversationProtocol? = ConversationProtocol.MLS,
+    val protocol: CryptoProtocol = CryptoProtocol.MLS,
     @SerialName("cells")
     val cellEnabled: Boolean = false
 ) {
@@ -57,5 +56,10 @@ data class CreateConversationRequest(
             ConversationAccessRole.TEAM_MEMBER,
             ConversationAccessRole.SERVICE
         )
+
+        fun create(name: String?): CreateConversationRequest =
+            CreateConversationRequest(
+                name = name
+            )
     }
 }

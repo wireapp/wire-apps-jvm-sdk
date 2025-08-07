@@ -233,12 +233,12 @@ internal class BackendClientDemo(
     }
 
     override suspend fun claimKeyPackages(
-        userDomain: String,
-        userId: UUID,
+        user: QualifiedId,
         cipherSuite: String
     ): ClaimedKeyPackageList {
         val token = loginUser()
-        return httpClient.post("$API_VERSION/mls/key-packages/claim/$userDomain/$userId") {
+        val url = "$API_VERSION/mls/key-packages/claim/${user.domain}/${user.id}"
+        return httpClient.post(url) {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $token")
             }

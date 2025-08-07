@@ -40,7 +40,7 @@ import com.wire.integrations.jvm.service.EventsRouter
 import com.wire.integrations.jvm.service.MlsFallbackStrategy
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
-import com.wire.integrations.jvm.service.conversation.CreateGroupConversationService
+import com.wire.integrations.jvm.service.conversation.ConversationService
 import com.wire.integrations.jvm.utils.KtxSerializer
 import com.wire.integrations.jvm.utils.mls
 import com.wire.integrations.jvm.utils.obfuscateClientId
@@ -94,7 +94,7 @@ val sdkModule =
         single { WireTeamEventsListener(get(), get()) }
 
         // Services
-        single { CreateGroupConversationService(get(), get()) }
+        single { ConversationService(get(), get()) }
 
         // Manager
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }

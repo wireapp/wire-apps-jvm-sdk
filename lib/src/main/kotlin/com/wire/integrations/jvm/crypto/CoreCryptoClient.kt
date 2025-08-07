@@ -147,6 +147,12 @@ internal class CoreCryptoClient private constructor(
         return coreCrypto.transaction { it.joinByExternalCommit(groupInfo).id }
     }
 
+    /**
+     * Creates a conversation in CoreCrypto.
+     *
+     * @param MLSGroupId Group ID from creating the conversation on the backend
+     * @param externalSenders Keys fetched from backend for validating external remove proposals
+     */
     override suspend fun createConversation(
         groupId: MLSGroupId,
         externalSenders: ByteArray
@@ -245,5 +251,10 @@ internal class CoreCryptoClient private constructor(
                 7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
                 else -> Ciphersuite.DEFAULT
             }
+
+        @Suppress("MagicNumber")
+        fun Int.toHexString(minDigits: Int = 4): String {
+            return "0x" + this.toString(16).padStart(minDigits, '0')
+        }
     }
 }

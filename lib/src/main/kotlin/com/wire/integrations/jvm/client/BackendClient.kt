@@ -33,7 +33,6 @@ import com.wire.integrations.jvm.model.http.conversation.CreateConversationReque
 import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import java.util.UUID
 
 interface BackendClient {
     suspend fun connectWebSocket(handleFrames: suspend (DefaultClientWebSocketSession) -> Unit)
@@ -59,8 +58,7 @@ interface BackendClient {
     )
 
     suspend fun claimKeyPackages(
-        userDomain: String,
-        userId: UUID,
+        user: QualifiedId,
         cipherSuite: String
     ): ClaimedKeyPackageList
 

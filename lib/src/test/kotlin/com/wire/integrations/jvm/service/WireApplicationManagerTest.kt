@@ -22,12 +22,15 @@ import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.TestUtils.V
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.config.IsolatedKoinContext
+import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.MLS_GROUP_ID
 import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64
 import io.ktor.http.HttpStatusCode
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -54,15 +57,7 @@ class WireApplicationManagerTest {
                     )
                 )
             )
-            wireMockServer.stubFor(
-                WireMock.get(
-                    WireMock.urlPathTemplate(
-                        "/$V/mls/public-keys"
-                    )
-                ).willReturn(
-                    WireMock.okJson(MLS_PUBLIC_KEYS_RESPONSE)
-                )
-            )
+
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
@@ -81,22 +76,13 @@ class WireApplicationManagerTest {
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
                 )
             )
-            wireMockServer.stubFor(
-                WireMock.post(
-                    WireMock.urlPathTemplate(
-                        "/$V/mls/commit-bundles"
-                    )
-                ).willReturn(
-                    WireMock.ok()
-                )
-            )
 
             val manager = IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
+            val cryptoClient = IsolatedKoinContext.koinApp.koin.get<CryptoClient>()
 
             // when
             val result = manager.createGroupConversation(
                 name = CONVERSATION_NAME,
-                teamId = TEAM_ID,
                 userIds = listOf(
                     USER_1,
                     USER_2
@@ -108,6 +94,7 @@ class WireApplicationManagerTest {
                 CONVERSATION_ID.id,
                 result.id
             )
+            assertTrue(cryptoClient.conversationExists(MLS_GROUP_ID))
         }
 
     companion object {
@@ -145,18 +132,6 @@ class WireApplicationManagerTest {
                 "group_id": "$MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
                 "type": 0
-            }
-            """.trimIndent()
-
-        private val MLS_PUBLIC_KEYS_RESPONSE =
-            """
-            {
-                "removal": {
-                    "ecdsa_secp256r1_sha256": "BGBbuHvwWYBrTru7sFzzcK/oT9XVzGkdNv/6iBHNtEo9QVDmYKbtW2FA+f+iNoOBgvhjp6mYQKmypa+z63u5/Qs=",
-                    "ecdsa_secp384r1_sha384": "BMW56MVt4zR1oCHv40t/Q9VDqMBPsetBzESkCY3lXhyQmEMaJRO293D4v94qTrSwSFNHG9859anU03OtQo2CXz5Tsgr2HTL7cNBpGWrROPSmS+dx/mKx4sugHn2zakM9hA==",
-                    "ecdsa_secp521r1_sha512": "BACrVVw3tK68GL8F7FP05mUp5y2zSV5eofS48BVoYNLdcNOBlKokO0f3mtGqLEiKPbgVncKeMskaZap2wL/kc1v/1wFCBdoSx5lS+efz1Fe3sx+lwjuhwkGW891lsjpbXzdkWGsM0yHY83DCgGT3XGaITURmL4I+EqEiMqtgi4VWo26+Nw==",
-                    "ed25519": "3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw="
-                }
             }
             """.trimIndent()
 

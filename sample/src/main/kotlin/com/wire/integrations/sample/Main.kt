@@ -26,7 +26,7 @@ fun main() {
     val wireAppSdk = WireAppSdk(
         applicationId = UUID.randomUUID(),
         apiToken = "myApiToken",
-        apiHost = "https://nginz-https.chala.wire.link",
+        apiHost = "https://staging-nginz-https.zinfra.io",
         cryptographyStoragePassword = "myDummyPasswordOfRandom32BytesCH",
         wireEventsHandler = SampleEventsHandler()
     )
@@ -42,10 +42,10 @@ fun main() {
         logger.info("Conversation: $it")
     }
     val selfUser = QualifiedId(
-        id = UUID.fromString("ee159b66-fd70-4739-9bae-23c96a02cb09"),
-        domain = "chala.wire.link"
+        id = UUID.fromString("2afce87f-3195-4c51-9e7c-3b01faf13ac5"),
+        domain = "staging.zinfra.io"
     )
-    logger.info(applicationManager.getUser(selfUser).toString())
+     logger.info(applicationManager.getUser(selfUser).toString())
     logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
 
     // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C

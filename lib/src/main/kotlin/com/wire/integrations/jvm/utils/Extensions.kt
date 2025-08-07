@@ -40,11 +40,6 @@ internal fun String.toUTF16BEByteArray(): ByteArray = toByteArray(charset = Char
 
 internal fun ByteArray.toStringFromUtf16BE(): String = toString(charset = Charsets.UTF_16BE)
 
-@Suppress("MagicNumber")
-fun Int.toHexString(minDigits: Int = 4): String {
-    return "0x" + this.toString(16).padStart(minDigits, '0')
-}
-
 /**
  * Converts a Long into a Byte Array Big Endian.
  */

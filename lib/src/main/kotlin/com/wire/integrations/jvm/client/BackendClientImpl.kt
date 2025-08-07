@@ -42,7 +42,6 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.http.HttpHeaders
-import java.util.UUID
 import org.slf4j.LoggerFactory
 
 /**
@@ -107,8 +106,7 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     }
 
     override suspend fun claimKeyPackages(
-        userDomain: String,
-        userId: UUID,
+        user: QualifiedId,
         cipherSuite: String
     ): ClaimedKeyPackageList {
         TODO("Not yet implemented")

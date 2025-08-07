@@ -21,35 +21,29 @@ import com.wire.crypto.toGroupId
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
+import com.wire.integrations.jvm.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
-import com.wire.integrations.jvm.model.TeamId
-import com.wire.integrations.jvm.model.http.conversation.ConversationTeamInfo
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.KeyPackage
 import com.wire.integrations.jvm.model.http.conversation.getRemovalKey
-import com.wire.integrations.jvm.utils.toHexString
 import io.ktor.util.decodeBase64Bytes
 import java.util.Base64
+import java.util.UUID
 import org.slf4j.LoggerFactory
 
-internal class CreateGroupConversationService internal constructor(
+internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    suspend fun create(
+    suspend fun createGroup(
         name: String,
-        teamId: TeamId,
         userIds: List<QualifiedId>
     ): QualifiedId {
-        val conversationRequest = CreateConversationRequest(
-            name = name,
-            conversationTeamInfo = ConversationTeamInfo(
-                managed = false,
-                teamId = teamId.value.toString()
-            )
+        val conversationRequest = CreateConversationRequest.create(
+            name = name
         )
 
         val conversationResponse = backendClient.createGroupConversation(
@@ -72,11 +66,17 @@ internal class CreateGroupConversationService internal constructor(
         val publicKeys = (conversationResponse.publicKeys ?: backendClient.getPublicKeys())
             .getRemovalKey(cipherSuite = cipherSuite)
 
+        // Adds self user to list of userIds
+        val users = userIds + QualifiedId(
+            id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
+            domain = System.getenv("WIRE_SDK_ENVIRONMENT")
+        )
+
         createMlsGroupConversation(
             publicKeys = publicKeys,
             cipherSuiteCode = cipherSuiteCode,
             mlsGroupId = mlsGroupId,
-            userIds = userIds
+            userIds = users
         )
 
         val conversationId = conversationResponse.id
@@ -113,7 +113,7 @@ internal class CreateGroupConversationService internal constructor(
                     }
                 )
             }
-        }
+        } ?: logger.error("No Public Keys found, skipping creating a conversation.")
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -125,8 +125,7 @@ internal class CreateGroupConversationService internal constructor(
         userIds.forEach { user ->
             try {
                 val result = backendClient.claimKeyPackages(
-                    userDomain = user.domain,
-                    userId = user.id,
+                    user = user,
                     cipherSuite = cipherSuiteCode.toHexString()
                 )
 
@@ -136,7 +135,7 @@ internal class CreateGroupConversationService internal constructor(
             } catch (exception: Exception) {
                 // Ignoring when claiming key packages fails for a user
                 // as for now there is no retry
-                logger.info("Error when claiming key packages: $exception")
+                logger.error("Error when claiming key packages: $exception")
             }
         }
 
