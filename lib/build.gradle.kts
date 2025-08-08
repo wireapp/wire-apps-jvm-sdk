@@ -31,7 +31,7 @@ plugins {
 }
 
 group = "com.wire"
-version = "0.0.13"
+version = "0.0.15"
 val artifactId = "wire-apps-jvm-sdk"
 
 repositories {
