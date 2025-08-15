@@ -36,6 +36,7 @@ import com.wire.integrations.jvm.model.http.conversation.ClaimedKeyPackageList
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
+import com.wire.integrations.jvm.model.http.conversation.OneToOneConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import com.wire.integrations.jvm.persistence.AppStorage
 import com.wire.integrations.jvm.utils.Mls
@@ -384,6 +385,17 @@ internal class BackendClientDemo(
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<ConversationResponse>()
+    }
+
+    override suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse {
+        val token = loginUser()
+        return httpClient.get("/$API_VERSION/one2one-conversations/${userId.domain}/${userId.id}") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<OneToOneConversationResponse>()
     }
 
     internal class AssetBody internal constructor(

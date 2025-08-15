@@ -32,6 +32,24 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     override suspend fun onMessage(wireMessage: WireMessage.Text) {
         logger.info("Received Text Message : $wireMessage")
 
+        if (wireMessage.text.contains("create-one2one")) {
+            // Expected message: `create-one2one [USER_ID] [DOMAIN]
+            val split = wireMessage.text.split(" ")
+
+            logger.info("split[0] -> ${split[0]}")
+            logger.info("split[1] -> ${split[1]}")
+            logger.info("split[2] -> ${split[2]}")
+
+            manager.createOneToOneConversation(
+                userId = QualifiedId(
+                    id = UUID.fromString(split[1]),
+                    domain = split[2]
+                )
+            )
+
+            return
+        }
+
         if (wireMessage.text.contains("create-conversation")) {
             // Expected message: `create-conversation [NAME] [USER_ID] [DOMAIN]`
             val split = wireMessage.text.split(" ")

@@ -28,8 +28,10 @@ import com.wire.integrations.jvm.model.http.conversation.CreateConversationReque
 import com.wire.integrations.jvm.model.http.conversation.KeyPackage
 import com.wire.integrations.jvm.model.http.conversation.getRemovalKey
 import io.ktor.util.decodeBase64Bytes
+import io.ktor.util.encodeBase64
 import java.util.Base64
 import java.util.UUID
+import kotlin.collections.plus
 import org.slf4j.LoggerFactory
 
 internal class ConversationService internal constructor(
@@ -55,11 +57,7 @@ internal class ConversationService internal constructor(
             .decode(conversationResponse.groupId)
             .toGroupId()
 
-        val cipherSuiteCode = backendClient
-            .getApplicationFeatures()
-            .mlsFeatureResponse
-            .mlsFeatureConfigResponse
-            .defaultCipherSuite
+        val cipherSuiteCode = getCipherSuiteCode()
 
         val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
@@ -80,7 +78,7 @@ internal class ConversationService internal constructor(
         )
 
         val conversationId = conversationResponse.id
-        logger.info("Conversation created with ID: $conversationId")
+        logger.info("Group Conversation created with ID: $conversationId")
         return conversationId
     }
 
@@ -140,5 +138,78 @@ internal class ConversationService internal constructor(
         }
 
         return claimedKeyPackages.map { it.keyPackage.decodeBase64Bytes() }
+    }
+
+    private suspend fun getCipherSuiteCode(): Int =
+        backendClient
+            .getApplicationFeatures()
+            .mlsFeatureResponse
+            .mlsFeatureConfigResponse
+            .defaultCipherSuite
+
+    suspend fun createOneToOne(
+        userId: QualifiedId
+    ): QualifiedId {
+        logger.info("fetching One2One conversation")
+        val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
+        val conversation = oneToOneConversationResponse.conversation
+        logger.info("fetched One2One conversation id : ${conversation.id}")
+
+        val cipherSuiteCode = getCipherSuiteCode()
+        logger.info("ciphersuitecode = $cipherSuiteCode")
+
+        val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
+
+//        val publicKeys = (oneToOneConversationResponse.publicKeys ?: backendClient.getPublicKeys())
+//            .getRemovalKey(cipherSuite = cipherSuite)
+        val publicKeys = oneToOneConversationResponse.publicKeys?.getRemovalKey(cipherSuite = cipherSuite)
+        logger.info("got removal keys : ${publicKeys?.encodeBase64()}")
+
+        val mlsGroupId = conversation.groupId.toGroupId()
+        logger.info("got mlsGroupId: ${mlsGroupId.copyBytes().encodeBase64()}")
+
+        publicKeys?.let { externalSenders ->
+            logger.info("creating CC conversation")
+            // verify if conversation exists?
+            cryptoClient.createConversation(
+                groupId = mlsGroupId,
+                externalSenders = externalSenders
+            )
+
+            // logger.info("commiting pending proposals")
+            // cryptoClient.commitPendingProposals(mlsGroupId)
+
+            // Adds self user to list of userIds
+            val users = listOf(
+                userId,
+                QualifiedId(
+                    id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
+                    domain = System.getenv("WIRE_SDK_ENVIRONMENT")
+                )
+            )
+            logger.info("users: ${users.size}")
+
+            val claimedKeyPackages: List<ByteArray> = claimKeyPackages(
+                userIds = users,
+                cipherSuiteCode = cipherSuiteCode
+            )
+            logger.info("claimed key packages -> $claimedKeyPackages")
+            claimedKeyPackages.forEach {
+                logger.info("keyPackage : " + it.encodeBase64())
+            }
+            logger.info("keyPackage : end")
+
+            cryptoClient.addMemberToMlsConversation(
+                mlsGroupId = mlsGroupId,
+                keyPackages = claimedKeyPackages.map { keyPackage ->
+                    keyPackage.toMLSKeyPackage()
+                }
+            )
+            logger.info("added members to conversation")
+        }
+
+        val conversationId = conversation.id
+        logger.info("OneToOne Conversation created with ID: $conversationId")
+        return conversationId
     }
 }
