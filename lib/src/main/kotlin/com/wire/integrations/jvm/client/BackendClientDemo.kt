@@ -387,7 +387,9 @@ internal class BackendClientDemo(
         }.body<ConversationResponse>()
     }
 
-    override suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse {
+    override suspend fun getOneToOneConversation(
+        userId: QualifiedId
+    ): OneToOneConversationResponse {
         val token = loginUser()
         return httpClient.get("/$API_VERSION/one2one-conversations/${userId.domain}/${userId.id}") {
             headers {

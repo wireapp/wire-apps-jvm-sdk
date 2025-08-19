@@ -22,12 +22,8 @@ import com.wire.crypto.MlsTransport
 import com.wire.crypto.MlsTransportData
 import com.wire.crypto.MlsTransportResponse
 import com.wire.integrations.jvm.client.BackendClient
-import io.ktor.util.encodeBase64
-import org.slf4j.LoggerFactory
 
 internal class MlsTransportImpl(private val backendClient: BackendClient) : MlsTransport {
-    private val logger = LoggerFactory.getLogger(this::class.java)
-
     override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
         backendClient.uploadCommitBundle(
             commitBundle = parseBundleIntoSingleByteArray(
@@ -51,10 +47,6 @@ internal class MlsTransportImpl(private val backendClient: BackendClient) : MlsT
      * @param bundle the CommitBundle to parse
      */
     private fun parseBundleIntoSingleByteArray(bundle: CommitBundle): ByteArray {
-        logger.info("MLS_TRANSPORT -> bundle.commit: ${(bundle.commit).encodeBase64()}")
-        logger.info("MLS_TRANSPORT -> bundle.groupInfoBundle.payload: ${(bundle.groupInfoBundle.payload.copyBytes()).encodeBase64()}")
-        logger.info("MLS_TRANSPORT -> (bundle.welcome?.copyBytes() ?: ByteArray(0)): ${(bundle.welcome?.copyBytes() ?: ByteArray(0)).encodeBase64()}")
-
         return bundle.commit +
             bundle.groupInfoBundle.payload.copyBytes() +
             (bundle.welcome?.copyBytes() ?: ByteArray(0))

@@ -43,6 +43,15 @@ The SDK needs to be initialized with your application's credentials, the backend
 | `cryptographyStoragePassword` | The password you choose to let the SDK encrypt the cryptographic material at rest. It is recommended to be generated randomly and stored in a secure place. It must be 32 characters long. |
 | `wireEventsHandler`           | Your implementation (extending the `WireEventsHandler` abstract class)                                                                                                                     |
 
+#### Environment Variables
+> For now (it will be changed in the future) the SDK also needs some environment variables of a User to act as the App
+```dotenv
+WIRE_SDK_USER_ID=abcd-1234-efgh-5678
+WIRE_SDK_EMAIL=your_email@domain.com
+WIRE_SDK_PASSWORD=dummyPassword
+WIRE_SDK_ENVIRONMENT=my.domain.link
+```
+
 Initializing an instance of WireAppSdk is enough to get access to local stored teams and conversations and to send messages or similar actions.
 
 However, to establish a long-lasting connection with the backend and receive all the events targeted to you Application, you need to call the `startListening()` method.
@@ -53,7 +62,7 @@ The `startListening()` method keeps a background thread running until explicitly
 The SDK provides access to teams and conversations through the `WireApplicationManager`, available after initializing the `WireAppSDK`
 
 ```kotlin
-val applicationManager = wireAppSdk.getTeamManager()
+val applicationManager = wireAppSdk.getApplicationManager()
 
 // Get all teams the application has been invited to
 val teams = applicationManager.getStoredTeams()
@@ -87,7 +96,7 @@ fun main() {
         apiToken = "your-api-token",
         apiHost = "https://your-wire-backend.example.com",
         cryptographyStoragePassword = "secure-password",
-        object : WireEventsHandler() {
+        object : WireEventsHandlerDefault() {
             override fun onMessage(wireMessage: WireMessage) {
                 println("Message received: $wireMessage")
                 
@@ -101,10 +110,10 @@ fun main() {
     wireAppSdk.startListening()
 }
 ```
-For simplicity the subclassing of WireEventsHandler is done inline as an anonymous class, but you can create a separate class for it,
+For simplicity the subclassing of WireEventsHandlerDefault is done inline as an anonymous class, but you can create a separate class for it,
 especially if you handle events in a complex way:
 ```kotlin
-class MyWireEventsHandler : WireEventsHandler() {
+class MyWireEventsHandler : WireEventsHandlerDefault() {
     private val logger = LoggerFactory.getLogger(MyWireEventsHandler::class.java)
 
     override fun onMessage(wireMessage: WireMessage.Text) {
@@ -205,6 +214,33 @@ override suspend fun onAssetSuspending(wireMessage: WireMessage.Asset) {
 }
 ```
 > **_Java:_** Use `override fun onAsset(wireMessage: WireMessage.Asset) { .. }`
+
+#### Creation of a Conversation
+
+Through the WireApplicationManager (standalone or through events) you can create conversations (One to One or Group).
+Here are an example for both on the standalone way:
+
+```kotlin
+val applicationManager = wireAppSdk.getApplicationManager()
+
+// For Group Conversations there is no need to pass the App user Id as it will be added to the conversation by default.
+val createdGroupConversationId = applicationManager.createGroupConversationSuspending(
+    name = "Conversation Name",
+    userIds = listOf(
+        QualifiedId(userId1, userDomain1),
+        QualifiedId(userId2, userDomain2)
+    )
+)
+
+// For One to One conversations you need to pass only the user whom the App will create the One to One conversation with.
+val createdOneToOneConversationId = applicationManager.createOneToOneConversationSuspending(
+    userId = QualifiedId(otherUserId, otherUserDomain)
+)
+```
+
+> **_Java:_** Use `createGroupConversation` for Group Conversations
+
+> **_Java:_** Use `createOneToOneConversation` for One to One Conversations
 
 ## Deploy example
 

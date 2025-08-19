@@ -16,20 +16,20 @@
 
 package com.wire.integrations.jvm.service.conversation
 
-import com.wire.crypto.MLSGroupId
+import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupId
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
 import com.wire.integrations.jvm.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.integrations.jvm.crypto.CryptoClient
+import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.KeyPackage
+import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
 import com.wire.integrations.jvm.model.http.conversation.getRemovalKey
 import io.ktor.util.decodeBase64Bytes
-import io.ktor.util.encodeBase64
-import java.util.Base64
 import java.util.UUID
 import kotlin.collections.plus
 import org.slf4j.LoggerFactory
@@ -40,41 +40,32 @@ internal class ConversationService internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    /**
+     * Creates a Group Conversation where currently the only admin is the App
+     *
+     * @param name Name of the created conversation
+     * @param userIds List of QualifiedId of all the users to be added to the conversation
+     * (excluding the App user)
+     *
+     * @return QualifiedId The Id of the created conversation
+     */
     suspend fun createGroup(
         name: String,
         userIds: List<QualifiedId>
     ): QualifiedId {
-        val conversationRequest = CreateConversationRequest.create(
-            name = name
-        )
-
         val conversationResponse = backendClient.createGroupConversation(
-            createConversationRequest = conversationRequest
+            createConversationRequest = CreateConversationRequest.create(
+                name = name
+            )
         )
 
-        val mlsGroupId = Base64
-            .getDecoder()
-            .decode(conversationResponse.groupId)
-            .toGroupId()
+        val publicKeysResponse = conversationResponse.publicKeys ?: backendClient.getPublicKeys()
 
-        val cipherSuiteCode = getCipherSuiteCode()
-
-        val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
-
-        val publicKeys = (conversationResponse.publicKeys ?: backendClient.getPublicKeys())
-            .getRemovalKey(cipherSuite = cipherSuite)
-
-        // Adds self user to list of userIds
-        val users = userIds + QualifiedId(
-            id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
-            domain = System.getenv("WIRE_SDK_ENVIRONMENT")
-        )
-
-        createMlsGroupConversation(
-            publicKeys = publicKeys,
-            cipherSuiteCode = cipherSuiteCode,
-            mlsGroupId = mlsGroupId,
-            userIds = users
+        createConversation(
+            userIds = userIds,
+            groupId = conversationResponse.groupId,
+            publicKeysResponse = publicKeysResponse,
+            type = ConversationType.GROUP
         )
 
         val conversationId = conversationResponse.id
@@ -82,26 +73,67 @@ internal class ConversationService internal constructor(
         return conversationId
     }
 
-    private suspend fun createMlsGroupConversation(
-        publicKeys: ByteArray?,
-        cipherSuiteCode: Int,
-        mlsGroupId: MLSGroupId,
-        userIds: List<QualifiedId>
+    /**
+     * Creates a One To One Conversation with a user starting from the App
+     *
+     * @param userId QualifiedId of the user the App will create the conversation with
+     *
+     * @return QualifiedId The Id of the created conversation
+     */
+    suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
+        val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
+        val conversation = oneToOneConversationResponse.conversation
+
+        createConversation(
+            userIds = listOf(userId),
+            groupId = conversation.groupId,
+            publicKeysResponse = oneToOneConversationResponse.publicKeys,
+            type = ConversationType.ONE_TO_ONE
+        )
+
+        val conversationId = conversation.id
+        logger.info("OneToOne Conversation created with ID: $conversationId")
+        return conversationId
+    }
+
+    private suspend fun createConversation(
+        userIds: List<QualifiedId>,
+        groupId: String,
+        publicKeysResponse: MlsPublicKeysResponse?,
+        type: ConversationType
     ) {
+        val cipherSuiteCode = getCipherSuiteCode()
+        val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
+
+        val mlsGroupId = groupId.decodeBase64Bytes().toGroupId()
+        val publicKeys = publicKeysResponse?.getRemovalKey(cipherSuite = cipherSuite)
+
         publicKeys?.let { externalSenders ->
-            cryptoClient.createConversation(
-                groupId = mlsGroupId,
-                externalSenders = externalSenders
+            try {
+                cryptoClient.createConversation(
+                    groupId = mlsGroupId,
+                    externalSenders = externalSenders
+                )
+            } catch (exception: MlsException.ConversationAlreadyExists) {
+                throw WireException.CryptographicSystemError(
+                    "Conversation already exists.",
+                    throwable = exception
+                )
+            }
+
+            val users = userIds + listOf(
+                QualifiedId(
+                    id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
+                    domain = System.getenv("WIRE_SDK_ENVIRONMENT")
+                )
             )
 
-            cryptoClient.commitPendingProposals(mlsGroupId)
-
             val claimedKeyPackages: List<ByteArray> = claimKeyPackages(
-                userIds = userIds,
+                userIds = users,
                 cipherSuiteCode = cipherSuiteCode
             )
 
-            if (claimedKeyPackages.isEmpty()) {
+            if (type == ConversationType.GROUP && claimedKeyPackages.isEmpty()) {
                 cryptoClient.updateKeyingMaterial(mlsGroupId)
             } else {
                 cryptoClient.addMemberToMlsConversation(
@@ -111,7 +143,9 @@ internal class ConversationService internal constructor(
                     }
                 )
             }
-        } ?: logger.error("No Public Keys found, skipping creating a conversation.")
+        } ?: throw WireException.MissingParameter(
+            message = "No Public Keys found, skipping creating a conversation."
+        )
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -147,69 +181,11 @@ internal class ConversationService internal constructor(
             .mlsFeatureConfigResponse
             .defaultCipherSuite
 
-    suspend fun createOneToOne(
-        userId: QualifiedId
-    ): QualifiedId {
-        logger.info("fetching One2One conversation")
-        val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
-        val conversation = oneToOneConversationResponse.conversation
-        logger.info("fetched One2One conversation id : ${conversation.id}")
-
-        val cipherSuiteCode = getCipherSuiteCode()
-        logger.info("ciphersuitecode = $cipherSuiteCode")
-
-        val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
-
-//        val publicKeys = (oneToOneConversationResponse.publicKeys ?: backendClient.getPublicKeys())
-//            .getRemovalKey(cipherSuite = cipherSuite)
-        val publicKeys = oneToOneConversationResponse.publicKeys?.getRemovalKey(cipherSuite = cipherSuite)
-        logger.info("got removal keys : ${publicKeys?.encodeBase64()}")
-
-        val mlsGroupId = conversation.groupId.toGroupId()
-        logger.info("got mlsGroupId: ${mlsGroupId.copyBytes().encodeBase64()}")
-
-        publicKeys?.let { externalSenders ->
-            logger.info("creating CC conversation")
-            // verify if conversation exists?
-            cryptoClient.createConversation(
-                groupId = mlsGroupId,
-                externalSenders = externalSenders
-            )
-
-            // logger.info("commiting pending proposals")
-            // cryptoClient.commitPendingProposals(mlsGroupId)
-
-            // Adds self user to list of userIds
-            val users = listOf(
-                userId,
-                QualifiedId(
-                    id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
-                    domain = System.getenv("WIRE_SDK_ENVIRONMENT")
-                )
-            )
-            logger.info("users: ${users.size}")
-
-            val claimedKeyPackages: List<ByteArray> = claimKeyPackages(
-                userIds = users,
-                cipherSuiteCode = cipherSuiteCode
-            )
-            logger.info("claimed key packages -> $claimedKeyPackages")
-            claimedKeyPackages.forEach {
-                logger.info("keyPackage : " + it.encodeBase64())
-            }
-            logger.info("keyPackage : end")
-
-            cryptoClient.addMemberToMlsConversation(
-                mlsGroupId = mlsGroupId,
-                keyPackages = claimedKeyPackages.map { keyPackage ->
-                    keyPackage.toMLSKeyPackage()
-                }
-            )
-            logger.info("added members to conversation")
+    private companion object {
+        enum class ConversationType {
+            ONE_TO_ONE,
+            GROUP,
+            CHANNEL
         }
-
-        val conversationId = conversation.id
-        logger.info("OneToOne Conversation created with ID: $conversationId")
-        return conversationId
     }
 }

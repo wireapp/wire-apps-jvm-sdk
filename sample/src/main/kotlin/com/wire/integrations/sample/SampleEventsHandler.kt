@@ -36,10 +36,6 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             // Expected message: `create-one2one [USER_ID] [DOMAIN]
             val split = wireMessage.text.split(" ")
 
-            logger.info("split[0] -> ${split[0]}")
-            logger.info("split[1] -> ${split[1]}")
-            logger.info("split[2] -> ${split[2]}")
-
             manager.createOneToOneConversation(
                 userId = QualifiedId(
                     id = UUID.fromString(split[1]),

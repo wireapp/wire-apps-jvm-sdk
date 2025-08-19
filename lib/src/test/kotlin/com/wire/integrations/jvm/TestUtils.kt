@@ -145,7 +145,7 @@ object TestUtils {
     private const val API_TOKEN = "dummyToken"
     private const val API_HOST = "http://localhost:8086"
     const val CRYPTOGRAPHY_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH"
-    private val MLS_PUBLIC_KEYS_RESPONSE =
+    val MLS_PUBLIC_KEYS_RESPONSE =
         """
             {
                 "removal": {
