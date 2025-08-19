@@ -58,7 +58,7 @@ dependencies {
 
 ### Maven
 ```xml
-<dependency>persistence
+<dependency>
     <groupId>com.wire</groupId>
     <artifactId>wire-apps-jvm-sdk</artifactId>
     <version>0.0.1</version>
