@@ -444,7 +444,7 @@ internal class BackendClientDemo(
             System.getenv("WIRE_SDK_PASSWORD") ?: "Aqa123456!"
 
         val DEMO_ENVIRONMENT: String =
-            System.getenv("WIRE_SDK_ENVIRONMENT") ?: "chala.wire.link"
+            System.getenv("WIRE_SDK_ENVIRONMENT") ?: "staging.zinfra.io"
     }
 }
 
