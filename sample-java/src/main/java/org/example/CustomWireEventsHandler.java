@@ -17,35 +17,31 @@
 package org.example;
 
 import com.wire.integrations.jvm.WireEventsHandlerDefault;
+import com.wire.integrations.jvm.model.QualifiedId;
 import com.wire.integrations.jvm.model.WireMessage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomWireEventsHandler.class);
-    private ChatService chatService = null;
-
-    // We have this method just because Application Manager is lazy-loaded.
-    private ChatService getChatService() {
-        if (chatService == null) {
-            chatService = new ChatService(getManager());
-        }
-        return chatService;
-    }
 
     @Override
     public void onMessage(@NotNull WireMessage.Text wireMessage) {
         logger.info("Message received. conversationId:{}", wireMessage.conversationId());
 
-        getChatService().sendReply(
+        final WireMessage reply = WireMessage.Text.createReply(
                 wireMessage.conversationId(),
-                wireMessage.text() + " -- Sent from the Custom App (Java)",
+                wireMessage.text() + " -- Sent from the Sample-Java App",
                 wireMessage.mentions(),
                 wireMessage.linkPreviews(),
-                wireMessage
-        );
-    }
+                wireMessage,
+                null);
 
+        getManager().sendMessage(reply);
+        logger.info("Reply sent. conversationId:{}", wireMessage.conversationId());
+    }
 }
