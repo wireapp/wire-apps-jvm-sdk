@@ -45,7 +45,7 @@ fun main() {
         id = UUID.fromString("2afce87f-3195-4c51-9e7c-3b01faf13ac5"),
         domain = "staging.zinfra.io"
     )
-     logger.info(applicationManager.getUser(selfUser).toString())
+    logger.info(applicationManager.getUser(selfUser).toString())
     logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
 
     // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C

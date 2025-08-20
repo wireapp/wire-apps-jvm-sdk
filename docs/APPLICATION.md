@@ -122,7 +122,7 @@ class MyWireEventsHandler : WireEventsHandlerDefault() {
 }
 ```
 
-**NOTE**: Your application can simply call `startListening()` and a new thread is created and will keep the Application running and receiving events. To stop it, just close the Application (Cmd+d) or call `stopListening()`
+**NOTE**: Your application can simply call `startListening()` and a new thread is created and will keep the Application running and receiving events. To stop it, just close the Application (Ctrl+C/Cmd+C) or call `stopListening()`
 
 ## Sending Messages
 
