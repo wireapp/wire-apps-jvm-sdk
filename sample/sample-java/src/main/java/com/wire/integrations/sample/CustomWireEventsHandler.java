@@ -14,16 +14,13 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package org.example;
+package com.wire.integrations.sample;
 
 import com.wire.integrations.jvm.WireEventsHandlerDefault;
-import com.wire.integrations.jvm.model.QualifiedId;
 import com.wire.integrations.jvm.model.WireMessage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
