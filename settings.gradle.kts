@@ -19,4 +19,4 @@ plugins {
 }
 
 rootProject.name = "wire-apps-jvm-sdk"
-include("lib", "sample")
+include("lib", "sample", "sample-java")
