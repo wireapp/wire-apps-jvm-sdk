@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package org.example;
+package com.wire.integrations.sample;
 
 import com.wire.integrations.jvm.WireEventsHandlerDefault;
 import com.wire.integrations.jvm.model.WireMessage;
