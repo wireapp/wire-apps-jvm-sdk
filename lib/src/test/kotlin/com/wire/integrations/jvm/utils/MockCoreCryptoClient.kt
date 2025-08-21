@@ -126,10 +126,6 @@ internal class MockCoreCryptoClient private constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun commitPendingProposals(mlsGroupId: MLSGroupId) {
-        TODO("Not yet implemented")
-    }
-
     override suspend fun updateKeyingMaterial(mlsGroupId: MLSGroupId) {
         TODO("Not yet implemented")
     }

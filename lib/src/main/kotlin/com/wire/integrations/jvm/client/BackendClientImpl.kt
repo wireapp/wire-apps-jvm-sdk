@@ -33,6 +33,7 @@ import com.wire.integrations.jvm.model.http.conversation.ClaimedKeyPackageList
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
+import com.wire.integrations.jvm.model.http.conversation.OneToOneConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -158,6 +159,12 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     override suspend fun createGroupConversation(
         createConversationRequest: CreateConversationRequest
     ): ConversationResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getOneToOneConversation(
+        userId: QualifiedId
+    ): OneToOneConversationResponse {
         TODO("Not yet implemented")
     }
 }

@@ -31,6 +31,7 @@ import com.wire.integrations.jvm.model.http.conversation.ClaimedKeyPackageList
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
+import com.wire.integrations.jvm.model.http.conversation.OneToOneConversationResponse
 import com.wire.integrations.jvm.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import java.util.UUID
@@ -92,6 +93,8 @@ interface BackendClient {
     suspend fun createGroupConversation(
         createConversationRequest: CreateConversationRequest
     ): ConversationResponse
+
+    suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 
     companion object {
         const val API_VERSION = "v9"

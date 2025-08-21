@@ -168,12 +168,6 @@ internal class CoreCryptoClient private constructor(
         }
     }
 
-    override suspend fun commitPendingProposals(mlsGroupId: MLSGroupId) {
-        coreCrypto.transaction {
-            it.commitPendingProposals(mlsGroupId)
-        }
-    }
-
     override suspend fun updateKeyingMaterial(mlsGroupId: MLSGroupId) {
         coreCrypto.transaction {
             it.updateKeyingMaterial(mlsGroupId)

@@ -18,6 +18,7 @@ package com.wire.integrations.jvm.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.wire.crypto.toGroupId
 import com.wire.integrations.jvm.TestUtils
 import com.wire.integrations.jvm.TestUtils.V
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
@@ -25,9 +26,8 @@ import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
-import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.MLS_GROUP_ID
-import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64
 import io.ktor.http.HttpStatusCode
+import java.util.Base64
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test
 
 class WireApplicationManagerTest {
     @Test
-    fun whenCreatingConversationIsHandledSuccessfullyThenReturnsConversationId() =
+    fun whenCreatingGroupConversationIsHandledSuccessfullyThenReturnsConversationId() =
         runTest {
             // Given
             TestUtils.setupWireMockStubs(wireMockServer)
@@ -52,7 +52,7 @@ class WireApplicationManagerTest {
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
-                        CREATE_CONVERSATION_RESPONSE,
+                        CREATE_GROUP_CONVERSATION_RESPONSE,
                         HttpStatusCode.Created.value
                     )
                 )
@@ -94,7 +94,76 @@ class WireApplicationManagerTest {
                 CONVERSATION_ID.id,
                 result.id
             )
-            assertTrue(cryptoClient.conversationExists(MLS_GROUP_ID))
+            assertTrue(
+                cryptoClient.conversationExists(
+                    GROUP_CONVERSATION_MLS_GROUP_ID
+                )
+            )
+        }
+
+    @Test
+    fun whenCreatingOneToOneConversationIsHandledSuccessfullyThenReturnsConversationId() =
+        runTest {
+            // Given
+            TestUtils.setupWireMockStubs(wireMockServer)
+            val eventsHandler = object : WireEventsHandlerSuspending() {}
+            TestUtils.setupSdk(eventsHandler)
+
+            wireMockServer.stubFor(
+                WireMock.get(
+                    WireMock.urlPathTemplate(
+                        "/$V/one2one-conversations/${USER_2.domain}/${USER_2.id}"
+                    )
+                ).willReturn(
+                    WireMock.jsonResponse(
+                        CREATE_ONE_TO_ONE_CONVERSATION_RESPONSE,
+                        HttpStatusCode.Created.value
+                    )
+                )
+            )
+
+            val user1Id = System.getenv("WIRE_SDK_USER_ID")
+            val user1Domain = System.getenv("WIRE_SDK_ENVIRONMENT")
+
+            wireMockServer.stubFor(
+                WireMock.post(
+                    WireMock.urlPathTemplate(
+                        "/$V/mls/key-packages/claim/$user1Domain/$user1Id"
+                    )
+                ).willReturn(
+                    WireMock.okJson(
+                        getDynamicKeyPackageClaimedUser(user1Id)
+                    )
+                )
+            )
+            wireMockServer.stubFor(
+                WireMock.post(
+                    WireMock.urlPathTemplate(
+                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                    )
+                ).willReturn(
+                    WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
+                )
+            )
+
+            val manager = IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
+            val cryptoClient = IsolatedKoinContext.koinApp.koin.get<CryptoClient>()
+
+            // when
+            val result = manager.createOneToOneConversation(
+                userId = USER_2
+            )
+
+            // then
+            assertEquals(
+                CONVERSATION_ID.id,
+                result.id
+            )
+            assertTrue(
+                cryptoClient.conversationExists(
+                    ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID
+                )
+            )
         }
 
     companion object {
@@ -117,7 +186,15 @@ class WireApplicationManagerTest {
             domain = DOMAIN
         )
 
-        private val CREATE_CONVERSATION_RESPONSE =
+        val GROUP_CONVERSATION_MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
+        val GROUP_CONVERSATION_MLS_GROUP_ID_BASE64 =
+            Base64.getEncoder().encodeToString(GROUP_CONVERSATION_MLS_GROUP_ID.copyBytes())
+
+        val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
+        val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64 =
+            Base64.getEncoder().encodeToString(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID.copyBytes())
+
+        private val CREATE_GROUP_CONVERSATION_RESPONSE =
             """
             {
                 "qualified_id": {
@@ -129,9 +206,37 @@ class WireApplicationManagerTest {
                 "members": {
                     "others": []
                 },
-                "group_id": "$MLS_GROUP_ID_BASE64",
+                "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
                 "type": 0
+            }
+            """.trimIndent()
+
+        private val CREATE_ONE_TO_ONE_CONVERSATION_RESPONSE =
+            """
+            {
+                "conversation": {
+                    "qualified_id": {
+                        "id": "${CONVERSATION_ID.id}",
+                        "domain": "${CONVERSATION_ID.domain}"
+                    },
+                    "name": "Test conversation",
+                    "epoch": 0,
+                    "members": {
+                        "others": []
+                    },
+                    "group_id": "$ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64",
+                    "team": "${TEAM_ID.value}",
+                    "type": 0
+                },
+                "public_keys": {
+                    "removal": {
+                        "ecdsa_secp256r1_sha256": "BGBbuHvwWYBrTru7sFzzcK/oT9XVzGkdNv/6iBHNtEo9QVDmYKbtW2FA+f+iNoOBgvhjp6mYQKmypa+z63u5/Qs=",
+                        "ecdsa_secp384r1_sha384": "BMW56MVt4zR1oCHv40t/Q9VDqMBPsetBzESkCY3lXhyQmEMaJRO293D4v94qTrSwSFNHG9859anU03OtQo2CXz5Tsgr2HTL7cNBpGWrROPSmS+dx/mKx4sugHn2zakM9hA==",
+                        "ecdsa_secp521r1_sha512": "BACrVVw3tK68GL8F7FP05mUp5y2zSV5eofS48BVoYNLdcNOBlKokO0f3mtGqLEiKPbgVncKeMskaZap2wL/kc1v/1wFCBdoSx5lS+efz1Fe3sx+lwjuhwkGW891lsjpbXzdkWGsM0yHY83DCgGT3XGaITURmL4I+EqEiMqtgi4VWo26+Nw==",
+                        "ed25519": "3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw="
+                    }
+                }
             }
             """.trimIndent()
 
@@ -142,15 +247,32 @@ class WireApplicationManagerTest {
             }
             """.trimIndent()
 
+        private fun getDynamicKeyPackageClaimedUser(userId: String): String =
+            """
+            {
+                "key_packages": [
+                    {
+                        "client": "a0991ebb1935c08",
+                        "domain": "wire.com",
+                        "key_package": "AAEAASCVE6WPHxIa8Vft67p+n3ddwPttze/srwh88h3T9kBbKSAjQQ6esCwjBIVnF03H/AP0RM1qdR5hoOUwG7xFzt3OOSAGIwGQeRsCW2OOW0S+H0++tAr8P6E3qrSqoTg+UKTo9gABQEQ5ZjU0ZDEzNC02NDZlLTQ3NGYtYmQwYS1jYTg3MDJhZDZlNDA6YTA5OTFlYmIxOTM1YzA5QGNoYWxhLndpcmUubGluawIAAQoAAQACAAMABwAFAAAEAAEAAgEAAAAAaHjXmgAAAABo56OqAEBAb7RP7rdbTlHxfMma8JV1iv8JAtJYMwnnrtYzo9LLkUqZSFN7+mcMkMN6qjRbY4lpWZ9TDMTqWqciVSUTyYlAAgBAQMR5ag9/BRA4CQCOQYMQQ2jd6jRwjaWO0qZ9ShDhcJDMuZ0HQasVtbTVVylVWoUwxPaSorWLPuQ9TUpkA2w46gc=",
+                        "key_package_ref": "RGQI8whr1iZI+LDdHGU1Ulaq4FIfSVBAompRGMBzvb0=",
+                        "user": "$userId"
+                    }
+                ]
+            }
+            """.trimIndent()
+
         private val MLS_KEYPACKAGE_CLAIMED_USER_2 =
             """
             {
                 "key_packages": [
-                    "client": "a0991ebb1935c09",
-                    "domain": "wire.com",
-                    "key_package": "AAEAASCVE6WPHxIa8Vft67p+n3ddwPttze/srwh88h3T9kBbKSAjQQ6esCwjBIVnF03H/AP0RM1qdR5hoOUwG7xFzt3OOSAGIwGQeRsCW2OOW0S+H0++tAr8P6E3qrSqoTg+UKTo9gABQEQ5ZjU0ZDEzNC02NDZlLTQ3NGYtYmQwYS1jYTg3MDJhZDZlNDA6YTA5OTFlYmIxOTM1YzA5QGNoYWxhLndpcmUubGluawIAAQoAAQACAAMABwAFAAAEAAEAAgEAAAAAaHjXmgAAAABo56OqAEBAb7RP7rdbTlHxfMma8JV1iv8JAtJYMwnnrtYzo9LLkUqZSFN7+mcMkMN6qjRbY4lpWZ9TDMTqWqciVSUTyYlAAgBAQMR5ag9/BRA4CQCOQYMQQ2jd6jRwjaWO0qZ9ShDhcJDMuZ0HQasVtbTVVylVWoUwxPaSorWLPuQ9TUpkA2w46gc=",
-                    "key_package_ref": "RGQI8whr1iZI+LDdHGU1Ulaq4FIfSVBAompRGMBzvb0=",
-                    "user": "${USER_2.id}"
+                    {
+                        "client": "a0991ebb1935c09",
+                        "domain": "wire.com",
+                        "key_package": "AAEAASCVE6WPHxIa8Vft67p+n3ddwPttze/srwh88h3T9kBbKSAjQQ6esCwjBIVnF03H/AP0RM1qdR5hoOUwG7xFzt3OOSAGIwGQeRsCW2OOW0S+H0++tAr8P6E3qrSqoTg+UKTo9gABQEQ5ZjU0ZDEzNC02NDZlLTQ3NGYtYmQwYS1jYTg3MDJhZDZlNDA6YTA5OTFlYmIxOTM1YzA5QGNoYWxhLndpcmUubGluawIAAQoAAQACAAMABwAFAAAEAAEAAgEAAAAAaHjXmgAAAABo56OqAEBAb7RP7rdbTlHxfMma8JV1iv8JAtJYMwnnrtYzo9LLkUqZSFN7+mcMkMN6qjRbY4lpWZ9TDMTqWqciVSUTyYlAAgBAQMR5ag9/BRA4CQCOQYMQQ2jd6jRwjaWO0qZ9ShDhcJDMuZ0HQasVtbTVVylVWoUwxPaSorWLPuQ9TUpkA2w46gc=",
+                        "key_package_ref": "RGQI8whr1iZI+LDdHGU1Ulaq4FIfSVBAompRGMBzvb0=",
+                        "user": "${USER_2.id}"
+                    }
                 ]
             }
             """.trimIndent()

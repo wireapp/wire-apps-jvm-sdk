@@ -56,6 +56,14 @@ data class ConversationResponse(
 }
 
 @Serializable
+data class OneToOneConversationResponse(
+    @SerialName("public_keys")
+    val publicKeys: MlsPublicKeysResponse? = null,
+    @SerialName("conversation")
+    val conversation: ConversationResponse
+)
+
+@Serializable
 data class ConversationMembers(
     @SerialName("others")
     val others: List<ConversationMemberOther>

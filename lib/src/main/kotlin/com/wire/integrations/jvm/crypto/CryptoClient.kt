@@ -77,8 +77,6 @@ internal interface CryptoClient : AutoCloseable {
         externalSenders: ByteArray
     )
 
-    suspend fun commitPendingProposals(mlsGroupId: MLSGroupId)
-
     suspend fun updateKeyingMaterial(mlsGroupId: MLSGroupId)
 
     /**

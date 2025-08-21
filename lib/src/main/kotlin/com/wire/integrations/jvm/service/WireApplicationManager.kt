@@ -365,4 +365,12 @@ class WireApplicationManager internal constructor(
             name = name,
             userIds = userIds
         )
+
+    fun createOneToOneConversation(userId: QualifiedId) =
+        runBlocking {
+            createOneToOneConversationSuspending(userId = userId)
+        }
+
+    suspend fun createOneToOneConversationSuspending(userId: QualifiedId) =
+        conversationService.createOneToOne(userId = userId)
 }
