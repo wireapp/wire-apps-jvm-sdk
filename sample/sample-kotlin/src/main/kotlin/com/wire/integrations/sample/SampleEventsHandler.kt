@@ -32,92 +32,28 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     override suspend fun onMessage(wireMessage: WireMessage.Text) {
         logger.info("Received Text Message : $wireMessage")
 
-        if (wireMessage.text.contains("create-one2one")) {
-            // Expected message: `create-one2one [USER_ID] [DOMAIN]
-            val split = wireMessage.text.split(" ")
-
-            manager.createOneToOneConversation(
-                userId = QualifiedId(
-                    id = UUID.fromString(split[1]),
-                    domain = split[2]
-                )
-            )
-
+        if (isCreateOneToOneConversation(text = wireMessage.text)) {
+            processCreateOneToOneConversation(wireMessage = wireMessage)
             return
         }
 
-        if (wireMessage.text.contains("create-conversation")) {
-            // Expected message: `create-conversation [NAME] [USER_ID] [DOMAIN]`
-            val split = wireMessage.text.split(" ")
-
-            logger.info("conversation_name: ${split[1]}")
-            manager.createGroupConversation(
-                name = split[1],
-                userIds = listOf(
-                    QualifiedId(
-                        id = UUID.fromString(split[2]),
-                        domain = split[3]
-                    )
-                )
-            )
-
+        if (isCreateGroupConversation(text = wireMessage.text)) {
+            processCreateGroupConversation(wireMessage = wireMessage)
             return
         }
 
-        if (wireMessage.text.contains("asset-image")) {
-            val resourcePath = javaClass.classLoader.getResource("banana-icon.png")?.path
-                ?: throw IllegalStateException("Test resource 'banana-icon.png' not found")
-            val asset = File(resourcePath)
-            val originalData = asset.readBytes()
-
-            manager.sendAssetSuspending(
-                conversationId = wireMessage.conversationId,
-                asset = AssetResource(originalData),
-                name = asset.name,
-                mimeType = "image/png",
-                retention = AssetRetention.VOLATILE
-            )
-
+        if (isAssetImage(text = wireMessage.text)) {
+            processAssetImage(wireMessage = wireMessage)
             return
         }
 
-        if (wireMessage.text.contains("asset-audio")) {
-            val resourcePath = javaClass.classLoader.getResource("sample_audio_6s.mp3")?.path
-                ?: throw IllegalStateException("Test resource 'sample_audio_6s.mp3' not found")
-            val asset = File(resourcePath)
-            val originalData = asset.readBytes()
-
-            manager.sendAssetSuspending(
-                conversationId = wireMessage.conversationId,
-                asset = AssetResource(originalData),
-                metadata = getSampleAudioMetadata(),
-                name = asset.name,
-                mimeType = "audio/mp3",
-                retention = AssetRetention.VOLATILE
-            )
-
+        if (isAssetAudio(text = wireMessage.text)) {
+            processAssetAudio(wireMessage = wireMessage)
             return
         }
 
-        if (wireMessage.text.contains("asset-video")) {
-            val resourcePath = javaClass.classLoader.getResource("sample_video_5s.mp4")?.path
-                ?: throw IllegalStateException("Test resource 'sample_video_5s.mp4' not found")
-            val asset = File(resourcePath)
-            val originalData = asset.readBytes()
-
-            manager.sendAssetSuspending(
-                conversationId = wireMessage.conversationId,
-                asset = AssetResource(originalData),
-                metadata = AssetMetadata.Video(
-                    width = 1920,
-                    height = 1080,
-                    durationMs = 6000L
-                ),
-                name = asset.name,
-                mimeType = "video/mp4",
-                retention = AssetRetention.VOLATILE
-            )
-
+        if (isAssetVideo(text = wireMessage.text)) {
+            processAssetVideo(wireMessage = wireMessage)
             return
         }
 
@@ -241,6 +177,100 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         return AssetMetadata.Audio(
             durationMs = 6000L,
             normalizedLoudness = Base64.getDecoder().decode(base64Loudness)
+        )
+    }
+
+    private fun isCreateOneToOneConversation(text: String): Boolean =
+        text.contains("create-one2one-conversation")
+
+    private fun isCreateGroupConversation(text: String): Boolean =
+        text.contains("create-group-conversation")
+
+    private fun isAssetImage(text: String): Boolean =
+        text.contains("asset-image")
+
+    private fun isAssetAudio(text: String): Boolean =
+        text.contains("asset-audio")
+
+    private fun isAssetVideo(text: String): Boolean =
+        text.contains("asset-video")
+
+    private fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
+        // Expected message: `create-one2one [USER_ID] [DOMAIN]
+        val split = wireMessage.text.split(" ")
+
+        manager.createOneToOneConversation(
+            userId = QualifiedId(
+                id = UUID.fromString(split[1]),
+                domain = split[2]
+            )
+        )
+    }
+
+    private fun processCreateGroupConversation(wireMessage: WireMessage.Text) {
+        // Expected message: `create-conversation [NAME] [USER_ID] [DOMAIN]`
+        val split = wireMessage.text.split(" ")
+
+        logger.info("conversation_name: ${split[1]}")
+        manager.createGroupConversation(
+            name = split[1],
+            userIds = listOf(
+                QualifiedId(
+                    id = UUID.fromString(split[2]),
+                    domain = split[3]
+                )
+            )
+        )
+    }
+
+    private suspend fun processAssetImage(wireMessage: WireMessage.Text) {
+        val resourcePath = javaClass.classLoader.getResource("banana-icon.png")?.path
+            ?: throw IllegalStateException("Test resource 'banana-icon.png' not found")
+        val asset = File(resourcePath)
+        val originalData = asset.readBytes()
+
+        manager.sendAssetSuspending(
+            conversationId = wireMessage.conversationId,
+            asset = AssetResource(originalData),
+            name = asset.name,
+            mimeType = "image/png",
+            retention = AssetRetention.VOLATILE
+        )
+    }
+
+    private suspend fun processAssetAudio(wireMessage: WireMessage.Text) {
+        val resourcePath = javaClass.classLoader.getResource("sample_audio_6s.mp3")?.path
+            ?: throw IllegalStateException("Test resource 'sample_audio_6s.mp3' not found")
+        val asset = File(resourcePath)
+        val originalData = asset.readBytes()
+
+        manager.sendAssetSuspending(
+            conversationId = wireMessage.conversationId,
+            asset = AssetResource(originalData),
+            metadata = getSampleAudioMetadata(),
+            name = asset.name,
+            mimeType = "audio/mp3",
+            retention = AssetRetention.VOLATILE
+        )
+    }
+
+    private suspend fun processAssetVideo(wireMessage: WireMessage.Text) {
+        val resourcePath = javaClass.classLoader.getResource("sample_video_5s.mp4")?.path
+            ?: throw IllegalStateException("Test resource 'sample_video_5s.mp4' not found")
+        val asset = File(resourcePath)
+        val originalData = asset.readBytes()
+
+        manager.sendAssetSuspending(
+            conversationId = wireMessage.conversationId,
+            asset = AssetResource(originalData),
+            metadata = AssetMetadata.Video(
+                width = 1920,
+                height = 1080,
+                durationMs = 6000L
+            ),
+            name = asset.name,
+            mimeType = "video/mp4",
+            retention = AssetRetention.VOLATILE
         )
     }
 }
