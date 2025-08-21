@@ -19,4 +19,10 @@ plugins {
 }
 
 rootProject.name = "wire-apps-jvm-sdk"
-include("lib", "sample")
+include("lib")
+
+include(":sample-kotlin")
+include(":sample-java")
+
+project(":sample-kotlin").projectDir = file("sample/sample-kotlin")
+project(":sample-java").projectDir = file("sample/sample-java")
