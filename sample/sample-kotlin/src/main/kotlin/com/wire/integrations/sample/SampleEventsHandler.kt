@@ -196,7 +196,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         text.contains("asset-video")
 
     private fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `create-one2one [USER_ID] [DOMAIN]
+        // Expected message: `create-one2one-conversation [USER_ID] [DOMAIN]
         val split = wireMessage.text.split(" ")
 
         manager.createOneToOneConversation(
@@ -208,7 +208,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     private fun processCreateGroupConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `create-conversation [NAME] [USER_ID] [DOMAIN]`
+        // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
         val split = wireMessage.text.split(" ")
 
         logger.info("conversation_name: ${split[1]}")

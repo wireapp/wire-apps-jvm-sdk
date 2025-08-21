@@ -16,6 +16,7 @@
 
 package com.wire.integrations.jvm.service.conversation
 
+import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupId
 import com.wire.crypto.toMLSKeyPackage
@@ -59,11 +60,12 @@ internal class ConversationService internal constructor(
             )
         )
 
+        val mlsGroupId = conversationResponse.groupId.decodeBase64Bytes().toGroupId()
         val publicKeysResponse = conversationResponse.publicKeys ?: backendClient.getPublicKeys()
 
         createConversation(
             userIds = userIds,
-            groupId = conversationResponse.groupId,
+            mlsGroupId = mlsGroupId,
             publicKeysResponse = publicKeysResponse,
             type = ConversationType.GROUP
         )
@@ -83,10 +85,11 @@ internal class ConversationService internal constructor(
     suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
         val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
         val conversation = oneToOneConversationResponse.conversation
+        val mlsGroupId = conversation.groupId.decodeBase64Bytes().toGroupId()
 
         createConversation(
             userIds = listOf(userId),
-            groupId = conversation.groupId,
+            mlsGroupId = mlsGroupId,
             publicKeysResponse = oneToOneConversationResponse.publicKeys,
             type = ConversationType.ONE_TO_ONE
         )
@@ -98,14 +101,13 @@ internal class ConversationService internal constructor(
 
     private suspend fun createConversation(
         userIds: List<QualifiedId>,
-        groupId: String,
+        mlsGroupId: MLSGroupId,
         publicKeysResponse: MlsPublicKeysResponse?,
         type: ConversationType
     ) {
         val cipherSuiteCode = getCipherSuiteCode()
         val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
-        val mlsGroupId = groupId.decodeBase64Bytes().toGroupId()
         val publicKeys = publicKeysResponse?.getRemovalKey(cipherSuite = cipherSuite)
 
         publicKeys?.let { externalSenders ->
@@ -183,8 +185,23 @@ internal class ConversationService internal constructor(
 
     private companion object {
         enum class ConversationType {
+            /**
+             * Conversation is between two Users
+             */
             ONE_TO_ONE,
+
+            /**
+             * Conversation is between two or more Users
+             * - Up to 500 Users
+             */
             GROUP,
+
+            /**
+             * Almost the same as a Group Conversation but with extra perks:
+             * - Public or Private (If public, can be found by other users outside the channel)
+             * - History
+             * - Currently up to 2000 Users
+             */
             CHANNEL
         }
     }

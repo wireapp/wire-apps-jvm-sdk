@@ -65,6 +65,14 @@ dependencies {
 </dependency>
 ```
 
+## Environment Variables
+```dotenv
+WIRE_SDK_USER_ID=abcd-1234-efgh-5678
+WIRE_SDK_EMAIL=your_email@domain.com
+WIRE_SDK_PASSWORD=randomPassword
+WIRE_SDK_ENVIRONMENT=my.domain.link
+```
+
 ## Build the project
 
 ```shell
