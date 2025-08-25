@@ -19,6 +19,7 @@ package com.wire.integrations.sample
 import com.wire.integrations.jvm.WireEventsHandlerSuspending
 import com.wire.integrations.jvm.model.AssetResource
 import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.WireMessage.Asset.AssetMetadata
 import com.wire.integrations.jvm.model.asset.AssetRetention
@@ -39,6 +40,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         if (isCreateGroupConversation(text = wireMessage.text)) {
             processCreateGroupConversation(wireMessage = wireMessage)
+            return
+        }
+
+        if (isCreateChannelConversation(text = wireMessage.text)) {
+            processCreateChannelConversation(wireMessage = wireMessage)
             return
         }
 
@@ -186,6 +192,9 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     private fun isCreateGroupConversation(text: String): Boolean =
         text.contains("create-group-conversation")
 
+    private fun isCreateChannelConversation(text: String): Boolean =
+        text.contains("create-channel-conversation")
+
     private fun isAssetImage(text: String): Boolean =
         text.contains("asset-image")
 
@@ -211,7 +220,6 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
         val split = wireMessage.text.split(" ")
 
-        logger.info("conversation_name: ${split[1]}")
         manager.createGroupConversation(
             name = split[1],
             userIds = listOf(
@@ -220,6 +228,21 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
                     domain = split[3]
                 )
             )
+        )
+    }
+
+    private fun processCreateChannelConversation(wireMessage: WireMessage.Text) {
+        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN]`
+        val split = wireMessage.text.split(" ")
+        manager.createChannelConversation(
+            name = split[1],
+            userIds = listOf(
+                QualifiedId(
+                    id = UUID.fromString(split[2]),
+                    domain = split[3]
+                )
+            ),
+            teamId = TeamId(value = UUID.fromString("86fdb92f-76b8-4548-8f21-6e3fd3f5f449"))
         )
     }
 
