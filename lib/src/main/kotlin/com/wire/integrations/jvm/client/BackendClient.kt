@@ -97,6 +97,6 @@ interface BackendClient {
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 
     companion object {
-        const val API_VERSION = "v9"
+        const val API_VERSION = "v10"
     }
 }

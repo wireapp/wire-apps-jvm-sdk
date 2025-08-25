@@ -347,16 +347,29 @@ class WireApplicationManager internal constructor(
     suspend fun getUserSuspending(userId: QualifiedId): UserResponse =
         backendClient.getUserData(userId)
 
+    /**
+     * Creates a Group Conversation where currently the only admin is the App
+     *
+     * @param name Name of the created conversation
+     * @param userIds List of QualifiedId of all the users to be added to the conversation
+     * (excluding the App user)
+     *
+     * @return QualifiedId The Id of the created conversation
+     */
     fun createGroupConversation(
         name: String,
         userIds: List<QualifiedId>
-    ) = runBlocking {
-        createGroupConversationSuspending(
-            name = name,
-            userIds = userIds
-        )
-    }
+    ): QualifiedId =
+        runBlocking {
+            createGroupConversationSuspending(
+                name = name,
+                userIds = userIds
+            )
+        }
 
+    /**
+     * See [createGroupConversation]
+     */
     suspend fun createGroupConversationSuspending(
         name: String,
         userIds: List<QualifiedId>
@@ -366,11 +379,58 @@ class WireApplicationManager internal constructor(
             userIds = userIds
         )
 
-    fun createOneToOneConversation(userId: QualifiedId) =
+    /**
+     * Creates a One To One Conversation with a user starting from the App
+     *
+     * @param userId QualifiedId of the user the App will create the conversation with
+     *
+     * @return QualifiedId The Id of the created conversation
+     */
+    fun createOneToOneConversation(userId: QualifiedId): QualifiedId =
         runBlocking {
             createOneToOneConversationSuspending(userId = userId)
         }
 
-    suspend fun createOneToOneConversationSuspending(userId: QualifiedId) =
+    /**
+     * See [createOneToOneConversation]
+     */
+    suspend fun createOneToOneConversationSuspending(userId: QualifiedId): QualifiedId =
         conversationService.createOneToOne(userId = userId)
+
+    /**
+     * Creates a Channel Conversation where currently the only admin is the App and only the Admin
+     * can invite others to join.
+     *
+     * @param name Name of the created conversation
+     * @param userIds List of QualifiedId of all the users to be added to the conversation
+     * (excluding the App user)
+     *
+     * @return QualifiedId The Id of the created conversation
+     */
+    fun createChannelConversation(
+        name: String,
+        userIds: List<QualifiedId>,
+        teamId: TeamId
+    ): QualifiedId =
+        runBlocking {
+            createChannelConversationSuspending(
+                name = name,
+                userIds = userIds,
+                teamId = teamId
+            )
+        }
+
+    /**
+     * See [createChannelConversation]
+     */
+    suspend fun createChannelConversationSuspending(
+        name: String,
+        userIds: List<QualifiedId>,
+        teamId: TeamId
+    ): QualifiedId =
+        conversationService.createChannel(
+            name = name,
+            userIds = userIds,
+            teamId = teamId
+        )
 }

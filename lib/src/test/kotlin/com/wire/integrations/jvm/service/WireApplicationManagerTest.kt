@@ -166,6 +166,71 @@ class WireApplicationManagerTest {
             )
         }
 
+    @Test
+    fun whenCreatingChannelConversationIsHandledSuccessfullyThenReturnsConversationId() =
+        runTest {
+            // Given
+            TestUtils.setupWireMockStubs(wireMockServer)
+            val eventsHandler = object : WireEventsHandlerSuspending() {}
+            TestUtils.setupSdk(eventsHandler)
+
+            wireMockServer.stubFor(
+                WireMock.post(
+                    WireMock.urlPathTemplate(
+                        "/$V/conversations"
+                    )
+                ).willReturn(
+                    WireMock.jsonResponse(
+                        CREATE_CHANNEL_CONVERSATION_RESPONSE,
+                        HttpStatusCode.Created.value
+                    )
+                )
+            )
+
+            wireMockServer.stubFor(
+                WireMock.post(
+                    WireMock.urlPathTemplate(
+                        "/$V/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
+                    )
+                ).willReturn(
+                    WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_1)
+                )
+            )
+            wireMockServer.stubFor(
+                WireMock.post(
+                    WireMock.urlPathTemplate(
+                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                    )
+                ).willReturn(
+                    WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
+                )
+            )
+
+            val manager = IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
+            val cryptoClient = IsolatedKoinContext.koinApp.koin.get<CryptoClient>()
+
+            // when
+            val result = manager.createChannelConversation(
+                name = CONVERSATION_NAME,
+                userIds = listOf(
+                    USER_1,
+                    USER_2
+                ),
+                teamId = TEAM_ID
+            )
+
+            // then
+            assertEquals(
+                CONVERSATION_ID.id,
+                result.id
+            )
+            assertTrue(
+                cryptoClient.conversationExists(
+                    CHANNEL_CONVERSATION_MLS_GROUP_ID
+                )
+            )
+        }
+
     companion object {
         private val wireMockServer = WireMockServer(8086)
 
@@ -194,6 +259,10 @@ class WireApplicationManagerTest {
         val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64 =
             Base64.getEncoder().encodeToString(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID.copyBytes())
 
+        val CHANNEL_CONVERSATION_MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
+        val CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64 =
+            Base64.getEncoder().encodeToString(CHANNEL_CONVERSATION_MLS_GROUP_ID.copyBytes())
+
         private val CREATE_GROUP_CONVERSATION_RESPONSE =
             """
             {
@@ -207,6 +276,24 @@ class WireApplicationManagerTest {
                     "others": []
                 },
                 "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
+                "team": "${TEAM_ID.value}",
+                "type": 0
+            }
+            """.trimIndent()
+
+        private val CREATE_CHANNEL_CONVERSATION_RESPONSE =
+            """
+            {
+                "qualified_id": {
+                    "id": "${CONVERSATION_ID.id}",
+                    "domain": "${CONVERSATION_ID.domain}"
+                },
+                "name": "Test conversation",
+                "epoch": 0,
+                "members": {
+                    "others": []
+                },
+                "group_id": "$CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
                 "type": 0
             }
