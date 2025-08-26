@@ -149,7 +149,7 @@ internal class MockCoreCryptoClient private constructor(
             userId: String,
             ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
         ): MockCoreCryptoClient {
-            val clientDirectoryPath = "cryptography/$userId"
+            val clientDirectoryPath = "storage/cryptography/$userId"
             val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
             val ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
 

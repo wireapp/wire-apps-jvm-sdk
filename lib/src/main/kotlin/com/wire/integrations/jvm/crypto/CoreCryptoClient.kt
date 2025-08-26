@@ -215,7 +215,7 @@ internal class CoreCryptoClient private constructor(
             userId: String,
             ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
         ): CoreCryptoClient {
-            val clientDirectoryPath = "cryptography/$userId"
+            val clientDirectoryPath = "storage/cryptography/$userId"
             val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
             val ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
 
