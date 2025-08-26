@@ -232,8 +232,9 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     private fun processCreateChannelConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN]`
+        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN] [TEAM_ID]`
         val split = wireMessage.text.split(" ")
+
         manager.createChannelConversation(
             name = split[1],
             userIds = listOf(
@@ -242,7 +243,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
                     domain = split[3]
                 )
             ),
-            teamId = TeamId(value = UUID.fromString("86fdb92f-76b8-4548-8f21-6e3fd3f5f449"))
+            teamId = TeamId(value = UUID.fromString(split[4]))
         )
     }
 

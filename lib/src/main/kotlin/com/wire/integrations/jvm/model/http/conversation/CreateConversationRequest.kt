@@ -33,7 +33,7 @@ data class CreateConversationRequest private constructor(
     @SerialName("access_role")
     val accessRole: List<ConversationAccessRole> = DEFAULT_ACCESS_ROLE_LIST,
     @SerialName("group_conv_type")
-    val groupConversationType: GroupConversationType? = GroupConversationType.REGULAR_GROUP,
+    val groupConversationType: GroupConversationType?,
     @SerialName("add_permission")
     val channelAddPermissionTypeDTO: ChannelAddPermissionType = ChannelAddPermissionType.ADMINS,
     @SerialName("team")
@@ -66,7 +66,8 @@ data class CreateConversationRequest private constructor(
 
         fun createGroup(name: String): CreateConversationRequest =
             CreateConversationRequest(
-                name = name
+                name = name,
+                groupConversationType = GroupConversationType.REGULAR_GROUP
             )
 
         fun createChannel(

@@ -181,6 +181,9 @@ internal class ConversationService internal constructor(
                 cipherSuiteCode = cipherSuiteCode
             )
 
+            // When its a Group or Channel conversation and there are no claimed key packages
+            // the conversation is created with only the creator user (App User in this case)
+            // and we need to update the keying material rather than adding members.
             if (type != ConversationType.ONE_TO_ONE && claimedKeyPackages.isEmpty()) {
                 cryptoClient.updateKeyingMaterial(mlsGroupId)
             } else {

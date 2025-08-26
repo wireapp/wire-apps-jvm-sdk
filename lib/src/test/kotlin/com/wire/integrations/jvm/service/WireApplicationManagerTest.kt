@@ -314,7 +314,7 @@ class WireApplicationManagerTest {
                     },
                     "group_id": "$ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",
-                    "type": 0
+                    "type": 1
                 },
                 "public_keys": {
                     "removal": {
