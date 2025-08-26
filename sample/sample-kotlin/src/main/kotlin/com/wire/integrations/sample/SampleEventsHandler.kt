@@ -63,6 +63,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             return
         }
 
+        if (isAssetPDFDocumentTestMessage(text = wireMessage.text)) {
+            replyWithSamplePDFDocument(wireMessage = wireMessage)
+            return
+        }
+
         // Sends an Ephemeral message if received message is Ephemeral
         wireMessage.expiresAfterMillis?.let {
             val ephemeralMessage = WireMessage.Text.create(
@@ -204,6 +209,9 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     private fun isAssetVideo(text: String): Boolean =
         text.contains("asset-video")
 
+    private fun isAssetPDFDocumentTestMessage(text: String): Boolean =
+        text.contains("asset-document-pdf")
+
     private fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
         // Expected message: `create-one2one-conversation [USER_ID] [DOMAIN]
         val split = wireMessage.text.split(" ")
@@ -294,6 +302,23 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             ),
             name = asset.name,
             mimeType = "video/mp4",
+            retention = AssetRetention.VOLATILE
+        )
+    }
+
+    private suspend fun replyWithSamplePDFDocument(wireMessage: WireMessage.Text) {
+        val fileName = "sample-pdf-1.pdf"
+        val resourcePath = javaClass.classLoader.getResource(fileName)?.path
+            ?: throw IllegalStateException("Test resource $fileName not found")
+        val asset = File(resourcePath)
+        val originalData = asset.readBytes()
+
+        manager.sendAssetSuspending(
+            conversationId = wireMessage.conversationId,
+            asset = AssetResource(originalData),
+            metadata = null,
+            name = asset.name,
+            mimeType = "application/pdf",
             retention = AssetRetention.VOLATILE
         )
     }
