@@ -18,7 +18,6 @@ package com.wire.integrations.jvm.service.conversation
 
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
-import com.wire.crypto.toGroupId
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
@@ -26,9 +25,11 @@ import com.wire.integrations.jvm.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
 import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.KeyPackage
 import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
+import com.wire.integrations.jvm.model.http.conversation.getDecodedMlsGroupId
 import com.wire.integrations.jvm.model.http.conversation.getRemovalKey
 import io.ktor.util.decodeBase64Bytes
 import java.util.UUID
@@ -54,14 +55,13 @@ internal class ConversationService internal constructor(
         name: String,
         userIds: List<QualifiedId>
     ): QualifiedId {
-        val conversationResponse = backendClient.createGroupConversation(
-            createConversationRequest = CreateConversationRequest.create(
-                name = name
-            )
+        val conversationCreatedResponse = backendClient.createGroupConversation(
+            createConversationRequest = CreateConversationRequest.createGroup(name = name)
         )
 
-        val mlsGroupId = conversationResponse.groupId.decodeBase64Bytes().toGroupId()
-        val publicKeysResponse = conversationResponse.publicKeys ?: backendClient.getPublicKeys()
+        val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
+        val publicKeysResponse = conversationCreatedResponse.publicKeys
+            ?: backendClient.getPublicKeys()
 
         createConversation(
             userIds = userIds,
@@ -70,9 +70,56 @@ internal class ConversationService internal constructor(
             type = ConversationType.GROUP
         )
 
-        val conversationId = conversationResponse.id
+        val conversationId = conversationCreatedResponse.id
         logger.info("Group Conversation created with ID: $conversationId")
         return conversationId
+    }
+
+    /**
+     * Creates a Channel Conversation where currently the only admin is the App
+     *
+     * @param name Name of the created conversation
+     * @param userIds List of QualifiedId of all the users to be added to the conversation
+     * (excluding the App user)
+     *
+     * @return QualifiedId The Id of the created conversation
+     */
+    suspend fun createChannel(
+        name: String,
+        userIds: List<QualifiedId>,
+        teamId: TeamId
+    ): QualifiedId {
+        try {
+            val conversationCreatedResponse = backendClient.createGroupConversation(
+                createConversationRequest = CreateConversationRequest.createChannel(
+                    name = name,
+                    teamId = teamId
+                )
+            )
+
+            val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
+            val publicKeysResponse =
+                conversationCreatedResponse.publicKeys ?: backendClient.getPublicKeys()
+
+            createConversation(
+                userIds = userIds,
+                mlsGroupId = mlsGroupId,
+                publicKeysResponse = publicKeysResponse,
+                type = ConversationType.CHANNEL
+            )
+
+            val conversationId = conversationCreatedResponse.id
+            logger.info("Channel Conversation created with ID: $conversationId")
+            return conversationId
+        } catch (exception: WireException.ClientError) {
+            if (exception.response.isOperationDenied()) {
+                throw WireException.Forbidden(
+                    message = "Insufficient Permissions to create Channel.",
+                    throwable = exception
+                )
+            }
+            throw exception
+        }
     }
 
     /**
@@ -85,7 +132,7 @@ internal class ConversationService internal constructor(
     suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
         val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
         val conversation = oneToOneConversationResponse.conversation
-        val mlsGroupId = conversation.groupId.decodeBase64Bytes().toGroupId()
+        val mlsGroupId = conversation.getDecodedMlsGroupId()
 
         createConversation(
             userIds = listOf(userId),
@@ -135,7 +182,10 @@ internal class ConversationService internal constructor(
                 cipherSuiteCode = cipherSuiteCode
             )
 
-            if (type == ConversationType.GROUP && claimedKeyPackages.isEmpty()) {
+            // When its a Group or Channel conversation and there are no claimed key packages
+            // the conversation is created with only the creator user (App User in this case)
+            // and we need to update the keying material rather than adding members.
+            if (type != ConversationType.ONE_TO_ONE && claimedKeyPackages.isEmpty()) {
                 cryptoClient.updateKeyingMaterial(mlsGroupId)
             } else {
                 cryptoClient.addMemberToMlsConversation(

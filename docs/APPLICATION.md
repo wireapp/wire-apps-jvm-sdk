@@ -232,9 +232,19 @@ val createdGroupConversationId = applicationManager.createGroupConversationSuspe
     )
 )
 
-// For One to One conversations you need to pass only the user whom the App will create the One to One conversation with.
+// For One to One Conversations you need to pass only the user whom the App will create the One to One conversation with.
 val createdOneToOneConversationId = applicationManager.createOneToOneConversationSuspending(
     userId = QualifiedId(otherUserId, otherUserDomain)
+)
+
+// Channel Conversations are similar to Group Conversations, with the difference of passing the Team Id.
+val createdChannelConversationId = applicationManager.createChannelConversationSuspending(
+    name = "Channel Name",
+    userIds = listOf(
+        QualifiedId(userId1, userDomain1),
+        QualifiedId(userId2, userDomain2)
+    ),
+    teamId = TeamId(value = UUID.fromString("my-team-id"))
 )
 ```
 

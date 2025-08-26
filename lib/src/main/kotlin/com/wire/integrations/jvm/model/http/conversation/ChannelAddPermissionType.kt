@@ -14,22 +14,22 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.model
+package com.wire.integrations.jvm.model.http.conversation
 
-import com.wire.integrations.jvm.exception.NetworkErrorLabel.MLS_STALE_MESSAGE
-import com.wire.integrations.jvm.exception.NetworkErrorLabel.TOO_MANY_CLIENTS
-import com.wire.integrations.jvm.exception.NetworkErrorLabel.OPERATION_DENIED
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class StandardError(
-    val code: Int,
-    val label: String,
-    val message: String
-) {
-    fun isMlsStaleMessage(): Boolean = (label == MLS_STALE_MESSAGE)
+enum class ChannelAddPermissionType {
+    /**
+     * Permission used when only Admins of the Channel (or Team) can join and add others
+     */
+    @SerialName("admins")
+    ADMINS,
 
-    fun isTooManyClients(): Boolean = (label == TOO_MANY_CLIENTS)
-
-    fun isOperationDenied(): Boolean = (label == OPERATION_DENIED)
+    /**
+     * Permission used when everyone can join and add others
+     */
+    @SerialName("everyone")
+    EVERYONE
 }

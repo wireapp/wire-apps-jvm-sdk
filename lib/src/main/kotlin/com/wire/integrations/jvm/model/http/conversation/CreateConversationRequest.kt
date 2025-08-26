@@ -18,6 +18,7 @@ package com.wire.integrations.jvm.model.http.conversation
 
 import com.wire.integrations.jvm.model.CryptoProtocol
 import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.model.TeamId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -32,7 +33,11 @@ data class CreateConversationRequest private constructor(
     @SerialName("access_role")
     val accessRole: List<ConversationAccessRole> = DEFAULT_ACCESS_ROLE_LIST,
     @SerialName("group_conv_type")
-    val groupConversationType: GroupConversationType? = GroupConversationType.REGULAR_GROUP,
+    val groupConversationType: GroupConversationType?,
+    @SerialName("add_permission")
+    val channelAddPermissionTypeDTO: ChannelAddPermissionType = ChannelAddPermissionType.ADMINS,
+    @SerialName("team")
+    val conversationTeamInfo: ConversationTeamInfo? = null,
     @SerialName("message_timer")
     val messageTimer: Long? = null,
     @SerialName("receipt_mode")
@@ -42,7 +47,9 @@ data class CreateConversationRequest private constructor(
     @SerialName("protocol")
     val protocol: CryptoProtocol = CryptoProtocol.MLS,
     @SerialName("cells")
-    val cellEnabled: Boolean = false
+    val cellEnabled: Boolean = false,
+    @SerialName("skip_creator")
+    val skipCreator: Boolean = false
 ) {
     companion object {
         const val DEFAULT_MEMBER_ROLE = "wire_member"
@@ -57,9 +64,23 @@ data class CreateConversationRequest private constructor(
             ConversationAccessRole.SERVICE
         )
 
-        fun create(name: String?): CreateConversationRequest =
+        fun createGroup(name: String): CreateConversationRequest =
             CreateConversationRequest(
-                name = name
+                name = name,
+                groupConversationType = GroupConversationType.REGULAR_GROUP
+            )
+
+        fun createChannel(
+            name: String,
+            teamId: TeamId
+        ): CreateConversationRequest =
+            CreateConversationRequest(
+                name = name,
+                groupConversationType = GroupConversationType.CHANNEL,
+                conversationTeamInfo = ConversationTeamInfo(
+                    managed = false,
+                    teamId = teamId.value.toString()
+                )
             )
     }
 }
