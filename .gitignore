@@ -8,6 +8,9 @@ build
 cryptography
 lib/cryptography
 
+# Ignore Storage directory
+storage
+
 # Ignore IntelliJ IDEA project files
 .idea
 *.iml
