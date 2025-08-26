@@ -18,7 +18,6 @@ package com.wire.integrations.jvm.service.conversation
 
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
-import com.wire.crypto.toGroupId
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
@@ -61,7 +60,8 @@ internal class ConversationService internal constructor(
         )
 
         val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
-        val publicKeysResponse = conversationCreatedResponse.publicKeys ?: backendClient.getPublicKeys()
+        val publicKeysResponse = conversationCreatedResponse.publicKeys
+            ?: backendClient.getPublicKeys()
 
         createConversation(
             userIds = userIds,
