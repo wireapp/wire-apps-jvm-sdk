@@ -16,8 +16,11 @@
 
 package com.wire.integrations.jvm.model.http.conversation
 
+import com.wire.crypto.MLSGroupId
+import com.wire.crypto.toGroupId
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.utils.UUIDSerializer
+import io.ktor.util.decodeBase64Bytes
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
@@ -54,6 +57,9 @@ data class ConversationResponse(
         ONE_TO_ONE
     }
 }
+
+fun ConversationResponse.getDecodedMlsGroupId(): MLSGroupId =
+    this.groupId.decodeBase64Bytes().toGroupId()
 
 @Serializable
 data class OneToOneConversationResponse(

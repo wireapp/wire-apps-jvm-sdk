@@ -30,6 +30,7 @@ import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.KeyPackage
 import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
+import com.wire.integrations.jvm.model.http.conversation.getDecodedMlsGroupId
 import com.wire.integrations.jvm.model.http.conversation.getRemovalKey
 import io.ktor.util.decodeBase64Bytes
 import java.util.UUID
@@ -55,12 +56,12 @@ internal class ConversationService internal constructor(
         name: String,
         userIds: List<QualifiedId>
     ): QualifiedId {
-        val conversationResponse = backendClient.createGroupConversation(
+        val conversationCreatedResponse = backendClient.createGroupConversation(
             createConversationRequest = CreateConversationRequest.createGroup(name = name)
         )
 
-        val mlsGroupId = conversationResponse.groupId.decodeBase64Bytes().toGroupId()
-        val publicKeysResponse = conversationResponse.publicKeys ?: backendClient.getPublicKeys()
+        val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
+        val publicKeysResponse = conversationCreatedResponse.publicKeys ?: backendClient.getPublicKeys()
 
         createConversation(
             userIds = userIds,
@@ -69,7 +70,7 @@ internal class ConversationService internal constructor(
             type = ConversationType.GROUP
         )
 
-        val conversationId = conversationResponse.id
+        val conversationId = conversationCreatedResponse.id
         logger.info("Group Conversation created with ID: $conversationId")
         return conversationId
     }
@@ -89,16 +90,16 @@ internal class ConversationService internal constructor(
         teamId: TeamId
     ): QualifiedId {
         try {
-            val conversationResponse = backendClient.createGroupConversation(
+            val conversationCreatedResponse = backendClient.createGroupConversation(
                 createConversationRequest = CreateConversationRequest.createChannel(
                     name = name,
                     teamId = teamId
                 )
             )
 
-            val mlsGroupId = conversationResponse.groupId.decodeBase64Bytes().toGroupId()
+            val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
             val publicKeysResponse =
-                conversationResponse.publicKeys ?: backendClient.getPublicKeys()
+                conversationCreatedResponse.publicKeys ?: backendClient.getPublicKeys()
 
             createConversation(
                 userIds = userIds,
@@ -107,7 +108,7 @@ internal class ConversationService internal constructor(
                 type = ConversationType.CHANNEL
             )
 
-            val conversationId = conversationResponse.id
+            val conversationId = conversationCreatedResponse.id
             logger.info("Channel Conversation created with ID: $conversationId")
             return conversationId
         } catch (exception: WireException.ClientError) {
@@ -131,7 +132,7 @@ internal class ConversationService internal constructor(
     suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
         val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
         val conversation = oneToOneConversationResponse.conversation
-        val mlsGroupId = conversation.groupId.decodeBase64Bytes().toGroupId()
+        val mlsGroupId = conversation.getDecodedMlsGroupId()
 
         createConversation(
             userIds = listOf(userId),
