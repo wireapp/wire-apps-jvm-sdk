@@ -270,7 +270,7 @@ In case you need to build the SDK locally, you can skip the signing option by ru
 ## Troubleshooting
 
 - Enable DEBUG logging on the SDK if you are developing an Application and want to test it in a safe environment. Set the log level to DEBUG in your logging framework for the package `com.wire.integrations.jvm` (e.g. for Logback `<logger name="com.wire.integrations.jvm" level="DEBUG" />`).
-- If you switch between different Wire environments, you may need to delete the `apps.db` directory to avoid conflicts
+- If you switch between different Wire environments, you may need to delete the `storage/apps.db` directory to avoid conflicts
 - For connection issues, verify your API token, host URL and if your deployed app has access to the public network (firewalls, docker ports, etc.)
 - When running into cryptography issues, ensure your storage password is consistent between app restarts
 - The SDK is designed to be thread-safe. The `startListening()` and `stopListening()` methods are synchronized to prevent concurrent modifications to the SDK state. However at this moment, only using a single Wire Application instance has been tested.

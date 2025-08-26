@@ -82,7 +82,7 @@ WIRE_SDK_ENVIRONMENT=my.domain.link
 ## Troubleshooting
 
 If you have started using the SDK targeting one Wire environment,
-and later you want to switch to another, you may need to move/delete the `apps.db` directory
+and later you want to switch to another, you may need to move/delete the `storage/apps.db` directory
 
 ### Testing the SDK
 
