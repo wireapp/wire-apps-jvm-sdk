@@ -58,7 +58,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
 
         if (isAssetPDFDocumentTestMessage(text = wireMessage.text)) {
-            sendSamplePDFDocument(wireMessage = wireMessage)
+            replyWithSamplePDFDocument(wireMessage = wireMessage)
             return
         }
 
@@ -282,7 +282,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
-    private suspend fun sendSamplePDFDocument(wireMessage: WireMessage.Text) {
+    private suspend fun replyWithSamplePDFDocument(wireMessage: WireMessage.Text) {
         val fileName = "sample-pdf-1.pdf"
         val resourcePath = javaClass.classLoader.getResource(fileName)?.path
             ?: throw IllegalStateException("Test resource $fileName not found")
