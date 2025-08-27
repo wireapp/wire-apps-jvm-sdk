@@ -8,6 +8,10 @@ build
 cryptography
 lib/cryptography
 
+# Ignore Storage directory content but keep the directory
+storage/*
+!storage/.gitkeep
+
 # Ignore IntelliJ IDEA project files
 .idea
 *.iml
