@@ -96,6 +96,12 @@ interface BackendClient {
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 
+    suspend fun getConversationIds(): List<QualifiedId>
+
+    suspend fun getConversationFromIds(
+        conversationIds: List<QualifiedId>
+    ): List<ConversationResponse>
+
     companion object {
         const val API_VERSION = "v10"
     }

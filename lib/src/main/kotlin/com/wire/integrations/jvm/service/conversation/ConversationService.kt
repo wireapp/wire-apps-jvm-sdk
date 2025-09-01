@@ -18,19 +18,25 @@ package com.wire.integrations.jvm.service.conversation
 
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
+import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
 import com.wire.integrations.jvm.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.model.ConversationMember
+import com.wire.integrations.jvm.model.CryptoProtocol
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
+import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.KeyPackage
 import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
 import com.wire.integrations.jvm.model.http.conversation.getDecodedMlsGroupId
 import com.wire.integrations.jvm.model.http.conversation.getRemovalKey
+import com.wire.integrations.jvm.persistence.AppStorage
+import com.wire.integrations.jvm.persistence.ConversationStorage
 import io.ktor.util.decodeBase64Bytes
 import java.util.UUID
 import kotlin.collections.plus
@@ -38,6 +44,8 @@ import org.slf4j.LoggerFactory
 
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
+    private val conversationStorage: ConversationStorage,
+    private val appStorage: AppStorage,
     private val cryptoClient: CryptoClient
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -60,14 +68,11 @@ internal class ConversationService internal constructor(
         )
 
         val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
-        val publicKeysResponse = conversationCreatedResponse.publicKeys
-            ?: backendClient.getPublicKeys()
 
-        createConversation(
+        establishMlsConversation(
             userIds = userIds,
             mlsGroupId = mlsGroupId,
-            publicKeysResponse = publicKeysResponse,
-            type = ConversationType.GROUP
+            publicKeysResponse = conversationCreatedResponse.publicKeys
         )
 
         val conversationId = conversationCreatedResponse.id
@@ -98,14 +103,11 @@ internal class ConversationService internal constructor(
             )
 
             val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
-            val publicKeysResponse =
-                conversationCreatedResponse.publicKeys ?: backendClient.getPublicKeys()
 
-            createConversation(
+            establishMlsConversation(
                 userIds = userIds,
                 mlsGroupId = mlsGroupId,
-                publicKeysResponse = publicKeysResponse,
-                type = ConversationType.CHANNEL
+                publicKeysResponse = conversationCreatedResponse.publicKeys
             )
 
             val conversationId = conversationCreatedResponse.id
@@ -134,11 +136,10 @@ internal class ConversationService internal constructor(
         val conversation = oneToOneConversationResponse.conversation
         val mlsGroupId = conversation.getDecodedMlsGroupId()
 
-        createConversation(
+        establishMlsConversation(
             userIds = listOf(userId),
             mlsGroupId = mlsGroupId,
-            publicKeysResponse = oneToOneConversationResponse.publicKeys,
-            type = ConversationType.ONE_TO_ONE
+            publicKeysResponse = oneToOneConversationResponse.publicKeys
         )
 
         val conversationId = conversation.id
@@ -146,16 +147,17 @@ internal class ConversationService internal constructor(
         return conversationId
     }
 
-    private suspend fun createConversation(
+    private suspend fun establishMlsConversation(
         userIds: List<QualifiedId>,
         mlsGroupId: MLSGroupId,
-        publicKeysResponse: MlsPublicKeysResponse?,
-        type: ConversationType
+        publicKeysResponse: MlsPublicKeysResponse?
     ) {
         val cipherSuiteCode = getCipherSuiteCode()
         val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
-        val publicKeys = publicKeysResponse?.getRemovalKey(cipherSuite = cipherSuite)
+        val publicKeys = (publicKeysResponse ?: backendClient.getPublicKeys()).run {
+            getRemovalKey(cipherSuite = cipherSuite)
+        }
 
         publicKeys?.let { externalSenders ->
             try {
@@ -182,10 +184,7 @@ internal class ConversationService internal constructor(
                 cipherSuiteCode = cipherSuiteCode
             )
 
-            // When its a Group or Channel conversation and there are no claimed key packages
-            // the conversation is created with only the creator user (App User in this case)
-            // and we need to update the keying material rather than adding members.
-            if (type != ConversationType.ONE_TO_ONE && claimedKeyPackages.isEmpty()) {
+            if (claimedKeyPackages.isEmpty()) {
                 cryptoClient.updateKeyingMaterial(mlsGroupId)
             } else {
                 cryptoClient.addMemberToMlsConversation(
@@ -198,6 +197,104 @@ internal class ConversationService internal constructor(
         } ?: throw WireException.MissingParameter(
             message = "No Public Keys found, skipping creating a conversation."
         )
+    }
+
+    fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
+        conversationStorage.getMembersByConversationId(conversationId)
+
+    suspend fun establishOrRejoinConversations() {
+        val shouldRejoinConversations = appStorage.getShouldRejoinConversations()
+        if (shouldRejoinConversations != null && !shouldRejoinConversations) {
+            logger.info("Skipping re-joining conversations as its not needed.")
+            return
+        }
+
+        val conversations = fetchConversationsToRejoin()
+
+        conversations
+            .filter { conversation -> conversation.protocol == CryptoProtocol.MLS }
+            .forEach { conversation ->
+                establishOrJoinMlsConversation(
+                    conversationId = conversation.id,
+                    mlsGroupId = conversation.getDecodedMlsGroupId(),
+                    conversation = conversation,
+                    backendClient = backendClient,
+                    cryptoClient = cryptoClient
+                )
+            }
+
+        appStorage.setShouldRejoinConversations(should = false)
+    }
+
+    private suspend fun fetchConversationsToRejoin(): List<ConversationResponse> {
+        val conversationIdsToRejoin = backendClient.getConversationIds()
+        val conversations: MutableList<ConversationResponse> = mutableListOf()
+
+        if (!conversationIdsToRejoin.isEmpty()) {
+            var startIndex = FETCH_CONVERSATIONS_START_INDEX
+            var endIndex = FETCH_CONVERSATIONS_END_INDEX
+
+            do {
+                if (endIndex > conversationIdsToRejoin.size) {
+                    endIndex = conversationIdsToRejoin.size
+                }
+
+                conversations.addAll(
+                    backendClient.getConversationFromIds(
+                        conversationIds = conversationIdsToRejoin.subList(startIndex, endIndex)
+                    )
+                )
+
+                startIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
+                endIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
+            } while (endIndex < conversationIdsToRejoin.size + FETCH_CONVERSATIONS_INCREASE_INDEX)
+        }
+
+        return conversations
+    }
+
+    private suspend fun establishOrJoinMlsConversation(
+        conversationId: QualifiedId,
+        mlsGroupId: MLSGroupId,
+        conversation: ConversationResponse,
+        backendClient: BackendClient,
+        cryptoClient: CryptoClient
+    ) {
+        if (cryptoClient.conversationExists(mlsGroupId)) {
+            logger.info("Conversation {} already exists, skipping it", conversationId)
+            return
+        }
+
+        when {
+            conversation.epoch != null && conversation.epoch != 0L -> {
+                val conversationGroupInfo: ByteArray =
+                    backendClient.getConversationGroupInfo(conversationId = conversationId)
+
+                cryptoClient.joinMlsConversationRequest(
+                    groupInfo = conversationGroupInfo.toGroupInfo()
+                )
+            }
+
+            conversation.type == ConversationResponse.Type.SELF -> {
+                establishMlsConversation(
+                    userIds = emptyList(),
+                    mlsGroupId = mlsGroupId,
+                    publicKeysResponse = null
+                )
+            }
+
+            conversation.type == ConversationResponse.Type.ONE_TO_ONE -> {
+                val users = conversationStorage
+                    .getMembersByConversationId(conversationId = conversationId)
+                    .map { members -> members.userId }
+
+                establishMlsConversation(
+                    userIds = users,
+                    mlsGroupId = mlsGroupId,
+                    publicKeysResponse = null
+                )
+            }
+        }
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -234,25 +331,8 @@ internal class ConversationService internal constructor(
             .defaultCipherSuite
 
     private companion object {
-        enum class ConversationType {
-            /**
-             * Conversation is between two Users
-             */
-            ONE_TO_ONE,
-
-            /**
-             * Conversation is between two or more Users
-             * - Up to 500 Users
-             */
-            GROUP,
-
-            /**
-             * Almost the same as a Group Conversation but with extra perks:
-             * - Public or Private (If public, can be found by other users outside the channel)
-             * - History
-             * - Currently up to 2000 Users
-             */
-            CHANNEL
-        }
+        private const val FETCH_CONVERSATIONS_START_INDEX = 0
+        private const val FETCH_CONVERSATIONS_END_INDEX = 1000
+        private const val FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
     }
 }

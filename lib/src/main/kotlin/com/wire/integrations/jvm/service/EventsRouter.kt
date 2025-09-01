@@ -20,7 +20,6 @@ import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
-import com.wire.crypto.toGroupId
 import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toWelcome
 import com.wire.integrations.jvm.WireEventsHandler
@@ -37,6 +36,7 @@ import com.wire.integrations.jvm.model.WireMessage
 import com.wire.integrations.jvm.model.http.EventContentDTO
 import com.wire.integrations.jvm.model.http.EventResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.model.http.conversation.getDecodedMlsGroupId
 import com.wire.integrations.jvm.model.protobuf.ProtobufDeserializer
 import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
@@ -191,10 +191,7 @@ internal class EventsRouter internal constructor(
         groupId: MLSGroupId?
     ): MLSGroupId {
         val conversation = backendClient.getConversation(qualifiedConversation)
-        val mlsGroupId = groupId ?: Base64
-            .getDecoder()
-            .decode(conversation.groupId)
-            .toGroupId()
+        val mlsGroupId = groupId ?: conversation.getDecodedMlsGroupId()
 
         val conversationName = if (conversation.type == ConversationResponse.Type.ONE_TO_ONE) {
             backendClient.getUserData(userId = conversation.members.others.first().id).name

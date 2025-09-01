@@ -371,7 +371,8 @@ class WireEventsIntegrationTest {
                     },
                     "group_id": "$MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",
-                    "type": 0
+                    "type": 0,
+                    "protocol": "mls"
                 }
             """.trimIndent()
         private val NEW_CONVERSATION_RESPONSE =
@@ -396,7 +397,8 @@ class WireEventsIntegrationTest {
                     },
                     "group_id": "$MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",
-                    "type": 0
+                    "type": 0,
+                    "protocol": "mls"
                 }
             """.trimIndent()
 
@@ -445,7 +447,8 @@ class WireEventsIntegrationTest {
                                 ]
                             },
                             "group_id": "$MLS_GROUP_ID_BASE64",
-                            "team": "${TEAM_ID.value}"
+                            "team": "${TEAM_ID.value}",
+                            "protocol": "mls"
                         }
                         """.trimIndent()
                     )

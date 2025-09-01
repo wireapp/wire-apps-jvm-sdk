@@ -18,6 +18,8 @@ package com.wire.integrations.jvm.model.http.conversation
 
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.toGroupId
+import com.wire.integrations.jvm.exception.WireException
+import com.wire.integrations.jvm.model.CryptoProtocol
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.utils.UUIDSerializer
 import io.ktor.util.decodeBase64Bytes
@@ -33,11 +35,13 @@ data class ConversationResponse(
     @SerialName("team")
     val teamId: UUID?,
     @SerialName("group_id")
-    val groupId: String,
+    val groupId: String?,
     @SerialName("name")
     val name: String?,
     @SerialName("epoch")
-    val epoch: Long,
+    val epoch: Long?,
+    @SerialName("protocol")
+    val protocol: CryptoProtocol,
     @SerialName("members")
     val members: ConversationMembers,
     @SerialName("type")
@@ -59,7 +63,8 @@ data class ConversationResponse(
 }
 
 fun ConversationResponse.getDecodedMlsGroupId(): MLSGroupId =
-    this.groupId.decodeBase64Bytes().toGroupId()
+    this.groupId?.decodeBase64Bytes()?.toGroupId()
+        ?: throw WireException.MissingParameter("MLSGroupId should not be empty or null.")
 
 @Serializable
 data class OneToOneConversationResponse(

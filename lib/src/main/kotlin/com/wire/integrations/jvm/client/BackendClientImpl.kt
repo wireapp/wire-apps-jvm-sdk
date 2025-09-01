@@ -167,4 +167,14 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     ): OneToOneConversationResponse {
         TODO("Not yet implemented")
     }
+
+    override suspend fun getConversationIds(): List<QualifiedId> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getConversationFromIds(
+        conversationIds: List<QualifiedId>
+    ): List<ConversationResponse> {
+        TODO("Not yet implemented")
+    }
 }

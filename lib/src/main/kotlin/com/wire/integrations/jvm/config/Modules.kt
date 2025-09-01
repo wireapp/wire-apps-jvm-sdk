@@ -94,7 +94,7 @@ val sdkModule =
         single { WireTeamEventsListener(get(), get()) }
 
         // Services
-        single { ConversationService(get(), get()) }
+        single { ConversationService(get(), get(), get(), get()) }
 
         // Manager
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
@@ -182,6 +182,7 @@ internal suspend fun getOrInitCryptoClient(
             appClientId = appClientId,
             mlsTransport = mlsTransport
         )
+        appStorage.setShouldRejoinConversations(should = false)
     } else {
         val userPassword = System.getenv("WIRE_SDK_PASSWORD")
         requireNotNull(userPassword)
@@ -235,6 +236,8 @@ internal suspend fun getOrInitCryptoClient(
             appClientId = appClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value.copyBytes() }
         )
+
+        appStorage.setShouldRejoinConversations(should = true)
     }
 
     return cryptoClient

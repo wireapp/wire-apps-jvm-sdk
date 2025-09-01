@@ -18,6 +18,7 @@ package com.wire.integrations.jvm
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.service.WireApplicationManager
 import com.wire.integrations.jvm.service.WireTeamEventsListener
+import com.wire.integrations.jvm.service.conversation.ConversationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
@@ -70,6 +71,11 @@ class WireAppSdk(
                 }
                 logger.info("Connection ended, attempting to reconnect...")
             }
+        }
+
+        runBlocking {
+            val conversationService = IsolatedKoinContext.koinApp.koin.get<ConversationService>()
+            conversationService.establishOrRejoinConversations()
         }
     }
 

@@ -129,6 +129,23 @@ object TestUtils {
                 WireMock.ok()
             )
         )
+        wireMockServer.stubFor(
+            WireMock.post(
+                WireMock.urlPathTemplate(
+                    "/$V/conversations/list-ids"
+                )
+            ).willReturn(
+                WireMock.okJson(
+                    """
+                        {
+                            "has_more": false,
+                            "paging_state": "123",
+                            "qualified_conversations": []
+                        }
+                    """.trimIndent()
+                )
+            )
+        )
     }
 
     fun setupSdk(eventsHandler: WireEventsHandler) {

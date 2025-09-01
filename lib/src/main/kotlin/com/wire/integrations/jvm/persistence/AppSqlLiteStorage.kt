@@ -22,6 +22,7 @@ import com.wire.integrations.jvm.AppsSdkDatabase
 import com.wire.integrations.jvm.model.AppData
 
 private const val DEVICE_ID = "device_id"
+private const val SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
 
 class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     private val appQueries: AppQueries = db.appQueries
@@ -39,12 +40,20 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     override fun getAll(): List<AppData> =
         appQueries.selectAll().executeAsList().map { appMapper(it) }
 
-    override fun getById(key: String): AppData =
+    override fun getByKey(key: String): AppData =
         appQueries.selectByKey(key).executeAsOne().let { appMapper(it) }
 
-    override fun getDeviceId(): String? = runCatching { getById(DEVICE_ID).value }.getOrNull()
+    override fun getDeviceId(): String? = runCatching { getByKey(DEVICE_ID).value }.getOrNull()
 
     override fun saveDeviceId(deviceId: String) = save(DEVICE_ID, deviceId)
+
+    override fun getShouldRejoinConversations(): Boolean? =
+        runCatching {
+            getByKey(SHOULD_REJOIN_CONVERSATIONS).value.toBoolean()
+        }.getOrNull()
+
+    override fun setShouldRejoinConversations(should: Boolean) =
+        save(SHOULD_REJOIN_CONVERSATIONS, should.toString())
 
     private fun appMapper(app: App) =
         AppData(

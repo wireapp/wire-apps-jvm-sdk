@@ -33,7 +33,11 @@ import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
 import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
 import com.wire.integrations.jvm.model.http.conversation.ClaimedKeyPackageList
+import com.wire.integrations.jvm.model.http.conversation.ConversationListIdsRequest
+import com.wire.integrations.jvm.model.http.conversation.ConversationListIdsResponse
+import com.wire.integrations.jvm.model.http.conversation.ConversationListPaginationConfig
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
+import com.wire.integrations.jvm.model.http.conversation.ConversationsResponse
 import com.wire.integrations.jvm.model.http.conversation.CreateConversationRequest
 import com.wire.integrations.jvm.model.http.conversation.MlsPublicKeysResponse
 import com.wire.integrations.jvm.model.http.conversation.OneToOneConversationResponse
@@ -61,11 +65,11 @@ import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
 import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
+import java.util.Base64
+import java.util.UUID
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
-import java.util.Base64
-import java.util.UUID
 
 /**
  * Backend client implementation for test/demo purposes
@@ -400,6 +404,55 @@ internal class BackendClientDemo(
         }.body<OneToOneConversationResponse>()
     }
 
+    override suspend fun getConversationIds(): List<QualifiedId> {
+        val token = loginUser()
+        val conversationIds: MutableList<QualifiedId> = mutableListOf()
+
+        var pagingConfig = ConversationListPaginationConfig(
+            pagingState = null,
+            size = CONVERSATION_LIST_IDS_PAGING_SIZE
+        )
+
+        var hasMorePages: Boolean
+        do {
+            hasMorePages = false
+            val listIdsResponse = httpClient.post("/$API_VERSION/conversations/list-ids") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+                setBody(pagingConfig)
+                contentType(ContentType.Application.Json)
+                accept(ContentType.Application.Json)
+            }.body<ConversationListIdsResponse>()
+
+            hasMorePages = listIdsResponse.hasMore
+            pagingConfig = pagingConfig.copy(pagingState = listIdsResponse.pagingState)
+            conversationIds.addAll(listIdsResponse.qualifiedConversations)
+        } while (hasMorePages)
+
+        return conversationIds
+    }
+
+    override suspend fun getConversationFromIds(
+        conversationIds: List<QualifiedId>
+    ): List<ConversationResponse> {
+        val token = loginUser()
+        val conversationListIds = ConversationListIdsRequest(
+            qualifiedIds = conversationIds
+        )
+
+        val conversationsListResponse = httpClient.post("/$API_VERSION/conversations/list") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(conversationListIds)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<ConversationsResponse>()
+
+        return conversationsListResponse.found
+    }
+
     internal class AssetBody internal constructor(
         private val assetContent: ByteArray,
         assetSize: Long,
@@ -444,6 +497,7 @@ internal class BackendClientDemo(
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"
         const val TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
+        const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
 
         val DEMO_USER_ID: UUID =
             UUID.fromString(

@@ -45,7 +45,9 @@ class MlsFallbackStrategy internal constructor(
     ) {
         val conversationExists = cryptoClient.conversationExists(mlsGroupId = mlsGroupId)
         val fetchedConversation = backendClient.getConversation(conversationId = conversationId)
+        val conversationEpoch = fetchedConversation.epoch
         val currentEpoch = cryptoClient.conversationEpoch(mlsGroupId = mlsGroupId)
+        val isEpochBehind = conversationEpoch != null && currentEpoch.toLong() < conversationEpoch
 
         logger.info(
             "Verifying Fallback Strategy for conversationId: $conversationId, " +
@@ -53,7 +55,7 @@ class MlsFallbackStrategy internal constructor(
                 "epoch: local[$currentEpoch] < remote[${fetchedConversation.epoch}]"
         )
 
-        if (!conversationExists || currentEpoch.toLong() < fetchedConversation.epoch) {
+        if (!conversationExists || isEpochBehind) {
             val groupInfo = backendClient.getConversationGroupInfo(
                 conversationId = conversationId
             )

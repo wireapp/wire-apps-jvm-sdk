@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -13,28 +14,18 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.persistence
+package com.wire.integrations.jvm.model.http.conversation
 
-import com.wire.integrations.jvm.model.AppData
+import com.wire.integrations.jvm.model.QualifiedId
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-interface AppStorage {
-    /**
-     * Save (UPSERT) a key-value pair representing a property.
-     */
-    fun save(
-        key: String,
-        value: String
-    )
-
-    fun getAll(): List<AppData>
-
-    fun getByKey(key: String): AppData
-
-    fun getDeviceId(): String?
-
-    fun saveDeviceId(deviceId: String)
-
-    fun getShouldRejoinConversations(): Boolean?
-
-    fun setShouldRejoinConversations(should: Boolean)
-}
+@Serializable
+data class ConversationListIdsResponse(
+    @SerialName("has_more")
+    val hasMore: Boolean,
+    @SerialName("paging_state")
+    val pagingState: String,
+    @SerialName("qualified_conversations")
+    val qualifiedConversations: List<QualifiedId>
+)

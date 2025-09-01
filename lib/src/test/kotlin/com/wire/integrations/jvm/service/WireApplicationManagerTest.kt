@@ -278,6 +278,7 @@ class WireApplicationManagerTest {
                 "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
                 "type": 0
+                "protocol": "mls"
             }
             """.trimIndent()
 
@@ -295,7 +296,8 @@ class WireApplicationManagerTest {
                 },
                 "group_id": "$CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
-                "type": 0
+                "type": 0,
+                "protocol": "mls"
             }
             """.trimIndent()
 
@@ -314,7 +316,8 @@ class WireApplicationManagerTest {
                     },
                     "group_id": "$ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",
-                    "type": 1
+                    "type": 1,
+                    "protocol": "mls"
                 },
                 "public_keys": {
                     "removal": {
