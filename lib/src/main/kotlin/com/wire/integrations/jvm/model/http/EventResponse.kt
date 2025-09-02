@@ -21,10 +21,11 @@ import com.wire.integrations.jvm.model.http.conversation.ConversationCreateData
 import com.wire.integrations.jvm.model.http.conversation.MemberJoinEventData
 import com.wire.integrations.jvm.model.http.conversation.MemberLeaveEventData
 import com.wire.integrations.jvm.utils.UUIDSerializer
-import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
+import kotlin.time.Instant
+import kotlinx.serialization.Contextual
 
 @Serializable
 data class EventResponse(

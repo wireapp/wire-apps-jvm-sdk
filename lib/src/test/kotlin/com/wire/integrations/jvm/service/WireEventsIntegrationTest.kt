@@ -38,7 +38,6 @@ import com.wire.integrations.jvm.persistence.ConversationStorage
 import com.wire.integrations.jvm.persistence.TeamStorage
 import com.wire.integrations.jvm.utils.MockCoreCryptoClient
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Instant
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -50,6 +49,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64
 import com.wire.integrations.jvm.utils.MockCoreCryptoClient.Companion.GENERIC_TEXT_MESSAGE
+import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
 
 /**

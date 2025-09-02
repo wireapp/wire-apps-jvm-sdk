@@ -44,7 +44,7 @@ import com.wire.integrations.jvm.utils.obfuscateGroupId
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import org.slf4j.LoggerFactory
 
 internal class EventsRouter internal constructor(

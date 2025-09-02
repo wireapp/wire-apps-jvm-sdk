@@ -24,7 +24,7 @@ import com.wire.integrations.protobuf.messages.Messages.Composite
 import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import org.slf4j.LoggerFactory
 
 /**

@@ -77,6 +77,12 @@ dependencies {
     testImplementation("org.wiremock:wiremock:$wireMockVersion")
 }
 
+kotlin {
+    sourceSets.all {
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
+    }
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)

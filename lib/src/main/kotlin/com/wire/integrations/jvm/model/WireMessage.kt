@@ -21,8 +21,8 @@ import com.wire.integrations.jvm.model.protobuf.MessageContentEncoder
 import com.wire.integrations.jvm.model.protobuf.MessageEncryptionAlgorithm
 import java.nio.file.Path
 import java.util.UUID
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 @Suppress("ArrayInDataClass")
 sealed interface WireMessage {
