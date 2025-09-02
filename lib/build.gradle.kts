@@ -58,7 +58,6 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1-0.6.x-compat")
     implementation("com.wire:core-crypto-jvm:8.0.1")
     implementation("com.wire:core-crypto-uniffi-jvm:8.0.1")
     implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
@@ -75,6 +74,12 @@ dependencies {
     testImplementation("io.mockk:mockk:1.14.5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("org.wiremock:wiremock:$wireMockVersion")
+}
+
+kotlin {
+    sourceSets.all {
+        languageSettings.optIn("kotlin.time.ExperimentalTime")
+    }
 }
 
 java {

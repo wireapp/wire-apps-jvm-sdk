@@ -27,7 +27,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import org.junit.jupiter.api.AfterAll
 
 class CoreCryptoClientTest {
