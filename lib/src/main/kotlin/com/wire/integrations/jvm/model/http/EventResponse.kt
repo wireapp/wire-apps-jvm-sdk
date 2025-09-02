@@ -25,7 +25,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
 import kotlin.time.Instant
-import kotlinx.serialization.Contextual
 
 @Serializable
 data class EventResponse(
