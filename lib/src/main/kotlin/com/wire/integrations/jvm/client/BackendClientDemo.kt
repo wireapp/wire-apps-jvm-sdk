@@ -452,14 +452,15 @@ internal class BackendClientDemo(
                     qualifiedIds = conversationIds.subList(startIndex, endIndex)
                 )
 
-                val conversationsListResponse = httpClient.post("/$API_VERSION/conversations/list") {
-                    headers {
-                        append(HttpHeaders.Authorization, "Bearer $token")
-                    }
-                    setBody(conversationIdsRequest)
-                    contentType(ContentType.Application.Json)
-                    accept(ContentType.Application.Json)
-                }.body<ConversationsResponse>()
+                val conversationsListResponse =
+                    httpClient.post("/$API_VERSION/conversations/list") {
+                        headers {
+                            append(HttpHeaders.Authorization, "Bearer $token")
+                        }
+                        setBody(conversationIdsRequest)
+                        contentType(ContentType.Application.Json)
+                        accept(ContentType.Application.Json)
+                    }.body<ConversationsResponse>()
 
                 conversations.addAll(conversationsListResponse.found)
 

@@ -70,6 +70,7 @@ class ConversationServiceTest {
             }
             val backendClient = mockk<BackendClient> {
                 coEvery { getConversationIds() } returns listOf()
+                coEvery { getConversationsById(any()) } returns listOf()
             }
 
             val service = ConversationService(
