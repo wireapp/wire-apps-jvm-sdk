@@ -16,7 +16,7 @@
 
 package com.wire.integrations.sample;
 
-import com.wire.integrations.jvm.WireAppSdk;
+import com.wire.sdk.WireAppSdk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

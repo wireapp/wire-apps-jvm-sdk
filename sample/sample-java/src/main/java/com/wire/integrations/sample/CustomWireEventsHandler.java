@@ -16,8 +16,8 @@
 
 package com.wire.integrations.sample;
 
-import com.wire.integrations.jvm.WireEventsHandlerDefault;
-import com.wire.integrations.jvm.model.WireMessage;
+import com.wire.sdk.WireEventsHandlerDefault;
+import com.wire.sdk.model.WireMessage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -16,13 +16,13 @@
 
 package com.wire.integrations.sample
 
-import com.wire.integrations.jvm.WireEventsHandlerSuspending
-import com.wire.integrations.jvm.model.AssetResource
-import com.wire.integrations.jvm.model.QualifiedId
-import com.wire.integrations.jvm.model.TeamId
-import com.wire.integrations.jvm.model.WireMessage
-import com.wire.integrations.jvm.model.WireMessage.Asset.AssetMetadata
-import com.wire.integrations.jvm.model.asset.AssetRetention
+import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.sdk.model.AssetResource
+import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.TeamId
+import com.wire.sdk.model.WireMessage
+import com.wire.sdk.model.WireMessage.Asset.AssetMetadata
+import com.wire.sdk.model.asset.AssetRetention
 import java.io.File
 import java.util.*
 import org.slf4j.LoggerFactory
