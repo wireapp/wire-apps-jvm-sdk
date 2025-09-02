@@ -33,8 +33,8 @@ import com.wire.integrations.jvm.model.http.MlsPublicKeys
 import com.wire.integrations.jvm.model.http.client.RegisterClientRequest
 import com.wire.integrations.jvm.model.http.client.RegisterClientResponse
 import com.wire.integrations.jvm.model.http.conversation.ClaimedKeyPackageList
-import com.wire.integrations.jvm.model.http.conversation.ConversationListIdsRequest
-import com.wire.integrations.jvm.model.http.conversation.ConversationListIdsResponse
+import com.wire.integrations.jvm.model.http.conversation.ConversationIdsRequest
+import com.wire.integrations.jvm.model.http.conversation.ConversationIdsResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationListPaginationConfig
 import com.wire.integrations.jvm.model.http.conversation.ConversationResponse
 import com.wire.integrations.jvm.model.http.conversation.ConversationsResponse
@@ -423,7 +423,7 @@ internal class BackendClientDemo(
                 setBody(pagingConfig)
                 contentType(ContentType.Application.Json)
                 accept(ContentType.Application.Json)
-            }.body<ConversationListIdsResponse>()
+            }.body<ConversationIdsResponse>()
 
             hasMorePages = listIdsResponse.hasMore
             pagingConfig = pagingConfig.copy(pagingState = listIdsResponse.pagingState)
@@ -433,24 +433,42 @@ internal class BackendClientDemo(
         return conversationIds
     }
 
-    override suspend fun getConversationFromIds(
+    override suspend fun getConversationsById(
         conversationIds: List<QualifiedId>
     ): List<ConversationResponse> {
         val token = loginUser()
-        val conversationListIds = ConversationListIdsRequest(
-            qualifiedIds = conversationIds
-        )
+        val conversations: MutableList<ConversationResponse> = mutableListOf()
 
-        val conversationsListResponse = httpClient.post("/$API_VERSION/conversations/list") {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer $token")
-            }
-            setBody(conversationListIds)
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }.body<ConversationsResponse>()
+        if (!conversationIds.isEmpty()) {
+            var startIndex = FETCH_CONVERSATIONS_START_INDEX
+            var endIndex = FETCH_CONVERSATIONS_END_INDEX
 
-        return conversationsListResponse.found
+            do {
+                if (endIndex > conversationIds.size) {
+                    endIndex = conversationIds.size
+                }
+
+                val conversationIdsRequest = ConversationIdsRequest(
+                    qualifiedIds = conversationIds.subList(startIndex, endIndex)
+                )
+
+                val conversationsListResponse = httpClient.post("/$API_VERSION/conversations/list") {
+                    headers {
+                        append(HttpHeaders.Authorization, "Bearer $token")
+                    }
+                    setBody(conversationIdsRequest)
+                    contentType(ContentType.Application.Json)
+                    accept(ContentType.Application.Json)
+                }.body<ConversationsResponse>()
+
+                conversations.addAll(conversationsListResponse.found)
+
+                startIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
+                endIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
+            } while (endIndex < conversationIds.size + FETCH_CONVERSATIONS_INCREASE_INDEX)
+        }
+
+        return conversations
     }
 
     internal class AssetBody internal constructor(
@@ -513,6 +531,10 @@ internal class BackendClientDemo(
 
         val DEMO_ENVIRONMENT: String =
             System.getenv("WIRE_SDK_ENVIRONMENT") ?: "staging.zinfra.io"
+
+        private const val FETCH_CONVERSATIONS_START_INDEX = 0
+        private const val FETCH_CONVERSATIONS_END_INDEX = 1000
+        private const val FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
     }
 }
 

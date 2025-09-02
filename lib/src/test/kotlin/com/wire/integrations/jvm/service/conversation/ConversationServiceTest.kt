@@ -104,7 +104,7 @@ class ConversationServiceTest {
                     CONVERSATION_ID
                 )
                 coEvery {
-                    getConversationFromIds(listOf(CONVERSATION_ID))
+                    getConversationsById(listOf(CONVERSATION_ID))
                 } returns listOf(CONVERSATION_RESPONSE)
             }
             val cryptoClient = mockk<CryptoClient> {
@@ -144,7 +144,7 @@ class ConversationServiceTest {
             val backendClient = mockk<BackendClient> {
                 coEvery { getConversationIds() } returns listOf(CONVERSATION_ID)
                 coEvery {
-                    getConversationFromIds(listOf(CONVERSATION_ID))
+                    getConversationsById(listOf(CONVERSATION_ID))
                 } returns listOf(CONVERSATION_RESPONSE)
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)

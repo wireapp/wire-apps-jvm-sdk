@@ -21,7 +21,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ConversationListIdsRequest(
+data class ConversationIdsRequest(
     @SerialName("qualified_ids")
     val qualifiedIds: List<QualifiedId>
 )

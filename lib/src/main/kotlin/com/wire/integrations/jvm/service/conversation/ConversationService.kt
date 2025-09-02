@@ -228,27 +228,9 @@ internal class ConversationService internal constructor(
 
     private suspend fun fetchConversationsToRejoin(): List<ConversationResponse> {
         val conversationIdsToRejoin = backendClient.getConversationIds()
-        val conversations: MutableList<ConversationResponse> = mutableListOf()
 
-        if (!conversationIdsToRejoin.isEmpty()) {
-            var startIndex = FETCH_CONVERSATIONS_START_INDEX
-            var endIndex = FETCH_CONVERSATIONS_END_INDEX
-
-            do {
-                if (endIndex > conversationIdsToRejoin.size) {
-                    endIndex = conversationIdsToRejoin.size
-                }
-
-                conversations.addAll(
-                    backendClient.getConversationFromIds(
-                        conversationIds = conversationIdsToRejoin.subList(startIndex, endIndex)
-                    )
-                )
-
-                startIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
-                endIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
-            } while (endIndex < conversationIdsToRejoin.size + FETCH_CONVERSATIONS_INCREASE_INDEX)
-        }
+        val conversations: List<ConversationResponse> =
+            backendClient.getConversationsById(conversationIds = conversationIdsToRejoin)
 
         return conversations
     }
@@ -329,10 +311,4 @@ internal class ConversationService internal constructor(
             .mlsFeatureResponse
             .mlsFeatureConfigResponse
             .defaultCipherSuite
-
-    private companion object {
-        private const val FETCH_CONVERSATIONS_START_INDEX = 0
-        private const val FETCH_CONVERSATIONS_END_INDEX = 1000
-        private const val FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
-    }
 }

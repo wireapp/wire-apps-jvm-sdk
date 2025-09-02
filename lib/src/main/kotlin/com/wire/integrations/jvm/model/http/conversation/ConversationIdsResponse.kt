@@ -21,7 +21,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ConversationListIdsResponse(
+data class ConversationIdsResponse(
     @SerialName("has_more")
     val hasMore: Boolean,
     @SerialName("paging_state")

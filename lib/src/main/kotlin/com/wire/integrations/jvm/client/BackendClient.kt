@@ -98,7 +98,7 @@ interface BackendClient {
 
     suspend fun getConversationIds(): List<QualifiedId>
 
-    suspend fun getConversationFromIds(
+    suspend fun getConversationsById(
         conversationIds: List<QualifiedId>
     ): List<ConversationResponse>
 
