@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.sample;
+package com.wire.sdk.sample;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.WireMessage;
