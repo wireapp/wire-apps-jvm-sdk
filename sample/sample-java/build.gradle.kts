@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.wire:wire-apps-jvm-sdk:0.0.15")
+    implementation("com.wire:wire-apps-jvm-sdk:0.0.16")
     implementation("org.slf4j:slf4j-api:2.0.17")
     implementation("ch.qos.logback:logback-classic:1.5.18")
 }
