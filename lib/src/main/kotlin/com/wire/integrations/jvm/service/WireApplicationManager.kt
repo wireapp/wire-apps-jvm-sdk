@@ -63,7 +63,7 @@ class WireApplicationManager internal constructor(
     fun getStoredConversations(): List<ConversationData> = conversationStorage.getAll()
 
     fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
-        conversationStorage.getMembersByConversationId(conversationId)
+        conversationService.getStoredConversationMembers(conversationId = conversationId)
 
     /**
      * Get API configuration from the connected Wire backend.

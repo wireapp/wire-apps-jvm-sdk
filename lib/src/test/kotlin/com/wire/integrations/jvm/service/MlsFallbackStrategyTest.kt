@@ -20,6 +20,7 @@ import com.wire.crypto.toGroupId
 import com.wire.crypto.toGroupInfo
 import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.CryptoClient
+import com.wire.integrations.jvm.model.CryptoProtocol
 import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.integrations.jvm.model.TeamId
 import com.wire.integrations.jvm.model.http.conversation.ConversationMembers
@@ -161,7 +162,8 @@ class MlsFallbackStrategyTest {
             name = "Random Conversation",
             epoch = 0L,
             members = ConversationMembers(others = emptyList()),
-            type = ConversationResponse.Type.GROUP
+            type = ConversationResponse.Type.GROUP,
+            protocol = CryptoProtocol.MLS
         )
     }
 }
