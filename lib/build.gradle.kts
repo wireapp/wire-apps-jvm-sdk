@@ -91,7 +91,7 @@ java {
 sqldelight {
     databases {
         create("AppsSdkDatabase") {
-            packageName.set("com.wire.integrations.jvm")
+            packageName.set("com.wire.sdk")
             dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.1.0")
         }
     }

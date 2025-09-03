@@ -269,7 +269,7 @@ In case you need to build the SDK locally, you can skip the signing option by ru
 
 ## Troubleshooting
 
-- Enable DEBUG logging on the SDK if you are developing an Application and want to test it in a safe environment. Set the log level to DEBUG in your logging framework for the package `com.wire.integrations.jvm` (e.g. for Logback `<logger name="com.wire.integrations.jvm" level="DEBUG" />`).
+- Enable DEBUG logging on the SDK if you are developing an Application and want to test it in a safe environment. Set the log level to DEBUG in your logging framework for the package `com.wire.sdk` (e.g. for Logback `<logger name="com.wire.sdk" level="DEBUG" />`).
 - If you switch between different Wire environments, you may need to delete the `storage/apps.db` directory to avoid conflicts
 - For connection issues, verify your API token, host URL and if your deployed app has access to the public network (firewalls, docker ports, etc.)
 - When running into cryptography issues, ensure your storage password is consistent between app restarts
