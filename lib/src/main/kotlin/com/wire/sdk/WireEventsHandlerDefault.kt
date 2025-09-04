@@ -33,7 +33,7 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     open fun onMessage(wireMessage: WireMessage.Text) {
-        logger.info("Received event: onMessage")
+        logger.debug("Received event: onMessage")
     }
 
     /**
@@ -46,66 +46,66 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         conversation: ConversationData,
         members: List<ConversationMember>
     ) {
-        logger.info("Received event: onConversationJoin")
+        logger.debug("Received event: onConversationJoin")
     }
 
     /**
      * A user deleted a conversation accessible by the Wire App.
      */
     open fun onConversationDelete(conversationId: QualifiedId) {
-        logger.info("Received event: onConversationDelete")
+        logger.debug("Received event: onConversationDelete")
     }
 
     open fun onAsset(wireMessage: WireMessage.Asset) {
-        logger.info("Received event: onAsset")
+        logger.debug("Received event: onAsset")
     }
 
     open fun onComposite(wireMessage: WireMessage.Composite) {
-        logger.info("Received event: onComposite")
+        logger.debug("Received event: onComposite")
     }
 
     open fun onButtonAction(wireMessage: WireMessage.ButtonAction) {
-        logger.info("Received event: onButtonAction")
+        logger.debug("Received event: onButtonAction")
     }
 
     open fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
-        logger.info("Received event: onButtonActionConfirmation")
+        logger.debug("Received event: onButtonActionConfirmation")
     }
 
     open fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.info("Received event: onKnock: $wireMessage")
+        logger.debug("Received event: onKnock: $wireMessage")
     }
 
     open fun onLocation(wireMessage: WireMessage.Location) {
-        logger.info("Received event: onLocation: $wireMessage")
+        logger.debug("Received event: onLocation: $wireMessage")
     }
 
     open fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.info("Received event: onDeletedMessage: $wireMessage")
+        logger.debug("Received event: onDeletedMessage: $wireMessage")
     }
 
     open fun onReceiptConfirmation(wireMessage: WireMessage) {
-        logger.info("Received event: onReceiptConfirmation: $wireMessage")
+        logger.debug("Received event: onReceiptConfirmation: $wireMessage")
     }
 
     open fun onTextEdited(wireMessage: WireMessage.TextEdited) {
-        logger.info("Received event: onTextEdited: $wireMessage")
+        logger.debug("Received event: onTextEdited: $wireMessage")
     }
 
     open fun onCompositeEdited(wireMessage: WireMessage.CompositeEdited) {
-        logger.info("Received event: onCompositeEdited: $wireMessage")
+        logger.debug("Received event: onCompositeEdited: $wireMessage")
     }
 
     open fun onReaction(wireMessage: WireMessage.Reaction) {
-        logger.info("Received event: onReaction: $wireMessage")
+        logger.debug("Received event: onReaction: $wireMessage")
     }
 
     open fun onInCallEmoji(wireMessage: WireMessage.InCallEmoji) {
-        logger.info("Received event: onInCallEmoji: $wireMessage")
+        logger.debug("Received event: onInCallEmoji: $wireMessage")
     }
 
     open fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {
-        logger.info("Received event: onInCallHandRaise: $wireMessage")
+        logger.debug("Received event: onInCallHandRaise: $wireMessage")
     }
 
     /**
@@ -116,7 +116,7 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         conversationId: QualifiedId,
         members: List<ConversationMember>
     ) {
-        logger.info("Received event: onMemberJoin")
+        logger.debug("Received event: onMemberJoin")
     }
 
     /**
@@ -126,6 +126,6 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         conversationId: QualifiedId,
         members: List<QualifiedId>
     ) {
-        logger.info("Received event: onMemberLeave")
+        logger.debug("Received event: onMemberLeave")
     }
 }
