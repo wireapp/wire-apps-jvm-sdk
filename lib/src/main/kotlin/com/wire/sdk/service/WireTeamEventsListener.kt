@@ -75,7 +75,7 @@ internal class WireTeamEventsListener internal constructor(
     ) {
         // Assuming byteArray is a UTF-8 character set
         val jsonString = frame.data.decodeToString(0, frame.data.size)
-        logger.debug("Binary frame content: '$jsonString'")
+        logger.trace("Binary frame content: '$jsonString'")
         val notification =
             KtxSerializer.json.decodeFromString<ConsumableNotificationResponse>(jsonString)
         when (notification) {
