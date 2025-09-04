@@ -69,7 +69,7 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
     }
 
     open suspend fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
-        logger.debug("Received event: onButtonActionConfirmation: $wireMessage")
+        logger.debug("Received event: onButtonActionConfirmation: {}", wireMessage)
     }
 
     /**
@@ -78,39 +78,39 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
      * @param wireMessage the message received
      */
     open suspend fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.debug("Received event: onKnock: $wireMessage")
+        logger.debug("Received event: onKnock: {}", wireMessage)
     }
 
     open suspend fun onLocation(wireMessage: WireMessage.Location) {
-        logger.debug("Received event: onLocation: $wireMessage")
+        logger.debug("Received event: onLocation: {}", wireMessage)
     }
 
     open suspend fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.debug("Received event: onDeletedMessage: $wireMessage")
+        logger.debug("Received event: onDeletedMessage: {}", wireMessage)
     }
 
     open suspend fun onReceiptConfirmation(wireMessage: WireMessage) {
-        logger.debug("Received event: onReceiptConfirmation: $wireMessage")
+        logger.debug("Received event: onReceiptConfirmation: {}", wireMessage)
     }
 
     open suspend fun onTextEdited(wireMessage: WireMessage.TextEdited) {
-        logger.debug("Received event: onTextEdited: $wireMessage")
+        logger.debug("Received event: onTextEdited: {}", wireMessage)
     }
 
     open suspend fun onCompositeEdited(wireMessage: WireMessage.CompositeEdited) {
-        logger.debug("Received event: onCompositeEdited: $wireMessage")
+        logger.debug("Received event: onCompositeEdited: {}", wireMessage)
     }
 
     open suspend fun onReaction(wireMessage: WireMessage.Reaction) {
-        logger.debug("Received event: onReaction: $wireMessage")
+        logger.debug("Received event: onReaction: {}", wireMessage)
     }
 
     open suspend fun onInCallEmoji(wireMessage: WireMessage.InCallEmoji) {
-        logger.debug("Received event: onInCallEmoji: $wireMessage")
+        logger.debug("Received event: onInCallEmoji: {}", wireMessage)
     }
 
     open suspend fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {
-        logger.debug("Received event: onInCallHandRaise: $wireMessage")
+        logger.debug("Received event: onInCallHandRaise: {}", wireMessage)
     }
 
     /**

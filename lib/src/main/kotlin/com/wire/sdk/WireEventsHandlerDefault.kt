@@ -73,39 +73,39 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
     }
 
     open fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.debug("Received event: onKnock: $wireMessage")
+        logger.debug("Received event: onKnock: {}", wireMessage)
     }
 
     open fun onLocation(wireMessage: WireMessage.Location) {
-        logger.debug("Received event: onLocation: $wireMessage")
+        logger.debug("Received event: onLocation: {}", wireMessage)
     }
 
     open fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.debug("Received event: onDeletedMessage: $wireMessage")
+        logger.debug("Received event: onDeletedMessage: {}", wireMessage)
     }
 
     open fun onReceiptConfirmation(wireMessage: WireMessage) {
-        logger.debug("Received event: onReceiptConfirmation: $wireMessage")
+        logger.debug("Received event: onReceiptConfirmation: {}", wireMessage)
     }
 
     open fun onTextEdited(wireMessage: WireMessage.TextEdited) {
-        logger.debug("Received event: onTextEdited: $wireMessage")
+        logger.debug("Received event: onTextEdited: {}", wireMessage)
     }
 
     open fun onCompositeEdited(wireMessage: WireMessage.CompositeEdited) {
-        logger.debug("Received event: onCompositeEdited: $wireMessage")
+        logger.debug("Received event: onCompositeEdited: {}", wireMessage)
     }
 
     open fun onReaction(wireMessage: WireMessage.Reaction) {
-        logger.debug("Received event: onReaction: $wireMessage")
+        logger.debug("Received event: onReaction: {}", wireMessage)
     }
 
     open fun onInCallEmoji(wireMessage: WireMessage.InCallEmoji) {
-        logger.debug("Received event: onInCallEmoji: $wireMessage")
+        logger.debug("Received event: onInCallEmoji: {}", wireMessage)
     }
 
     open fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {
-        logger.debug("Received event: onInCallHandRaise: $wireMessage")
+        logger.debug("Received event: onInCallHandRaise: {}", wireMessage)
     }
 
     /**
