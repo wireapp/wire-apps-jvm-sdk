@@ -102,7 +102,7 @@ sealed class EventContentDTO {
         @Serializable
         @SerialName("conversation.typing")
         data class Typing(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId
         ) : Conversation()
     }
 
