@@ -98,6 +98,12 @@ sealed class EventContentDTO {
             @SerialName("time") val time: Instant,
             @SerialName("data") val data: String
         ) : Conversation()
+
+        @Serializable
+        @SerialName("conversation.typing")
+        data class Typing(
+            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
+        ) : Conversation()
     }
 
     @Serializable

@@ -179,6 +179,10 @@ internal class EventsRouter internal constructor(
                     }
                 }
 
+                is EventContentDTO.Conversation.Typing -> {
+                    // Ignore silently
+                }
+
                 is EventContentDTO.Unknown -> {
                     logger.warn("Unknown event type: {}", event)
                 }
