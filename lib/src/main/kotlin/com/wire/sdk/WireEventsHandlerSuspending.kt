@@ -33,7 +33,7 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     open suspend fun onMessage(wireMessage: WireMessage.Text) {
-        logger.info("Received event: onMessage")
+        logger.debug("Received event: onMessage")
     }
 
     /**
@@ -46,30 +46,30 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         conversation: ConversationData,
         members: List<ConversationMember>
     ) {
-        logger.info("Received event: onConversationJoin")
+        logger.debug("Received event: onConversationJoin")
     }
 
     /**
      * A user deleted a conversation accessible by the Wire App.
      */
     open suspend fun onConversationDelete(conversationId: QualifiedId) {
-        logger.info("Received event: onConversationDelete")
+        logger.debug("Received event: onConversationDelete")
     }
 
     open suspend fun onAsset(wireMessage: WireMessage.Asset) {
-        logger.info("Received event: onAsset")
+        logger.debug("Received event: onAsset")
     }
 
     open suspend fun onComposite(wireMessage: WireMessage.Composite) {
-        logger.info("Received event: onComposite")
+        logger.debug("Received event: onComposite")
     }
 
     open suspend fun onButtonAction(wireMessage: WireMessage.ButtonAction) {
-        logger.info("Received event: onButtonAction")
+        logger.debug("Received event: onButtonAction")
     }
 
     open suspend fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
-        logger.info("Received event: onButtonActionConfirmation: $wireMessage")
+        logger.debug("Received event: onButtonActionConfirmation: {}", wireMessage)
     }
 
     /**
@@ -78,39 +78,39 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
      * @param wireMessage the message received
      */
     open suspend fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.info("Received event: onKnock: $wireMessage")
+        logger.debug("Received event: onKnock: {}", wireMessage)
     }
 
     open suspend fun onLocation(wireMessage: WireMessage.Location) {
-        logger.info("Received event: onLocation: $wireMessage")
+        logger.debug("Received event: onLocation: {}", wireMessage)
     }
 
     open suspend fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.info("Received event: onDeletedMessage: $wireMessage")
+        logger.debug("Received event: onDeletedMessage: {}", wireMessage)
     }
 
     open suspend fun onReceiptConfirmation(wireMessage: WireMessage) {
-        logger.info("Received event: onReceiptConfirmation: $wireMessage")
+        logger.debug("Received event: onReceiptConfirmation: {}", wireMessage)
     }
 
     open suspend fun onTextEdited(wireMessage: WireMessage.TextEdited) {
-        logger.info("Received event: onTextEdited: $wireMessage")
+        logger.debug("Received event: onTextEdited: {}", wireMessage)
     }
 
     open suspend fun onCompositeEdited(wireMessage: WireMessage.CompositeEdited) {
-        logger.info("Received event: onCompositeEdited: $wireMessage")
+        logger.debug("Received event: onCompositeEdited: {}", wireMessage)
     }
 
     open suspend fun onReaction(wireMessage: WireMessage.Reaction) {
-        logger.info("Received event: onReaction: $wireMessage")
+        logger.debug("Received event: onReaction: {}", wireMessage)
     }
 
     open suspend fun onInCallEmoji(wireMessage: WireMessage.InCallEmoji) {
-        logger.info("Received event: onInCallEmoji: $wireMessage")
+        logger.debug("Received event: onInCallEmoji: {}", wireMessage)
     }
 
     open suspend fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {
-        logger.info("Received event: onInCallHandRaise: $wireMessage")
+        logger.debug("Received event: onInCallHandRaise: {}", wireMessage)
     }
 
     /**
@@ -121,7 +121,7 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         conversationId: QualifiedId,
         members: List<ConversationMember>
     ) {
-        logger.info("Received event: onMemberJoin")
+        logger.debug("Received event: onMemberJoin")
     }
 
     /**
@@ -131,6 +131,6 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         conversationId: QualifiedId,
         members: List<QualifiedId>
     ) {
-        logger.info("Received event: onMemberLeave")
+        logger.debug("Received event: onMemberLeave")
     }
 }
