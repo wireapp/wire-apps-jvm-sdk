@@ -19,6 +19,7 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.integrations.jvm.AppsSdkDatabase
+import com.wire.integrations.jvm.calling.CallingHttpClient
 import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.client.BackendClientDemo
 import com.wire.integrations.jvm.crypto.CoreCryptoClient
@@ -83,6 +84,7 @@ val sdkModule =
             }
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get()) }
+        single { CallingHttpClient(get()) }
         single { WireApplicationManager(get(), get(), get(), get(), get()) }
     }
 
