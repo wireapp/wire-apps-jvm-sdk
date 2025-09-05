@@ -19,7 +19,6 @@ package com.wire.sdk.sample
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.model.AssetResource
 import com.wire.sdk.model.QualifiedId
-import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireMessage.Asset.AssetMetadata
 import com.wire.sdk.model.asset.AssetRetention
@@ -240,7 +239,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     private fun processCreateChannelConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN] [TEAM_ID]`
+        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN]`
         val split = wireMessage.text.split(" ")
 
         manager.createChannelConversation(
@@ -250,8 +249,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
                     id = UUID.fromString(split[2]),
                     domain = split[3]
                 )
-            ),
-            teamId = TeamId(value = UUID.fromString(split[4]))
+            )
         )
     }
 

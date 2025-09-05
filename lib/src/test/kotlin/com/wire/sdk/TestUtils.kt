@@ -146,6 +146,25 @@ object TestUtils {
                 )
             )
         )
+        wireMockServer.stubFor(
+            WireMock.get(
+                WireMock.urlPathTemplate("/$V/self")
+            ).willReturn(
+                WireMock.okJson(
+                    """
+                        {
+                          "qualified_id": {
+                            "domain": "staging.zinfra.io",
+                            "id": "b82c3381-37b0-4545-b555-ca32a3a093d0"
+                          },
+                          "team": "86fdb92f-76b8-4548-8f21-6e3fd3f5f449",
+                          "email": "sdk.user@wire.com",
+                          "name": "SDK User"
+                        }
+                    """.trimIndent()
+                )
+            )
+        )
     }
 
     fun setupSdk(eventsHandler: WireEventsHandler) {

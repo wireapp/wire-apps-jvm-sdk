@@ -353,7 +353,7 @@ class WireApplicationManager internal constructor(
      * @param userIds List of QualifiedId of all the users to be added to the conversation
      * (excluding the App user)
      *
-     * @return QualifiedId The Id of the created conversation
+     * @return QualifiedId The ID of the created conversation
      */
     fun createGroupConversation(
         name: String,
@@ -383,7 +383,7 @@ class WireApplicationManager internal constructor(
      *
      * @param userId QualifiedId of the user the App will create the conversation with
      *
-     * @return QualifiedId The Id of the created conversation
+     * @return QualifiedId The ID of the created conversation
      */
     fun createOneToOneConversation(userId: QualifiedId): QualifiedId =
         runBlocking {
@@ -404,18 +404,16 @@ class WireApplicationManager internal constructor(
      * @param userIds List of QualifiedId of all the users to be added to the conversation
      * (excluding the App user)
      *
-     * @return QualifiedId The Id of the created conversation
+     * @return QualifiedId The ID of the created conversation
      */
     fun createChannelConversation(
         name: String,
-        userIds: List<QualifiedId>,
-        teamId: TeamId
+        userIds: List<QualifiedId>
     ): QualifiedId =
         runBlocking {
             createChannelConversationSuspending(
                 name = name,
-                userIds = userIds,
-                teamId = teamId
+                userIds = userIds
             )
         }
 
@@ -424,12 +422,10 @@ class WireApplicationManager internal constructor(
      */
     suspend fun createChannelConversationSuspending(
         name: String,
-        userIds: List<QualifiedId>,
-        teamId: TeamId
+        userIds: List<QualifiedId>
     ): QualifiedId =
         conversationService.createChannel(
             name = name,
-            userIds = userIds,
-            teamId = teamId
+            userIds = userIds
         )
 }
