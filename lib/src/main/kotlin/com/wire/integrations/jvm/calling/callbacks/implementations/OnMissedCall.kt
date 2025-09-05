@@ -23,7 +23,7 @@ import com.wire.integrations.jvm.calling.callbacks.MissedCallHandler
 import com.wire.integrations.jvm.calling.types.Uint32_t
 import org.slf4j.LoggerFactory
 
-object OnMissedCall : MissedCallHandler {
+class OnMissedCall : MissedCallHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
     override fun onMissedCall(conversationId: String, messageTime: Uint32_t, userId: String, isVideoCall: Boolean, arg: Pointer?) {
         // NOTHING TO DO | This callback is not triggered by AVS

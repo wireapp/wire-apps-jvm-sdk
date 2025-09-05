@@ -18,6 +18,8 @@
 
 package com.wire.sdk.utils
 
+import com.wire.crypto.MLSGroupId
+import com.wire.sdk.model.QualifiedId
 import java.util.UUID
 
 private const val START_INDEX = 0
@@ -30,12 +32,19 @@ fun String.obfuscateId(): String = obfuscateId(END_INDEX_ID)
 
 fun String.obfuscateClientId(): String = obfuscateId(END_INDEX_CLIENT_ID)
 
+fun MLSGroupId.obfuscateGroupId(): String = this.toString().obfuscateId(END_INDEX_ID)
+
 private fun String.obfuscateId(lastChar: Int): String =
     if (this.length < END_INDEX_ID) this else this.substring(START_INDEX, lastChar) + "***"
 
 internal fun String.toUTF16BEByteArray(): ByteArray = toByteArray(charset = Charsets.UTF_16BE)
 
 internal fun ByteArray.toStringFromUtf16BE(): String = toString(charset = Charsets.UTF_16BE)
+
+internal fun String.toQualifiedId(): QualifiedId = this.split("@").let {
+    if (it.size != 2) throw IllegalArgumentException("String is not a valid qualified ID")
+    QualifiedId(UUID.fromString(it[0]), it[1])
+}
 
 /**
  * Converts a Long into a Byte Array Big Endian.

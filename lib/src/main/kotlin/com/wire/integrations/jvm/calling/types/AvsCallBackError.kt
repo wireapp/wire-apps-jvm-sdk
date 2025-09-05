@@ -16,12 +16,15 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.integrations.jvm.calling
+package com.wire.integrations.jvm.calling.types
 
-import com.wire.integrations.jvm.model.QualifiedId
+enum class AvsCallBackError(val value: Int) {
+    NONE(0),
+    INVALID_ARGUMENT(1),
+    COULD_NOT_DECODE_ARGUMENT(2)
+}
 
-interface CallManager {
-    suspend fun endCall(conversationId: QualifiedId)
-    suspend fun reportProcessNotifications(isStarted: Boolean)
-    suspend fun cancelJobs()
+enum class AvsSFTError(val value: Int) {
+    NONE(0),
+    NO_RESPONSE_DATA(1)
 }

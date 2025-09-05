@@ -38,7 +38,7 @@ import com.wire.integrations.jvm.calling.types.Handle
 import com.wire.integrations.jvm.calling.types.Uint32_t
 
 @Suppress("FunctionNaming")
-interface CallingClient : Library {
+interface CallingAvsClient : Library {
 
     fun wcall_create(
         userId: String,
@@ -186,6 +186,6 @@ interface CallingClient : Library {
     )
 
     companion object {
-        val INSTANCE: CallingClient by lazy { Native.load("avs", CallingClient::class.java)!! }
+        val INSTANCE: CallingAvsClient by lazy { Native.load("avs", CallingAvsClient::class.java)!! }
     }
 }

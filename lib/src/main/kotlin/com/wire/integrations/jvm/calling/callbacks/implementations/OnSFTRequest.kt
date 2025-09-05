@@ -19,58 +19,65 @@
 package com.wire.integrations.jvm.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
+import com.wire.integrations.jvm.calling.CallingHttpClient
+import com.wire.integrations.jvm.calling.CallingAvsClient
 import com.wire.integrations.jvm.calling.callbacks.SFTRequestHandler
+import com.wire.integrations.jvm.calling.types.AvsCallBackError
+import com.wire.integrations.jvm.calling.types.AvsSFTError
+import com.wire.integrations.jvm.calling.types.Handle
 import com.wire.integrations.jvm.calling.types.Size_t
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 
-// TODO(testing): create unit test
 class OnSFTRequest(
     private val handle: Deferred<Handle>,
-    private val calling: Calling,
-    private val callRepository: CallRepository,
+    private val callingAvsClient: CallingAvsClient,
+    private val callingHttpClient: CallingHttpClient,
     private val callingScope: CoroutineScope
 ) : SFTRequestHandler {
-    override fun onSFTRequest(ctx: Pointer?, url: String, data: Pointer?, length: Size_t, arg: Pointer?): Int {
-        callingLogger.i("[OnSFTRequest] -> Start")
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
-        val dataString = data?.getString(0, CallManagerImpl.UTF8_ENCODING)
-        callingLogger.i("[OnSFTRequest] -> Connecting to SFT Server: $url")
-        callingLogger.i("[OnSFTRequest] -> Connecting to SFT Server with data: $dataString")
+    override fun onSFTRequest(
+        ctx: Pointer?,
+        url: String,
+        data: Pointer?,
+        length: Size_t,
+        arg: Pointer?
+    ): Int {
+        val dataString = data?.getString(0, UTF8_ENCODING)
+        logger.info("[OnSFTRequest] -> Connecting to SFT Server $url with data $dataString")
 
         callingScope.launch {
             dataString?.let {
-                val responseData = callRepository.connectToSFT(
+                val responseData = callingHttpClient.connectToSFT(
                     url = url,
                     data = dataString
-                ).nullableFold({
-                    callingLogger.i("[OnSFTRequest] -> Could not connect to SFT Server: $url")
-                    null
-                }, {
-                    callingLogger.i("[OnSFTRequest] -> Connected to SFT Server: $url")
-                    it
-                })
+                )
 
                 onSFTResponse(data = responseData, context = ctx)
             }
         }
 
-        callingLogger.i("[OnSFTRequest] -> sftRequestHandler called")
+        logger.info("[OnSFTRequest] -> sftRequestHandler called")
         return AvsCallBackError.NONE.value
     }
 
     private suspend fun onSFTResponse(data: ByteArray?, context: Pointer?) {
-        callingLogger.i("[OnSFTRequest] -> Sending SFT Response")
+        logger.info("[OnSFTRequest] -> Sending SFT Response")
         val responseData = data ?: byteArrayOf()
-        calling.wcall_sft_resp(
+        callingAvsClient.wcall_sft_resp(
             inst = handle.await(),
             error = data?.let { AvsSFTError.NONE.value } ?: AvsSFTError.NO_RESPONSE_DATA.value,
             data = responseData,
             length = responseData.size,
             ctx = context
         )
-        callingLogger.i("[OnSFTRequest] -> wcall_sft_resp() called")
+        logger.info("[OnSFTRequest] -> wcall_sft_resp() called")
     }
 
+    private companion object {
+        const val UTF8_ENCODING = "UTF-8"
+    }
 }
