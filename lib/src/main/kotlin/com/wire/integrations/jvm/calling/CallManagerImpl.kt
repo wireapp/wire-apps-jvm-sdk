@@ -20,9 +20,17 @@
 
 package com.wire.integrations.jvm.calling
 
-import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.callbacks.ReadyHandler
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnAnsweredCall
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnCloseCall
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnConfigRequest
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnEstablishedCall
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnMissedCall
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnParticipantsVideoStateChanged
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnSFTRequest
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnSendOTR
 import com.wire.integrations.jvm.calling.types.Handle
+import com.wire.integrations.jvm.client.BackendClientDemo.Companion.DEMO_ENVIRONMENT
 import com.wire.integrations.jvm.client.BackendClientDemo.Companion.DEMO_USER_CLIENT
 import com.wire.integrations.jvm.client.BackendClientDemo.Companion.DEMO_USER_ID
 import com.wire.integrations.jvm.model.QualifiedId
@@ -33,12 +41,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
-import java.util.Collections
 
 @Suppress("LongParameterList", "TooManyFunctions")
-class CallManagerImpl internal constructor(private val calling: CallingClient) : CallManager {
+class CallManagerImpl internal constructor(
+    private val callingAvsClient: CallingAvsClient,
+    private val callingHttpClient: CallingHttpClient
+) : CallManager {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val job = SupervisorJob()
     private val scope = CoroutineScope(job)
@@ -48,44 +57,32 @@ class CallManagerImpl internal constructor(private val calling: CallingClient) :
         return scope.async(start = CoroutineStart.LAZY) {
             logger.info("$TAG: Creating Handle")
             val selfUserId = DEMO_USER_ID
+            val selfUserDomain = DEMO_ENVIRONMENT
             val selfClientId = DEMO_USER_CLIENT
 
             val waitInitializationJob = Job()
 
-            val handle = calling.wcall_create(
-                userId = selfUserId,
+            val handle = callingAvsClient.wcall_create(
+                userId = "$selfUserId@$selfUserDomain",
                 clientId = selfClientId,
-                readyHandler = ReadyHandler { handle, arg -> Unit },
-                // TODO(refactor): inject all of these CallbackHandlers in class constructor
-                sendHandler = OnSendOTR(
-                    qualifiedIdMapper = qualifiedIdMapper,
-                    selfUserId = selfUserId,
-                    selfClientId = selfClientId,
-                    callMapper = callMapper,
-                    callingMessageSender = callingMessageSender,
-                ),
-                sftRequestHandler = OnSFTRequest(deferredHandle, calling, callRepository, scope)
-                    .keepingStrongReference(),
-                incomingCallHandler = OnIncomingCall(callRepository, callMapper, qualifiedIdMapper, scope, kaliumConfigs)
-                    .keepingStrongReference(),
-                missedCallHandler = OnMissedCall,
-                answeredCallHandler = OnAnsweredCall(callRepository, scope, qualifiedIdMapper)
-                    .keepingStrongReference(),
-                establishedCallHandler = OnEstablishedCall(callRepository, scope, qualifiedIdMapper)
-                    .keepingStrongReference(),
+                readyHandler = ReadyHandler { _, _ -> },
+                sendHandler = OnSendOTR(),
+                sftRequestHandler = OnSFTRequest(deferredHandle, callingAvsClient, callingHttpClient, scope)
+                incomingCallHandler = OnIncomingCall(callRepository, callMapper, qualifiedIdMapper, scope, kaliumConfigs),
+                missedCallHandler = OnMissedCall(),
+                answeredCallHandler = OnAnsweredCall(),
+                establishedCallHandler = OnEstablishedCall(),
                 closeCallHandler = OnCloseCall(
                     callRepository = callRepository,
                     networkStateObserver = networkStateObserver,
                     scope = scope,
                     qualifiedIdMapper = qualifiedIdMapper,
                     createAndPersistRecentlyEndedCallMetadata = createAndPersistRecentlyEndedCallMetadata
-                ).keepingStrongReference(),
+                ),
                 metricsHandler = metricsHandler,
-                callConfigRequestHandler = OnConfigRequest(calling, callRepository, scope)
-                    .keepingStrongReference(),
+                callConfigRequestHandler = OnConfigRequest(callingAvsClient, callingHttpClient, scope),
                 constantBitRateStateChangeHandler = constantBitRateStateChangeHandler,
-                videoReceiveStateHandler = OnParticipantsVideoStateChanged().keepingStrongReference(),
-                arg = null
+                videoReceiveStateHandler = OnParticipantsVideoStateChanged()
             )
             logger.info("$TAG - wcall_create() called")
             waitInitializationJob.join()
@@ -93,9 +90,9 @@ class CallManagerImpl internal constructor(private val calling: CallingClient) :
         }
     }
 
-    private suspend fun <T> withCalling(action: suspend CallingClient.(handle: Handle) -> T): T {
+    private suspend fun <T> withCalling(action: suspend CallingAvsClient.(handle: Handle) -> T): T {
         val handle = deferredHandle.await()
-        return calling.action(handle)
+        return callingAvsClient.action(handle)
     }
 
     override suspend fun endCall(conversationId: QualifiedId) = withCalling {

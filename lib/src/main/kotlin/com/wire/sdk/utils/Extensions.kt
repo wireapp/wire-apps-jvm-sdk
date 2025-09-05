@@ -18,6 +18,7 @@
 
 package com.wire.sdk.utils
 
+import com.wire.integrations.jvm.model.QualifiedId
 import com.wire.crypto.MLSGroupId
 import java.util.UUID
 
@@ -39,6 +40,11 @@ private fun String.obfuscateId(lastChar: Int): String =
 internal fun String.toUTF16BEByteArray(): ByteArray = toByteArray(charset = Charsets.UTF_16BE)
 
 internal fun ByteArray.toStringFromUtf16BE(): String = toString(charset = Charsets.UTF_16BE)
+
+internal fun String.toQualifiedId(): QualifiedId = this.split("@").let {
+    if (it.size != 2) throw IllegalArgumentException("String is not a valid qualified ID")
+    QualifiedId(UUID.fromString(it[0]), it[1])
+}
 
 /**
  * Converts a Long into a Byte Array Big Endian.

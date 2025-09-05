@@ -16,8 +16,7 @@
 
 package com.wire.sdk
 
-import com.sun.jna.Native
-import com.wire.integrations.jvm.calling.CallingClient
+import com.wire.integrations.jvm.calling.CallingHttpClient
 import com.wire.integrations.jvm.calling.GlobalCallManager
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.service.WireApplicationManager
@@ -64,10 +63,8 @@ class WireAppSdk(
             return
         }
         running.set(true)
-//        val libraryTest = Native.load("avs", CallingClient::class.java)!!
-//        CallingClient.INSTANCE.wcall_setup()
-//        CallingClient.INSTANCE.wcall_run()
-        val callManager = GlobalCallManager().getCallManagerForClient()
+        val callingHttpClient = IsolatedKoinContext.koinApp.koin.get<CallingHttpClient>()
+        val callManager = GlobalCallManager(callingHttpClient).startCallManagerForClient()
 
         executor.execute {
             val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()

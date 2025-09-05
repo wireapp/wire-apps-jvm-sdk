@@ -19,42 +19,32 @@
 package com.wire.integrations.jvm.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
+import com.wire.integrations.jvm.calling.CallingHttpClient
+import com.wire.integrations.jvm.calling.CallingAvsClient
 import com.wire.integrations.jvm.calling.callbacks.CallConfigRequestHandler
+import com.wire.integrations.jvm.calling.types.AvsCallBackError
 import com.wire.integrations.jvm.calling.types.Handle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-
+import org.slf4j.LoggerFactory
 
 class OnConfigRequest(
-    private val calling: Calling,
-    private val callRepository: CallRepository,
+    private val calling: CallingAvsClient,
+    private val callingHttpClient: CallingHttpClient,
     private val callingScope: CoroutineScope
 ) : CallConfigRequestHandler {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     override fun onConfigRequest(inst: Handle, arg: Pointer?): Int {
-        callingLogger.i("[OnConfigRequest] - STARTED")
+        logger.info("[OnConfigRequest] - STARTED")
         callingScope.launch {
-            callRepository.getCallConfigResponse(limit = null)
-                .fold({
-                    callingLogger.w("[OnConfigRequest] - Error: $it")
-                    // We can call config_update with an error if there was a connectivity issue
-                    // AVS will eventually ask us again for the config
-                    // TODO(improvement): We can retry it ourselves and improve the app responsiveness.
-                    //                    Maybe add a retry mechanism that listens for the network state
-                    //                    Caches the config string and exposes a "invalidate" function
-                    //                    That we could call when AVS requests new config.
-                    calling.wcall_config_update(
-                        inst = inst,
-                        error = 1,
-                        jsonString = ""
-                    )
-                }, { config ->
-                    calling.wcall_config_update(
-                        inst = inst,
-                        error = 0,
-                        jsonString = config
-                    )
-                    callingLogger.i("[OnConfigRequest] - wcall_config_update()")
-                })
+            val config = callingHttpClient.getCallConfig(limit = null)
+            calling.wcall_config_update(
+                inst = inst,
+                error = 0,
+                jsonString = config
+            )
+            logger.info("[OnConfigRequest] - wcall_config_update()")
         }
 
         return AvsCallBackError.NONE.value

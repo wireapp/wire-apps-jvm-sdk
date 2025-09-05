@@ -22,11 +22,11 @@ import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.callbacks.LogHandler
 import org.slf4j.LoggerFactory
 
-class GlobalCallManager() {
+class GlobalCallManager(private val callingHttpClient: CallingHttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    val calling by lazy {
-        CallingClient.INSTANCE.apply {
+    val callingAvsClient by lazy {
+        CallingAvsClient.INSTANCE.apply {
             wcall_setup()
             wcall_run()
             wcall_set_log_handler(
@@ -40,7 +40,11 @@ class GlobalCallManager() {
     /**
      * Get a [CallManager] for a session, shouldn't be instantiated more than one CallManager for a single session.
      */
-    internal fun getCallManagerForClient(): CallManager = CallManagerImpl(calling = calling)
+    internal fun startCallManagerForClient(): CallManager =
+        CallManagerImpl(
+            callingAvsClient = callingAvsClient,
+            callingHttpClient = callingHttpClient
+        )
 }
 
 object CallingLogHandler : LogHandler {
