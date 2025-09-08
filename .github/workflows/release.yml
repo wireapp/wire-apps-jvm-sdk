@@ -25,15 +25,19 @@ jobs:
       - name: Update README.md with new version
         continue-on-error: true
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "Updating dependency sections in README.md with version $VERSION"
+          set -euo pipefail
+          VERSION="${{ github.event.release.tag_name }}"
+          echo "Updating dependency sections in README.md with version ${VERSION}"
 
           # Update Gradle dependency section
-          sed -i "s|implementation(\"com\\.wire:wire-apps-jvm-sdk:[0-9.]\+\")|implementation(\"com.wire:wire-apps-jvm-sdk:${VERSION}\")|g" README.md
+          sed -i -E 's|implementation\("com\.wire:wire-apps-jvm-sdk:[^"]+"\)|implementation("com.wire:wire-apps-jvm-sdk:'"$VERSION"'")|g' README.md
 
-          # Update Maven dependency section
-          sed -i "s|<version>[0-9.]\+</version>|<version>${VERSION}</version>|g" README.md
-
+          # Update Maven dependency section (only within the com.wire:wire-apps-jvm-sdk dependency block)
+          sed -i -E '/<groupId>com\.wire<\/groupId>/,/<\/dependency>/{
+            /<artifactId>wire-apps-jvm-sdk<\/artifactId>/,/<\/dependency>/{
+              s|<version>[^<]+</version>|<version>'"$VERSION"'</version>|g
+            }
+          }' README.md
       - name: Commit and push README.md update
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
