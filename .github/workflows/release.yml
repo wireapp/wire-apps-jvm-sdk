@@ -23,7 +23,6 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
 
       - name: Update README.md with new version
-        continue-on-error: true
         run: |
           set -euo pipefail
           VERSION="${{ github.event.release.tag_name }}"
@@ -38,14 +37,20 @@ jobs:
               s|<version>[^<]+</version>|<version>'"$VERSION"'</version>|g
             }
           }' README.md
+
       - name: Commit and push README.md update
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
+          set -euo pipefail
+          VERSION="${{ github.event.release.tag_name }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- README.md; then
+            echo "No README.md changes to commit"
+            exit 0
+          fi
           git add README.md
-          git commit -m "docs: Update README.md to version ${VERSION}" || echo "No changes to commit"
-          git push origin main
+          git commit -m "docs(readme): update dependency version to ${VERSION}"
+          git push origin HEAD:"${{ github.event.repository.default_branch }}"
 
       - name: Store reports
         if: failure()
