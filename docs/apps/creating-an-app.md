@@ -5,7 +5,7 @@ Creating an App is simple and only takes a few minutes.
 ---
 
 ## 1. Open the Team Settings Dashboard
-Go to [Team Settings Dashboard] and navigate to **Apps → Create New App**.
+Go to Team Settings Dashboard and navigate to **Apps → Create New App**.
 
 ![Team Settings Dashboard -> Apps -> Create New App](./images/create-app.png)
 
@@ -21,14 +21,6 @@ Example: `SupportBot`, `Daily Standup Assistant`.
 Apps require **permissions** (also called security scopes).  
 These define what your app can do.
 
-
-Type 1 - ALL: the same type of bot we have and know. they can do everything a normal client can - reserved for legal hold, archival bots, stuff like that. are permanently online and active
-
-Type 2 - READ/WRITE: utility bots. users interact with these bots in limited ways, on demand using some command like @poll (in contrast to type 1). Think polls, summary bots, Jira integrations, confluence integrations
-
-Type 3 - WRITE: write only bots. Think bots that notify you about stuff happening elsewhere and that need a very limited security scope. Github notifications, pager duty, jenkins bot, birthday bot. They do not receive messages.
-
-
 | Permission    | Common Use                           |
 |---------------|--------------------------------------|
 | `ALL`         | Can do everything a normal User can. |
@@ -42,4 +34,4 @@ To learn more about permissions, [click here](./permissions.md)
 ## 4. Generate an App Token
 Once created, your app will have a **unique token** used to authenticate requests.
 
-> 🔒 Treat tokens like passwords — never share them publicly.s
+> 🔒 Treat tokens like passwords — never share them publicly.
