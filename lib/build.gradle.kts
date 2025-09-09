@@ -47,8 +47,8 @@ dependencies {
         api("commons-io:commons-io:2.20.0")
     }
 
-    implementation(platform("io.insert-koin:koin-bom:4.1.0"))
-    implementation("io.insert-koin:koin-core:4.1.0")
+    implementation(platform("io.insert-koin:koin-bom:4.1.1"))
+    implementation("io.insert-koin:koin-core:4.1.1")
     implementation("ch.qos.logback:logback-classic:1.5.18")
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
