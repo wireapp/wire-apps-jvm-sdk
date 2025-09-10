@@ -7,7 +7,7 @@ on:
       - 'docs/**'
 
 jobs:
-  tests:
+  docs-verification:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5

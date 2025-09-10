@@ -1,4 +1,4 @@
-# App Permissions
+# Permissions
 
 Permissions define what your app is allowed to do inside the platform.
 
