@@ -48,7 +48,7 @@ When a page needs to be moved because it's related to code changes:
      ```
      cd src/integrations/
      rm creating-an-app.md
-     ln -s ../../../wire-apps-jvm-sdk/docs/src/creating-an-app.md creating-an-app.md
+     ln -s ../../wire-apps-jvm-sdk/docs/src/creating-an-app.md creating-an-app.md
      ```
 3. Test with `make run` before creating a PR
 
