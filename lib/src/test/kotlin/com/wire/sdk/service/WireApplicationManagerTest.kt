@@ -20,9 +20,11 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.wire.crypto.toGroupId
 import com.wire.sdk.TestUtils
+import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import io.ktor.http.HttpStatusCode
@@ -34,6 +36,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class WireApplicationManagerTest {
     @Test
@@ -214,8 +217,7 @@ class WireApplicationManagerTest {
                 userIds = listOf(
                     USER_1,
                     USER_2
-                ),
-                teamId = TEAM_ID
+                )
             )
 
             // then
@@ -228,6 +230,39 @@ class WireApplicationManagerTest {
                     CHANNEL_CONVERSATION_MLS_GROUP_ID
                 )
             )
+        }
+
+    @Test
+    fun whenCreatingChannelConversationAndTeamIdIsNullThenThrowException() =
+        runTest {
+            // Given
+            TestUtils.setupWireMockStubs(wireMockServer)
+            val eventsHandler = object : WireEventsHandlerSuspending() {}
+            TestUtils.setupSdk(eventsHandler)
+
+            wireMockServer.stubFor(
+                WireMock.get(
+                    WireMock.urlPathTemplate("/$V/self")
+                ).willReturn(
+                    WireMock.okJson(
+                        SELF_USER_NO_TEAM_ID_RESPONSE
+                    )
+                )
+            )
+
+            val manager = IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
+
+            // then
+            assertThrows<WireException.MissingParameter> {
+                // when
+                manager.createChannelConversation(
+                    name = CONVERSATION_NAME,
+                    userIds = listOf(
+                        USER_1,
+                        USER_2
+                    )
+                )
+            }
         }
 
     companion object {
@@ -363,6 +398,18 @@ class WireApplicationManagerTest {
                         "user": "${USER_2.id}"
                     }
                 ]
+            }
+            """.trimIndent()
+
+        private val SELF_USER_NO_TEAM_ID_RESPONSE =
+            """
+            {
+              "qualified_id": {
+                "domain": "staging.zinfra.io",
+                "id": "b82c3381-37b0-4545-b555-ca32a3a093d0"
+              },
+              "email": "sdk.user@wire.com",
+              "name": "SDK User"
             }
             """.trimIndent()
 

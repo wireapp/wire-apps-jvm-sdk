@@ -40,8 +40,13 @@ import com.wire.sdk.persistence.ConversationStorage
 import io.ktor.util.decodeBase64Bytes
 import java.util.UUID
 import kotlin.collections.plus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
 
+@Suppress("TooManyFunctions")
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
     private val conversationStorage: ConversationStorage,
@@ -49,6 +54,17 @@ internal class ConversationService internal constructor(
     private val cryptoClient: CryptoClient
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private val selfTeamId: Deferred<UUID?> by lazy {
+        CoroutineScope(Dispatchers.IO).async {
+            backendClient.getSelfUser().teamId
+        }
+    }
+
+    private suspend fun getSelfTeamId(): TeamId =
+        selfTeamId.await()
+            ?.let(::TeamId)
+            ?: throw WireException.MissingParameter("TeamId should not be empty or null.")
 
     /**
      * Creates a Group Conversation where currently the only admin is the App
@@ -91,10 +107,10 @@ internal class ConversationService internal constructor(
      */
     suspend fun createChannel(
         name: String,
-        userIds: List<QualifiedId>,
-        teamId: TeamId
+        userIds: List<QualifiedId>
     ): QualifiedId {
         try {
+            val teamId = getSelfTeamId()
             val conversationCreatedResponse = backendClient.createGroupConversation(
                 createConversationRequest = CreateConversationRequest.Companion.createChannel(
                     name = name,

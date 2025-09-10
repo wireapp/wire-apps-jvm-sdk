@@ -41,6 +41,7 @@ import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
+import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.Mls
@@ -102,7 +103,7 @@ internal class BackendClientDemo(
         notificationSyncMarker = UUID.randomUUID()
         val token = loginUser()
 
-        val url = "/${BackendClient.Companion.API_VERSION}/events" +
+        val url = "/$API_VERSION/events" +
             "?client=$cachedDeviceId" +
             "&access_token=$token" +
             "&sync_marker=$notificationSyncMarker"
@@ -118,7 +119,7 @@ internal class BackendClientDemo(
 
     override suspend fun getAvailableApiVersions(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
-        return httpClient.get("/${BackendClient.Companion.API_VERSION}/api-version").body()
+        return httpClient.get("/$API_VERSION/api-version").body()
     }
 
     override suspend fun getApplicationData(): AppDataResponse {
@@ -134,7 +135,7 @@ internal class BackendClientDemo(
         logger.info("Fetching application enabled features")
         return cachedFeatures ?: run {
             val token = loginUser()
-            httpClient.get("/${BackendClient.Companion.API_VERSION}/feature-configs") {
+            httpClient.get("/$API_VERSION/feature-configs") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
@@ -168,7 +169,7 @@ internal class BackendClientDemo(
             logger.info("Access token expired, getting a new one")
         }
 
-        val loginResponse = httpClient.post("/${BackendClient.Companion.API_VERSION}/login") {
+        val loginResponse = httpClient.post("/$API_VERSION/login") {
             setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
             contentType(ContentType.Application.Json)
         }
@@ -308,6 +309,12 @@ internal class BackendClientDemo(
         }.body<ConversationResponse>()
     }
 
+    /**
+     * Get User details
+     *
+     * @param [QualifiedId] The ID of the user to be requested
+     * @return [UserResponse]
+     */
     override suspend fun getUserData(userId: QualifiedId): UserResponse {
         logger.info("Fetching user: $userId")
         val token = loginUser()
@@ -318,6 +325,21 @@ internal class BackendClientDemo(
                 append(HttpHeaders.Authorization, "Bearer $token")
             }
         }.body<UserResponse>()
+    }
+
+    /**
+     * Get Self User (SDK User) details
+     *
+     * @return [SelfUserResponse]
+     */
+    override suspend fun getSelfUser(): SelfUserResponse {
+        val token = loginUser()
+        return httpClient.get("/$API_VERSION/self") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            accept(ContentType.Application.Json)
+        }.body<SelfUserResponse>()
     }
 
     override suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
