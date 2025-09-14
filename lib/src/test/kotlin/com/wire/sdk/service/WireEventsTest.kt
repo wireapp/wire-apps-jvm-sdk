@@ -16,9 +16,11 @@
 
 package com.wire.sdk.service
 
+import com.wire.crypto.ClientId
 import com.wire.crypto.toGroupId
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.integrations.jvm.calling.CallManager
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.ConversationData
 import com.wire.sdk.model.ConversationMember
@@ -247,7 +249,21 @@ class WireEventsTest {
             val modules = module {
                 single<WireEventsHandler> { wireEventsHandler }
                 single<EventsRouter> {
-                    EventsRouter(get(), get(), get(), get(), get(), get())
+                    EventsRouter(get(), get(), get(), get(), get(), get(), get())
+                }
+                single<CallManager> {
+                    object : CallManager {
+                        override suspend fun endCall(conversationId: QualifiedId) {}
+
+                        override suspend fun reportProcessNotifications(isStarted: Boolean) {}
+
+                        override suspend fun cancelJobs() {}
+
+                        override suspend fun onCallingMessageReceived(
+                            message: WireMessage.Calling,
+                            senderClient: ClientId
+                        ) {}
+                    }
                 }
             }
             IsolatedKoinContext.start()

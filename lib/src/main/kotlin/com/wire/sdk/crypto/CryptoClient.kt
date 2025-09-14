@@ -16,6 +16,7 @@
 
 package com.wire.sdk.crypto
 
+import com.wire.crypto.DecryptedMessage
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
@@ -36,7 +37,7 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun decryptMls(
         mlsGroupId: MLSGroupId,
         encryptedMessage: String
-    ): ByteArray?
+    ): DecryptedMessage
 
     /**
      * Proteus Configuration

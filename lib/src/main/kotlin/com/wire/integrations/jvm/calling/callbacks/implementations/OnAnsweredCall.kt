@@ -22,9 +22,13 @@ import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.callbacks.AnsweredCallHandler
 import org.slf4j.LoggerFactory
 
-class OnAnsweredCall() : AnsweredCallHandler {
+class OnAnsweredCall : AnsweredCallHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    override fun onAnsweredCall(conversationId: String, arg: Pointer?) {
+
+    override fun onAnsweredCall(
+        conversationId: String,
+        arg: Pointer?
+    ) {
         logger.info("[Calling] OnAnsweredCall: $conversationId")
     }
 }

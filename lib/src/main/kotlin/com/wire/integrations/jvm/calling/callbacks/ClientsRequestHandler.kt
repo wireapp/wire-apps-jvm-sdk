@@ -23,5 +23,9 @@ import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.types.Handle
 
 interface ClientsRequestHandler : Callback {
-    fun onClientsRequest(inst: Handle, conversationId: String, arg: Pointer?)
+    fun onClientsRequest(
+        inst: Handle,
+        conversationId: String,
+        arg: Pointer?
+    )
 }

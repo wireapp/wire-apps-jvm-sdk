@@ -24,8 +24,9 @@ import com.wire.integrations.jvm.calling.types.Handle
 import org.slf4j.LoggerFactory
 
 @Suppress("LongParameterList")
-internal class OnSendOTR() : SendHandler {
+internal class OnSendOTR : SendHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
     @Suppress("TooGenericExceptionCaught", "NestedBlockDepth")
     override fun onSend(
         context: Pointer?,
@@ -40,8 +41,10 @@ internal class OnSendOTR() : SendHandler {
         myClientsOnly: Boolean,
         arg: Pointer?
     ): Int {
-        logger.info("[Calling] OnSendOTR: $remoteConversationId - $remoteSelfUserId -" +
-            "$remoteClientIdSelf - $targetRecipientsJson - $clientIdDestination")
+        logger.info(
+            "[Calling] OnSendOTR: $remoteConversationId - $remoteSelfUserId -" +
+                "$remoteClientIdSelf - $targetRecipientsJson - $clientIdDestination"
+        )
         return 0
     }
 }

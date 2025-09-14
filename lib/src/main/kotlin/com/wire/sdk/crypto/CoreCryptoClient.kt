@@ -4,6 +4,7 @@ import com.wire.crypto.Ciphersuite
 import com.wire.crypto.Ciphersuites
 import com.wire.crypto.CoreCrypto
 import com.wire.crypto.DatabaseKey
+import com.wire.crypto.DecryptedMessage
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
@@ -53,7 +54,7 @@ internal class CoreCryptoClient private constructor(
     override suspend fun decryptMls(
         mlsGroupId: MLSGroupId,
         encryptedMessage: String
-    ): ByteArray? {
+    ): DecryptedMessage {
         val encryptedMessageBytes: ByteArray = Base64.getDecoder().decode(encryptedMessage)
         val decryptedMessage =
             coreCrypto.transaction {
@@ -62,7 +63,7 @@ internal class CoreCryptoClient private constructor(
                     message = encryptedMessageBytes
                 )
             }
-        return decryptedMessage.message
+        return decryptedMessage
     }
 
     override suspend fun initializeProteusClient() =

@@ -133,6 +133,13 @@ object ProtobufDeserializer {
                 sender = sender
             )
 
+            genericMessage.hasCalling() -> unpackCalling(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender,
+                timestamp = timestamp
+            )
+
             else -> WireMessage.Unknown
         }
 
@@ -552,5 +559,19 @@ object ProtobufDeserializer {
             conversationId = conversationId,
             sender = sender,
             isHandUp = genericMessage.inCallHandRaise.isHandUp
+        )
+
+    private fun unpackCalling(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId,
+        timestamp: Instant
+    ): WireMessage.Calling =
+        WireMessage.Calling(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            content = genericMessage.calling.content,
+            timestamp = timestamp
         )
 }

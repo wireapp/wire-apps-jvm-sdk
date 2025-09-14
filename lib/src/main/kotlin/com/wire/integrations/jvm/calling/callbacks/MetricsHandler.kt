@@ -22,5 +22,9 @@ import com.sun.jna.Callback
 import com.sun.jna.Pointer
 
 fun interface MetricsHandler : Callback {
-    fun onMetricsReady(conversationId: String, metricsJson: String, arg: Pointer?)
+    fun onMetricsReady(
+        conversationId: String,
+        metricsJson: String,
+        arg: Pointer?
+    )
 }

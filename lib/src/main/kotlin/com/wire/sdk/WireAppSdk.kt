@@ -18,7 +18,9 @@ package com.wire.sdk
 
 import com.wire.integrations.jvm.calling.CallingHttpClient
 import com.wire.integrations.jvm.calling.GlobalCallManager
+import com.wire.integrations.jvm.client.BackendClient
 import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.sdk.service.WireApplicationManager
 import com.wire.sdk.service.WireTeamEventsListener
 import com.wire.sdk.service.conversation.ConversationService
@@ -64,7 +66,15 @@ class WireAppSdk(
         }
         running.set(true)
         val callingHttpClient = IsolatedKoinContext.koinApp.koin.get<CallingHttpClient>()
-        val callManager = GlobalCallManager(callingHttpClient).startCallManagerForClient()
+        val backendClient = IsolatedKoinContext.koinApp.koin.get<BackendClient>()
+        val cryptoClient = IsolatedKoinContext.koinApp.koin.get<CryptoClient>()
+
+        // TODO Maybe find a way to not start AVS if the app does not need it
+        GlobalCallManager(
+            callingHttpClient = callingHttpClient,
+            backendClient = backendClient,
+            cryptoClient = cryptoClient
+        ).startCallManagerForClient()
 
         executor.execute {
             val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()

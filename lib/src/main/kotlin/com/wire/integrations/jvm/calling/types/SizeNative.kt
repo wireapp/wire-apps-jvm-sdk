@@ -19,12 +19,9 @@
 package com.wire.integrations.jvm.calling.types
 
 import com.sun.jna.IntegerType
+import com.sun.jna.Native
 
-typealias Handle = Uint32_t
-
-private const val integerSize = 4
-
-data class Uint32_t(val value: Long = 0) : IntegerType(integerSize, value, true) {
+class SizeNative(val value: Long = 0) : IntegerType(Native.SIZE_T_SIZE, value, true) {
     override fun toByte(): Byte = value.toByte()
 
     override fun toChar(): Char = value.toInt().toChar()

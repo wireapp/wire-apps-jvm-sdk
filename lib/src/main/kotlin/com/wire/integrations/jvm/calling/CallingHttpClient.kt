@@ -27,6 +27,9 @@ import io.ktor.client.request.setBody
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 
+/**
+ * HTTP client not connecting to Wire Backend but to the AVS servers directly.
+ */
 class CallingHttpClient(private val httpClient: HttpClient) {
     suspend fun getCallConfig(limit: Int?): String =
         runWithWireException {
@@ -35,8 +38,10 @@ class CallingHttpClient(private val httpClient: HttpClient) {
             }.body<String>()
         }
 
-
-    suspend fun connectToSFT(url: String, data: String): ByteArray =
+    suspend fun connectToSFT(
+        url: String,
+        data: String
+    ): ByteArray =
         runWithWireException {
             url.let {
                 URLBuilder(it).apply {
@@ -44,7 +49,8 @@ class CallingHttpClient(private val httpClient: HttpClient) {
                 }
             }.build().let { parsedUrl ->
                 httpClient.post(url = parsedUrl) {
-                    // We are parsing the data string to json due to Ktor serialization escaping the string
+                    // We are parsing the data string to json due to Ktor serialization escaping
+                    // the string
                     // and thus backend not recognizing and returning a 400 - Bad Request
                     val json = KtxSerializer.json.parseToJsonElement(data)
                     setBody(json)

@@ -19,7 +19,9 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.integrations.jvm.calling.CallManager
 import com.wire.integrations.jvm.calling.CallingHttpClient
+import com.wire.integrations.jvm.calling.GlobalCallManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientDemo
 import com.wire.sdk.crypto.CoreCryptoClient
@@ -83,7 +85,7 @@ val sdkModule =
         single<BackendClient> { BackendClientDemo(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get()) }
+        single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost())
         } onClose { it?.close() }
@@ -100,6 +102,8 @@ val sdkModule =
 
         // Manager
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
+//        single { GlobalCallManager(get(), get(), get()) }
+        single<CallManager> { GlobalCallManager(get(), get(), get()).startCallManagerForClient() }
     }
 
 @OptIn(ExperimentalLogbookKtorApi::class)

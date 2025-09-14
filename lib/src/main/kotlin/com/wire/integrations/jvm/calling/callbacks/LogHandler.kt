@@ -28,5 +28,9 @@ import com.sun.jna.Pointer
  * LEVEL_ERROR 3
  */
 interface LogHandler : Callback {
-    fun onLog(level: Int, message: String, arg: Pointer?)
+    fun onLog(
+        level: Int,
+        message: String,
+        arg: Pointer?
+    )
 }

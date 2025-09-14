@@ -16,24 +16,30 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-@file:Suppress("konsist.useCasesShouldNotAccessNetworkLayerDirectly")
-
 package com.wire.integrations.jvm.calling
 
-import com.wire.integrations.jvm.calling.callbacks.ReadyHandler
+import com.sun.jna.Pointer
+import com.wire.crypto.ClientId
 import com.wire.integrations.jvm.calling.callbacks.implementations.OnAnsweredCall
 import com.wire.integrations.jvm.calling.callbacks.implementations.OnCloseCall
 import com.wire.integrations.jvm.calling.callbacks.implementations.OnConfigRequest
 import com.wire.integrations.jvm.calling.callbacks.implementations.OnEstablishedCall
+import com.wire.integrations.jvm.calling.callbacks.implementations.OnIncomingCall
 import com.wire.integrations.jvm.calling.callbacks.implementations.OnMissedCall
 import com.wire.integrations.jvm.calling.callbacks.implementations.OnParticipantsVideoStateChanged
 import com.wire.integrations.jvm.calling.callbacks.implementations.OnSFTRequest
 import com.wire.integrations.jvm.calling.callbacks.implementations.OnSendOTR
 import com.wire.integrations.jvm.calling.types.Handle
+import com.wire.integrations.jvm.calling.types.Uint32Native
+import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.client.BackendClientDemo.Companion.DEMO_ENVIRONMENT
 import com.wire.integrations.jvm.client.BackendClientDemo.Companion.DEMO_USER_CLIENT
 import com.wire.integrations.jvm.client.BackendClientDemo.Companion.DEMO_USER_ID
+import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.model.WireMessage
+import com.wire.integrations.jvm.utils.obfuscateId
+import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -41,12 +47,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.datetime.Clock
 import org.slf4j.LoggerFactory
 
 @Suppress("LongParameterList", "TooManyFunctions")
 class CallManagerImpl internal constructor(
     private val callingAvsClient: CallingAvsClient,
-    private val callingHttpClient: CallingHttpClient
+    private val callingHttpClient: CallingHttpClient,
+    private val backendClient: BackendClient,
+    private val cryptoClient: CryptoClient
 ) : CallManager {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val job = SupervisorJob()
@@ -55,36 +64,61 @@ class CallManagerImpl internal constructor(
 
     private fun startHandleAsync(): Deferred<Handle> {
         return scope.async(start = CoroutineStart.LAZY) {
-            logger.info("$TAG: Creating Handle")
+            logger.info("Creating Handle")
             val selfUserId = DEMO_USER_ID
             val selfUserDomain = DEMO_ENVIRONMENT
+            val selfUser = QualifiedId(selfUserId, selfUserDomain)
             val selfClientId = DEMO_USER_CLIENT
 
             val waitInitializationJob = Job()
 
             val handle = callingAvsClient.wcall_create(
-                userId = "$selfUserId@$selfUserDomain",
+                userId = selfUser.toFederatedId(),
                 clientId = selfClientId,
-                readyHandler = ReadyHandler { _, _ -> },
+                readyHandler = { _, _ -> logger.info("Calling ready") },
                 sendHandler = OnSendOTR(),
-                sftRequestHandler = OnSFTRequest(deferredHandle, callingAvsClient, callingHttpClient, scope)
-                incomingCallHandler = OnIncomingCall(callRepository, callMapper, qualifiedIdMapper, scope, kaliumConfigs),
+                sftRequestHandler = OnSFTRequest(
+                    deferredHandle,
+                    callingAvsClient,
+                    callingHttpClient,
+                    scope
+                ),
+                incomingCallHandler = OnIncomingCall(
+                    backendClient,
+                    cryptoClient,
+                    deferredHandle,
+                    callingAvsClient,
+                    scope
+                ),
                 missedCallHandler = OnMissedCall(),
                 answeredCallHandler = OnAnsweredCall(),
                 establishedCallHandler = OnEstablishedCall(),
                 closeCallHandler = OnCloseCall(
-                    callRepository = callRepository,
-                    networkStateObserver = networkStateObserver,
-                    scope = scope,
-                    qualifiedIdMapper = qualifiedIdMapper,
-                    createAndPersistRecentlyEndedCallMetadata = createAndPersistRecentlyEndedCallMetadata
+                    backendClient = backendClient,
+                    callingAvsClient = callingAvsClient,
+                    handle = deferredHandle,
+                    scope = scope
                 ),
-                metricsHandler = metricsHandler,
-                callConfigRequestHandler = OnConfigRequest(callingAvsClient, callingHttpClient, scope),
-                constantBitRateStateChangeHandler = constantBitRateStateChangeHandler,
-                videoReceiveStateHandler = OnParticipantsVideoStateChanged()
+                metricsHandler =
+                    { conversationId: String, metricsJson: String, _: Pointer? ->
+                        logger.info("Calling metrics on conversation $conversationId: $metricsJson")
+                    },
+                callConfigRequestHandler = OnConfigRequest(
+                    callingAvsClient,
+                    callingHttpClient,
+                    scope
+                ),
+                constantBitRateStateChangeHandler =
+                    { userId: String, clientId: String, isEnabled: Boolean, _: Pointer? ->
+                        logger.info(
+                            "ConstantBitRate changed for userId: ${userId.obfuscateId()} " +
+                                "clientId: ${clientId.obfuscateId()}  isCbrEnabled: $isEnabled"
+                        )
+                    },
+                videoReceiveStateHandler = OnParticipantsVideoStateChanged(),
+                arg = null
             )
-            logger.info("$TAG - wcall_create() called")
+            logger.info("wcall_create() called")
             waitInitializationJob.join()
             handle
         }
@@ -95,14 +129,40 @@ class CallManagerImpl internal constructor(
         return callingAvsClient.action(handle)
     }
 
-    override suspend fun endCall(conversationId: QualifiedId) = withCalling {
-        logger.info("[$TAG][endCall] -> ConversationId: $conversationId")
+    override suspend fun onCallingMessageReceived(
+        message: WireMessage.Calling,
+        senderClient: ClientId
+    ) = withCalling {
+        logger.info("onCallingMessageReceived called: ${message.content}")
 
-        wcall_end(
-            inst = deferredHandle.await(),
-            conversationId = "${conversationId.id}@${conversationId.domain}"
-        )
+        if (!message.content.contains("REMOTEMUTE")) {
+            val msg = message.content.toByteArray()
+
+            wcall_recv_msg(
+                inst = deferredHandle.await(),
+                msg = msg,
+                len = msg.size,
+                curr_time = Uint32Native(value = Clock.System.now().epochSeconds),
+                msg_time = Uint32Native(value = message.timestamp.epochSeconds),
+                convId = message.conversationId.toFederatedId(),
+                userId = message.sender.toFederatedId(),
+                clientId = senderClient.value,
+                // Hard coding 3 as for "Conference MLS"
+                convType = 3
+            )
+            logger.info("wcall_recv_msg() called")
+        }
     }
+
+    override suspend fun endCall(conversationId: QualifiedId) =
+        withCalling {
+            logger.info("endCall -> ConversationId: $conversationId")
+
+            wcall_end(
+                inst = deferredHandle.await(),
+                conversationId = "${conversationId.id}@${conversationId.domain}"
+            )
+        }
 
     override suspend fun reportProcessNotifications(isStarted: Boolean) {
         withCalling {
@@ -114,9 +174,5 @@ class CallManagerImpl internal constructor(
         deferredHandle.cancel()
         scope.cancel()
         job.cancel()
-    }
-
-    companion object {
-        const val TAG = "CallManager"
     }
 }

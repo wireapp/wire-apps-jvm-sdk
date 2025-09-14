@@ -20,8 +20,14 @@ package com.wire.integrations.jvm.calling.callbacks
 
 import com.sun.jna.Callback
 import com.sun.jna.Pointer
-import com.wire.integrations.jvm.calling.types.Size_t
+import com.wire.integrations.jvm.calling.types.SizeNative
 
 fun interface SFTRequestHandler : Callback {
-    fun onSFTRequest(ctx: Pointer?, url: String, data: Pointer?, length: Size_t, arg: Pointer?): Int
+    fun onSFTRequest(
+        ctx: Pointer?,
+        url: String,
+        data: Pointer?,
+        length: SizeNative,
+        arg: Pointer?
+    ): Int
 }

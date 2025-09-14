@@ -65,7 +65,7 @@ object ProtobufSerializer {
             is WireMessage.Reaction -> packReaction(wireMessage, genericMessage)
             is WireMessage.InCallEmoji -> packInCallEmoji(wireMessage, genericMessage)
             is WireMessage.InCallHandRaise -> packInCallHandRaise(wireMessage, genericMessage)
-
+            is WireMessage.Calling -> packCalling(wireMessage, genericMessage)
             is WireMessage.Ignored,
             is WireMessage.Unknown -> throw WireException.CryptographicSystemError(
                 "Unexpected message content type: $wireMessage"
@@ -414,4 +414,11 @@ object ProtobufSerializer {
     ): GenericMessage.Builder =
         genericMessage
             .setInCallHandRaise(InCallHandRaise.newBuilder().setIsHandUp(wireMessage.isHandUp))
+
+    private fun packCalling(
+        wireMessage: WireMessage.Calling,
+        genericMessage: GenericMessage.Builder
+    ): GenericMessage.Builder =
+        genericMessage
+            .setCalling(Messages.Calling.newBuilder().setContent(wireMessage.content))
 }

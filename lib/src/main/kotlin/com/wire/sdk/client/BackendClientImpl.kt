@@ -145,6 +145,14 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         TODO("Not yet implemented")
     }
 
+    override suspend fun getSubConversationGroupInfo(conversationId: QualifiedId): ByteArray {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun leaveSubConversation(conversationId: QualifiedId) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun downloadAsset(
         assetId: String,
         assetDomain: String,

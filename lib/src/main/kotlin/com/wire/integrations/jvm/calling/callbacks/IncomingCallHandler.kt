@@ -23,6 +23,7 @@ import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.types.Handle
 
 fun interface IncomingCallHandler : Callback {
+    @Suppress("LongParameterList")
     fun onIncomingCall(
         conversationId: String,
         messageTime: Handle,

@@ -30,4 +30,3 @@ object NativeLoader {
         System.load(tempFile.absolutePath)
     }
 }
-

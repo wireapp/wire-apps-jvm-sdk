@@ -22,7 +22,7 @@ import com.sun.jna.Callback
 import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.types.Handle
 
-/* Send calling message otr data */
+// Send calling message otr data
 fun interface SendHandler : Callback {
     @Suppress("LongParameterList")
     fun onSend(

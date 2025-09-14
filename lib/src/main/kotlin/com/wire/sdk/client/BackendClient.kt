@@ -81,6 +81,10 @@ interface BackendClient {
 
     suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray
 
+    suspend fun getSubConversationGroupInfo(conversationId: QualifiedId): ByteArray
+
+    suspend fun leaveSubConversation(conversationId: QualifiedId)
+
     suspend fun downloadAsset(
         assetId: String,
         assetDomain: String,
@@ -105,5 +109,6 @@ interface BackendClient {
 
     companion object {
         const val API_VERSION = "v10"
+        const val SUB_CONVERSATION_ID = "conference"
     }
 }

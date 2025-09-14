@@ -23,9 +23,14 @@ import com.wire.integrations.jvm.calling.callbacks.ClientsRequestHandler
 import com.wire.integrations.jvm.calling.types.Handle
 import org.slf4j.LoggerFactory
 
-internal class OnClientsRequest() : ClientsRequestHandler {
+internal class OnClientsRequest : ClientsRequestHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    override fun onClientsRequest(inst: Handle, conversationId: String, arg: Pointer?) {
+
+    override fun onClientsRequest(
+        inst: Handle,
+        conversationId: String,
+        arg: Pointer?
+    ) {
         logger.info("[Calling] OnClientsRequest: $conversationId")
     }
 }

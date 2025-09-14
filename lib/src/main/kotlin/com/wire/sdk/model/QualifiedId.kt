@@ -31,4 +31,6 @@ data class QualifiedId(
     val domain: String
 ) {
     override fun toString(): String = "${id.obfuscateId()}@$domain"
+
+    fun toFederatedId(): String = "$id@$domain"
 }

@@ -25,7 +25,7 @@ import com.wire.integrations.jvm.calling.callbacks.SFTRequestHandler
 import com.wire.integrations.jvm.calling.types.AvsCallBackError
 import com.wire.integrations.jvm.calling.types.AvsSFTError
 import com.wire.integrations.jvm.calling.types.Handle
-import com.wire.integrations.jvm.calling.types.Size_t
+import com.wire.integrations.jvm.calling.types.SizeNative
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
@@ -43,7 +43,7 @@ class OnSFTRequest(
         ctx: Pointer?,
         url: String,
         data: Pointer?,
-        length: Size_t,
+        length: SizeNative,
         arg: Pointer?
     ): Int {
         val dataString = data?.getString(0, UTF8_ENCODING)
@@ -64,7 +64,10 @@ class OnSFTRequest(
         return AvsCallBackError.NONE.value
     }
 
-    private suspend fun onSFTResponse(data: ByteArray?, context: Pointer?) {
+    private suspend fun onSFTResponse(
+        data: ByteArray?,
+        context: Pointer?
+    ) {
         logger.info("[OnSFTRequest] -> Sending SFT Response")
         val responseData = data ?: byteArrayOf()
         callingAvsClient.wcall_sft_resp(

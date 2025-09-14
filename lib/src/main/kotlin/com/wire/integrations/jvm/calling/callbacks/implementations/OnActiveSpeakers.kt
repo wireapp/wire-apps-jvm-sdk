@@ -23,9 +23,15 @@ import com.wire.integrations.jvm.calling.callbacks.ActiveSpeakersHandler
 import com.wire.integrations.jvm.calling.types.Handle
 import org.slf4j.LoggerFactory
 
-class OnActiveSpeakers() : ActiveSpeakersHandler {
+class OnActiveSpeakers : ActiveSpeakersHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    override fun onActiveSpeakersChanged(inst: Handle, conversationId: String, data: String, arg: Pointer?) {
+
+    override fun onActiveSpeakersChanged(
+        inst: Handle,
+        conversationId: String,
+        data: String,
+        arg: Pointer?
+    ) {
         logger.info("[Calling] OnActiveSpeakers $data")
     }
 }

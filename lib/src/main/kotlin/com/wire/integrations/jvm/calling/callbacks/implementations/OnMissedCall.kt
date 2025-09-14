@@ -20,12 +20,19 @@ package com.wire.integrations.jvm.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.callbacks.MissedCallHandler
-import com.wire.integrations.jvm.calling.types.Uint32_t
+import com.wire.integrations.jvm.calling.types.Uint32Native
 import org.slf4j.LoggerFactory
 
 class OnMissedCall : MissedCallHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    override fun onMissedCall(conversationId: String, messageTime: Uint32_t, userId: String, isVideoCall: Boolean, arg: Pointer?) {
+
+    override fun onMissedCall(
+        conversationId: String,
+        messageTime: Uint32Native,
+        userId: String,
+        isVideoCall: Boolean,
+        arg: Pointer?
+    ) {
         // NOTHING TO DO | This callback is not triggered by AVS
         logger.info("[Calling] onMissedCall: $conversationId - $userId")
     }
