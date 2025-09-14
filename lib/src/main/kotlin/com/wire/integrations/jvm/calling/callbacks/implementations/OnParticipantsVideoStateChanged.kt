@@ -24,7 +24,16 @@ import org.slf4j.LoggerFactory
 
 class OnParticipantsVideoStateChanged : VideoReceiveStateHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    override fun onVideoReceiveStateChanged(conversationId: String, userId: String, clientId: String, state: Int, arg: Pointer?) {
-        logger.info("[Calling] onVideoReceiveStateChanged: $conversationId - $userId - $clientId - state: $state")
+
+    override fun onVideoReceiveStateChanged(
+        conversationId: String,
+        userId: String,
+        clientId: String,
+        state: Int,
+        arg: Pointer?
+    ) {
+        logger.info(
+            "[Calling] onVideoReceiveStateChanged: $conversationId - $userId - $clientId : $state"
+        )
     }
 }

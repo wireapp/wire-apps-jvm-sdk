@@ -35,7 +35,10 @@ class OnConfigRequest(
 ) : CallConfigRequestHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    override fun onConfigRequest(inst: Handle, arg: Pointer?): Int {
+    override fun onConfigRequest(
+        inst: Handle,
+        arg: Pointer?
+    ): Int {
         logger.info("[OnConfigRequest] - STARTED")
         callingScope.launch {
             val config = callingHttpClient.getCallConfig(limit = null)

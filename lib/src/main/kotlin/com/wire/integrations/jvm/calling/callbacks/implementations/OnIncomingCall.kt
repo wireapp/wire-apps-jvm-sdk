@@ -19,39 +19,39 @@
 package com.wire.integrations.jvm.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
+import com.wire.crypto.GroupInfo
 import com.wire.integrations.jvm.calling.CallingAvsClient
 import com.wire.integrations.jvm.calling.callbacks.IncomingCallHandler
+import com.wire.integrations.jvm.calling.callbacks.implementations.CallTypeCalling.AUDIO
+import com.wire.integrations.jvm.calling.callbacks.implementations.CallTypeCalling.VIDEO
 import com.wire.integrations.jvm.calling.types.Handle
-import com.wire.integrations.jvm.calling.types.Uint32_t
-import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.calling.types.Uint32Native
+import com.wire.integrations.jvm.client.BackendClient
+import com.wire.integrations.jvm.crypto.CryptoClient
 import com.wire.integrations.jvm.utils.obfuscateId
 import com.wire.integrations.jvm.utils.toQualifiedId
-import com.wire.kalium.calling.callbacks.IncomingCallHandler
-import com.wire.kalium.calling.types.Uint32_t
-import com.wire.kalium.logger.obfuscateId
-import com.wire.kalium.common.logger.callingLogger
-import com.wire.kalium.logic.data.call.mapper.CallMapper
-import com.wire.kalium.logic.data.call.CallRepository
-import com.wire.kalium.logic.data.call.ConversationTypeForCall
-import com.wire.kalium.logic.data.id.QualifiedIdMapper
-import com.wire.kalium.logic.data.call.CallStatus
-import com.wire.kalium.logic.featureFlags.KaliumConfigs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
-class OnIncomingCall(
-    private val callRepository: CallRepository,
+/**
+ * Callback for incoming call event.
+ * Answers the call immediately and starts audio recording.
+ */
+internal class OnIncomingCall(
+    private val backendClient: BackendClient,
+    private val cryptoClient: CryptoClient,
     private val handle: Deferred<Handle>,
     private val callingAvsClient: CallingAvsClient,
-    private val scope: CoroutineScope,
+    private val scope: CoroutineScope
 ) : IncomingCallHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     override fun onIncomingCall(
         conversationId: String,
-        messageTime: Uint32_t,
+        messageTime: Uint32Native,
         userId: String,
         clientId: String,
         isVideoCall: Boolean,
@@ -61,12 +61,14 @@ class OnIncomingCall(
     ) {
         logger.info(
             "[OnIncomingCall] -> ConversationId: ${conversationId.obfuscateId()}" +
-                    " | UserId: ${userId.obfuscateId()} | shouldRing: $shouldRing | type: $conversationType"
+                " | UserId: ${userId.obfuscateId()} | shouldRing: $shouldRing" +
+                " | type: $conversationType"
         )
-        val qualifiedConversationId = conversationId.toQualifiedId()
+
         scope.launch {
             answerCall(
-                conversationId = qualifiedConversationId,
+                conversationId = conversationId,
+                userId = userId,
                 isAudioCbr = false,
                 isVideoCall = isVideoCall
             )
@@ -74,32 +76,51 @@ class OnIncomingCall(
     }
 
     private suspend fun answerCall(
-        conversationId: QualifiedId,
+        conversationId: String,
+        userId: String,
         isAudioCbr: Boolean,
         isVideoCall: Boolean
     ) {
         logger.info(
             "[OnIncomingCall] -> answering call for conversation = $conversationId"
         )
-        val callType = if (isVideoCall) CallTypeCalling.VIDEO else CallTypeCalling.AUDIO
+        val callId = UUID.randomUUID()
+        val callType = if (isVideoCall) VIDEO else AUDIO
+        val qualifiedConversationId = conversationId.toQualifiedId()
 
-        callRepository.joinMlsConference(
-            conversationId = conversationId,
-            onJoined = {
-                callingAvsClient.wcall_answer(
-                    inst = handle.await(),
-                    conversationId = federatedIdMapper.parseToFederatedId(conversationId),
-                    callType = callType.avsValue,
-                    cbrEnabled = isAudioCbr
-                )
-                logger.info(
-                    "[OnIncomingCall] - wcall_answer() called -> Incoming call for conversation = " +
-                            "$conversationId answered"
-                )
-            },
-            onEpochChange = { conversationId, epochInfo ->
-                updateEpochInfo(conversationId, epochInfo)
-            }
+        // Assume convo is MLS and that subconversation is already established
+        val subConversationGroupInfo = backendClient.getSubConversationGroupInfo(
+            qualifiedConversationId
         )
+        cryptoClient.joinMlsConversationRequest(GroupInfo(subConversationGroupInfo))
+
+        callingAvsClient.wcall_audio_record(
+            inst = handle.await(),
+            userId = userId,
+            filePath = "/tmp/wire_call_recording_${qualifiedConversationId.id}_$callId.wav"
+        )
+
+        callingAvsClient.wcall_answer(
+            inst = handle.await(),
+            conversationId = conversationId,
+            callType = callType.avsValue,
+            cbrEnabled = isAudioCbr
+        )
+        logger.info(
+            "[OnIncomingCall] - wcall_answer() called -> Incoming call for conversation = " +
+                "$qualifiedConversationId answered"
+        )
+
+        // AVS will close the call when the last participant is alone for more than 30s
+        // TODO listen epoch changes in subconversation and let AVS know with wcall_set_epoch_info
     }
+}
+
+/**
+ * [AUDIO] for audio call
+ * [VIDEO] for video cal
+ */
+enum class CallTypeCalling(val avsValue: Int) {
+    AUDIO(avsValue = 0),
+    VIDEO(avsValue = 1)
 }

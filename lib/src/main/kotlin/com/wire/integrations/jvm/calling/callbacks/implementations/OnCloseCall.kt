@@ -16,31 +16,34 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-@file:Suppress("konsist.useCasesShouldNotAccessNetworkLayerDirectly")
-
 package com.wire.integrations.jvm.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
+import com.wire.integrations.jvm.calling.CallingAvsClient
 import com.wire.integrations.jvm.calling.callbacks.CloseCallHandler
-import com.wire.integrations.jvm.calling.types.Uint32_t
+import com.wire.integrations.jvm.calling.types.Handle
+import com.wire.integrations.jvm.calling.types.Uint32Native
+import com.wire.integrations.jvm.client.BackendClient
 import com.wire.integrations.jvm.utils.obfuscateId
 import com.wire.integrations.jvm.utils.toQualifiedId
-import com.wire.kalium.logic.data.call.CallRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
 @Suppress("LongParameterList")
 class OnCloseCall(
-    private val callRepository: CallRepository,
-    private val scope: CoroutineScope,
+    private val backendClient: BackendClient,
+    private val callingAvsClient: CallingAvsClient,
+    private val handle: Deferred<Handle>,
+    private val scope: CoroutineScope
 ) : CloseCallHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     override fun onClosedCall(
         reason: Int,
         conversationId: String,
-        messageTime: Uint32_t,
+        messageTime: Uint32Native,
         userId: String,
         clientId: String?,
         arg: Pointer?
@@ -52,15 +55,15 @@ class OnCloseCall(
         val conversationIdWithDomain = conversationId.toQualifiedId()
 
         scope.launch {
-            callRepository.leaveMlsConference(conversationIdWithDomain)
+            backendClient.leaveSubConversation(conversationIdWithDomain)
             logger.info(
                 "[OnCloseCall] -> Left MLS conference" +
                     "ConversationId: ${conversationId.obfuscateId()}"
             )
-            withCalling {
-                wcall_end()
-            }
+            callingAvsClient.wcall_end(
+                inst = handle.await(),
+                conversationId = conversationId
+            )
         }
     }
-
 }

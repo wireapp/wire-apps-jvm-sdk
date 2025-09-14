@@ -22,9 +22,15 @@ import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.callbacks.EstablishedCallHandler
 import org.slf4j.LoggerFactory
 
-class OnEstablishedCall() : EstablishedCallHandler {
+class OnEstablishedCall : EstablishedCallHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    override fun onEstablishedCall(remoteConversationId: String, userId: String, clientId: String, arg: Pointer?) {
+
+    override fun onEstablishedCall(
+        remoteConversationId: String,
+        userId: String,
+        clientId: String,
+        arg: Pointer?
+    ) {
         logger.info("[Calling] OnEstablishedCall: $remoteConversationId - $userId - $clientId")
     }
 }

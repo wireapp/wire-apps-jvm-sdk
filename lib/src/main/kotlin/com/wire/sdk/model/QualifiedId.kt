@@ -33,4 +33,6 @@ data class QualifiedId(
     override fun toString(): String = "${id.obfuscateId()}@$domain" // Avoid accidental logging
 
     fun toFullString(): String = "$id@$domain"
+
+    fun toFederatedId(): String = toFullString()
 }

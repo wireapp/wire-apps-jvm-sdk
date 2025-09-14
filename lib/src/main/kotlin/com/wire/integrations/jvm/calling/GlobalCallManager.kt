@@ -20,9 +20,15 @@ package com.wire.integrations.jvm.calling
 
 import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.callbacks.LogHandler
+import com.wire.integrations.jvm.client.BackendClient
+import com.wire.integrations.jvm.crypto.CryptoClient
 import org.slf4j.LoggerFactory
 
-class GlobalCallManager(private val callingHttpClient: CallingHttpClient) {
+internal class GlobalCallManager(
+    private val callingHttpClient: CallingHttpClient,
+    private val backendClient: BackendClient,
+    private val cryptoClient: CryptoClient
+) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     val callingAvsClient by lazy {
@@ -38,23 +44,36 @@ class GlobalCallManager(private val callingHttpClient: CallingHttpClient) {
     }
 
     /**
-     * Get a [CallManager] for a session, shouldn't be instantiated more than one CallManager for a single session.
+     * Get a [CallManager] for a session, shouldn't be instantiated more than one
+     * CallManager for a single session.
      */
     internal fun startCallManagerForClient(): CallManager =
         CallManagerImpl(
             callingAvsClient = callingAvsClient,
-            callingHttpClient = callingHttpClient
+            callingHttpClient = callingHttpClient,
+            backendClient = backendClient,
+            cryptoClient = cryptoClient
         )
 }
 
 object CallingLogHandler : LogHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    override fun onLog(level: Int, message: String, arg: Pointer?) {
+
+    private const val LOG_LEVEL_DEBUG = 0
+    private const val LOG_LEVEL_INFO = 1
+    private const val LOG_LEVEL_WARN = 2
+    private const val LOG_LEVEL_ERROR = 3
+
+    override fun onLog(
+        level: Int,
+        message: String,
+        arg: Pointer?
+    ) {
         when (level) {
-            0 -> logger.debug(message)
-            1 -> logger.info(message)
-            2 -> logger.warn(message)
-            3 -> logger.error(message)
+            LOG_LEVEL_DEBUG -> logger.debug(message)
+            LOG_LEVEL_INFO -> logger.info(message)
+            LOG_LEVEL_WARN -> logger.warn(message)
+            LOG_LEVEL_ERROR -> logger.error(message)
             else -> logger.info(message)
         }
     }

@@ -25,5 +25,8 @@ fun interface AnsweredCallHandler : Callback {
     /**
      * Note, only relevant for one-to-one calls
      */
-    fun onAnsweredCall(conversationId: String, arg: Pointer?)
+    fun onAnsweredCall(
+        conversationId: String,
+        arg: Pointer?
+    )
 }

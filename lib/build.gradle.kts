@@ -16,6 +16,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.util.UUID
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     kotlin("jvm")
@@ -128,30 +129,30 @@ sqldelight {
     }
 }
 
-//ktlint {
-//    verbose.set(true)
-//    outputToConsole.set(true)
-//    coloredOutput.set(true)
-//    reporters {
-//        reporter(ReporterType.CHECKSTYLE)
-//        reporter(ReporterType.JSON)
-//        reporter(ReporterType.HTML)
-//    }
-//    filter {
-//        exclude { element ->
-//            element.file.path.contains("generated/")
-//        }
-//    }
-//}
-//
-//detekt {
-//    toolVersion = "1.23.7"
-//    config.setFrom(file("$rootDir/config/detekt/detekt.yml"))
-//    baseline = file("$rootDir/config/detekt/baseline.xml")
-//    parallel = true
-//    buildUponDefaultConfig = true
-//    source.setFrom("src/main/kotlin")
-//}
+ktlint {
+    verbose.set(true)
+    outputToConsole.set(true)
+    coloredOutput.set(true)
+    reporters {
+        reporter(ReporterType.CHECKSTYLE)
+        reporter(ReporterType.JSON)
+        reporter(ReporterType.HTML)
+    }
+    filter {
+        exclude { element ->
+            element.file.path.contains("generated/")
+        }
+    }
+}
+
+detekt {
+    toolVersion = "1.23.7"
+    config.setFrom(file("$rootDir/config/detekt/detekt.yml"))
+    baseline = file("$rootDir/config/detekt/baseline.xml")
+    parallel = true
+    buildUponDefaultConfig = true
+    source.setFrom("src/main/kotlin")
+}
 
 protobuf {
     protoc {

@@ -26,5 +26,8 @@ import com.sun.jna.Pointer
 * for calling.
 */
 fun interface ReadyHandler : Callback {
-    fun onReady(version: Int, arg: Pointer?)
+    fun onReady(
+        version: Int,
+        arg: Pointer?
+    )
 }

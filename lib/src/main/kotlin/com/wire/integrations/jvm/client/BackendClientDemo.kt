@@ -17,6 +17,7 @@
 package com.wire.integrations.jvm.client
 
 import com.wire.integrations.jvm.client.BackendClient.Companion.API_VERSION
+import com.wire.integrations.jvm.client.BackendClient.Companion.SUB_CONVERSATION_ID
 import com.wire.integrations.jvm.config.IsolatedKoinContext
 import com.wire.integrations.jvm.exception.runWithWireException
 import com.wire.integrations.jvm.model.AppClientId
@@ -41,6 +42,7 @@ import io.ktor.client.plugins.cookies.get
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
@@ -275,6 +277,37 @@ internal class BackendClientDemo internal constructor(
                 }
                 accept(Mls)
             }.body<ByteArray>()
+        }
+    }
+
+    override suspend fun getSubConversationGroupInfo(conversationId: QualifiedId): ByteArray {
+        logger.info("Fetching sub conversation groupInfo: $conversationId")
+        return runWithWireException {
+            val token = loginUser()
+            httpClient.get(
+                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+                    "/subconversations/$SUB_CONVERSATION_ID/groupinfo"
+            ) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+                accept(Mls)
+            }.body<ByteArray>()
+        }
+    }
+
+    override suspend fun leaveSubConversation(conversationId: QualifiedId) {
+        logger.info("Leaving sub conversation: $conversationId")
+        runWithWireException {
+            val token = loginUser()
+            httpClient.delete(
+                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+                    "/subconversations/$SUB_CONVERSATION_ID/self"
+            ) {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }
         }
     }
 

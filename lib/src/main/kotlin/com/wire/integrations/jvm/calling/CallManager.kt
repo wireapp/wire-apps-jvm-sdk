@@ -18,10 +18,19 @@
 
 package com.wire.integrations.jvm.calling
 
+import com.wire.crypto.ClientId
 import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.integrations.jvm.model.WireMessage
 
 interface CallManager {
     suspend fun endCall(conversationId: QualifiedId)
+
     suspend fun reportProcessNotifications(isStarted: Boolean)
+
     suspend fun cancelJobs()
+
+    suspend fun onCallingMessageReceived(
+        message: WireMessage.Calling,
+        senderClient: ClientId
+    )
 }

@@ -23,5 +23,10 @@ import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.types.Handle
 
 interface ActiveSpeakersHandler : Callback {
-    fun onActiveSpeakersChanged(inst: Handle, conversationId: String, data: String, arg: Pointer?)
+    fun onActiveSpeakersChanged(
+        inst: Handle,
+        conversationId: String,
+        data: String,
+        arg: Pointer?
+    )
 }

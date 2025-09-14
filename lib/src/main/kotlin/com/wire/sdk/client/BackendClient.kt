@@ -16,6 +16,7 @@
 
 package com.wire.sdk.client
 
+import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -33,7 +34,19 @@ interface BackendClient {
 
     suspend fun getApplicationFeatures(): FeaturesResponse
 
+    suspend fun getSubConversationGroupInfo(conversationId: QualifiedId): ByteArray
+
+    suspend fun leaveSubConversation(conversationId: QualifiedId)
+
+    suspend fun connectToSFT(
+        url: String,
+        data: String
+    ): ByteArray
+
+    suspend fun getCallConfig(limit: Int?): String
+
     companion object {
         const val CLIENT_QUERY_KEY = "client"
+        const val SUB_CONVERSATION_ID = "conference"
     }
 }

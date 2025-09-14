@@ -16,6 +16,7 @@
 
 package com.wire.sdk.service
 
+import com.wire.crypto.ClientId
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
@@ -24,6 +25,7 @@ import com.wire.crypto.toWelcome
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.sdk.calling.CallManager
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -70,6 +72,7 @@ internal class EventsRouter internal constructor(
     private val wireEventsHandler: WireEventsHandler,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
+    private val callingManager: CallManager,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : AutoCloseable {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -227,21 +230,25 @@ internal class EventsRouter internal constructor(
                     .getConversationById(event.qualifiedConversation)
                     .mlsGroupId
                 try {
-                    val message = cryptoClient.decryptMls(
+                    val decryptedMessage = cryptoClient.decryptMls(
                         mlsGroupId = mlsGroupId,
                         encryptedMessage = event.data
                     )
 
                     logger.debug("Decryption successful")
-                    if (message == null) {
+                    if (
+                        decryptedMessage.message == null ||
+                        decryptedMessage.senderClientId == null
+                    ) {
                         logger.debug("Decryption success but no message, probably epoch update")
                         return
                     }
 
                     forwardMessage(
-                        message = message,
+                        message = decryptedMessage.message!!,
                         conversationId = event.qualifiedConversation,
                         sender = event.qualifiedFrom,
+                        senderClient = decryptedMessage.senderClientId!!,
                         timestamp = event.time
                     )
                 } catch (exception: MlsException) {
@@ -318,6 +325,7 @@ internal class EventsRouter internal constructor(
         message: ByteArray,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        senderClient: ClientId,
         timestamp: Instant
     ) {
         val genericMessage = GenericMessage.parseFrom(message)
@@ -348,6 +356,10 @@ internal class EventsRouter internal constructor(
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
                         wireMessage
                     )
+                    is WireMessage.Calling -> callingManager.onCallingMessageReceived(
+                        wireMessage,
+                        senderClient
+                    )
                     is WireMessage.Ignored -> logger.warn("Ignored event received.")
                     is WireMessage.Unknown -> logger.warn("Unknown event received.")
                     is WireMessage.Composite -> logger.debug("Composite event received.")
@@ -373,6 +385,10 @@ internal class EventsRouter internal constructor(
                     )
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
                         wireMessage
+                    )
+                    is WireMessage.Calling -> callingManager.onCallingMessageReceived(
+                        wireMessage,
+                        senderClient
                     )
                     is WireMessage.Ignored -> logger.warn("Ignored event received.")
                     is WireMessage.Unknown -> logger.warn("Unknown event received.")

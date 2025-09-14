@@ -17,15 +17,26 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
+import com.wire.sdk.client.BackendClient.Companion.SUB_CONVERSATION_ID
 import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.persistence.AppStorage
+import com.wire.sdk.utils.KtxSerializer
+import com.wire.sdk.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
+import io.ktor.client.request.accept
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.URLBuilder
+import io.ktor.http.URLProtocol
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import org.slf4j.LoggerFactory
@@ -88,4 +99,42 @@ internal class BackendClientHttp(
                 .also { cachedFeatures = it }
         }
     }
+
+    override suspend fun getSubConversationGroupInfo(conversationId: QualifiedId): ByteArray {
+        logger.info("Fetching sub conversation groupInfo: $conversationId")
+        return httpClient.get(
+            "/conversations/${conversationId.domain}/${conversationId.id}" +
+                "/subconversations/$SUB_CONVERSATION_ID/groupinfo"
+        ) {
+            accept(Mls)
+        }.body<ByteArray>()
+    }
+
+    override suspend fun leaveSubConversation(conversationId: QualifiedId) {
+        logger.info("Leaving sub conversation: $conversationId")
+        httpClient.delete(
+            "/conversations/${conversationId.domain}/${conversationId.id}" +
+                "/subconversations/$SUB_CONVERSATION_ID/self"
+        )
+    }
+
+    override suspend fun connectToSFT(
+        url: String,
+        data: String
+    ): ByteArray =
+        url.let {
+            URLBuilder(it).apply {
+                protocol = URLProtocol.HTTPS
+            }
+        }.build().let { parsedUrl ->
+            httpClient.post(url = parsedUrl) {
+                val json = KtxSerializer.json.parseToJsonElement(data)
+                setBody(json)
+            }
+        }.body<ByteArray>()
+
+    override suspend fun getCallConfig(limit: Int?): String =
+        httpClient.get("/calls/config") {
+            limit?.let { parameter("limit", it) }
+        }.body<String>()
 }

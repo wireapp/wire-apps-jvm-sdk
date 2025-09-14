@@ -41,10 +41,11 @@ internal fun String.toUTF16BEByteArray(): ByteArray = toByteArray(charset = Char
 
 internal fun ByteArray.toStringFromUtf16BE(): String = toString(charset = Charsets.UTF_16BE)
 
-internal fun String.toQualifiedId(): QualifiedId = this.split("@").let {
-    if (it.size != 2) throw IllegalArgumentException("String is not a valid qualified ID")
-    QualifiedId(UUID.fromString(it[0]), it[1])
-}
+internal fun String.toQualifiedId(): QualifiedId =
+    this.split("@").let {
+        require(it.size == 2) { "String is not a valid qualified ID" }
+        QualifiedId(UUID.fromString(it[0]), it[1])
+    }
 
 /**
  * Converts a Long into a Byte Array Big Endian.

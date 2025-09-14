@@ -21,7 +21,12 @@ package com.wire.integrations.jvm.calling.callbacks
 import com.sun.jna.Callback
 import com.sun.jna.Pointer
 
-/* Call established (with media) */
+// Call established (with media)
 fun interface EstablishedCallHandler : Callback {
-    fun onEstablishedCall(remoteConversationId: String, userId: String, clientId: String, arg: Pointer?)
+    fun onEstablishedCall(
+        remoteConversationId: String,
+        userId: String,
+        clientId: String,
+        arg: Pointer?
+    )
 }

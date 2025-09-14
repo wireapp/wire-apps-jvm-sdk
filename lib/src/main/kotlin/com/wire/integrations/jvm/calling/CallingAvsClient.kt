@@ -35,11 +35,17 @@ import com.wire.integrations.jvm.calling.callbacks.SFTRequestHandler
 import com.wire.integrations.jvm.calling.callbacks.SendHandler
 import com.wire.integrations.jvm.calling.callbacks.VideoReceiveStateHandler
 import com.wire.integrations.jvm.calling.types.Handle
-import com.wire.integrations.jvm.calling.types.Uint32_t
+import com.wire.integrations.jvm.calling.types.Uint32Native
 
-@Suppress("FunctionNaming")
+@Suppress(
+    "FunctionNaming",
+    "LongParameterList",
+    "TooManyFunctions",
+    "FunctionParameterNaming",
+    "MaxLineLength",
+    "MagicNumber"
+)
 interface CallingAvsClient : Library {
-
     fun wcall_create(
         userId: String,
         clientId: String,
@@ -64,25 +70,56 @@ interface CallingAvsClient : Library {
 
     fun wcall_run()
 
-    fun wcall_start(inst: Handle, conversationId: String, callType: Int, convType: Int, audioCbr: Int): Int
+    fun wcall_start(
+        inst: Handle,
+        conversationId: String,
+        callType: Int,
+        convType: Int,
+        audioCbr: Int
+    ): Int
 
-    fun wcall_answer(inst: Handle, conversationId: String, callType: Int, cbrEnabled: Boolean)
+    fun wcall_answer(
+        inst: Handle,
+        conversationId: String,
+        callType: Int,
+        cbrEnabled: Boolean
+    )
 
-    fun wcall_audio_record(inst: Handle, userId: String, filePath: String)
+    fun wcall_audio_record(
+        inst: Handle,
+        userId: String,
+        filePath: String
+    )
 
-    fun wcall_reject(inst: Handle, conversationId: String)
+    fun wcall_reject(
+        inst: Handle,
+        conversationId: String
+    )
 
-    fun wcall_config_update(inst: Handle, error: Int, jsonString: String)
+    fun wcall_config_update(
+        inst: Handle,
+        error: Int,
+        jsonString: String
+    )
 
     fun wcall_library_version(): String
 
     fun wcall_init(env: Int): Int
 
-    fun wcall_set_log_handler(logHandler: LogHandler, arg: Pointer?)
+    fun wcall_set_log_handler(
+        logHandler: LogHandler,
+        arg: Pointer?
+    )
 
-    fun wcall_end(inst: Handle, conversationId: String)
+    fun wcall_end(
+        inst: Handle,
+        conversationId: String
+    )
 
-    fun wcall_set_mute(inst: Handle, muted: Int)
+    fun wcall_set_mute(
+        inst: Handle,
+        muted: Int
+    )
 
     fun wcall_sft_resp(
         inst: Handle,
@@ -92,13 +129,12 @@ interface CallingAvsClient : Library {
         ctx: Pointer?
     )
 
-    @Suppress("LongParameterList")
     fun wcall_recv_msg(
         inst: Handle,
         msg: ByteArray,
         len: Int,
-        curr_time: Uint32_t,
-        msg_time: Uint32_t,
+        curr_time: Uint32Native,
+        msg_time: Uint32Native,
         convId: String,
         userId: String,
         clientId: String,
@@ -112,7 +148,6 @@ interface CallingAvsClient : Library {
         arg: Pointer?
     ): Int
 
-    @Suppress("FunctionNaming")
     fun wcall_request_video_streams(
         inst: Handle,
         conversationId: String,
@@ -120,50 +155,33 @@ interface CallingAvsClient : Library {
         json: String
     )
 
-    @Suppress("FunctionNaming")
-    fun wcall_set_video_send_state(inst: Handle, conversationId: String, state: Int)
+    fun wcall_set_video_send_state(
+        inst: Handle,
+        conversationId: String,
+        state: Int
+    )
 
-//    @Suppress("FunctionNaming", "FunctionParameterNaming")
-//    fun wcall_set_req_clients_handler(
-//        inst: Handle,
-//        wcall_req_clients_h: ClientsRequestHandler
-//    )
-
-    @Suppress("FunctionNaming")
     fun wcall_set_clients_for_conv(
         inst: Handle,
         convId: String,
         clientsJson: String
     )
 
-//    @Suppress("FunctionNaming")
-//    fun wcall_set_active_speaker_handler(
-//        inst: Handle,
-//        activeSpeakersHandler: ActiveSpeakersHandler
-//    )
-
-    @Suppress("FunctionNaming", "LongParameterList")
     fun wcall_set_epoch_info(
         inst: Handle,
         conversationId: String,
-        epoch: Uint32_t,
+        epoch: Uint32Native,
         clientsJson: String,
-        keyData: String,
+        keyData: String
     ): Int
 
-//    @Suppress("FunctionNaming")
-//    fun wcall_set_req_new_epoch_handler(
-//        inst: Handle,
-//        requestNewEpochHandler: RequestNewEpochHandler
-//    )
-
-    @Suppress("FunctionNaming")
     fun wcall_process_notifications(
         inst: Handle,
-        isStarted: Boolean,
+        isStarted: Boolean
     )
 
     fun kcall_init(env: Int)
+
     fun kcall_close()
 
     fun kcall_set_local_user(
@@ -171,11 +189,10 @@ interface CallingAvsClient : Library {
         clientid: String
     )
 
-    fun kcall_set_wuser(
-        inst: Handle
-    )
+    fun kcall_set_wuser(inst: Handle)
 
     fun kcall_preview_start()
+
     fun kcall_preview_stop()
 
     fun kcall_set_user_vidstate(
@@ -186,6 +203,11 @@ interface CallingAvsClient : Library {
     )
 
     companion object {
-        val INSTANCE: CallingAvsClient by lazy { Native.load("avs", CallingAvsClient::class.java)!! }
+        val INSTANCE: CallingAvsClient by lazy {
+            Native.load(
+                "avs",
+                CallingAvsClient::class.java
+            )!!
+        }
     }
 }

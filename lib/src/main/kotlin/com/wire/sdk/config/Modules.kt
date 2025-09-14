@@ -20,6 +20,8 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.sdk.calling.CallManager
+import com.wire.sdk.calling.CallManagerImpl
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
@@ -71,6 +73,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.header
+import io.ktor.http.Url
 import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
@@ -107,7 +110,7 @@ val sdkModule =
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) } onClose
+        single { EventsRouter(get(), get(), get(), get(), get(), get(), get(), get()) } onClose
             { it?.close() }
         single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {
@@ -141,6 +144,8 @@ val sdkModule =
         single {
             WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get())
         }
+        // AVS library is initialized lazily inside CallManagerImpl.
+        single<CallManager> { CallManagerImpl(get(), get(), get()) } onClose { it?.cancelJobs() }
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
@@ -152,6 +157,8 @@ internal fun createHttpClient(
     apiHost: String,
     authTokenManager: AuthTokenManager
 ): HttpClient {
+    val apiUrl = Url(apiHost)
+
     return HttpClient(CIO) {
         expectSuccess = true
         HttpResponseValidator {
@@ -196,8 +203,9 @@ internal fun createHttpClient(
                     val path = request.url.encodedPath
                     val hasVersionPrefix =
                         path.startsWith("/$API_VERSION") || path.startsWith(API_VERSION)
+                    val isBackendRequest = request.url.host == apiUrl.host
 
-                    if (!path.contains("/await") && !hasVersionPrefix) {
+                    if (isBackendRequest && !path.contains("/await") && !hasVersionPrefix) {
                         request.url.encodedPath = "/$API_VERSION$path"
                     }
                 }
@@ -209,8 +217,9 @@ internal fun createHttpClient(
                 nonCancellableRefresh = true
                 sendWithoutRequest { request ->
                     val publicPath = listOf("/access", "/api-version")
+                    val isBackendRequest = request.url.host == apiUrl.host
 
-                    publicPath.none {
+                    isBackendRequest && publicPath.none {
                         request.url.encodedPath.endsWith(it)
                     }
                 }

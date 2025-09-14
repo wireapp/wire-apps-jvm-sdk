@@ -23,5 +23,8 @@ import com.sun.jna.Pointer
 import com.wire.integrations.jvm.calling.types.Handle
 
 fun interface CallConfigRequestHandler : Callback {
-    fun onConfigRequest(inst: Handle, arg: Pointer?): Int
+    fun onConfigRequest(
+        inst: Handle,
+        arg: Pointer?
+    ): Int
 }
