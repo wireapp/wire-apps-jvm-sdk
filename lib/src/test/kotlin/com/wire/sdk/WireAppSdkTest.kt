@@ -116,6 +116,21 @@ class WireAppSdkTest {
                 listOf(
                     module {
                         single { mockEventsListener }
+                        single<CallManager> {
+                            object : CallManager {
+                                override suspend fun endCall(conversationId: QualifiedId) {}
+
+                                override suspend fun reportProcessNotifications(isStarted: Boolean) {}
+
+                                override suspend fun cancelJobs() {}
+
+                                override suspend fun onCallingMessageReceived(
+                                    message: WireMessage.Calling,
+                                    senderClient: ClientId
+                                ) {
+                                }
+                            }
+                        }
                     }
                 )
             )
