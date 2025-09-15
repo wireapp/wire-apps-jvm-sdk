@@ -19,9 +19,9 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
-import com.wire.integrations.jvm.calling.CallManager
-import com.wire.integrations.jvm.calling.CallingHttpClient
-import com.wire.integrations.jvm.calling.GlobalCallManager
+import com.wire.sdk.calling.CallManager
+import com.wire.sdk.calling.CallingHttpClient
+import com.wire.sdk.calling.GlobalCallManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientDemo
 import com.wire.sdk.crypto.CoreCryptoClient
@@ -96,14 +96,16 @@ val sdkModule =
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get()) }
         single { CallingHttpClient(get()) }
-
-        // Services
         single { ConversationService(get(), get(), get(), get()) }
-
-        // Manager
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
-//        single { GlobalCallManager(get(), get(), get()) }
-        single<CallManager> { GlobalCallManager(get(), get(), get()).startCallManagerForClient() }
+        single<CallManager> {
+            GlobalCallManager(
+                callingHttpClient = get(),
+                backendClient = get(),
+                cryptoClient = get(),
+                appStorage = get()
+            ).startCallManagerForClient()
+        }
     }
 
 @OptIn(ExperimentalLogbookKtorApi::class)
@@ -170,7 +172,7 @@ internal suspend fun getOrInitCryptoClient(
     requireNotNull(userId)
     requireNotNull(userDomain)
 
-    val cryptoClient = CoreCryptoClient.Companion.create(
+    val cryptoClient = CoreCryptoClient.create(
         userId = userId,
         ciphersuiteCode = mlsCipherSuiteCode
     )
@@ -178,7 +180,7 @@ internal suspend fun getOrInitCryptoClient(
     val storedDeviceId = appStorage.getDeviceId()
     if (storedDeviceId != null) {
         logger.info("Loading MLS Client for: ${storedDeviceId.obfuscateClientId()}")
-        val appClientId = AppClientId.Companion.create(
+        val appClientId = AppClientId.create(
             userId = userId,
             deviceId = storedDeviceId,
             userDomain = userDomain
@@ -205,7 +207,7 @@ internal suspend fun getOrInitCryptoClient(
                     password = userPassword,
                     lastKey = lastKey.toApi(),
                     preKeys = preKeys.map { it.toApi() },
-                    capabilities = RegisterClientRequest.Companion.DEFAULT_CAPABILITIES
+                    capabilities = RegisterClientRequest.DEFAULT_CAPABILITIES
                 )
             )
         } catch (exception: WireException.ClientError) {
@@ -216,7 +218,7 @@ internal suspend fun getOrInitCryptoClient(
         }
 
         val deviceId = clientResponse.id
-        val appClientId = AppClientId.Companion.create(
+        val appClientId = AppClientId.create(
             userId = userId,
             deviceId = deviceId,
             userDomain = userDomain

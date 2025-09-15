@@ -2,7 +2,6 @@ package com.wire.sdk.crypto
 
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.DecryptedMessage
-import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException

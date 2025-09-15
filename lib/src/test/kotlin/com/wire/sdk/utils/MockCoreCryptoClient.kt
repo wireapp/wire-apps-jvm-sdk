@@ -16,34 +16,29 @@
 
 package com.wire.sdk.utils
 
-import com.wire.crypto.Ciphersuite
-import com.wire.crypto.CoreCrypto
+import com.wire.crypto.ClientId
 import com.wire.crypto.CoreCryptoException
-import com.wire.crypto.DatabaseKey
+import com.wire.crypto.CredentialType
+import com.wire.crypto.DecryptedMessage
+import com.wire.crypto.DeviceStatus
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
+import com.wire.crypto.WireIdentity
 import com.wire.crypto.toGroupId
-import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
-import com.wire.sdk.exception.WireException.InvalidParameter
 import com.wire.sdk.model.AppClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
-import com.wire.sdk.utils.toByteArray
-import java.io.File
 import java.util.Base64
 import java.util.UUID
 
-internal class MockCoreCryptoClient private constructor(
-    private val ciphersuite: Ciphersuite,
-    private var coreCrypto: CoreCrypto
-) : CryptoClient {
+internal class MockCoreCryptoClient : CryptoClient {
     val conversationExist = mutableSetOf<MLSGroupId>()
     private var appClientId: AppClientId? = null
 
@@ -90,7 +85,23 @@ internal class MockCoreCryptoClient private constructor(
     override suspend fun decryptMls(
         mlsGroupId: MLSGroupId,
         encryptedMessage: String
-    ): ByteArray = GENERIC_TEXT_MESSAGE.toByteArray()
+    ): DecryptedMessage =
+        DecryptedMessage(
+            message = GENERIC_TEXT_MESSAGE.toByteArray(),
+            isActive = true,
+            commitDelay = null,
+            hasEpochChanged = false,
+            senderClientId = ClientId(UUID.randomUUID().toString().toByteArray()),
+            identity = WireIdentity(
+                clientId = UUID.randomUUID().toString(),
+                status = DeviceStatus.Valid,
+                thumbprint = UUID.randomUUID().toString(),
+                credentialType = CredentialType.Companion.DEFAULT,
+                x509Identity = null
+            ),
+            bufferedMessages = null,
+            crlNewDistributionPoints = null
+        )
 
     // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
     override suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId =
@@ -146,43 +157,6 @@ internal class MockCoreCryptoClient private constructor(
     override suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong = 0UL
 
     companion object {
-        suspend fun create(
-            userId: String,
-            ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
-        ): MockCoreCryptoClient {
-            val clientDirectoryPath = "storage/cryptography/$userId"
-            val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
-            val ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
-
-            File(clientDirectoryPath).mkdirs()
-
-            val coreCrypto = CoreCrypto.invoke(
-                keystore = keystorePath,
-                databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
-                    ?.let { DatabaseKey(it) }
-                    ?: throw InvalidParameter("Cryptography password missing")
-            )
-
-            return MockCoreCryptoClient(
-                ciphersuite = ciphersuite,
-                coreCrypto = coreCrypto
-            )
-        }
-
-        private fun getMlsCipherSuiteName(code: Int): Ciphersuite =
-            when (code) {
-                DEFAULT_CIPHERSUITE_IDENTIFIER -> Ciphersuite.DEFAULT
-                2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
-                3 -> Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519
-                4 -> Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448
-                5 -> Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521
-                6 -> Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448
-                7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
-                else -> Ciphersuite.DEFAULT
-            }
-
-        private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
-        private const val KEYSTORE_NAME = "keystore"
         val MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
         val MLS_GROUP_ID_BASE64 = Base64.getEncoder().encodeToString(MLS_GROUP_ID.copyBytes())
         val GENERIC_TEXT_MESSAGE: GenericMessage = GenericMessage

@@ -18,9 +18,11 @@ package com.wire.sdk.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.wire.crypto.ClientId
+import com.wire.integrations.protobuf.messages.Messages
 import com.wire.sdk.TestUtils
-import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.sdk.calling.CallManager
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.model.QualifiedId
@@ -48,7 +50,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
-import kotlinx.coroutines.test.runTest
 
 /**
  * This integrations test verifies the behavior of the WireEventsHandler and EventsRouter classes.
@@ -59,10 +60,6 @@ class WireEventsIntegrationTest {
     @Test
     fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
         runBlocking {
-            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
-            val eventsHandler = object : WireEventsHandlerSuspending() {}
-            TestUtils.setupSdk(eventsHandler)
-
             val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
             eventsRouter.route(
                 eventResponse = NEW_TEAM_INVITE_EVENT
@@ -77,203 +74,144 @@ class WireEventsIntegrationTest {
     }
 
     @Test
-    fun givenNewConversationsThenMembersAreCreatedAndDeleted() =
-        runTest {
-            // Setup
-            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
-
-            wireMockServer.stubFor(
-                WireMock.get(
-                    WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations/{conversationDomain}/{conversationId}"
-                    )
-                ).willReturn(
-                    WireMock.okJson(NEW_CONVERSATION_RESPONSE)
-                )
+    fun givenNewConversationsThenMembersAreCreatedAndDeleted() {
+        val conversationId =
+            QualifiedId(
+                id = UUID.randomUUID(),
+                domain = "wire.com"
             )
 
-            // Create SDK with our custom handler
-            TestUtils.setupSdk(wireEventsHandler)
+        // Execute
+        val conversationStorage = IsolatedKoinContext.koinApp.koin.get<ConversationStorage>()
+        val conversationPrevious = conversationStorage.getById(conversationId)
+        assertNull(conversationPrevious)
 
-            // Load Koin Modules
-            val mockCoreCryptoClient = MockCoreCryptoClient.Companion.create(
-                userId = UUID.randomUUID().toString(),
-                ciphersuiteCode = 1
-            )
-            IsolatedKoinContext.koin.loadModules(
-                listOf(
-                    module {
-                        single<CryptoClient> { mockCoreCryptoClient }
-                    }
+        val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
+
+        runBlocking {
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id10",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MlsWelcome(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = "xyz"
+                            )
+                        ),
+                    transient = true
                 )
             )
-
-            val conversationId =
-                QualifiedId(
-                    id = UUID.randomUUID(),
-                    domain = "wire.com"
-                )
-
-            // Execute
-            val conversationStorage = IsolatedKoinContext.koinApp.koin.get<ConversationStorage>()
-            val conversationPrevious = conversationStorage.getById(conversationId)
-            assertNull(conversationPrevious)
-
-            val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
-
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = EventResponse(
-                        id = "event_id10",
-                        payload =
-                            listOf(
-                                EventContentDTO.Conversation.MlsWelcome(
-                                    qualifiedConversation = conversationId,
-                                    qualifiedFrom = USER_ID,
-                                    time = EXPECTED_NEW_CONVERSATION_VALUE,
-                                    data = "xyz"
-                                )
-                            ),
-                        transient = true
-                    )
-                )
-            }
-
-            val conversation = conversationStorage.getById(conversationId)
-            assertEquals(conversation?.id, conversationId)
-            assertEquals(conversation?.teamId, TEAM_ID)
-            var conversationMember = conversationStorage.getMembersByConversationId(conversationId)
-            // First member received when fetching whole conversation after welcome
-            assertEquals(1, conversationMember.size)
-
-            val newUser1 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
-            val newUser2 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
-            val newUser3 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
-
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = EventResponse(
-                        id = "event_id11",
-                        payload =
-                            listOf(
-                                EventContentDTO.Conversation.MemberJoin(
-                                    qualifiedConversation = conversationId,
-                                    qualifiedFrom = USER_ID,
-                                    time = EXPECTED_NEW_CONVERSATION_VALUE,
-                                    data = MemberJoinEventData(
-                                        users = listOf(
-                                            Member(newUser1, ConversationRole.ADMIN),
-                                            Member(newUser2, ConversationRole.MEMBER),
-                                            Member(newUser3, ConversationRole.MEMBER)
-                                        )
-                                    )
-                                )
-                            ),
-                        transient = true
-                    )
-                )
-            }
-            conversationMember = conversationStorage.getMembersByConversationId(conversationId)
-            assertEquals(4, conversationMember.size)
-
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = EventResponse(
-                        id = "event_id12",
-                        payload =
-                            listOf(
-                                EventContentDTO.Conversation.MemberLeave(
-                                    qualifiedConversation = conversationId,
-                                    qualifiedFrom = USER_ID,
-                                    time = EXPECTED_NEW_CONVERSATION_VALUE,
-                                    data = MemberLeaveEventData(
-                                        users = listOf(newUser1, newUser2),
-                                        reason = "deletion"
-                                    )
-                                )
-                            ),
-                        transient = true
-                    )
-                )
-            }
-            conversationMember = conversationStorage.getMembersByConversationId(conversationId)
-            assertEquals(2, conversationMember.size)
         }
 
-    @Test
-    fun givenNewMLSMessageEventWhenRouterProcessesItThenMessageIsDecryptedAndHandled() =
-        runTest {
-            // Setup
-            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
-            wireMockServer.stubFor(
-                WireMock.get(
-                    WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations/{conversationDomain}/{conversationId}"
-                    )
-                ).willReturn(
-                    WireMock.okJson(CONVERSATION_RESPONSE)
-                )
-            )
+        val conversation = conversationStorage.getById(conversationId)
+        assertEquals(conversation?.id, conversationId)
+        assertEquals(conversation?.teamId, TEAM_ID)
+        var conversationMember = conversationStorage.getMembersByConversationId(conversationId)
+        // First member received when fetching whole conversation after welcome
+        assertEquals(1, conversationMember.size)
 
-            // Create SDK with our custom handler
-            TestUtils.setupSdk(wireEventsHandler)
+        val newUser1 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
+        val newUser2 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
+        val newUser3 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
 
-            // Load Koin Modules
-            val mockCoreCryptoClient = MockCoreCryptoClient.Companion.create(
-                userId = UUID.randomUUID().toString(),
-                ciphersuiteCode = 1
-            )
-            IsolatedKoinContext.koin.loadModules(
-                listOf(
-                    module {
-                        single<CryptoClient> { mockCoreCryptoClient }
-                    }
-                )
-            )
-
-            // Execute
-            val conversationStorage = IsolatedKoinContext.koinApp.koin.get<ConversationStorage>()
-            val conversationPrevious = conversationStorage.getById(CONVERSATION_ID)
-            assertNull(conversationPrevious)
-
-            val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
-
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = NEW_CONVERSATION_EVENT
-                )
-                eventsRouter.route(
-                    eventResponse = NEW_WELCOME_EVENT
-                )
-
-                val encryptedBase64Message = Base64
-                    .getEncoder()
-                    .encodeToString(
-                        MockCoreCryptoClient.Companion.GENERIC_TEXT_MESSAGE.toByteArray()
-                    )
-
-                eventsRouter.route(
-                    eventResponse = NEW_MLS_MESSAGE_EVENT.copy(
-                        payload = listOf(
-                            (
-                                NEW_MLS_MESSAGE_EVENT.payload?.first() as EventContentDTO
-                                    .Conversation
-                                    .NewMLSMessageDTO
-                            ).copy(
-                                message = encryptedBase64Message.toString()
+        runBlocking {
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id11",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MemberJoin(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = MemberJoinEventData(
+                                    users = listOf(
+                                        Member(newUser1, ConversationRole.ADMIN),
+                                        Member(newUser2, ConversationRole.MEMBER),
+                                        Member(newUser3, ConversationRole.MEMBER)
+                                    )
+                                )
                             )
+                        ),
+                    transient = true
+                )
+            )
+        }
+        conversationMember = conversationStorage.getMembersByConversationId(conversationId)
+        assertEquals(4, conversationMember.size)
+
+        runBlocking {
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id12",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MemberLeave(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = MemberLeaveEventData(
+                                    users = listOf(newUser1, newUser2),
+                                    reason = "deletion"
+                                )
+                            )
+                        ),
+                    transient = true
+                )
+            )
+        }
+        conversationMember = conversationStorage.getMembersByConversationId(conversationId)
+        assertEquals(2, conversationMember.size)
+    }
+
+    @Test
+    fun givenNewMLSMessageEventWhenRouterProcessesItThenMessageIsDecryptedAndHandled() {
+        // Execute
+        val conversationStorage = IsolatedKoinContext.koinApp.koin.get<ConversationStorage>()
+        val conversationPrevious = conversationStorage.getById(CONVERSATION_ID)
+        assertNull(conversationPrevious)
+
+        val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
+
+        runBlocking {
+            eventsRouter.route(
+                eventResponse = NEW_CONVERSATION_EVENT
+            )
+            eventsRouter.route(
+                eventResponse = NEW_WELCOME_EVENT
+            )
+
+            val encryptedBase64Message = Base64
+                .getEncoder()
+                .encodeToString(
+                    GENERIC_TEXT_MESSAGE.toByteArray()
+                )
+
+            eventsRouter.route(
+                eventResponse = NEW_MLS_MESSAGE_EVENT.copy(
+                    payload = listOf(
+                        (
+                            NEW_MLS_MESSAGE_EVENT.payload?.first() as EventContentDTO
+                                .Conversation
+                                .NewMLSMessageDTO
+                        ).copy(
+                            message = encryptedBase64Message.toString()
                         )
                     )
                 )
-            }
-
-            val conversation = conversationStorage.getById(CONVERSATION_ID)
-            assertEquals(conversation?.id, CONVERSATION_ID)
-            assertEquals(conversation?.teamId, TEAM_ID)
-
-            val conversationMember = conversationStorage.getMembersByConversationId(CONVERSATION_ID)
-            assertEquals(1, conversationMember.size)
+            )
         }
+
+        val conversation = conversationStorage.getById(CONVERSATION_ID)
+        assertEquals(conversation?.id, CONVERSATION_ID)
+        assertEquals(conversation?.teamId, TEAM_ID)
+
+        val conversationMember = conversationStorage.getMembersByConversationId(CONVERSATION_ID)
+        assertEquals(1, conversationMember.size)
+    }
 
     companion object {
         private val EXPECTED_NEW_CONVERSATION_VALUE = Instant.DISTANT_FUTURE
@@ -347,58 +285,15 @@ class WireEventsIntegrationTest {
                     ),
                 transient = true
             )
-        private val CONVERSATION_RESPONSE =
-            """
-                {
-                    "qualified_id": {
-                        "id": "${CONVERSATION_ID.id}",
-                        "domain": "${CONVERSATION_ID.domain}"
-                    },
-                    "name": "Test conversation",
-                    "epoch": 0,
-                    "members": {
-                        "others": [
-                            {
-                                "qualified_id": {
-                                    "id": "${UUID.randomUUID()}",
-                                    "domain": "${CONVERSATION_ID.domain}"
-                                },
-                                "conversation_role": "wire_admin"
-                            }
-                        ]
-                    },
-                    "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
-                    "team": "${TEAM_ID.value}",
-                    "type": 0,
-                    "protocol": "mls"
-                }
-            """.trimIndent()
-        private val NEW_CONVERSATION_RESPONSE =
-            """
-                {
-                    "qualified_id": {
-                        "id": "${CONVERSATION_ID.id}",
-                        "domain": "${CONVERSATION_ID.domain}"
-                    },
-                    "name": "Test conversation",
-                    "epoch": 0,
-                    "members": {
-                        "others": [
-                            {
-                                "qualified_id": {
-                                    "id": "${UUID.randomUUID()}",
-                                    "domain": "${CONVERSATION_ID.domain}"
-                                },
-                                "conversation_role": "wire_admin"
-                            }
-                        ]
-                    },
-                    "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
-                    "team": "${TEAM_ID.value}",
-                    "type": 0,
-                    "protocol": "mls"
-                }
-            """.trimIndent()
+        private val GENERIC_TEXT_MESSAGE = Messages.GenericMessage
+            .newBuilder()
+            .setMessageId(UUID.randomUUID().toString())
+            .setText(
+                Messages.Text.newBuilder()
+                    .setContent("Decrypted message content")
+                    .build()
+            )
+            .build()
 
         private val wireMockServer = WireMockServer(8086)
 
@@ -416,12 +311,11 @@ class WireEventsIntegrationTest {
         @JvmStatic
         @BeforeAll
         fun before() {
-            IsolatedKoinContext.start()
-
             wireMockServer.start()
 
             // Mock conversation fetching
-            val stubConvPath = "/$V/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
+            val stubConvPath =
+                "/${TestUtils.V}/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
             wireMockServer.stubFor(
                 WireMock.get(WireMock.urlPathTemplate(stubConvPath)).willReturn(
                     WireMock.okJson(
@@ -444,9 +338,8 @@ class WireEventsIntegrationTest {
                                     }
                                 ]
                             },
-                            "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
-                            "team": "${TEAM_ID.value}",
-                            "protocol": "mls"
+                            "group_id": "${MockCoreCryptoClient.MLS_GROUP_ID_BASE64}",
+                            "team": "${TEAM_ID.value}"
                         }
                         """.trimIndent()
                     )
@@ -463,6 +356,68 @@ class WireEventsIntegrationTest {
                             .withBody(ByteArray(128) { 1 })
                     )
             )
+
+            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
+            wireMockServer.stubFor(
+                WireMock.get(
+                    WireMock.urlPathTemplate(
+                        "/${TestUtils.V}/conversations/{conversationDomain}/{conversationId}"
+                    )
+                ).willReturn(
+                    WireMock.okJson(
+                        """
+                        {
+                            "qualified_id": {
+                                "id": "${CONVERSATION_ID.id}",
+                                "domain": "${CONVERSATION_ID.domain}"
+                            },
+                            "name": "Test conversation",
+                            "epoch": 0,
+                            "members": {
+                                "others": [
+                                    {
+                                        "qualified_id": {
+                                            "id": "${UUID.randomUUID()}",
+                                            "domain": "${CONVERSATION_ID.domain}"
+                                        },
+                                        "conversation_role": "wire_admin"
+                                    }
+                                ]
+                            },
+                            "group_id": "${MockCoreCryptoClient.MLS_GROUP_ID_BASE64}",
+                            "team": "${TEAM_ID.value}",
+                            "type": 0,
+                            "protocol": "mls"
+                        }
+                        """.trimIndent()
+                    )
+                )
+            )
+
+            val modules =
+                module {
+                    single<CryptoClient> {
+                        MockCoreCryptoClient()
+                    }
+                    single<CallManager> {
+                        object : CallManager {
+                            override suspend fun endCall(conversationId: QualifiedId) {}
+
+                            override suspend fun reportProcessNotifications(isStarted: Boolean) {}
+
+                            override suspend fun cancelJobs() {}
+
+                            override suspend fun onCallingMessageReceived(
+                                message: WireMessage.Calling,
+                                senderClient: ClientId
+                            ) {
+                            }
+                        }
+                    }
+                }
+            // Create SDK with our custom handler
+            TestUtils.setupSdk(wireEventsHandler)
+            IsolatedKoinContext.koin.loadModules(listOf(modules))
         }
 
         @JvmStatic

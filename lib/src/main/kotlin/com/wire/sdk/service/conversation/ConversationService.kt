@@ -80,7 +80,7 @@ internal class ConversationService internal constructor(
         userIds: List<QualifiedId>
     ): QualifiedId {
         val conversationCreatedResponse = backendClient.createGroupConversation(
-            createConversationRequest = CreateConversationRequest.Companion.createGroup(name = name)
+            createConversationRequest = CreateConversationRequest.createGroup(name = name)
         )
 
         val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
@@ -112,7 +112,7 @@ internal class ConversationService internal constructor(
         try {
             val teamId = getSelfTeamId()
             val conversationCreatedResponse = backendClient.createGroupConversation(
-                createConversationRequest = CreateConversationRequest.Companion.createChannel(
+                createConversationRequest = CreateConversationRequest.createChannel(
                     name = name,
                     teamId = teamId
                 )
@@ -169,7 +169,7 @@ internal class ConversationService internal constructor(
         publicKeysResponse: MlsPublicKeysResponse?
     ) {
         val cipherSuiteCode = getCipherSuiteCode()
-        val cipherSuite = CoreCryptoClient.Companion.getMlsCipherSuiteName(code = cipherSuiteCode)
+        val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
         val publicKeys = (publicKeysResponse ?: backendClient.getPublicKeys()).run {
             getRemovalKey(cipherSuite = cipherSuite)

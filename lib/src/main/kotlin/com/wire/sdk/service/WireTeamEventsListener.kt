@@ -97,7 +97,7 @@ internal class WireTeamEventsListener internal constructor(
 
             is ConsumableNotificationResponse.SynchronizationNotification -> {
                 notification.data.deliveryTag?.let { deliveryTag ->
-                    val ackRequest = EventAcknowledgeRequest.Companion.basicAck(deliveryTag)
+                    val ackRequest = EventAcknowledgeRequest.basicAck(deliveryTag)
                     ackEvent(ackRequest, session)
                 }
                 val notificationSyncMarker = backendClient.getNotificationSyncMarker()

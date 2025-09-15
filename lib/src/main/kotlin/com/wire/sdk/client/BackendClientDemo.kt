@@ -17,6 +17,7 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
+import com.wire.sdk.client.BackendClient.Companion.SUB_CONVERSATION_ID
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AppClientId
@@ -52,6 +53,7 @@ import io.ktor.client.plugins.cookies.get
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
@@ -356,6 +358,33 @@ internal class BackendClientDemo(
         }.body<ByteArray>()
     }
 
+    override suspend fun getSubConversationGroupInfo(conversationId: QualifiedId): ByteArray {
+        logger.info("Fetching sub conversation groupInfo: $conversationId")
+        val token = loginUser()
+        return httpClient.get(
+            "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+                "/subconversations/$SUB_CONVERSATION_ID/groupinfo"
+        ) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            accept(Mls)
+        }.body<ByteArray>()
+    }
+
+    override suspend fun leaveSubConversation(conversationId: QualifiedId) {
+        logger.info("Leaving sub conversation: $conversationId")
+        val token = loginUser()
+        httpClient.delete(
+            "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+                "/subconversations/$SUB_CONVERSATION_ID/self"
+        ) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }
+    }
+
     override suspend fun downloadAsset(
         assetId: String,
         assetDomain: String,
@@ -533,7 +562,7 @@ internal class BackendClientDemo(
             openingData.toByteArray() + assetContent + closingData.toByteArray()
     }
 
-    private companion object {
+    companion object {
         const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"

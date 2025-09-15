@@ -15,9 +15,8 @@
 
 package com.wire.sdk.sample
 
-import com.wire.integrations.jvm.WireAppSdk
-import com.wire.integrations.jvm.calling.GlobalCallManager
-import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.sdk.WireAppSdk
+import com.wire.sdk.model.QualifiedId
 import org.slf4j.LoggerFactory
 import java.util.UUID
 

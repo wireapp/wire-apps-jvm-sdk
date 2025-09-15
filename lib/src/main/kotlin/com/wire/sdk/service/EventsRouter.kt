@@ -26,7 +26,6 @@ import com.wire.crypto.toWelcome
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.integrations.jvm.calling.CallManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -44,6 +43,7 @@ import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.utils.obfuscateGroupId
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import com.wire.sdk.calling.CallManager
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
 import kotlin.time.Instant

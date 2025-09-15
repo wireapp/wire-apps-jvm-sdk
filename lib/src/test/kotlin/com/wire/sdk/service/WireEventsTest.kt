@@ -20,7 +20,7 @@ import com.wire.crypto.ClientId
 import com.wire.crypto.toGroupId
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.integrations.jvm.calling.CallManager
+import com.wire.sdk.calling.CallManager
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.ConversationData
 import com.wire.sdk.model.ConversationMember

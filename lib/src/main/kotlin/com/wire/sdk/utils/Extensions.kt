@@ -18,7 +18,7 @@
 
 package com.wire.sdk.utils
 
-import com.wire.integrations.jvm.model.QualifiedId
+import com.wire.sdk.model.QualifiedId
 import com.wire.crypto.MLSGroupId
 import java.util.UUID
 
