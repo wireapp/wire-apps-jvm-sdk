@@ -16,7 +16,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.util.UUID
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
-import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     kotlin("jvm")
