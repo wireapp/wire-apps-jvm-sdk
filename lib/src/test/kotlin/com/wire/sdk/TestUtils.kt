@@ -21,7 +21,13 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
+import com.wire.crypto.ClientId
+import com.wire.sdk.calling.CallManager
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.WireMessage
+import org.koin.dsl.module
 import java.util.UUID
 
 object TestUtils {
@@ -175,6 +181,25 @@ object TestUtils {
             cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
             eventsHandler
         )
+        val modules =
+            module {
+                single<CallManager> {
+                    object : CallManager {
+                        override suspend fun endCall(conversationId: QualifiedId) {}
+
+                        override suspend fun reportProcessNotifications(isStarted: Boolean) {}
+
+                        override suspend fun cancelJobs() {}
+
+                        override suspend fun onCallingMessageReceived(
+                            message: WireMessage.Calling,
+                            senderClient: ClientId
+                        ) {
+                        }
+                    }
+                }
+            }
+        IsolatedKoinContext.koin.loadModules(listOf(modules))
     }
 
     private val APPLICATION_ID = UUID.randomUUID()

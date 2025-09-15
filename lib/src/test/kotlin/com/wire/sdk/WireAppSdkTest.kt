@@ -18,7 +18,10 @@ package com.wire.sdk
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.wire.crypto.ClientId
+import com.wire.sdk.calling.CallManager
 import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.service.WireTeamEventsListener
 import io.mockk.coEvery
@@ -156,7 +159,27 @@ class WireAppSdkTest {
         @BeforeAll
         fun before() {
             wireMockServer.start()
+
+            val modules =
+                module {
+                    single<CallManager> {
+                        object : CallManager {
+                            override suspend fun endCall(conversationId: QualifiedId) {}
+
+                            override suspend fun reportProcessNotifications(isStarted: Boolean) {}
+
+                            override suspend fun cancelJobs() {}
+
+                            override suspend fun onCallingMessageReceived(
+                                message: WireMessage.Calling,
+                                senderClient: ClientId
+                            ) {
+                            }
+                        }
+                    }
+                }
             IsolatedKoinContext.start()
+            IsolatedKoinContext.koin.loadModules(listOf(modules))
         }
 
         @JvmStatic
