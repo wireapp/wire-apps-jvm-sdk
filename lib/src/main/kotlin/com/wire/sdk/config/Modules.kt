@@ -98,6 +98,8 @@ val sdkModule =
         single { CallingHttpClient(get()) }
         single { ConversationService(get(), get(), get(), get()) }
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
+        // TODO Maybe find a way to not start AVS if the app does not need it.
+        //  Decide if this should start lazily on startup
         single<CallManager> {
             GlobalCallManager(
                 callingHttpClient = get(),
