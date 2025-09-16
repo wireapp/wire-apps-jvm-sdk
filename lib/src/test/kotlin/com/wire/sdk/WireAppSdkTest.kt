@@ -111,29 +111,9 @@ class WireAppSdkTest {
             )
 
             val mockEventsListener = mockk<WireTeamEventsListener>()
+            val listenerModule = module { single { mockEventsListener } }
             // Load our mock into Koin
-            IsolatedKoinContext.koinApp.koin.loadModules(
-                listOf(
-                    module {
-                        single { mockEventsListener }
-                        single<CallManager> {
-                            object : CallManager {
-                                override suspend fun endCall(conversationId: QualifiedId) {}
-
-                                override suspend fun reportProcessNotifications(isStarted: Boolean) {}
-
-                                override suspend fun cancelJobs() {}
-
-                                override suspend fun onCallingMessageReceived(
-                                    message: WireMessage.Calling,
-                                    senderClient: ClientId
-                                ) {
-                                }
-                            }
-                        }
-                    }
-                )
-            )
+            IsolatedKoinContext.koin.loadModules(listOf(modules, listenerModule))
             var callCount = 0
             val latch = CountDownLatch(1)
 
@@ -169,30 +149,30 @@ class WireAppSdkTest {
         private const val API_HOST = "http://localhost:8086"
 
         private val wireMockServer = WireMockServer(8086)
+        private val modules =
+            module {
+                single<CallManager> {
+                    object : CallManager {
+                        override suspend fun endCall(conversationId: QualifiedId) {}
+
+                        override suspend fun reportProcessNotifications(isStarted: Boolean) {}
+
+                        override suspend fun cancelJobs() {}
+
+                        override suspend fun onCallingMessageReceived(
+                            message: WireMessage.Calling,
+                            senderClient: ClientId
+                        ) {
+                        }
+                    }
+                }
+            }
 
         @JvmStatic
         @BeforeAll
         fun before() {
             wireMockServer.start()
 
-            val modules =
-                module {
-                    single<CallManager> {
-                        object : CallManager {
-                            override suspend fun endCall(conversationId: QualifiedId) {}
-
-                            override suspend fun reportProcessNotifications(isStarted: Boolean) {}
-
-                            override suspend fun cancelJobs() {}
-
-                            override suspend fun onCallingMessageReceived(
-                                message: WireMessage.Calling,
-                                senderClient: ClientId
-                            ) {
-                            }
-                        }
-                    }
-                }
             IsolatedKoinContext.start()
             IsolatedKoinContext.koin.loadModules(listOf(modules))
         }
