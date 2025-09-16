@@ -16,8 +16,6 @@
 
 package com.wire.sdk
 
-import com.wire.integrations.jvm.calling.CallingHttpClient
-import com.wire.integrations.jvm.calling.GlobalCallManager
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.service.WireApplicationManager
@@ -152,8 +150,6 @@ class WireAppSdk(
             return
         }
         running.set(true)
-        val callingHttpClient = IsolatedKoinContext.koinApp.koin.get<CallingHttpClient>()
-        val callManager = GlobalCallManager(callingHttpClient).startCallManagerForClient()
 
         // Recreate executor if it was previously shut down
         if (executor.isShutdown) {
