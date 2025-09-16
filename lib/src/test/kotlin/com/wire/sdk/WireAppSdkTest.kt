@@ -38,6 +38,7 @@ import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class WireAppSdkTest {
     @Test
@@ -135,7 +136,7 @@ class WireAppSdkTest {
 
             // Wait for the last reconnect attempt to complete (with exception)
             val completed = latch.await(5, TimeUnit.SECONDS)
-            assert(completed) { "Timed out waiting for connection attempts" }
+            assertTrue(completed, "Timed out waiting for connection attempts")
 
             // Verify connect was called the expected number of times
             coVerify(atLeast = 3) { mockEventsListener.connect() }
@@ -157,7 +158,7 @@ class WireAppSdkTest {
 
                         override suspend fun reportProcessNotifications(isStarted: Boolean) {}
 
-                        override suspend fun cancelJobs() {}
+                        override fun cancelJobs() {}
 
                         override suspend fun onCallingMessageReceived(
                             message: WireMessage.Calling,

@@ -156,7 +156,6 @@ internal class EventsRouter internal constructor(
                         logger.debug("Decryption successful")
                         if (decrypted.message == null || decrypted.senderClientId == null) {
                             logger.debug("Decrypt success but no message, probably epoch update")
-                            return
                         } else {
                             forwardMessage(
                                 message = decrypted.message!!,

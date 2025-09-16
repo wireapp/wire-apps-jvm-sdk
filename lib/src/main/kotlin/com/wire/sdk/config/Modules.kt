@@ -107,7 +107,7 @@ val sdkModule =
                 cryptoClient = get(),
                 appStorage = get()
             ).startCallManagerForClient()
-        }
+        } onClose { it?.cancelJobs() }
     }
 
 @OptIn(ExperimentalLogbookKtorApi::class)

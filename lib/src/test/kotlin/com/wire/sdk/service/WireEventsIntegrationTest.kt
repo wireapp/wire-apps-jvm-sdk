@@ -405,7 +405,7 @@ class WireEventsIntegrationTest {
 
                             override suspend fun reportProcessNotifications(isStarted: Boolean) {}
 
-                            override suspend fun cancelJobs() {}
+                            override fun cancelJobs() {}
 
                             override suspend fun onCallingMessageReceived(
                                 message: WireMessage.Calling,

@@ -46,6 +46,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import org.slf4j.LoggerFactory
+import java.util.Base64
 import kotlin.time.Clock
 
 @Suppress("LongParameterList", "TooManyFunctions")
@@ -138,14 +139,14 @@ class CallManagerImpl internal constructor(
             val msg = message.content.toByteArray()
 
             wcall_recv_msg(
-                inst = deferredHandle.await(),
+                inst = it,
                 msg = msg,
                 len = msg.size,
                 curr_time = Uint32Native(value = Clock.System.now().epochSeconds),
                 msg_time = Uint32Native(value = message.timestamp.epochSeconds),
                 convId = message.conversationId.toFederatedId(),
                 userId = message.sender.toFederatedId(),
-                clientId = senderClient.toString(),
+                clientId = Base64.getEncoder().encodeToString(senderClient.value),
                 // Hard coding 3 as for "Conference MLS"
                 convType = 3
             )
@@ -158,7 +159,7 @@ class CallManagerImpl internal constructor(
             logger.info("endCall -> ConversationId: $conversationId")
 
             wcall_end(
-                inst = deferredHandle.await(),
+                inst = it,
                 conversationId = "${conversationId.id}@${conversationId.domain}"
             )
         }
@@ -169,7 +170,7 @@ class CallManagerImpl internal constructor(
         }
     }
 
-    override suspend fun cancelJobs() {
+    override fun cancelJobs() {
         deferredHandle.cancel()
         scope.cancel()
         job.cancel()
