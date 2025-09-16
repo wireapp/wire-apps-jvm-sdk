@@ -25,7 +25,7 @@ interface CallManager {
 
     suspend fun reportProcessNotifications(isStarted: Boolean)
 
-    suspend fun cancelJobs()
+    fun cancelJobs()
 
     suspend fun onCallingMessageReceived(
         message: WireMessage.Calling,
