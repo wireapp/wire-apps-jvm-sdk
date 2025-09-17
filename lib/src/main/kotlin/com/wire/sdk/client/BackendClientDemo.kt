@@ -45,6 +45,7 @@ import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.persistence.AppStorage
+import com.wire.sdk.utils.KtxSerializer
 import com.wire.sdk.utils.Mls
 import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.HttpClient
@@ -64,15 +65,17 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.URLBuilder
+import io.ktor.http.URLProtocol
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
 import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
-import java.util.Base64
-import java.util.UUID
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
+import java.util.Base64
+import java.util.UUID
 
 /**
  * Backend client implementation for test/demo purposes
@@ -466,7 +469,6 @@ internal class BackendClientDemo(
 
         var hasMorePages: Boolean
         do {
-            hasMorePages = false
             val listIdsResponse = httpClient.post("/$API_VERSION/conversations/list-ids") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
@@ -523,6 +525,34 @@ internal class BackendClientDemo(
         return conversations
     }
 
+    override suspend fun getCallConfig(limit: Int?): String {
+        val token = loginUser()
+        return httpClient.get("${PATH_CALLS}/${PATH_CONFIG}") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            limit?.let { parameter(QUERY_KEY_LIMIT, it) }
+        }.body<String>()
+    }
+
+    override suspend fun connectToSFT(
+        url: String,
+        data: String
+    ): ByteArray =
+        url.let {
+            URLBuilder(it).apply {
+                protocol = URLProtocol.HTTPS
+            }
+        }.build().let { parsedUrl ->
+            httpClient.post(url = parsedUrl) {
+                // We are parsing the data string to json due to Ktor serialization escaping
+                // the string
+                // and thus backend not recognizing and returning a 400 - Bad Request
+                val json = KtxSerializer.json.parseToJsonElement(data)
+                setBody(json)
+            }
+        }.body<ByteArray>()
+
     internal class AssetBody internal constructor(
         private val assetContent: ByteArray,
         assetSize: Long,
@@ -565,6 +595,9 @@ internal class BackendClientDemo(
     companion object {
         const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
+        const val PATH_CALLS = "calls"
+        const val PATH_CONFIG = "config/v2"
+        const val QUERY_KEY_LIMIT = "limit"
         const val HEADER_ASSET_TOKEN = "Asset-Token"
         const val TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
         const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100

@@ -20,7 +20,6 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.calling.CallManager
-import com.wire.sdk.calling.CallingHttpClient
 import com.wire.sdk.calling.GlobalCallManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientDemo
@@ -95,14 +94,12 @@ val sdkModule =
             }
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get()) }
-        single { CallingHttpClient(get()) }
         single { ConversationService(get(), get(), get(), get()) }
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
         // TODO Maybe find a way to not start AVS if the app does not need it.
         //  Decide if this should start lazily on startup
         single<CallManager> {
             GlobalCallManager(
-                callingHttpClient = get(),
                 backendClient = get(),
                 cryptoClient = get(),
                 appStorage = get()

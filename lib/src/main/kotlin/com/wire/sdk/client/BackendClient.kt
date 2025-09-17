@@ -107,6 +107,13 @@ interface BackendClient {
 
     suspend fun getConversationsById(conversationIds: List<QualifiedId>): List<ConversationResponse>
 
+    suspend fun connectToSFT(
+        url: String,
+        data: String
+    ): ByteArray
+
+    suspend fun getCallConfig(limit: Int?): String
+
     companion object {
         const val API_VERSION = "v10"
         const val SUB_CONVERSATION_ID = "conference"

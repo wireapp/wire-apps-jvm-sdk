@@ -190,4 +190,15 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     ): List<ConversationResponse> {
         TODO("Not yet implemented")
     }
+
+    override suspend fun connectToSFT(
+        url: String,
+        data: String
+    ): ByteArray {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getCallConfig(limit: Int?): String {
+        TODO("Not yet implemented")
+    }
 }

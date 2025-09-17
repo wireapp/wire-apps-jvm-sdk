@@ -17,13 +17,13 @@
 package com.wire.sdk.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
-import com.wire.sdk.calling.CallingHttpClient
 import com.wire.sdk.calling.CallingAvsClient
 import com.wire.sdk.calling.callbacks.SFTRequestHandler
 import com.wire.sdk.calling.types.AvsCallBackError
 import com.wire.sdk.calling.types.AvsSFTError
 import com.wire.sdk.calling.types.Handle
 import com.wire.sdk.calling.types.SizeNative
+import com.wire.sdk.client.BackendClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory
 class OnSFTRequest(
     private val handle: Deferred<Handle>,
     private val callingAvsClient: CallingAvsClient,
-    private val callingHttpClient: CallingHttpClient,
+    private val backendClient: BackendClient,
     private val callingScope: CoroutineScope
 ) : SFTRequestHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -49,7 +49,7 @@ class OnSFTRequest(
 
         callingScope.launch {
             dataString?.let {
-                val responseData = callingHttpClient.connectToSFT(
+                val responseData = backendClient.connectToSFT(
                     url = url,
                     data = dataString
                 )
