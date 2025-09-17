@@ -17,6 +17,7 @@
 package com.wire.sdk.exception
 
 import com.wire.sdk.model.StandardError
+import io.ktor.client.call.NoTransformationFoundException
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.ResponseException
@@ -28,28 +29,29 @@ private val logger = LoggerFactory.getLogger("ExceptionMapper")
 
 suspend fun ResponseException.mapToWireException(): Nothing {
     logger.warn("Error occurred", this)
-
-    val errorResponse = try {
-        this.response.body<StandardError>()
+    throw try {
+        val errorResponse = this.response.body<StandardError>()
+        when (this) {
+            is ClientRequestException -> {
+                WireException.ClientError(errorResponse, this)
+            }
+            is ServerResponseException -> {
+                WireException.ServerError(errorResponse, this)
+            }
+            else -> WireException.UnknownError(
+                message = this.message,
+                throwable = this
+            )
+        }
     } catch (e: JsonConvertException) {
         logger.error(
-            "Exception could not be mapped to StandardError type. ${e.message}"
+            "Error response does not contain StandardError fields. ${e.message}"
         )
-        throw WireException.UnknownError(e.cause?.message, e)
-    }
-
-    throw when (this) {
-        is ClientRequestException -> {
-            WireException.ClientError(errorResponse, this)
-        }
-
-        is ServerResponseException -> {
-            WireException.InternalSystemError(errorResponse, this)
-        }
-
-        else -> WireException.UnknownError(
-            message = this.message,
-            throwable = this
+        WireException.UnknownError(e.cause?.message, e)
+    } catch (e: NoTransformationFoundException) {
+        logger.error(
+            "Error response is not in serializable mime type. ${e.message}"
         )
+        WireException.UnknownError(e.cause?.message, e)
     }
 }
