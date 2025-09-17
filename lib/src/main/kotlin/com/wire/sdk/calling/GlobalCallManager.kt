@@ -24,7 +24,6 @@ import com.wire.sdk.persistence.AppStorage
 import org.slf4j.LoggerFactory
 
 internal class GlobalCallManager(
-    private val callingHttpClient: CallingHttpClient,
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient,
     private val appStorage: AppStorage
@@ -50,7 +49,6 @@ internal class GlobalCallManager(
     internal fun startCallManagerForClient(): CallManager =
         CallManagerImpl(
             callingAvsClient = callingAvsClient,
-            callingHttpClient = callingHttpClient,
             backendClient = backendClient,
             cryptoClient = cryptoClient,
             appStorage = appStorage

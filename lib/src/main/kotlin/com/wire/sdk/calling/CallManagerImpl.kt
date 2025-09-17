@@ -52,7 +52,6 @@ import kotlin.time.Clock
 @Suppress("LongParameterList", "TooManyFunctions")
 class CallManagerImpl internal constructor(
     private val callingAvsClient: CallingAvsClient,
-    private val callingHttpClient: CallingHttpClient,
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient,
     private val appStorage: AppStorage
@@ -80,7 +79,7 @@ class CallManagerImpl internal constructor(
                 sftRequestHandler = OnSFTRequest(
                     deferredHandle,
                     callingAvsClient,
-                    callingHttpClient,
+                    backendClient,
                     scope
                 ),
                 incomingCallHandler = OnIncomingCall(
@@ -105,7 +104,7 @@ class CallManagerImpl internal constructor(
                     },
                 callConfigRequestHandler = OnConfigRequest(
                     callingAvsClient,
-                    callingHttpClient,
+                    backendClient,
                     scope
                 ),
                 constantBitRateStateChangeHandler =

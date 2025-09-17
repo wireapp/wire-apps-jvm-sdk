@@ -17,18 +17,18 @@
 package com.wire.sdk.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
-import com.wire.sdk.calling.CallingHttpClient
 import com.wire.sdk.calling.CallingAvsClient
 import com.wire.sdk.calling.callbacks.CallConfigRequestHandler
 import com.wire.sdk.calling.types.AvsCallBackError
 import com.wire.sdk.calling.types.Handle
+import com.wire.sdk.client.BackendClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
 class OnConfigRequest(
     private val calling: CallingAvsClient,
-    private val callingHttpClient: CallingHttpClient,
+    private val backendClient: BackendClient,
     private val callingScope: CoroutineScope
 ) : CallConfigRequestHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -39,7 +39,7 @@ class OnConfigRequest(
     ): Int {
         logger.info("[OnConfigRequest] - STARTED")
         callingScope.launch {
-            val config = callingHttpClient.getCallConfig(limit = null)
+            val config = backendClient.getCallConfig(limit = null)
             calling.wcall_config_update(
                 inst = inst,
                 error = 0,

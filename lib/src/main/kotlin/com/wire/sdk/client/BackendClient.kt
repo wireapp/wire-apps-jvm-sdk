@@ -45,6 +45,13 @@ interface BackendClient {
 
     suspend fun getCallConfig(limit: Int?): String
 
+    suspend fun connectToSFT(
+        url: String,
+        data: String
+    ): ByteArray
+
+    suspend fun getCallConfig(limit: Int?): String
+
     companion object {
         const val CLIENT_QUERY_KEY = "client"
         const val SUB_CONVERSATION_ID = "conference"
