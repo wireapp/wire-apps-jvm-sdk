@@ -133,7 +133,7 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
 
         install(HttpCache)
         install(HttpRequestRetry) {
-            retryOnServerErrors(maxRetries = 3)
+            retryOnServerErrors(maxRetries = MAX_RETRY_NUMBER_ON_SERVER_ERROR)
             exponentialDelay()
         }
 
