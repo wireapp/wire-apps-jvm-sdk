@@ -100,6 +100,8 @@ val sdkModule =
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
     }
 
+internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
+
 @OptIn(ExperimentalLogbookKtorApi::class)
 internal fun createHttpClient(apiHost: String?): HttpClient {
     return HttpClient(CIO) {

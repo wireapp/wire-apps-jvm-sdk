@@ -16,14 +16,21 @@
 
 package com.wire.sdk.service
 
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.BackendClientDemo
+import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.config.MAX_RETRY_NUMBER_ON_SERVER_ERROR
 import com.wire.sdk.model.http.ConsumableNotificationResponse
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventDataDTO
 import com.wire.sdk.model.http.EventResponse
-import com.wire.sdk.service.EventsRouter
-import com.wire.sdk.service.WireTeamEventsListener
+import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.KtxSerializer
+import io.ktor.client.HttpClient
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSocketException
@@ -132,5 +139,46 @@ class WireTeamEventsListenerTest {
             // Act and Assert
             // Should not throw exception
             listener.connect()
+        }
+
+    @Test
+    fun whenServerIsDownThenApplyExponentialBackoffStrategy() =
+        runTest {
+            // Arrange
+            val wireMockServer = WireMockServer(8086)
+            IsolatedKoinContext.start()
+            IsolatedKoinContext.koinApp.koin.setProperty("API_HOST", "http://localhost:8086")
+            wireMockServer.start()
+            wireMockServer.stubFor(
+                WireMock.post(WireMock.anyUrl())
+                    .willReturn(
+                        aResponse()
+                            .withStatus(503)
+                            .withHeader("Content-Type", "text/html")
+                            .withBody("<html><body>Service Temporarily Unavailable</body></html>")
+                    )
+            )
+            val httpClient = IsolatedKoinContext.koinApp.koin.get<HttpClient>()
+            val appStorage = mockk<AppStorage>()
+            val backendClient = BackendClientDemo(
+                httpClient = httpClient,
+                appStorage = appStorage
+            )
+            val eventsRouter = mockk<EventsRouter>()
+            val listener = WireTeamEventsListener(backendClient, eventsRouter)
+
+            // Assert
+            assertThrows<InterruptedException> {
+                // Act
+                listener.connect()
+            }
+            wireMockServer.verify(
+                1 + MAX_RETRY_NUMBER_ON_SERVER_ERROR,
+                postRequestedFor(WireMock.anyUrl())
+            )
+
+            // Clean up
+            wireMockServer.stop()
+            IsolatedKoinContext.stop()
         }
 }
