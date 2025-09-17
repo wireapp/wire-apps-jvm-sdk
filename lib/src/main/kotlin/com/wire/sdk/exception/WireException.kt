@@ -74,9 +74,9 @@ sealed class WireException @JvmOverloads constructor(
     ) : WireException(response.message, throwable)
 
     /**
-     * Internal Error
+     * Server Error
      */
-    data class InternalSystemError(
+    data class ServerError(
         val response: StandardError,
         val throwable: Throwable?
     ) : WireException(response.message, throwable)
