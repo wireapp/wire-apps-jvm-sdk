@@ -20,7 +20,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.calling.CallManager
-import com.wire.sdk.calling.GlobalCallManager
+import com.wire.sdk.calling.CallManagerImpl
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientDemo
 import com.wire.sdk.crypto.CoreCryptoClient
@@ -96,15 +96,8 @@ val sdkModule =
         single { WireTeamEventsListener(get(), get()) }
         single { ConversationService(get(), get(), get(), get()) }
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
-        // TODO Maybe find a way to not start AVS if the app does not need it.
-        //  Decide if this should start lazily on startup
-        single<CallManager> {
-            GlobalCallManager(
-                backendClient = get(),
-                cryptoClient = get(),
-                appStorage = get()
-            ).startCallManagerForClient()
-        } onClose { it?.cancelJobs() }
+        // AVS library called lazily inside CallManagerImpl
+        single<CallManager> { CallManagerImpl(get(), get(), get()) } onClose { it?.cancelJobs() }
     }
 
 @OptIn(ExperimentalLogbookKtorApi::class)

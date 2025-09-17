@@ -18,6 +18,7 @@ package com.wire.sdk.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
 import com.wire.sdk.calling.callbacks.AnsweredCallHandler
+import com.wire.sdk.utils.obfuscateId
 import org.slf4j.LoggerFactory
 
 class OnAnsweredCall : AnsweredCallHandler {
@@ -27,6 +28,6 @@ class OnAnsweredCall : AnsweredCallHandler {
         conversationId: String,
         arg: Pointer?
     ) {
-        logger.info("[Calling] OnAnsweredCall: $conversationId")
+        logger.info("[Calling] OnAnsweredCall: ${conversationId.obfuscateId()}")
     }
 }

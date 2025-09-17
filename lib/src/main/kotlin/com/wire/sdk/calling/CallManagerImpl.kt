@@ -18,6 +18,7 @@ package com.wire.sdk.calling
 
 import com.sun.jna.Pointer
 import com.wire.crypto.ClientId
+import com.wire.sdk.calling.callbacks.LogHandler
 import com.wire.sdk.calling.callbacks.implementations.OnAnsweredCall
 import com.wire.sdk.calling.callbacks.implementations.OnCloseCall
 import com.wire.sdk.calling.callbacks.implementations.OnConfigRequest
@@ -51,7 +52,6 @@ import kotlin.time.Clock
 
 @Suppress("LongParameterList", "TooManyFunctions")
 class CallManagerImpl internal constructor(
-    private val callingAvsClient: CallingAvsClient,
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient,
     private val appStorage: AppStorage
@@ -59,6 +59,19 @@ class CallManagerImpl internal constructor(
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val job = SupervisorJob()
     private val scope = CoroutineScope(job)
+
+    private val callingAvsClient by lazy {
+        CallingAvsClient.INSTANCE.apply {
+            wcall_setup()
+            wcall_run()
+            wcall_set_log_handler(
+                logHandler = CallingLogHandler,
+                arg = null
+            )
+            logger.info("AVS setup complete")
+        }
+    }
+
     private val deferredHandle: Deferred<Handle> = startHandleAsync()
 
     private fun startHandleAsync(): Deferred<Handle> {
@@ -159,7 +172,7 @@ class CallManagerImpl internal constructor(
 
             wcall_end(
                 inst = it,
-                conversationId = "${conversationId.id}@${conversationId.domain}"
+                conversationId = conversationId.toFederatedId()
             )
         }
 
@@ -173,5 +186,28 @@ class CallManagerImpl internal constructor(
         deferredHandle.cancel()
         scope.cancel()
         job.cancel()
+    }
+}
+
+object CallingLogHandler : LogHandler {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private const val LOG_LEVEL_DEBUG = 0
+    private const val LOG_LEVEL_INFO = 1
+    private const val LOG_LEVEL_WARN = 2
+    private const val LOG_LEVEL_ERROR = 3
+
+    override fun onLog(
+        level: Int,
+        message: String,
+        arg: Pointer?
+    ) {
+        when (level) {
+            LOG_LEVEL_DEBUG -> logger.debug(message)
+            LOG_LEVEL_INFO -> logger.info(message)
+            LOG_LEVEL_WARN -> logger.warn(message)
+            LOG_LEVEL_ERROR -> logger.error(message)
+            else -> logger.info(message)
+        }
     }
 }

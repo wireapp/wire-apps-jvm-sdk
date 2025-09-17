@@ -16,11 +16,10 @@
 
 package com.wire.sdk.service
 
-import com.wire.crypto.ClientId
 import com.wire.crypto.toGroupId
+import com.wire.sdk.TestUtils.MOCK_CALL_MANAGER_MODULE
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.sdk.calling.CallManager
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.ConversationData
 import com.wire.sdk.model.ConversationMember
@@ -28,18 +27,17 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
-import com.wire.sdk.service.EventsRouter
 import com.wire.sdk.utils.KtxSerializer
-import java.util.UUID
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
-import kotlin.time.Instant
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.koin.dsl.module
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class WireEventsTest {
     @Test
@@ -150,8 +148,8 @@ class WireEventsTest {
             domain = "anta.wire.link"
         )
 
-        private val EXPECTED_LOCATION_LATITUDE = 11.12345F
-        private val EXPECTED_LOCATION_LONGITUDE = 12.12345F
+        private const val EXPECTED_LOCATION_LATITUDE = 11.12345F
+        private const val EXPECTED_LOCATION_LONGITUDE = 12.12345F
 
         private val DUMMY_CONVERSATION_CREATE_EVENT_RESPONSE =
             """{
@@ -251,23 +249,9 @@ class WireEventsTest {
                 single<EventsRouter> {
                     EventsRouter(get(), get(), get(), get(), get(), get(), get())
                 }
-                single<CallManager> {
-                    object : CallManager {
-                        override suspend fun endCall(conversationId: QualifiedId) {}
-
-                        override suspend fun reportProcessNotifications(isStarted: Boolean) {}
-
-                        override fun cancelJobs() {}
-
-                        override suspend fun onCallingMessageReceived(
-                            message: WireMessage.Calling,
-                            senderClient: ClientId
-                        ) {}
-                    }
-                }
             }
             IsolatedKoinContext.start()
-            IsolatedKoinContext.koin.loadModules(listOf(modules))
+            IsolatedKoinContext.koin.loadModules(listOf(modules, MOCK_CALL_MANAGER_MODULE))
         }
 
         @JvmStatic

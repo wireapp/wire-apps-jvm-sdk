@@ -50,10 +50,10 @@ class OnCloseCall(
             "[OnCloseCall] -> ConversationId: ${conversationId.obfuscateId()} |" +
                 " UserId: ${userId.obfuscateId()} | Reason: $reason"
         )
-        val conversationIdWithDomain = conversationId.toQualifiedId()
+        val qualifiedConversationId = conversationId.toQualifiedId()
 
         scope.launch {
-            backendClient.leaveSubConversation(conversationIdWithDomain)
+            backendClient.leaveSubConversation(qualifiedConversationId)
             logger.info(
                 "[OnCloseCall] -> Left MLS conference" +
                     "ConversationId: ${conversationId.obfuscateId()}"

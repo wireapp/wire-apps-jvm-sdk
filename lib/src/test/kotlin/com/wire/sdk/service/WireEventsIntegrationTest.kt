@@ -18,11 +18,10 @@ package com.wire.sdk.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.wire.crypto.ClientId
 import com.wire.integrations.protobuf.messages.Messages
 import com.wire.sdk.TestUtils
+import com.wire.sdk.TestUtils.MOCK_CALL_MANAGER_MODULE
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.sdk.calling.CallManager
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.model.QualifiedId
@@ -399,25 +398,10 @@ class WireEventsIntegrationTest {
                     single<CryptoClient> {
                         MockCoreCryptoClient()
                     }
-                    single<CallManager> {
-                        object : CallManager {
-                            override suspend fun endCall(conversationId: QualifiedId) {}
-
-                            override suspend fun reportProcessNotifications(isStarted: Boolean) {}
-
-                            override fun cancelJobs() {}
-
-                            override suspend fun onCallingMessageReceived(
-                                message: WireMessage.Calling,
-                                senderClient: ClientId
-                            ) {
-                            }
-                        }
-                    }
                 }
             // Create SDK with our custom handler
             TestUtils.setupSdk(wireEventsHandler)
-            IsolatedKoinContext.koin.loadModules(listOf(modules))
+            IsolatedKoinContext.koin.loadModules(listOf(modules, MOCK_CALL_MANAGER_MODULE))
         }
 
         @JvmStatic

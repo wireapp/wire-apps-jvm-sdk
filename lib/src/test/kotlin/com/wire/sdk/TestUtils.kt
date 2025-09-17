@@ -181,25 +181,8 @@ object TestUtils {
             cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
             eventsHandler
         )
-        val modules =
-            module {
-                single<CallManager> {
-                    object : CallManager {
-                        override suspend fun endCall(conversationId: QualifiedId) {}
 
-                        override suspend fun reportProcessNotifications(isStarted: Boolean) {}
-
-                        override fun cancelJobs() {}
-
-                        override suspend fun onCallingMessageReceived(
-                            message: WireMessage.Calling,
-                            senderClient: ClientId
-                        ) {
-                        }
-                    }
-                }
-            }
-        IsolatedKoinContext.koin.loadModules(listOf(modules))
+        IsolatedKoinContext.koin.loadModules(listOf(MOCK_CALL_MANAGER_MODULE))
     }
 
     private val APPLICATION_ID = UUID.randomUUID()
@@ -217,4 +200,22 @@ object TestUtils {
                 }
             }
         """.trimIndent()
+    val MOCK_CALL_MANAGER_MODULE =
+        module {
+            single<CallManager> {
+                object : CallManager {
+                    override suspend fun endCall(conversationId: QualifiedId) {}
+
+                    override suspend fun reportProcessNotifications(isStarted: Boolean) {}
+
+                    override fun cancelJobs() {}
+
+                    override suspend fun onCallingMessageReceived(
+                        message: WireMessage.Calling,
+                        senderClient: ClientId
+                    ) {
+                    }
+                }
+            }
+        }
 }

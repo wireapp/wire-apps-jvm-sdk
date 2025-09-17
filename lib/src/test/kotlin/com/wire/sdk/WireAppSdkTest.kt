@@ -18,10 +18,8 @@ package com.wire.sdk
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.wire.crypto.ClientId
-import com.wire.sdk.calling.CallManager
+import com.wire.sdk.TestUtils.MOCK_CALL_MANAGER_MODULE
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.service.WireTeamEventsListener
 import io.mockk.coEvery
@@ -114,7 +112,7 @@ class WireAppSdkTest {
             val mockEventsListener = mockk<WireTeamEventsListener>()
             val listenerModule = module { single { mockEventsListener } }
             // Load our mock into Koin
-            IsolatedKoinContext.koin.loadModules(listOf(modules, listenerModule))
+            IsolatedKoinContext.koin.loadModules(listOf(MOCK_CALL_MANAGER_MODULE, listenerModule))
             var callCount = 0
             val latch = CountDownLatch(1)
 
@@ -150,24 +148,6 @@ class WireAppSdkTest {
         private const val API_HOST = "http://localhost:8086"
 
         private val wireMockServer = WireMockServer(8086)
-        private val modules =
-            module {
-                single<CallManager> {
-                    object : CallManager {
-                        override suspend fun endCall(conversationId: QualifiedId) {}
-
-                        override suspend fun reportProcessNotifications(isStarted: Boolean) {}
-
-                        override fun cancelJobs() {}
-
-                        override suspend fun onCallingMessageReceived(
-                            message: WireMessage.Calling,
-                            senderClient: ClientId
-                        ) {
-                        }
-                    }
-                }
-            }
 
         @JvmStatic
         @BeforeAll
@@ -175,7 +155,7 @@ class WireAppSdkTest {
             wireMockServer.start()
 
             IsolatedKoinContext.start()
-            IsolatedKoinContext.koin.loadModules(listOf(modules))
+            IsolatedKoinContext.koin.loadModules(listOf(MOCK_CALL_MANAGER_MODULE))
         }
 
         @JvmStatic
