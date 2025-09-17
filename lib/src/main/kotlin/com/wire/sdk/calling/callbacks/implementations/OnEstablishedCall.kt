@@ -18,6 +18,8 @@ package com.wire.sdk.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
 import com.wire.sdk.calling.callbacks.EstablishedCallHandler
+import com.wire.sdk.utils.obfuscateClientId
+import com.wire.sdk.utils.obfuscateId
 import org.slf4j.LoggerFactory
 
 class OnEstablishedCall : EstablishedCallHandler {
@@ -29,6 +31,9 @@ class OnEstablishedCall : EstablishedCallHandler {
         clientId: String,
         arg: Pointer?
     ) {
-        logger.info("[Calling] OnEstablishedCall: $remoteConversationId - $userId - $clientId")
+        logger.info(
+            "[Calling] OnEstablishedCall: ${remoteConversationId.obfuscateId()} - " +
+                "${userId.obfuscateId()} - ${clientId.obfuscateClientId()}"
+        )
     }
 }

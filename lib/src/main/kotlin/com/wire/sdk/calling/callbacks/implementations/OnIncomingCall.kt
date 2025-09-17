@@ -80,7 +80,7 @@ internal class OnIncomingCall(
         isVideoCall: Boolean
     ) {
         logger.info(
-            "[OnIncomingCall] -> answering call for conversation = $conversationId"
+            "[OnIncomingCall] -> answering call for conversation = ${conversationId.obfuscateId()}"
         )
         val callId = UUID.randomUUID()
         val callType = if (isVideoCall) VIDEO else AUDIO

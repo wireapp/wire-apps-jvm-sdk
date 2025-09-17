@@ -19,6 +19,7 @@ package com.wire.sdk.calling.callbacks.implementations
 import com.sun.jna.Pointer
 import com.wire.sdk.calling.callbacks.ClientsRequestHandler
 import com.wire.sdk.calling.types.Handle
+import com.wire.sdk.utils.obfuscateId
 import org.slf4j.LoggerFactory
 
 internal class OnClientsRequest : ClientsRequestHandler {
@@ -29,6 +30,6 @@ internal class OnClientsRequest : ClientsRequestHandler {
         conversationId: String,
         arg: Pointer?
     ) {
-        logger.info("[Calling] OnClientsRequest: $conversationId")
+        logger.info("[Calling] OnClientsRequest: ${conversationId.obfuscateId()}")
     }
 }

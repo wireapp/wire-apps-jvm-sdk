@@ -19,6 +19,7 @@ package com.wire.sdk.calling.callbacks.implementations
 import com.sun.jna.Pointer
 import com.wire.sdk.calling.callbacks.SendHandler
 import com.wire.sdk.calling.types.Handle
+import com.wire.sdk.utils.obfuscateId
 import org.slf4j.LoggerFactory
 
 @Suppress("LongParameterList")
@@ -40,8 +41,9 @@ internal class OnSendOTR : SendHandler {
         arg: Pointer?
     ): Int {
         logger.info(
-            "[Calling] OnSendOTR: $remoteConversationId - $remoteSelfUserId -" +
-                "$remoteClientIdSelf - $targetRecipientsJson - $clientIdDestination"
+            "[Calling] OnSendOTR: ${remoteConversationId.obfuscateId()} - " +
+                "${remoteSelfUserId.obfuscateId()} - ${remoteClientIdSelf.obfuscateId()} - " +
+                "$targetRecipientsJson - ${clientIdDestination?.obfuscateId()}"
         )
         return 0
     }
