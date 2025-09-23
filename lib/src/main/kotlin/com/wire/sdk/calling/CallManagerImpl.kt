@@ -75,14 +75,13 @@ class CallManagerImpl internal constructor(
     private val deferredHandle: Deferred<Handle> = startHandleAsync()
 
     private fun startHandleAsync(): Deferred<Handle> {
+        logger.info("startHandleAsync is called")
         return scope.async(start = CoroutineStart.LAZY) {
             logger.info("Creating Handle")
             val selfUserId = DEMO_USER_ID
             val selfUserDomain = DEMO_ENVIRONMENT
             val selfUser = QualifiedId(selfUserId, selfUserDomain)
             val selfClientId = appStorage.getDeviceId()!!
-
-            val waitInitializationJob = Job()
 
             val handle = callingAvsClient.wcall_create(
                 userId = selfUser.toFederatedId(),
@@ -131,12 +130,12 @@ class CallManagerImpl internal constructor(
                 arg = null
             )
             logger.info("wcall_create() called")
-            waitInitializationJob.join()
             handle
         }
     }
 
     private suspend fun <T> withCalling(action: suspend CallingAvsClient.(handle: Handle) -> T): T {
+        logger.info("withCalling is called with action: {}", action)
         val handle = deferredHandle.await()
         return callingAvsClient.action(handle)
     }
