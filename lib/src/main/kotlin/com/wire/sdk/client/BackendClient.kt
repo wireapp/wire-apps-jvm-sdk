@@ -32,7 +32,6 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
-import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import java.util.UUID
@@ -77,8 +76,6 @@ interface BackendClient {
 
     suspend fun getUserData(userId: QualifiedId): UserResponse
 
-    suspend fun getSelfUser(): SelfUserResponse
-
     suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray
 
     suspend fun downloadAsset(
@@ -104,6 +101,6 @@ interface BackendClient {
     suspend fun getConversationsById(conversationIds: List<QualifiedId>): List<ConversationResponse>
 
     companion object {
-        const val API_VERSION = "v10"
+        const val API_VERSION = "v12"
     }
 }

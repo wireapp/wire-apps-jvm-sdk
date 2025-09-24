@@ -38,12 +38,6 @@ import com.wire.sdk.model.http.conversation.getRemovalKey
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
 import io.ktor.util.decodeBase64Bytes
-import java.util.UUID
-import kotlin.collections.plus
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
 
 @Suppress("TooManyFunctions")
@@ -54,17 +48,6 @@ internal class ConversationService internal constructor(
     private val cryptoClient: CryptoClient
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
-    private val selfTeamId: Deferred<UUID?> by lazy {
-        CoroutineScope(Dispatchers.IO).async {
-            backendClient.getSelfUser().teamId
-        }
-    }
-
-    private suspend fun getSelfTeamId(): TeamId =
-        selfTeamId.await()
-            ?.let(::TeamId)
-            ?: throw WireException.MissingParameter("TeamId should not be empty or null.")
 
     /**
      * Creates a Group Conversation where currently the only admin is the App
@@ -77,10 +60,14 @@ internal class ConversationService internal constructor(
      */
     suspend fun createGroup(
         name: String,
-        userIds: List<QualifiedId>
+        userIds: List<QualifiedId>,
+        teamId: TeamId
     ): QualifiedId {
         val conversationCreatedResponse = backendClient.createGroupConversation(
-            createConversationRequest = CreateConversationRequest.Companion.createGroup(name = name)
+            createConversationRequest = CreateConversationRequest.Companion.createGroup(
+                name = name,
+                teamId = teamId
+            )
         )
 
         val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
@@ -107,10 +94,10 @@ internal class ConversationService internal constructor(
      */
     suspend fun createChannel(
         name: String,
-        userIds: List<QualifiedId>
+        userIds: List<QualifiedId>,
+        teamId: TeamId
     ): QualifiedId {
         try {
-            val teamId = getSelfTeamId()
             val conversationCreatedResponse = backendClient.createGroupConversation(
                 createConversationRequest = CreateConversationRequest.Companion.createChannel(
                     name = name,
@@ -188,15 +175,8 @@ internal class ConversationService internal constructor(
                 )
             }
 
-            val users = userIds + listOf(
-                QualifiedId(
-                    id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
-                    domain = System.getenv("WIRE_SDK_ENVIRONMENT")
-                )
-            )
-
             val claimedKeyPackages: List<ByteArray> = claimKeyPackages(
-                userIds = users,
+                userIds = userIds,
                 cipherSuiteCode = cipherSuiteCode
             )
 

@@ -24,7 +24,6 @@ import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
-import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import io.ktor.http.HttpStatusCode
@@ -36,7 +35,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 class WireApplicationManagerTest {
     @Test
@@ -50,7 +48,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations"
+                        "/$V/conversations"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -63,7 +61,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
+                        "/$V/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_1)
@@ -72,7 +70,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
@@ -88,7 +86,8 @@ class WireApplicationManagerTest {
                 userIds = listOf(
                     USER_1,
                     USER_2
-                )
+                ),
+                teamId = TEAM_ID.value
             )
 
             // then
@@ -114,7 +113,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/one2one-conversations/${USER_2.domain}/${USER_2.id}"
+                        "/$V/one2one-conversations/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -124,13 +123,13 @@ class WireApplicationManagerTest {
                 )
             )
 
-            val user1Id = System.getenv("WIRE_SDK_USER_ID")
-            val user1Domain = System.getenv("WIRE_SDK_ENVIRONMENT")
+            val user1Id = TestUtils.APPLICATION_ID.toString()
+            val user1Domain = TestUtils.APPLICATION_DOMAIN
 
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/$user1Domain/$user1Id"
+                        "/$V/mls/key-packages/claim/$user1Domain/$user1Id"
                     )
                 ).willReturn(
                     WireMock.okJson(
@@ -141,7 +140,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
@@ -179,7 +178,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations"
+                        "/$V/conversations"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -192,7 +191,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
+                        "/$V/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_1)
@@ -201,7 +200,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
@@ -217,7 +216,8 @@ class WireApplicationManagerTest {
                 userIds = listOf(
                     USER_1,
                     USER_2
-                )
+                ),
+                teamId = TEAM_ID.value
             )
 
             // then
@@ -232,57 +232,23 @@ class WireApplicationManagerTest {
             )
         }
 
-    @Test
-    fun whenCreatingChannelConversationAndTeamIdIsNullThenThrowException() =
-        runTest {
-            // Given
-            TestUtils.setupWireMockStubs(wireMockServer)
-            val eventsHandler = object : WireEventsHandlerSuspending() {}
-            TestUtils.setupSdk(eventsHandler)
-
-            wireMockServer.stubFor(
-                WireMock.get(
-                    WireMock.urlPathTemplate("/$V/self")
-                ).willReturn(
-                    WireMock.okJson(
-                        SELF_USER_NO_TEAM_ID_RESPONSE
-                    )
-                )
-            )
-
-            val manager = IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
-
-            // then
-            assertThrows<WireException.MissingParameter> {
-                // when
-                manager.createChannelConversation(
-                    name = CONVERSATION_NAME,
-                    userIds = listOf(
-                        USER_1,
-                        USER_2
-                    )
-                )
-            }
-        }
-
     companion object {
         private val wireMockServer = WireMockServer(8086)
 
         private const val CONVERSATION_NAME = "Conversation Name"
-        private const val DOMAIN = "wire.com"
         private val CONVERSATION_ID =
             QualifiedId(
                 id = UUID.randomUUID(),
-                domain = DOMAIN
+                domain = TestUtils.APPLICATION_DOMAIN
             )
         private val TEAM_ID = TeamId(UUID.randomUUID())
         private val USER_1 = QualifiedId(
             id = UUID.randomUUID(),
-            domain = DOMAIN
+            domain = TestUtils.APPLICATION_DOMAIN
         )
         private val USER_2 = QualifiedId(
             id = UUID.randomUUID(),
-            domain = DOMAIN
+            domain = TestUtils.APPLICATION_DOMAIN
         )
 
         val GROUP_CONVERSATION_MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()

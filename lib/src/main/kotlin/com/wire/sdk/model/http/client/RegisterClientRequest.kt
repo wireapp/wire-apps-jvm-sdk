@@ -21,7 +21,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RegisterClientRequest(
-    val password: String,
     val type: String = "temporary",
     val model: String = "App Client",
     @SerialName("lastkey")

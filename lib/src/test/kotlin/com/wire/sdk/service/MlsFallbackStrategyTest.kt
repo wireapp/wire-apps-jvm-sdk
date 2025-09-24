@@ -25,7 +25,6 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
-import com.wire.sdk.service.MlsFallbackStrategy
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

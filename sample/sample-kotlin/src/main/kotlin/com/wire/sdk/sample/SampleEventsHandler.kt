@@ -227,6 +227,13 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
         val split = wireMessage.text.split(" ")
 
+        // This is just an example of a way to get the teamId based on the receiving message
+        val teamId = manager.getConversationById(
+            conversationId = wireMessage.conversationId
+        )?.teamId?.value
+
+        requireNotNull(teamId)
+
         manager.createGroupConversation(
             name = split[1],
             userIds = listOf(
@@ -234,12 +241,13 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
                     id = UUID.fromString(split[2]),
                     domain = split[3]
                 )
-            )
+            ),
+            teamId = teamId
         )
     }
 
     private fun processCreateChannelConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN]`
+        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN] [TEAM_ID]`
         val split = wireMessage.text.split(" ")
 
         manager.createChannelConversation(
@@ -249,7 +257,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
                     id = UUID.fromString(split[2]),
                     domain = split[3]
                 )
-            )
+            ),
+            teamId = UUID.fromString(split[4])
         )
     }
 

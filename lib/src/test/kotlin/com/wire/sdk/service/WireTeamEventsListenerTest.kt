@@ -147,6 +147,7 @@ class WireTeamEventsListenerTest {
             // Arrange
             val wireMockServer = WireMockServer(8086)
             IsolatedKoinContext.start()
+            IsolatedKoinContext.koinApp.koin.setProperty("API_TOKEN", "randomToken")
             IsolatedKoinContext.koinApp.koin.setProperty("API_HOST", "http://localhost:8086")
             wireMockServer.start()
             wireMockServer.stubFor(
@@ -159,7 +160,10 @@ class WireTeamEventsListenerTest {
                     )
             )
             val httpClient = IsolatedKoinContext.koinApp.koin.get<HttpClient>()
-            val appStorage = mockk<AppStorage>()
+            val appStorage = mockk<AppStorage> {
+                coEvery { getDeviceId() } returns "40bf2f52357c352e"
+            }
+
             val backendClient = BackendClientDemo(
                 httpClient = httpClient,
                 appStorage = appStorage

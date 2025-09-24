@@ -16,7 +16,6 @@
 package com.wire.sdk.sample
 
 import com.wire.sdk.WireAppSdk
-import com.wire.sdk.model.QualifiedId
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
@@ -24,10 +23,11 @@ private val logger = LoggerFactory.getLogger("WireAppSdkSample")
 
 fun main() {
     val wireAppSdk = WireAppSdk(
-        applicationId = UUID.randomUUID(),
-        apiToken = "myApiToken",
-        apiHost = "https://staging-nginz-https.zinfra.io",
-        cryptographyStoragePassword = "myDummyPasswordOfRandom32BytesCH",
+        applicationId = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID")),
+        applicationDomain = System.getenv("WIRE_SDK_APPLICATION_DOMAIN"),
+        apiToken = System.getenv("WIRE_SDK_API_TOKEN"),
+        apiHost = System.getenv("WIRE_SDK_API_HOST"),
+        cryptographyStoragePassword = System.getenv("WIRE_SDK_CRYPTO_STORAGE_PASSWORD"),
         wireEventsHandler = SampleEventsHandler()
     )
 
@@ -41,11 +41,6 @@ fun main() {
     applicationManager.getStoredConversations().forEach {
         logger.info("Conversation: $it")
     }
-    val selfUser = QualifiedId(
-        id = UUID.fromString("2afce87f-3195-4c51-9e7c-3b01faf13ac5"),
-        domain = "staging.zinfra.io"
-    )
-    logger.info(applicationManager.getUser(selfUser).toString())
     logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
 
     // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C

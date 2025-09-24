@@ -26,10 +26,11 @@ public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    final static UUID MY_APPLICATION_ID = UUID.randomUUID();
-    final static String WIRE_API_TOKEN = "myApiToken";
-    final static String WIRE_API_HOST = "https://staging-nginz-https.zinfra.io";
-    final static String WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH";
+    final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID"));
+    final static String MY_APPLICATION_DOMAIN = System.getenv("WIRE_SDK_APPLICATION_DOMAIN");
+    final static String WIRE_API_TOKEN = System.getenv("WIRE_SDK_API_TOKEN");
+    final static String WIRE_API_HOST = System.getenv("WIRE_SDK_API_HOST");
+    final static String WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD = System.getenv("WIRE_SDK_CRYPTO_STORAGE_PASSWORD");
 
     public static void main(String[] args) {
         new Main().initApp();
@@ -44,6 +45,7 @@ public class Main {
     private WireAppSdk initSdkInstance() {
         return new WireAppSdk(
                 MY_APPLICATION_ID,
+                MY_APPLICATION_DOMAIN,
                 WIRE_API_TOKEN,
                 WIRE_API_HOST,
                 WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD,

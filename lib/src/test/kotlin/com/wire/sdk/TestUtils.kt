@@ -71,7 +71,7 @@ object TestUtils {
         )
         wireMockServer.stubFor(
             WireMock.post(WireMock.urlPathEqualTo("/$V/access"))
-                .withQueryParam("client_id", WireMock.matching(".*")).willReturn(
+                .willReturn(
                     WireMock.okJson(
                         """
                         {
@@ -170,14 +170,16 @@ object TestUtils {
     fun setupSdk(eventsHandler: WireEventsHandler) {
         WireAppSdk(
             applicationId = APPLICATION_ID,
+            applicationDomain = APPLICATION_DOMAIN,
             apiToken = API_TOKEN,
             apiHost = API_HOST,
             cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
-            eventsHandler
+            wireEventsHandler = eventsHandler
         )
     }
 
-    private val APPLICATION_ID = UUID.randomUUID()
+    val APPLICATION_ID = UUID.randomUUID()
+    const val APPLICATION_DOMAIN = "wire.com"
     private const val API_TOKEN = "dummyToken"
     private const val API_HOST = "http://localhost:8086"
     const val CRYPTOGRAPHY_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH"

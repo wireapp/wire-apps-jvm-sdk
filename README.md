@@ -65,15 +65,16 @@ dependencies {
 </dependency>
 ```
 
-## Environment Variables
-```dotenv
-WIRE_SDK_USER_ID=abcd-1234-efgh-5678
-WIRE_SDK_EMAIL=your_email@domain.com
-WIRE_SDK_PASSWORD=randomPassword
-WIRE_SDK_ENVIRONMENT=my.domain.link
-```
-
 ## Build the project
+
+### Environment Variables (for sample projects)
+```dotenv
+WIRE_SDK_API_HOST=API_HOST;
+WIRE_SDK_API_TOKEN=API_TOKEN;
+WIRE_SDK_APPLICATION_DOMAIN=APP_DOMAIN;
+WIRE_SDK_APPLICATION_ID=APP_ID;
+WIRE_SDK_CRYPTO_STORAGE_PASSWORD=CRYPTOGRAPHY_PASSWORD // Must be exactly 32 chars
+```
 
 ```shell
 ./gradlew build 

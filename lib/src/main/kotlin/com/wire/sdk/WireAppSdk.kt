@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class WireAppSdk(
     applicationId: UUID,
+    applicationDomain: String,
     apiToken: String,
     apiHost: String,
     cryptographyStoragePassword: String,
@@ -47,6 +48,7 @@ class WireAppSdk(
 
         IsolatedKoinContext.start()
         IsolatedKoinContext.setApplicationId(applicationId)
+        IsolatedKoinContext.setApplicationDomain(applicationDomain)
         IsolatedKoinContext.setApiHost(apiHost)
         IsolatedKoinContext.setApiToken(apiToken)
         IsolatedKoinContext.setCryptographyStoragePassword(cryptographyStoragePassword)

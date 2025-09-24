@@ -43,10 +43,11 @@ class WireAppSdkTest {
         val wireAppSdk =
             WireAppSdk(
                 applicationId = APPLICATION_ID,
+                applicationDomain = APPLICATION_DOMAIN,
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStoragePassword = TestUtils.CRYPTOGRAPHY_STORAGE_PASSWORD,
-                object : WireEventsHandlerDefault() {
+                wireEventsHandler = object : WireEventsHandlerDefault() {
                     override fun onMessage(wireMessage: WireMessage.Text) {
                         println(wireMessage)
                     }
@@ -76,10 +77,11 @@ class WireAppSdkTest {
         val wireAppSdk =
             WireAppSdk(
                 applicationId = APPLICATION_ID,
+                applicationDomain = APPLICATION_DOMAIN,
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStoragePassword = TestUtils.CRYPTOGRAPHY_STORAGE_PASSWORD,
-                object : WireEventsHandlerDefault() {
+                wireEventsHandler = object : WireEventsHandlerDefault() {
                     override fun onMessage(wireMessage: WireMessage.Text) {
                         println(wireMessage)
                     }
@@ -97,6 +99,7 @@ class WireAppSdkTest {
             // Create the SDK instance
             val wireAppSdk = WireAppSdk(
                 applicationId = APPLICATION_ID,
+                applicationDomain = APPLICATION_DOMAIN,
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStoragePassword = TestUtils.CRYPTOGRAPHY_STORAGE_PASSWORD,
@@ -147,6 +150,7 @@ class WireAppSdkTest {
 
     companion object {
         private val APPLICATION_ID = UUID.randomUUID()
+        private const val APPLICATION_DOMAIN = "wire.com"
         private const val API_TOKEN = "dummyToken"
         private const val API_HOST = "http://localhost:8086"
 

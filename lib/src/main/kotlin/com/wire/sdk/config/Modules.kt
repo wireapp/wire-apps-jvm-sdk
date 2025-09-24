@@ -160,11 +160,8 @@ internal suspend fun getOrInitCryptoClient(
     val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
         .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
 
-    val userId = System.getenv("WIRE_SDK_USER_ID")
-    val userDomain = System.getenv("WIRE_SDK_ENVIRONMENT")
-
-    requireNotNull(userId)
-    requireNotNull(userDomain)
+    val userId = IsolatedKoinContext.getApplicationId().toString()
+    val userDomain = IsolatedKoinContext.getApplicationDomain()
 
     val cryptoClient = CoreCryptoClient.Companion.create(
         userId = userId,
@@ -186,9 +183,6 @@ internal suspend fun getOrInitCryptoClient(
         )
         appStorage.setShouldRejoinConversations(should = false)
     } else {
-        val userPassword = System.getenv("WIRE_SDK_PASSWORD")
-        requireNotNull(userPassword)
-
         // App doesn't have a client, create one
         logger.info("Initializing Proteus Client")
         cryptoClient.initializeProteusClient()
@@ -198,7 +192,6 @@ internal suspend fun getOrInitCryptoClient(
         val clientResponse = try {
             backendClient.registerClient(
                 registerClientRequest = RegisterClientRequest(
-                    password = userPassword,
                     lastKey = lastKey.toApi(),
                     preKeys = preKeys.map { it.toApi() },
                     capabilities = RegisterClientRequest.Companion.DEFAULT_CAPABILITIES

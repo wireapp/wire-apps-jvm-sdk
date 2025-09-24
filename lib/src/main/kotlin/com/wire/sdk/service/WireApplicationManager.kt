@@ -61,6 +61,9 @@ class WireApplicationManager internal constructor(
 
     fun getStoredConversations(): List<ConversationData> = conversationStorage.getAll()
 
+    fun getConversationById(conversationId: QualifiedId): ConversationData? =
+        conversationStorage.getById(conversationId = conversationId)
+
     fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
         conversationService.getStoredConversationMembers(conversationId = conversationId)
 
@@ -357,12 +360,14 @@ class WireApplicationManager internal constructor(
      */
     fun createGroupConversation(
         name: String,
-        userIds: List<QualifiedId>
+        userIds: List<QualifiedId>,
+        teamId: UUID
     ): QualifiedId =
         runBlocking {
             createGroupConversationSuspending(
                 name = name,
-                userIds = userIds
+                userIds = userIds,
+                teamId = teamId
             )
         }
 
@@ -371,11 +376,13 @@ class WireApplicationManager internal constructor(
      */
     suspend fun createGroupConversationSuspending(
         name: String,
-        userIds: List<QualifiedId>
+        userIds: List<QualifiedId>,
+        teamId: UUID
     ): QualifiedId =
         conversationService.createGroup(
             name = name,
-            userIds = userIds
+            userIds = userIds,
+            teamId = TeamId(value = teamId)
         )
 
     /**
@@ -408,12 +415,14 @@ class WireApplicationManager internal constructor(
      */
     fun createChannelConversation(
         name: String,
-        userIds: List<QualifiedId>
+        userIds: List<QualifiedId>,
+        teamId: UUID
     ): QualifiedId =
         runBlocking {
             createChannelConversationSuspending(
                 name = name,
-                userIds = userIds
+                userIds = userIds,
+                teamId = teamId
             )
         }
 
@@ -422,10 +431,12 @@ class WireApplicationManager internal constructor(
      */
     suspend fun createChannelConversationSuspending(
         name: String,
-        userIds: List<QualifiedId>
+        userIds: List<QualifiedId>,
+        teamId: UUID
     ): QualifiedId =
         conversationService.createChannel(
             name = name,
-            userIds = userIds
+            userIds = userIds,
+            teamId = TeamId(value = teamId)
         )
 }

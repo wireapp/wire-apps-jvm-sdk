@@ -13,7 +13,6 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-import java.util.UUID
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -202,14 +201,5 @@ tasks {
     }
     build {
         dependsOn(shadowJar)
-    }
-
-    /**
-     * Dummy environment variables for tests
-     */
-    test {
-        environment("WIRE_SDK_USER_ID", UUID.randomUUID().toString())
-        environment("WIRE_SDK_PASSWORD", "randomPassword")
-        environment("WIRE_SDK_ENVIRONMENT", "randomEnvironment")
     }
 }

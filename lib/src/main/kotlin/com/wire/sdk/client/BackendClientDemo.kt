@@ -41,14 +41,12 @@ import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
-import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.Mls
 import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.cookies.get
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
@@ -64,7 +62,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
-import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
 import java.util.Base64
 import java.util.UUID
@@ -124,8 +121,10 @@ internal class BackendClientDemo(
 
     override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
+        val applicationId = IsolatedKoinContext.getApplicationId()
+        val applicationDomain = IsolatedKoinContext.getApplicationDomain()
         return AppDataResponse(
-            appClientId = "$DEMO_USER_ID:$cachedDeviceId@$DEMO_ENVIRONMENT",
+            appClientId = "$applicationId:$cachedDeviceId@$applicationDomain",
             appType = "FULL",
             appCommand = "demo"
         )
@@ -169,30 +168,40 @@ internal class BackendClientDemo(
             logger.info("Access token expired, getting a new one")
         }
 
-        val loginResponse = httpClient.post("/$API_VERSION/login") {
-            setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
-            contentType(ContentType.Application.Json)
-        }
+        val apiToken = IsolatedKoinContext.getApiToken()
 
         cachedDeviceId = appStorage.getDeviceId()
-        if (cachedDeviceId != null) {
-            val zuidCookie = loginResponse.setCookie()["zuid"]
 
-            val accessResponse =
-                httpClient.post("/$API_VERSION/access?client_id=$cachedDeviceId") {
-                    headers {
-                        append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
-                    }
-                    accept(ContentType.Application.Json)
-                }.body<LoginResponse>()
+        return apiToken?.let {
+            getAccessToken(
+                apiToken = apiToken,
+                currentTime = currentTime
+            )
+        } ?: throw WireException.MissingParameter(
+            message = "apiToken is empty or null."
+        )
+    }
 
+    private suspend fun getAccessToken(
+        apiToken: String,
+        currentTime: Long
+    ): String {
+        val url = "/$API_VERSION/access".let {
+            if (cachedDeviceId != null) "$it?client_id=$cachedDeviceId" else it
+        }
+        val accessResponse = httpClient.post(url) {
+            headers {
+                append(HttpHeaders.Cookie, "zuid=$apiToken")
+            }
+            accept(ContentType.Application.Json)
+        }.body<LoginResponse>()
+
+        cachedDeviceId?.let {
             cachedAccessToken = accessResponse.accessToken
             tokenTimestamp = currentTime
-
-            return accessResponse.accessToken
-        } else {
-            return loginResponse.body<LoginResponse>().accessToken
         }
+
+        return accessResponse.accessToken
     }
 
     override suspend fun updateClientWithMlsPublicKey(
@@ -217,7 +226,9 @@ internal class BackendClientDemo(
     override suspend fun registerClient(
         registerClientRequest: RegisterClientRequest
     ): RegisterClientResponse {
+        logger.info("regiterClient")
         val token = loginUser()
+        logger.info("regiterClient / token -> $token")
         return httpClient.post("/$API_VERSION/clients") {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $token")
@@ -325,21 +336,6 @@ internal class BackendClientDemo(
                 append(HttpHeaders.Authorization, "Bearer $token")
             }
         }.body<UserResponse>()
-    }
-
-    /**
-     * Get Self User (SDK User) details
-     *
-     * @return [SelfUserResponse]
-     */
-    override suspend fun getSelfUser(): SelfUserResponse {
-        val token = loginUser()
-        return httpClient.get("/$API_VERSION/self") {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer $token")
-            }
-            accept(ContentType.Application.Json)
-        }.body<SelfUserResponse>()
     }
 
     override suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
@@ -539,21 +535,6 @@ internal class BackendClientDemo(
         const val HEADER_ASSET_TOKEN = "Asset-Token"
         const val TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
         const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
-
-        val DEMO_USER_ID: UUID =
-            UUID.fromString(
-                System.getenv("WIRE_SDK_USER_ID")
-                    ?: "ee159b66-fd70-4739-9bae-23c96a02cb09"
-            )
-
-        val DEMO_USER_EMAIL: String =
-            System.getenv("WIRE_SDK_EMAIL") ?: "integrations-admin@wire.com"
-
-        val DEMO_USER_PASSWORD: String =
-            System.getenv("WIRE_SDK_PASSWORD") ?: "Aqa123456!"
-
-        val DEMO_ENVIRONMENT: String =
-            System.getenv("WIRE_SDK_ENVIRONMENT") ?: "staging.zinfra.io"
 
         private const val FETCH_CONVERSATIONS_START_INDEX = 0
         private const val FETCH_CONVERSATIONS_END_INDEX = 1000

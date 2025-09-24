@@ -15,12 +15,14 @@
 
 package com.wire.sdk.config
 
+import com.wire.sdk.exception.WireException
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.dsl.koinApplication
 import org.koin.fileProperties
 import java.util.UUID
 
+@Suppress("TooManyFunctions")
 internal object IsolatedKoinContext {
     private var _koinApp: KoinApplication? = null
     val koinApp: KoinApplication
@@ -49,7 +51,23 @@ internal object IsolatedKoinContext {
         this.koinApp.koin.setProperty(APPLICATION_ID, value)
     }
 
-    fun getApplicationId(): UUID? = this.koinApp.koin.getProperty(APPLICATION_ID)
+    fun getApplicationId(): UUID =
+        this.koinApp.koin.getProperty(APPLICATION_ID)
+            ?: throw WireException.MissingParameter(
+                message = "ApplicationId is not set.",
+                throwable = null
+            )
+
+    fun setApplicationDomain(value: String) {
+        this.koinApp.koin.setProperty(APPLICATION_DOMAIN, value)
+    }
+
+    fun getApplicationDomain(): String =
+        this.koinApp.koin.getProperty(APPLICATION_DOMAIN)
+            ?: throw WireException.MissingParameter(
+                message = "ApplicationDomain is not set.",
+                throwable = null
+            )
 
     fun setApiHost(value: String) {
         this.koinApp.koin.setProperty(API_HOST, value)
@@ -75,6 +93,7 @@ internal object IsolatedKoinContext {
      * Property Constants
      */
     private const val APPLICATION_ID = "APPLICATION_ID"
+    private const val APPLICATION_DOMAIN = "APPLICATION_DOMAIN"
     private const val API_HOST = "API_HOST"
     private const val API_TOKEN = "API_TOKEN"
     private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "CRYPTOGRAPHY_STORAGE_PASSWORD"

@@ -34,7 +34,6 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
-import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -88,10 +87,6 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     override suspend fun confirmTeam(teamId: TeamId) {
         logger.info("Confirming team invite")
         httpClient.post("/$API_VERSION/apps/teams/${teamId.value}/confirm")
-    }
-
-    override suspend fun getSelfUser(): SelfUserResponse {
-        TODO("Not yet implemented")
     }
 
     override suspend fun updateClientWithMlsPublicKey(
