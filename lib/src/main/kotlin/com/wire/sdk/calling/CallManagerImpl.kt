@@ -19,6 +19,7 @@ package com.wire.sdk.calling
 import com.sun.jna.Pointer
 import com.wire.crypto.ClientId
 import com.wire.sdk.calling.callbacks.LogHandler
+import com.wire.sdk.calling.callbacks.ReadyHandler
 import com.wire.sdk.calling.callbacks.implementations.OnAnsweredCall
 import com.wire.sdk.calling.callbacks.implementations.OnCloseCall
 import com.wire.sdk.calling.callbacks.implementations.OnConfigRequest
@@ -83,10 +84,16 @@ class CallManagerImpl internal constructor(
             val selfUser = QualifiedId(selfUserId, selfUserDomain)
             val selfClientId = appStorage.getDeviceId()!!
 
+            val waitInitializationJob = Job()
+
             val handle = callingAvsClient.wcall_create(
                 userId = selfUser.toFederatedId(),
                 clientId = selfClientId,
-                readyHandler = { _, _ -> logger.info("Calling ready") },
+                readyHandler = ReadyHandler { version: Int, arg: Pointer? ->
+                    logger.info("readyHandler version=$version; arg=$arg")
+                    waitInitializationJob.complete()
+                    Unit
+                },
                 sendHandler = OnSendOTR(),
                 sftRequestHandler = OnSFTRequest(
                     deferredHandle,
@@ -130,6 +137,7 @@ class CallManagerImpl internal constructor(
                 arg = null
             )
             logger.info("wcall_create() called")
+            waitInitializationJob.join()
             handle
         }
     }
@@ -161,7 +169,8 @@ class CallManagerImpl internal constructor(
                 // Hard coding 3 as for "Conference MLS"
                 convType = 3
             )
-            logger.info("wcall_recv_msg() called")
+            logger.
+            info("wcall_recv_msg() called")
         }
     }
 
