@@ -99,6 +99,8 @@ override fun onMessage(wireMessage: WireMessage.Text) {
         originalMessage = wireMessage
     )
 
+    // The manager is accessible through the inherited WireEventsHandler class.
+    // It is used to manage the Wire application's lifecycle and communication with the backend.
     manager.sendMessageSuspending(message = message)
 }
 ```
