@@ -32,7 +32,7 @@ Apps are owned and managed at the **team level**, giving administrators control 
 - What data Apps can access
 
 ## How to create an App
-➡️ [Learn how to create an app](./creating-an-app.md)
+➡️ [Check out the Quickstart guide](./quickstart.md)
 
 ## SDK Overview
 

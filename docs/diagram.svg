@@ -16,10 +16,10 @@
   
   <!-- Files in wire-apps-jvm-sdk -->
   <rect x="100" y="110" width="260" height="40" rx="5" ry="5" fill="#f9f9ff" stroke="#333" stroke-width="1" />
-  <text x="230" y="135" font-family="Arial" font-size="14" text-anchor="middle">docs/src/creating-an-app.md</text>
+  <text x="230" y="135" font-family="Arial" font-size="14" text-anchor="middle">docs/src/quickstart.md</text>
   
   <rect x="100" y="170" width="260" height="40" rx="5" ry="5" fill="#f9f9ff" stroke="#333" stroke-width="1" />
-  <text x="230" y="195" font-family="Arial" font-size="14" text-anchor="middle">docs/src/images/create-app.png</text>
+  <text x="230" y="195" font-family="Arial" font-size="14" text-anchor="middle">docs/src/images/quickstart_1.png</text>
   
   <!-- Submodule in wire-docs -->
   <rect x="440" y="110" width="260" height="40" rx="5" ry="5" fill="#e6e6ff" stroke="#333" stroke-width="1" />
@@ -27,10 +27,10 @@
   
   <!-- Symlinks in wire-docs -->
   <rect x="440" y="170" width="260" height="40" rx="5" ry="5" fill="#e6f2ff" stroke="#333" stroke-dasharray="5,5" stroke-width="1" />
-  <text x="570" y="195" font-family="Arial" font-size="14" text-anchor="middle">src/integrations/creating-an-app.md (symlink)</text>
+  <text x="570" y="195" font-family="Arial" font-size="14" text-anchor="middle">src/integrations/quickstart.md (symlink)</text>
   
   <rect x="440" y="230" width="260" height="40" rx="5" ry="5" fill="#e6f2ff" stroke="#333" stroke-dasharray="5,5" stroke-width="1" />
-  <text x="570" y="255" font-family="Arial" font-size="14" text-anchor="middle">src/integrations/images/create-app.png (symlink)</text>
+  <text x="570" y="255" font-family="Arial" font-size="14" text-anchor="middle">src/integrations/images/quickstart_1.png (symlink)</text>
   
   <!-- Arrows -->
   <!-- From files to submodule -->
@@ -56,8 +56,8 @@
   <text x="390" y="332" font-family="Arial" font-size="14" text-anchor="start">Symlink in wire-docs</text>
   
   <text x="400" y="360" font-family="Arial" font-size="14" text-anchor="middle">Symlink paths from wire-docs to wire-apps-jvm-sdk:</text>
-  <text x="400" y="385" font-family="Arial" font-size="13" text-anchor="middle">creating-an-app.md → ../../../../wire-apps-jvm-sdk/docs/src/creating-an-app.md</text>
-  <text x="400" y="410" font-family="Arial" font-size="13" text-anchor="middle">create-app.png → ../../../../wire-apps-jvm-sdk/docs/src/images/create-app.png</text>
+  <text x="400" y="385" font-family="Arial" font-size="13" text-anchor="middle">quickstart.md → ../../../../wire-apps-jvm-sdk/docs/src/quickstart.md</text>
+  <text x="400" y="410" font-family="Arial" font-size="13" text-anchor="middle">quickstart_1.png → ../../../../wire-apps-jvm-sdk/docs/src/images/quickstart_1.png</text>
   
   <!-- Arrow definitions -->
   <defs>
