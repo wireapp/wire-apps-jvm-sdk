@@ -47,8 +47,8 @@ When a page needs to be moved because it's related to code changes:
    - Create a relative symbolic link to the file in the `wire-apps-jvm-sdk` module:
      ```
      cd src/integrations/
-     rm creating-an-app.md
-     ln -s ../../wire-apps-jvm-sdk/docs/src/creating-an-app.md creating-an-app.md
+     rm quickstart.md
+     ln -s ../../wire-apps-jvm-sdk/docs/src/quickstart.md quickstart.md
      ```
 3. Test with `make run` before creating a PR
 
