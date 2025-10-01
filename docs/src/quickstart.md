@@ -57,12 +57,12 @@ Here's a complete example showing how to initialize the SDK and handle received 
 ```kotlin
 fun main() {
     val wireAppSdk = WireAppSdk(
-        applicationId = "9c40bb37-6904-11ef-8008-be4b58ff1d17",
-        apiToken = "your-api-token",
-        apiHost = "https://your-wire-backend.example.com",
-        cryptographyStoragePassword = "secure-password",
+        applicationId = "YOUR_APPLICATION_ID",
+        apiToken = "YOUR_API_TOKEN",
+        apiHost = "YOUR_API_HOST",
+        cryptographyStoragePassword = "YOUR_32_CHAR_STORAGE_PASSWORD",
         object : WireEventsHandlerDefault() {
-            override fun onMessage(wireMessage: WireMessage) {
+            override fun onMessage(wireMessage: WireMessage.Text) {
                 println("Message received: $wireMessage")
                 
                 // Add your message handling logic here, like storing the message,
@@ -91,7 +91,7 @@ class MyWireEventsHandler : WireEventsHandlerDefault() {
 In your `onMessage` implementation from `MyWireEventsHandler` you can echo a message as:
 
 ```kotlin
-override fun onMessage(wireMessage: WireMessage) {
+override fun onMessage(wireMessage: WireMessage.Text) {
     val message = WireMessage.Text.createReply(
         conversationId = wireMessage.conversationId,
         text = "${wireMessage.text} -- Sent from the SDK",
