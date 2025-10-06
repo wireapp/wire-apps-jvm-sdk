@@ -42,7 +42,7 @@
 When a page needs to be moved because it's related to code changes:
 1. Add the page to `wire-apps-jvm-sdk/docs` and merge it to the main branch
 2. In `wire-docs`:
-   - Update the `wire-apps-jvm-sdk` submodule to the latest commit
+   - Update the `wire-apps-jvm-sdk` submodule and commit the change
    - Delete the original page from `wire-docs/src`
    - Create a relative symbolic link to the file in the `wire-apps-jvm-sdk` module:
      ```
@@ -50,7 +50,8 @@ When a page needs to be moved because it's related to code changes:
      rm quickstart.md
      ln -s ../../wire-apps-jvm-sdk/docs/src/quickstart.md quickstart.md
      ```
-3. Test with `make run` before creating a PR
+3. Commit new linked files before testing with `make run`
+4. Test with `make run` before creating a PR
 
 ## Creating New Files
 
@@ -59,7 +60,7 @@ When a page needs to be moved because it's related to code changes:
 2. Merge it into `wire-apps-jvm-sdk:main`
 3. To make it discoverable on docs.wire.com:
    - Update the navigation structure in [mkdocs.yml](https://github.com/wireapp/wire-docs/blob/main/mkdocs.yml#L9) or update the directory's README.md to include references to the new file, or add references to the new file from relevant existing pages
-   - Update the `wire-apps-jvm-sdk` submodule reference in `wire-docs` if not done automatically
+   - Update the `wire-apps-jvm-sdk` submodule reference in `wire-docs` and commit the change if not done automatically
    - Add references to the new file from relevant existing pages
    - Test with `make run` and create a PR to `wire-docs:main`
 
@@ -80,7 +81,8 @@ When a page needs to be moved because it's related to code changes:
 1. Identify all references to the file in `wire-docs` and `wire-apps-jvm-sdk/docs`
 2. Remove all references and links from navigation (mkdocs.yml) and other pages
 3. Delete the file from its location
-4. Submit a PR to `wire-docs:main`
+4. Commit local deleted files before testing with `make run`
+5. Submit a PR to `wire-docs:main`
 
 ## Publishing Changes
 
