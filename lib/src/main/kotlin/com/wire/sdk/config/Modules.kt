@@ -129,6 +129,7 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
 
         install(UserAgent) {
             agent = "Ktor JVM SDK client"
+            //comment
         }
 
         install(HttpCache)
