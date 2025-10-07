@@ -137,7 +137,7 @@ sealed interface WireMessage {
                         message = originalMessage
                     )?.sha256Digest,
                     linkPreviews = linkPreviews,
-                    timestamp = originalMessage.timestamp,
+                    timestamp = Clock.System.now(),
                     expiresAfterMillis = expiresAfterMillis
                 )
             }
