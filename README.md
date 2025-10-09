@@ -92,3 +92,5 @@ You can define the implementation of BackendClient to use, by changing it in the
   testing instead of the Application API and also some environment variables specified above.
 * BackendClientImpl is the real implementation of the SDK, targeting the Wire backend as an
   Application
+
+Test
