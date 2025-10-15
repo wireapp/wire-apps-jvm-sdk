@@ -9,21 +9,21 @@ In this guide you will create a basic App that can echo to received messages.
 - Access Team Settings Dashboard and navigate to **Apps**
 - Click **Create New App** button
 
-![Empty Apps Dashboard](./images/quickstart_1.jpg)
+![Empty Apps Dashboard](../images/quickstart_1.jpg)
 
 ## 2. Fill in the details
 
 - Add your App's name, avatar and description
 - Click **Create App**
 
-![Create App Details](./images/quickstart_2.jpg)
+![Create App Details](../images/quickstart_2.jpg)
 
 ## 3. Copy App ID and Token
 
 When your App is created, an App ID and a Token will be generated.
 Copy and save them with caution as the Token cannot be retrieved after the dialog closes.
 
-![App Details](./images/quickstart_3.jpg)
+![App Details](../images/quickstart_3.jpg)
 
 ## 4. Include the SDK into your project
 
@@ -109,6 +109,6 @@ override fun onMessage(wireMessage: WireMessage.Text) {
 
 With this basic setup you now have a running Echo App.
 
-You can check other events in [Wire Events](./events.md)
+You can check other events in [Wire Events](events.md)
 
 
