@@ -47,29 +47,67 @@ The SDK uses the `WireEventsHandler` to notify your application about events and
 
 Here's a complete example showing how to initialize the SDK and handle received events:
 
+<Tabs groupId="programming-language">
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 fun main() {
     val wireAppSdk = WireAppSdk(
-        applicationId = "YOUR_APPLICATION_ID",
+        applicationId = UUID.fromString("YOUR_APPLICATION_ID"),
         apiToken = "YOUR_API_TOKEN",
         apiHost = "YOUR_API_HOST",
         cryptographyStoragePassword = "YOUR_32_CHAR_STORAGE_PASSWORD",
         object : WireEventsHandlerDefault() {
             override fun onMessage(wireMessage: WireMessage.Text) {
                 println("Message received: $wireMessage")
-                
+
                 // Add your message handling logic here, like storing the message,
                 //   sending back another message, or triggering some workflow
             }
         }
     )
-    
+
     // Start the SDK
     wireAppSdk.startListening()
 }
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        final var wireAppSdk = new WireAppSdk(
+            UUID.fromString("YOUR_APPLICATION_ID"),
+            "YOUR_API_TOKEN",
+            "YOUR_API_HOST",
+            "YOUR_32_CHAR_STORAGE_PASSWORD",
+            new WireEventsHandlerDefault() {
+                @Override
+                public void onMessage(@NotNull WireMessage.Text wireMessage) {
+                    System.out.println("Message received: $wireMessage");
+
+                    // Add your message handling logic here, like storing the message,
+                    //   sending back another message, or triggering some workflow
+                }
+            }
+        );
+
+        // Start the SDK
+        wireAppSdk.startListening();
+    }
+}
+```
+
+</TabItem>
+</Tabs>
 For simplicity the subclassing of WireEventsHandlerDefault is done inline as an anonymous class, but you can create a separate class for it,
 especially if you handle events in a complex way:
+
+<Tabs groupId="programming-language">
+<TabItem value="kotlin" label="Kotlin">
+
 ```kotlin
 class MyWireEventsHandler : WireEventsHandlerDefault() {
     private val logger = LoggerFactory.getLogger(MyWireEventsHandler::class.java)
@@ -79,9 +117,30 @@ class MyWireEventsHandler : WireEventsHandlerDefault() {
     }
 }
 ```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+public class MyWireEventsHandler extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(MyWireEventsHandler.class);
+
+    @Override
+    public void onMessage(@NotNull WireMessage.Text wireMessage) {
+        logger.info("Message received: $wireMessage");
+    }
+}
+
+```
+
+</TabItem>
+</Tabs>
 ## 4. Echoing a received message
 
 In your `onMessage` implementation from `MyWireEventsHandler` you can echo a message as:
+
+<Tabs groupId="programming-language">
+<TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
 override fun onMessage(wireMessage: WireMessage.Text) {
@@ -98,6 +157,28 @@ override fun onMessage(wireMessage: WireMessage.Text) {
 }
 ```
 
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+@Override
+public void onMessage(@NotNull WireMessage.Text wireMessage) {
+    final WireMessage reply = WireMessage.Text.createReply(
+            wireMessage.conversationId(),
+            wireMessage.text() + " -- Sent from the SDK",
+            wireMessage.mentions(),
+            wireMessage.linkPreviews(),
+            wireMessage,
+            null);
+
+    // The manager is accessible through the inherited WireEventsHandler class.
+    // It is used to manage the Wire application's lifecycle and communication with the backend.
+    getManager().sendMessage(reply);
+}
+```
+
+</TabItem>
+</Tabs>
 ## 5. Conclusion
 
 With this basic setup you now have a running Echo App.
