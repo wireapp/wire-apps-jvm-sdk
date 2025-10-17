@@ -8,4 +8,4 @@ Apps — sometimes called *integrations*, *services*, or *third-party applicatio
 - **Customization**: Tailor the platform to your team’s needs.
 
 ## How to create an App
-➡️ [Check out the Quickstart guide](quickstart/quickstart.md)
+➡️ [Check out the Quickstart guide](quickstart/quickstart.mdx)
