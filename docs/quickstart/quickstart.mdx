@@ -57,8 +57,8 @@ fun main() {
         apiToken = "YOUR_API_TOKEN",
         apiHost = "YOUR_API_HOST",
         cryptographyStoragePassword = "YOUR_32_CHAR_STORAGE_PASSWORD",
-        object : WireEventsHandlerDefault() {
-            override fun onMessage(wireMessage: WireMessage.Text) {
+        object : WireEventsHandlerSuspending() {
+            override suspend fun onMessage(wireMessage: WireMessage.Text) {
                 println("Message received: $wireMessage")
 
                 // Add your message handling logic here, like storing the message,
@@ -102,17 +102,17 @@ public class Main {
 
 </TabItem>
 </Tabs>
-For simplicity the subclassing of WireEventsHandlerDefault is done inline as an anonymous class, but you can create a separate class for it,
+For simplicity the subclassing of WireEventsHandler is done inline as an anonymous class, but you can create a separate class for it,
 especially if you handle events in a complex way:
 
 <Tabs groupId="programming-language">
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-class MyWireEventsHandler : WireEventsHandlerDefault() {
+class MyWireEventsHandler : WireEventsHandlerSuspending() {
     private val logger = LoggerFactory.getLogger(MyWireEventsHandler::class.java)
 
-    override fun onMessage(wireMessage: WireMessage.Text) {
+    override suspend fun onMessage(wireMessage: WireMessage.Text) {
         logger.info("Message received: $wireMessage")
     }
 }
@@ -143,7 +143,7 @@ In your `onMessage` implementation from `MyWireEventsHandler` you can echo a mes
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-override fun onMessage(wireMessage: WireMessage.Text) {
+override suspend fun onMessage(wireMessage: WireMessage.Text) {
     val message = WireMessage.Text.createReply(
         conversationId = wireMessage.conversationId,
         text = "${wireMessage.text} -- Sent from the SDK",
