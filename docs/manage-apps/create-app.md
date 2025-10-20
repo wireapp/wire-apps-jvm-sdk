@@ -26,8 +26,8 @@ In the app:
 
 ![authentication token](../assets/team-management/authentication_token.png)
 
-6. You’ll see a one-time token. 
-    Copy it now to connect your app.   
+6. You’ll see the token once. 
+    Save it now, then set it as the `APP_TOKEN` environmental variable.   
    **You won’t be able to view it again.**
 
 ![integrations tab](../assets/team-management/integrations_tab_three_dots.png)

@@ -24,3 +24,8 @@ In the app:
 ![edit app](../assets/team-management/edit_app.png)
 
 6. Update the fields as needed, then select *Save*.
+
+## About authentication token editing
+
+You cannot edit or retrieve the authentication token because it’s securely generated for your app.
+If you need a new token, [regenerate it](./regenerate-auth-token.md).
