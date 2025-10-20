@@ -1,3 +1,5 @@
+# Architecture
+
 ## How Apps Work
 Apps are separate pieces of software that communicate with the platform’s frontend and backend through a **common protocol** (such as APIs or events).  
 They remain independent, but can seamlessly interact with the system and its users.
