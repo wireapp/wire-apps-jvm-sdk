@@ -23,11 +23,15 @@ import com.wire.sdk.TestUtils
 import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.crypto.CoreCryptoClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
+import com.wire.sdk.model.AppClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
+import com.wire.sdk.utils.MlsTransportLastWelcome
 import io.ktor.http.HttpStatusCode
+import io.ktor.util.encodeBase64
 import java.util.Base64
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -39,6 +43,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class WireApplicationManagerTest {
+    private val testMlsTransport = MlsTransportLastWelcome()
+
     @Test
     fun whenCreatingGroupConversationIsHandledSuccessfullyThenReturnsConversationId() =
         runTest {
@@ -47,10 +53,20 @@ class WireApplicationManagerTest {
             val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
 
+            val cryptoClientUser2 = CoreCryptoClient.create(
+                userId = USER_2.id.toString(),
+                ciphersuiteCode = 1
+            )
+            cryptoClientUser2.initializeMlsClient(
+                appClientId = AppClientId("user_${USER_2.id}"),
+                mlsTransport = testMlsTransport
+            )
+            val newPackages = cryptoClientUser2.mlsGenerateKeyPackages(10U)
+
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations"
+                        "/$V/conversations"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -59,11 +75,10 @@ class WireApplicationManagerTest {
                     )
                 )
             )
-
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
+                        "/$V/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_1)
@@ -72,10 +87,15 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
-                    WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
+                    WireMock.okJson(
+                        getDynamicKeyPackageClaimedUser(
+                            userId = USER_2.id.toString(),
+                            keyPackage = newPackages[0].value.copyBytes().encodeBase64()
+                        )
+                    )
                 )
             )
 
@@ -111,10 +131,20 @@ class WireApplicationManagerTest {
             val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
 
+            val cryptoClientUser2 = CoreCryptoClient.create(
+                userId = USER_2.id.toString(),
+                ciphersuiteCode = 1
+            )
+            cryptoClientUser2.initializeMlsClient(
+                appClientId = AppClientId("user_${USER_2.id}"),
+                mlsTransport = testMlsTransport
+            )
+            val newPackages = cryptoClientUser2.mlsGenerateKeyPackages(10U)
+
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/one2one-conversations/${USER_2.domain}/${USER_2.id}"
+                        "/$V/one2one-conversations/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -124,27 +154,18 @@ class WireApplicationManagerTest {
                 )
             )
 
-            val user1Id = System.getenv("WIRE_SDK_USER_ID")
-            val user1Domain = System.getenv("WIRE_SDK_ENVIRONMENT")
-
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/$user1Domain/$user1Id"
+                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(
-                        getDynamicKeyPackageClaimedUser(user1Id)
+                        getDynamicKeyPackageClaimedUser(
+                            userId = USER_2.id.toString(),
+                            keyPackage = newPackages[1].value.copyBytes().encodeBase64()
+                        )
                     )
-                )
-            )
-            wireMockServer.stubFor(
-                WireMock.post(
-                    WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
-                    )
-                ).willReturn(
-                    WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
                 )
             )
 
@@ -176,10 +197,20 @@ class WireApplicationManagerTest {
             val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
 
+            val cryptoClientUser2 = CoreCryptoClient.create(
+                userId = USER_2.id.toString(),
+                ciphersuiteCode = 1
+            )
+            cryptoClientUser2.initializeMlsClient(
+                appClientId = AppClientId("user_${USER_2.id}"),
+                mlsTransport = testMlsTransport
+            )
+            val newPackages = cryptoClientUser2.mlsGenerateKeyPackages(10U)
+
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations"
+                        "/$V/conversations"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -192,7 +223,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
+                        "/$V/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_1)
@@ -201,10 +232,15 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
-                    WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_2)
+                    WireMock.okJson(
+                        getDynamicKeyPackageClaimedUser(
+                            userId = USER_2.id.toString(),
+                            keyPackage = newPackages[2].value.copyBytes().encodeBase64()
+                        )
+                    )
                 )
             )
 
@@ -371,31 +407,19 @@ class WireApplicationManagerTest {
             }
             """.trimIndent()
 
-        private fun getDynamicKeyPackageClaimedUser(userId: String): String =
+        private fun getDynamicKeyPackageClaimedUser(
+            userId: String,
+            keyPackage: String
+        ): String =
             """
             {
                 "key_packages": [
                     {
                         "client": "a0991ebb1935c08",
                         "domain": "wire.com",
-                        "key_package": "AAEAASCVE6WPHxIa8Vft67p+n3ddwPttze/srwh88h3T9kBbKSAjQQ6esCwjBIVnF03H/AP0RM1qdR5hoOUwG7xFzt3OOSAGIwGQeRsCW2OOW0S+H0++tAr8P6E3qrSqoTg+UKTo9gABQEQ5ZjU0ZDEzNC02NDZlLTQ3NGYtYmQwYS1jYTg3MDJhZDZlNDA6YTA5OTFlYmIxOTM1YzA5QGNoYWxhLndpcmUubGluawIAAQoAAQACAAMABwAFAAAEAAEAAgEAAAAAaHjXmgAAAABo56OqAEBAb7RP7rdbTlHxfMma8JV1iv8JAtJYMwnnrtYzo9LLkUqZSFN7+mcMkMN6qjRbY4lpWZ9TDMTqWqciVSUTyYlAAgBAQMR5ag9/BRA4CQCOQYMQQ2jd6jRwjaWO0qZ9ShDhcJDMuZ0HQasVtbTVVylVWoUwxPaSorWLPuQ9TUpkA2w46gc=",
+                        "key_package": "$keyPackage",
                         "key_package_ref": "RGQI8whr1iZI+LDdHGU1Ulaq4FIfSVBAompRGMBzvb0=",
                         "user": "$userId"
-                    }
-                ]
-            }
-            """.trimIndent()
-
-        private val MLS_KEYPACKAGE_CLAIMED_USER_2 =
-            """
-            {
-                "key_packages": [
-                    {
-                        "client": "a0991ebb1935c09",
-                        "domain": "wire.com",
-                        "key_package": "AAEAASCVE6WPHxIa8Vft67p+n3ddwPttze/srwh88h3T9kBbKSAjQQ6esCwjBIVnF03H/AP0RM1qdR5hoOUwG7xFzt3OOSAGIwGQeRsCW2OOW0S+H0++tAr8P6E3qrSqoTg+UKTo9gABQEQ5ZjU0ZDEzNC02NDZlLTQ3NGYtYmQwYS1jYTg3MDJhZDZlNDA6YTA5OTFlYmIxOTM1YzA5QGNoYWxhLndpcmUubGluawIAAQoAAQACAAMABwAFAAAEAAEAAgEAAAAAaHjXmgAAAABo56OqAEBAb7RP7rdbTlHxfMma8JV1iv8JAtJYMwnnrtYzo9LLkUqZSFN7+mcMkMN6qjRbY4lpWZ9TDMTqWqciVSUTyYlAAgBAQMR5ag9/BRA4CQCOQYMQQ2jd6jRwjaWO0qZ9ShDhcJDMuZ0HQasVtbTVVylVWoUwxPaSorWLPuQ9TUpkA2w46gc=",
-                        "key_package_ref": "RGQI8whr1iZI+LDdHGU1Ulaq4FIfSVBAompRGMBzvb0=",
-                        "user": "${USER_2.id}"
                     }
                 ]
             }
