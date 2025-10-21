@@ -18,6 +18,7 @@ package com.wire.sdk.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.toGroupId
 import com.wire.sdk.TestUtils
 import com.wire.sdk.TestUtils.V
@@ -32,19 +33,17 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.utils.MlsTransportLastWelcome
 import io.ktor.http.HttpStatusCode
 import io.ktor.util.encodeBase64
-import java.util.Base64
-import java.util.UUID
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.Base64
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class WireApplicationManagerTest {
-    private val testMlsTransport = MlsTransportLastWelcome()
-
     @Test
     fun whenCreatingGroupConversationIsHandledSuccessfullyThenReturnsConversationId() =
         runTest {
@@ -53,15 +52,7 @@ class WireApplicationManagerTest {
             val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
 
-            val cryptoClientUser2 = CoreCryptoClient.create(
-                userId = USER_2.id.toString(),
-                ciphersuiteCode = 1
-            )
-            cryptoClientUser2.initializeMlsClient(
-                appClientId = AppClientId("user_${USER_2.id}"),
-                mlsTransport = testMlsTransport
-            )
-            val newPackages = cryptoClientUser2.mlsGenerateKeyPackages(10U)
+            newPackages = generateUser2Packages()
 
             wireMockServer.stubFor(
                 WireMock.post(
@@ -131,15 +122,7 @@ class WireApplicationManagerTest {
             val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
 
-            val cryptoClientUser2 = CoreCryptoClient.create(
-                userId = USER_2.id.toString(),
-                ciphersuiteCode = 1
-            )
-            cryptoClientUser2.initializeMlsClient(
-                appClientId = AppClientId("user_${USER_2.id}"),
-                mlsTransport = testMlsTransport
-            )
-            val newPackages = cryptoClientUser2.mlsGenerateKeyPackages(10U)
+            newPackages = generateUser2Packages()
 
             wireMockServer.stubFor(
                 WireMock.get(
@@ -197,15 +180,7 @@ class WireApplicationManagerTest {
             val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
 
-            val cryptoClientUser2 = CoreCryptoClient.create(
-                userId = USER_2.id.toString(),
-                ciphersuiteCode = 1
-            )
-            cryptoClientUser2.initializeMlsClient(
-                appClientId = AppClientId("user_${USER_2.id}"),
-                mlsTransport = testMlsTransport
-            )
-            val newPackages = cryptoClientUser2.mlsGenerateKeyPackages(10U)
+            newPackages = generateUser2Packages()
 
             wireMockServer.stubFor(
                 WireMock.post(
@@ -301,8 +276,22 @@ class WireApplicationManagerTest {
             }
         }
 
+    private suspend fun generateUser2Packages(): List<MLSKeyPackage> =
+        CoreCryptoClient.create(
+            userId = USER_2.id.toString(),
+            ciphersuiteCode = 1
+        ).use { cryptoClientUser2 ->
+            cryptoClientUser2.initializeMlsClient(
+                appClientId = AppClientId("user_${USER_2.id}"),
+                mlsTransport = testMlsTransport
+            )
+            cryptoClientUser2.mlsGenerateKeyPackages(10U)
+        }
+
     companion object {
         private val wireMockServer = WireMockServer(8086)
+        private val testMlsTransport = MlsTransportLastWelcome()
+        private lateinit var newPackages: List<MLSKeyPackage>
 
         private const val CONVERSATION_NAME = "Conversation Name"
         private const val DOMAIN = "wire.com"
