@@ -42,22 +42,16 @@ jobs:
             }
           }' README.md
 
-      - name: Commit and push README.md update
+      - name: Commit README.md changes and create PR
         continue-on-error: true
-        run: |
-          set -euo pipefail
-          VERSION="${{ github.event.release.tag_name }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          if git diff --quiet -- README.md; then
-            echo "No README.md changes to commit"
-            exit 0
-          fi
-          
-          git add README.md
-          git commit -m "docs(readme): update dependency version to ${VERSION}"
-          git push origin HEAD:"${{ github.event.repository.default_branch }}"
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "docs(readme): update dependency version to ${{ github.event.release.tag_name }}"
+          branch: "update-readme-${{ github.event.release.tag_name }}"
+          title: "docs(readme): update dependency version to ${{ github.event.release.tag_name }}"
+          body: |
+            This PR updates the README.md dependency sections to version ${{ github.event.release.tag_name }}.
+          labels: automated
 
       - name: Store reports
         if: failure()
