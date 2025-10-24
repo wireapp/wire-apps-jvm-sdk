@@ -1,0 +1,44 @@
+name: Test README Update (Manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-readme-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set test version
+        run: echo "VERSION=0.0.99-test" >> $GITHUB_ENV
+
+      - name: Update README.md with new version
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.release.tag_name }}"
+          echo "Updating dependency sections in README.md with version ${VERSION}"
+
+          # Update Gradle dependency section
+          sed -i -E 's|implementation\("com\.wire:wire-apps-jvm-sdk:[^"]+"\)|implementation("com.wire:wire-apps-jvm-sdk:'"$VERSION"'")|g' README.md
+
+          # Update Maven dependency section (only within the com.wire:wire-apps-jvm-sdk dependency block)
+          sed -i -E '/<groupId>com\.wire<\/groupId>/,/<\/dependency>/{
+            /<artifactId>wire-apps-jvm-sdk<\/artifactId>/,/<\/dependency>/{
+              s|<version>[^<]+</version>|<version>'"$VERSION"'</version>|g
+            }
+          }' README.md
+
+      - name: Commit README.md changes and create PR
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "docs(readme): test update dependency version to ${{ env.VERSION }}"
+          branch: "test-update-readme-${{ env.VERSION }}"
+          title: "Test: Update README.md to ${{ env.VERSION }}"
+          body: "This PR tests the README update logic."
+          base: main
+          labels: automated
