@@ -34,6 +34,7 @@ jobs:
           }' README.md
 
       - name: Commit README.md changes and create PR
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v5
         with:
           commit-message: "docs(readme): test update dependency version to ${{ env.VERSION }}"
