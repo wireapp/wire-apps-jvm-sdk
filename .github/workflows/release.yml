@@ -44,7 +44,7 @@ jobs:
 
       - name: Commit README.md changes and create PR
         continue-on-error: true
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "docs(readme): update dependency version to ${{ github.event.release.tag_name }}"
           branch: "update-readme-${{ github.event.release.tag_name }}"
