@@ -40,7 +40,7 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
      * The app has been added to a conversation.
      *
      * @param conversation the conversation id with some extra data
-     * @param members the members that got added, including the app and possibly other users
+     * @param members the participants of the conversation, excluding the App
      */
     open fun onConversationJoin(
         conversation: ConversationData,
