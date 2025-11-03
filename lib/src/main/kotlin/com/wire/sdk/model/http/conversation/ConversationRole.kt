@@ -21,9 +21,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class ConversationRole {
-    @SerialName("wire_admin")
+    @SerialName("wire_member")
     MEMBER,
 
-    @SerialName("wire_member")
+    @SerialName("wire_admin")
     ADMIN
 }
