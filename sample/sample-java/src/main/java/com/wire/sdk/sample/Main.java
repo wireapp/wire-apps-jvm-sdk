@@ -16,6 +16,7 @@
 
 package com.wire.sdk.sample;
 
+import com.wire.sdk.BackendConnectionListener;
 import com.wire.sdk.WireAppSdk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +43,27 @@ public class Main {
     }
 
     private WireAppSdk initSdkInstance() {
+        // Create a connection listener to monitor backend connection status
+        final var connectionListener = new BackendConnectionListener() {
+            @Override
+            public void onConnected() {
+                logger.info("Backend connection established - Ready to send/receive messages");
+            }
+
+            @Override
+            public void onDisconnected() {
+                logger.warn("Backend connection lost - Attempting to reconnect...");
+                // Optionally implement custom reconnection logic, alerting, or fallback behavior here
+            }
+        };
+
         return new WireAppSdk(
                 MY_APPLICATION_ID,
                 WIRE_API_TOKEN,
                 WIRE_API_HOST,
                 WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD,
-                new CustomWireEventsHandler()
+                new CustomWireEventsHandler(),
+                connectionListener
         );
     }
 

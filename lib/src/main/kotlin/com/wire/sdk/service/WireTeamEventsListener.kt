@@ -15,6 +15,7 @@
 
 package com.wire.sdk.service
 
+import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.model.EventAcknowledgeRequest
 import com.wire.sdk.model.http.ConsumableNotificationResponse
@@ -34,6 +35,18 @@ internal class WireTeamEventsListener internal constructor(
     private val eventsRouter: EventsRouter
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private var backendConnectionListener: BackendConnectionListener? = null
+
+    /**
+     * Updates the backend connection listener that will receive connection state notifications.
+     * This can be called after initialization to dynamically change the listener.
+     *
+     * @param listener The new listener to use, or null to remove the current listener
+     */
+    @Synchronized
+    fun setBackendConnectionListener(listener: BackendConnectionListener?) {
+        backendConnectionListener = listener
+    }
 
     /**
      * Keeps the webSocket connection open and listens for incoming events, while handling errors
@@ -41,6 +54,10 @@ internal class WireTeamEventsListener internal constructor(
     suspend fun connect() {
         try {
             backendClient.connectWebSocket { session ->
+                // Notify listener that connection is established
+                backendConnectionListener?.onConnected()
+                logger.info("WebSocket connection established")
+
                 for (frame in session.incoming) {
                     if (frame is Frame.Binary) {
                         handleEvent(frame, session)
@@ -61,6 +78,8 @@ internal class WireTeamEventsListener internal constructor(
             throw InterruptedException(error)
         } finally {
             logger.warn("WebSocket connection closed, stopping Wire Team Events Listener")
+            // Notify listener that connection is lost
+            backendConnectionListener?.onDisconnected()
         }
     }
 

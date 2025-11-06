@@ -2,8 +2,8 @@ plugins {
     id("java")
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+group = "com.wire"
+version = "0.0.1-SNAPSHOT"
 
 java {
     toolchain {

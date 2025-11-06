@@ -20,12 +20,15 @@ import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.service.WireApplicationManager
 import com.wire.sdk.service.WireTeamEventsListener
 import com.wire.sdk.service.conversation.ConversationService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 import java.util.UUID
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 class WireAppSdk(
@@ -37,7 +40,7 @@ class WireAppSdk(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val running = AtomicBoolean(false)
-    private val executor = Executors.newSingleThreadExecutor()
+    private var listenerJob: Job? = null
 
     init {
         require(cryptographyStoragePassword.length == CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH) {
@@ -62,18 +65,20 @@ class WireAppSdk(
         }
         running.set(true)
 
-        executor.execute {
+        // Asynchronously start listening to events
+        listenerJob = CoroutineScope(Dispatchers.IO).launch {
             val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
             logger.info("Start listening to WebSocket events...")
             // Connect and reconnect if connection closes and the listener function completes
-            while (running.get()) {
-                runBlocking(Dispatchers.IO) {
-                    eventsListener.connect()
+            while (isActive && running.get()) {
+                eventsListener.connect()
+                if (isActive && running.get()) {
+                    logger.info("Connection ended, attempting to reconnect...")
                 }
-                logger.info("Connection ended, attempting to reconnect...")
             }
         }
 
+        // Block thread until conversations are re-established
         runBlocking {
             val conversationService = IsolatedKoinContext.koinApp.koin.get<ConversationService>()
             conversationService.establishOrRejoinConversations()
@@ -88,12 +93,27 @@ class WireAppSdk(
         }
         logger.info("Wire Apps SDK shutting down")
         running.set(false)
-        executor.shutdownNow()
+        listenerJob?.cancel()
     }
 
     fun isRunning(): Boolean = running.get()
 
     fun getApplicationManager(): WireApplicationManager = IsolatedKoinContext.koinApp.koin.get()
+
+    /**
+     * Sets or updates the backend connection listener that will receive notifications about
+     * connection state changes.
+     *
+     * This method can be called at any time, even after [startListening] has been called.
+     * The new listener will immediately start receiving connection state notifications.
+     *
+     * @param listener The listener to receive connection state notifications, or null to remove
+     *                 the current listener
+     */
+    fun setBackendConnectionListener(listener: BackendConnectionListener?) {
+        val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
+        eventsListener.setBackendConnectionListener(listener)
+    }
 
     private fun initDynamicModules(wireEventsHandler: WireEventsHandler) {
         val dynamicModule = module {
