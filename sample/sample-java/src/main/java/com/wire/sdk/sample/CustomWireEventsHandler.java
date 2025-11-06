@@ -32,7 +32,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
         final WireMessage reply = WireMessage.Text.createReply(
                 wireMessage.conversationId(),
-                wireMessage.text() + " -- Sent from the Sample-Java App",
+                wireMessage.text() + " -- Sent from the Sample-Java App (source:"+wireMessage.id()+")",
                 wireMessage.mentions(),
                 wireMessage.linkPreviews(),
                 wireMessage,

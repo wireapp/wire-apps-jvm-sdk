@@ -17,9 +17,12 @@
 package com.wire.sdk.sample;
 
 import com.wire.sdk.WireAppSdk;
+import com.wire.sdk.model.QualifiedId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Main {
@@ -39,6 +42,9 @@ public class Main {
     private void initApp() {
         final var wireAppSdk = initSdkInstance();
         wireAppSdk.startListening();
+
+
+        createLoad(wireAppSdk); ////  TODO ::: TEMPORARY METHOD JUST FOR TESTING
     }
 
     private WireAppSdk initSdkInstance() {
@@ -49,6 +55,28 @@ public class Main {
                 WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD,
                 new CustomWireEventsHandler()
         );
+    }
+
+    private void createLoad(WireAppSdk wireAppSdk) {
+        final List<QualifiedId> users = new ArrayList<>();
+        users.add(new QualifiedId(
+                UUID.fromString("67781a55-0b11-46b1-90ec-b0c5a5695ca0"), //baris
+                "staging.zinfra.io"));
+
+        final String conversationNamePrefix = "LoadTestConv-"+UUID.randomUUID().toString().substring(0, 3)+"-";
+
+        for (int i = 0; i < 100; i++) {
+            String conversationName = conversationNamePrefix + i;
+            System.out.println("- - - - - - - - - - - - - - - - - -");
+            System.out.println("Creating conversation : " + conversationName);
+            System.out.println("- - - - - - - - - - - - - - - - - -");
+            wireAppSdk.getApplicationManager().createGroupConversation(conversationName, users);
+            try {
+                Thread.sleep(3);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 }
