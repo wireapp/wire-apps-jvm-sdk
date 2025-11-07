@@ -19,7 +19,7 @@ package com.wire.sdk
 /**
  * Listener interface for receiving notifications about backend connection state changes.
  *
- * Implement this interface and register it with [WireAppSdk.addConnectionListener]
+ * Implement this interface and register it with [WireAppSdk.setBackendConnectionListener]
  * to receive callbacks when the connection to the Wire backend is established or lost.
  *
  * Example usage:
@@ -33,7 +33,7 @@ package com.wire.sdk
  *         println("Disconnected from Wire backend")
  *     }
  * }
- * wireAppSdk.addConnectionListener(listener)
+ * wireAppSdk.setConnectionListener(listener)
  * ```
  */
 interface BackendConnectionListener {

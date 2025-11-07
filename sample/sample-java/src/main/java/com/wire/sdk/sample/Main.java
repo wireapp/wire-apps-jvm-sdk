@@ -39,10 +39,6 @@ public class Main {
 
     private void initApp() {
         final var wireAppSdk = initSdkInstance();
-        wireAppSdk.startListening();
-    }
-
-    private WireAppSdk initSdkInstance() {
         // Create a connection listener to monitor backend connection status
         final var connectionListener = new BackendConnectionListener() {
             @Override
@@ -56,14 +52,17 @@ public class Main {
                 // Optionally implement custom reconnection logic, alerting, or fallback behavior here
             }
         };
+        wireAppSdk.setBackendConnectionListener(connectionListener);
+        wireAppSdk.startListening();
+    }
 
+    private WireAppSdk initSdkInstance() {
         return new WireAppSdk(
                 MY_APPLICATION_ID,
                 WIRE_API_TOKEN,
                 WIRE_API_HOST,
                 WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD,
-                new CustomWireEventsHandler(),
-                connectionListener
+                new CustomWireEventsHandler()
         );
     }
 

@@ -38,23 +38,11 @@ internal class WireTeamEventsListener internal constructor(
     private var backendConnectionListener: BackendConnectionListener? = null
 
     /**
-     * Updates the backend connection listener that will receive connection state notifications.
-     * This can be called after initialization to dynamically change the listener.
-     *
-     * @param listener The new listener to use, or null to remove the current listener
-     */
-    @Synchronized
-    fun setBackendConnectionListener(listener: BackendConnectionListener?) {
-        backendConnectionListener = listener
-    }
-
-    /**
      * Keeps the webSocket connection open and listens for incoming events, while handling errors
      */
     suspend fun connect() {
         try {
             backendClient.connectWebSocket { session ->
-                // Notify listener that connection is established
                 backendConnectionListener?.onConnected()
                 logger.info("WebSocket connection established")
 
@@ -78,9 +66,18 @@ internal class WireTeamEventsListener internal constructor(
             throw InterruptedException(error)
         } finally {
             logger.warn("WebSocket connection closed, stopping Wire Team Events Listener")
-            // Notify listener that connection is lost
             backendConnectionListener?.onDisconnected()
         }
+    }
+
+    /**
+     * Updates the backend connection listener that will receive connection state notifications.
+     * This can be called after initialization to dynamically change the listener.
+     *
+     * @param listener The new listener to use, or null to remove the current listener
+     */
+    fun setBackendConnectionListener(listener: BackendConnectionListener?) {
+        backendConnectionListener = listener
     }
 
     /**
@@ -116,7 +113,7 @@ internal class WireTeamEventsListener internal constructor(
 
             is ConsumableNotificationResponse.SynchronizationNotification -> {
                 notification.data.deliveryTag?.let { deliveryTag ->
-                    val ackRequest = EventAcknowledgeRequest.Companion.basicAck(deliveryTag)
+                    val ackRequest = EventAcknowledgeRequest.basicAck(deliveryTag)
                     ackEvent(ackRequest, session)
                 }
                 val notificationSyncMarker = backendClient.getNotificationSyncMarker()

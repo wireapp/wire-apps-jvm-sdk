@@ -135,7 +135,7 @@ class WireAppSdkTest {
             // Start listening
             wireAppSdk.startListening()
 
-            // Wait for the the last reconnect attempt to complete (with exception)
+            // Wait for the last reconnect attempt to complete (with exception)
             val completed = latch.await(5, TimeUnit.SECONDS)
             assert(completed) { "Timed out waiting for connection attempts" }
 

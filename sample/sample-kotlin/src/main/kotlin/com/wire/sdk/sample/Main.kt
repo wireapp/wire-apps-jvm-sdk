@@ -42,8 +42,9 @@ fun main() {
         apiHost = "https://staging-nginz-https.zinfra.io",
         cryptographyStoragePassword = "myDummyPasswordOfRandom32BytesCH",
         wireEventsHandler = SampleEventsHandler(),
-        backendConnectionListener = connectionListener
     )
+
+    wireAppSdk.setBackendConnectionListener(connectionListener)
 
     logger.info("Starting Wire Apps SDK...")
     wireAppSdk.startListening() // Will keep a coroutine running in the background until explicitly stopped
