@@ -56,8 +56,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: ConversationDeleted")
     }
 
-    open fun onAsset(wireMessage: WireMessage.Asset) {
-        logger.debug("Received event: onAsset")
+    open fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
+        logger.debug("Received event: AssetMessageReceived")
     }
 
     open fun onComposite(wireMessage: WireMessage.Composite) {

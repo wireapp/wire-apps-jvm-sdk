@@ -213,7 +213,7 @@ override suspend fun onAssetSuspending(wireMessage: WireMessage.Asset) {
     }
 }
 ```
-> **_Java:_** Use `override fun onAsset(wireMessage: WireMessage.Asset) { .. }`
+> **_Java:_** Use `override fun onAssetMessageReceived(wireMessage: WireMessage.Asset) { .. }`
 
 #### Creation of a Conversation
 

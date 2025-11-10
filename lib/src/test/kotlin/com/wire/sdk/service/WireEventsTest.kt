@@ -80,7 +80,7 @@ class WireEventsTest {
                 .koin
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onAsset(
+            wireEvents.onAssetMessageReceived(
                 wireMessage = WireMessage.Asset(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -223,7 +223,7 @@ class WireEventsTest {
                     )
                 }
 
-                override suspend fun onAsset(wireMessage: WireMessage.Asset) {
+                override suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE,
                         wireMessage.name

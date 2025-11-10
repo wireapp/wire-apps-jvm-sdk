@@ -56,8 +56,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: ConversationDeleted")
     }
 
-    open suspend fun onAsset(wireMessage: WireMessage.Asset) {
-        logger.debug("Received event: onAsset")
+    open suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
+        logger.debug("Received event: AssetMessageReceived")
     }
 
     open suspend fun onComposite(wireMessage: WireMessage.Composite) {

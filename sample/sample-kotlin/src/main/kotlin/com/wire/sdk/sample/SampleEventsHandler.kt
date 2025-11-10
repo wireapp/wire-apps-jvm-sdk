@@ -106,7 +106,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         manager.sendMessageSuspending(message = reaction)
     }
 
-    override suspend fun onAsset(wireMessage: WireMessage.Asset) {
+    override suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
         logger.info("Received Asset Message : $wireMessage")
 
         val message = WireMessage.Text.createReply(
