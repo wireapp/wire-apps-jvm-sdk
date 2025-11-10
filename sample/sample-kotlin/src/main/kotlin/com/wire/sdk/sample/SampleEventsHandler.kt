@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory
 class SampleEventsHandler : WireEventsHandlerSuspending() {
     private val logger = LoggerFactory.getLogger("SampleEventsHandler")
 
-    override suspend fun onMessage(wireMessage: WireMessage.Text) {
+    override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
         logger.info("Received Text Message : $wireMessage")
 
         if (isCreateOneToOneConversation(text = wireMessage.text)) {

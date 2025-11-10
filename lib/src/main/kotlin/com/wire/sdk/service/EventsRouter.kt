@@ -289,7 +289,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
             is WireEventsHandlerSuspending -> when (wireMessage) {
-                is WireMessage.Text -> wireEventsHandler.onMessage(wireMessage)
+                is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
                 is WireMessage.Asset -> wireEventsHandler.onAsset(wireMessage)
                 is WireMessage.Composite -> wireEventsHandler.onComposite(wireMessage)
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonAction(wireMessage)

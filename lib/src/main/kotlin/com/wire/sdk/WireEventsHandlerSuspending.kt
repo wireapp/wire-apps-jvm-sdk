@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory
 abstract class WireEventsHandlerSuspending : WireEventsHandler() {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    open suspend fun onMessage(wireMessage: WireMessage.Text) {
+    open suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
         logger.debug("Received event: onMessage")
     }
 

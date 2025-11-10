@@ -26,7 +26,6 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
-import com.wire.sdk.service.EventsRouter
 import com.wire.sdk.utils.KtxSerializer
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -59,7 +58,7 @@ class WireEventsTest {
                 members = emptyList()
             )
 
-            wireEvents.onMessage(
+            wireEvents.onTextMessageReceived(
                 wireMessage = WireMessage.Text(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -217,7 +216,7 @@ class WireEventsTest {
                     assertEquals(CONVERSATION_ID, conversation.id)
                 }
 
-                override suspend fun onMessage(wireMessage: WireMessage.Text) {
+                override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE,
                         wireMessage.text
