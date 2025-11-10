@@ -236,11 +236,11 @@ internal class EventsRouter internal constructor(
 
         groupId?.run {
             when (wireEventsHandler) {
-                is WireEventsHandlerDefault -> wireEventsHandler.onConversationJoin(
+                is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(
                     conversation = conversationData,
                     members = members
                 )
-                is WireEventsHandlerSuspending -> wireEventsHandler.onConversationJoin(
+                is WireEventsHandlerSuspending -> wireEventsHandler.onAppAddedToConversation(
                     conversation = conversationData,
                     members = members
                 )

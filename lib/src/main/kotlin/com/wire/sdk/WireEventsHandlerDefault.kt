@@ -42,11 +42,11 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
      * @param conversation the conversation id with some extra data
      * @param members the participants of the conversation, excluding the App
      */
-    open fun onConversationJoin(
+    open fun onAppAddedToConversation(
         conversation: ConversationData,
         members: List<ConversationMember>
     ) {
-        logger.debug("Received event: onConversationJoin")
+        logger.debug("Received event: AppAddedToConversation")
     }
 
     /**

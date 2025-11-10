@@ -47,7 +47,7 @@ class WireEventsTest {
                 .koin
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onConversationJoin(
+            wireEvents.onAppAddedToConversation(
                 conversation = ConversationData(
                     id = CONVERSATION_ID,
                     name = "Test conversation",
@@ -209,7 +209,7 @@ class WireEventsTest {
 
         private val wireEventsHandler =
             object : WireEventsHandlerSuspending() {
-                override suspend fun onConversationJoin(
+                override suspend fun onAppAddedToConversation(
                     conversation: ConversationData,
                     members: List<ConversationMember>
                 ) {
