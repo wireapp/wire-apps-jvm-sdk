@@ -101,10 +101,12 @@ internal class EventsRouter internal constructor(
                             conversationId = event.qualifiedConversation,
                             members = members
                         )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onUserJoinedConversation(
-                            conversationId = event.qualifiedConversation,
-                            members = members
-                        )
+                        is WireEventsHandlerSuspending ->
+                            wireEventsHandler
+                                .onUserJoinedConversation(
+                                    conversationId = event.qualifiedConversation,
+                                    members = members
+                                )
                     }
                 }
 
@@ -253,7 +255,7 @@ internal class EventsRouter internal constructor(
     /**
      * Forwards the message to the appropriate handler (blocking or suspending) based on its type.
      */
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private suspend fun forwardMessage(
         message: ByteArray,
         conversationId: QualifiedId,
@@ -272,7 +274,9 @@ internal class EventsRouter internal constructor(
             is WireEventsHandlerDefault -> when (wireMessage) {
                 is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
                 is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
-                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(wireMessage)
+                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(
+                    wireMessage
+                )
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
                     wireEventsHandler.onButtonClickConfirmed(wireMessage)
@@ -281,17 +285,25 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
                 is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
-                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(wireMessage)
+                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(
+                    wireMessage
+                )
                 is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
-                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(wireMessage)
-                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(wireMessage)
+                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
+                    wireMessage
+                )
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
+                    wireMessage
+                )
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
             is WireEventsHandlerSuspending -> when (wireMessage) {
                 is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
                 is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
-                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(wireMessage)
+                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(
+                    wireMessage
+                )
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
                     wireEventsHandler.onButtonClickConfirmed(wireMessage)
@@ -300,10 +312,16 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
                 is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
-                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(wireMessage)
+                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(
+                    wireMessage
+                )
                 is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
-                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(wireMessage)
-                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(wireMessage)
+                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
+                    wireMessage
+                )
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
+                    wireMessage
+                )
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
