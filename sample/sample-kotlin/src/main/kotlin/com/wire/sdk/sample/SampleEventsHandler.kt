@@ -136,7 +136,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
     }
 
-    override suspend fun onButtonAction(wireMessage: WireMessage.ButtonAction) {
+    override suspend fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
         logger.info("Received ButtonAction Message : $wireMessage")
     }
 

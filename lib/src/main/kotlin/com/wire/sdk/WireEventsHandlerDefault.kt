@@ -64,8 +64,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: CompositeMessageReceived")
     }
 
-    open fun onButtonAction(wireMessage: WireMessage.ButtonAction) {
-        logger.debug("Received event: onButtonAction")
+    open fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
+        logger.debug("Received event: ButtonClicked")
     }
 
     open fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
