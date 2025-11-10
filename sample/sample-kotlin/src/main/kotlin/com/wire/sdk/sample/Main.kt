@@ -15,6 +15,7 @@
 
 package com.wire.sdk.sample
 
+import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.WireAppSdk
 import com.wire.sdk.model.QualifiedId
 import org.slf4j.LoggerFactory
@@ -23,16 +24,30 @@ import java.util.UUID
 private val logger = LoggerFactory.getLogger("WireAppSdkSample")
 
 fun main() {
+    // Create a connection listener to monitor backend connection status
+    val connectionListener = object : BackendConnectionListener {
+        override fun onConnected() {
+            logger.info("Backend connection established - Ready to send/receive messages")
+        }
+
+        override fun onDisconnected() {
+            logger.warn("Backend connection lost - Attempting to reconnect...")
+            // Optionally implement custom reconnection logic, alerting, or fallback behavior here
+        }
+    }
+
     val wireAppSdk = WireAppSdk(
         applicationId = UUID.randomUUID(),
         apiToken = "myApiToken",
         apiHost = "https://staging-nginz-https.zinfra.io",
         cryptographyStoragePassword = "myDummyPasswordOfRandom32BytesCH",
-        wireEventsHandler = SampleEventsHandler()
+        wireEventsHandler = SampleEventsHandler(),
     )
 
+    wireAppSdk.setBackendConnectionListener(connectionListener)
+
     logger.info("Starting Wire Apps SDK...")
-    wireAppSdk.startListening() // Will keep a thread running in the background until explicitly stopped
+    wireAppSdk.startListening() // Will keep a coroutine running in the background until explicitly stopped
     val applicationManager = wireAppSdk.getApplicationManager()
 
     applicationManager.getStoredTeams().forEach {
@@ -48,5 +63,5 @@ fun main() {
     logger.info(applicationManager.getUser(selfUser).toString())
     logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
 
-    // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C
+    // Use wireAppSdk.stopListening() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

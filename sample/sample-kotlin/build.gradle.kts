@@ -18,7 +18,7 @@ plugins {
     application
 }
 
-group = "com.wire.integrations"
+group = "com.wire"
 version = "0.0.1-SNAPSHOT"
 
 repositories {
@@ -47,5 +47,5 @@ tasks.named<Test>("test") {
 }
 
 application {
-    mainClass.set("com.wire.integrations.sample.MainKt")
+    mainClass.set("com.wire.sdk.sample.MainKt")
 }

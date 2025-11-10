@@ -37,7 +37,7 @@ class WireAppSdk(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val running = AtomicBoolean(false)
-    private val executor = Executors.newSingleThreadExecutor()
+    private var executor = Executors.newSingleThreadExecutor()
 
     init {
         require(cryptographyStoragePassword.length == CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH) {
@@ -62,15 +62,24 @@ class WireAppSdk(
         }
         running.set(true)
 
+        // Recreate executor if it was previously shut down
+        if (executor.isShutdown) {
+            executor = Executors.newSingleThreadExecutor()
+        }
+
         executor.execute {
-            val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
-            logger.info("Start listening to WebSocket events...")
-            // Connect and reconnect if connection closes and the listener function completes
-            while (running.get()) {
-                runBlocking(Dispatchers.IO) {
-                    eventsListener.connect()
+            try {
+                val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
+                logger.info("Start listening to WebSocket events...")
+                // Connect and reconnect if connection closes and the listener function completes
+                while (running.get()) {
+                    runBlocking(Dispatchers.IO) {
+                        eventsListener.connect()
+                    }
                 }
-                logger.info("Connection ended, attempting to reconnect...")
+            } finally {
+                running.set(false)
+                logger.info("WebSocket listener stopped")
             }
         }
 
@@ -94,6 +103,21 @@ class WireAppSdk(
     fun isRunning(): Boolean = running.get()
 
     fun getApplicationManager(): WireApplicationManager = IsolatedKoinContext.koinApp.koin.get()
+
+    /**
+     * Sets or updates the backend connection listener that will receive notifications about
+     * websocket state changes.
+     *
+     * This method can be called at any time, even after [startListening] has been called.
+     * The new listener will immediately start receiving connection state notifications.
+     *
+     * @param listener The listener to receive connection state notifications, or null to remove
+     *                 the current listener
+     */
+    fun setBackendConnectionListener(listener: BackendConnectionListener?) {
+        val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
+        eventsListener.setBackendConnectionListener(listener)
+    }
 
     private fun initDynamicModules(wireEventsHandler: WireEventsHandler) {
         val dynamicModule = module {

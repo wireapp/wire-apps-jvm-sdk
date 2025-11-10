@@ -252,6 +252,41 @@ val createdChannelConversationId = applicationManager.createChannelConversationS
 
 > **_Java:_** Use `createOneToOneConversation` for One to One Conversations
 
+## Monitoring Backend Connection
+
+The SDK provides a way to monitor the connection state to the Wire backend through the `BackendConnectionListener` interface. This is useful for:
+- Displaying connection status in your application UI
+- Logging connection events for monitoring and debugging
+- Triggering reconnection logic or notifications when connection is lost
+
+The listener receives two types of notifications:
+- `onConnected()`: Called when the WebSocket connection is successfully established
+- `onDisconnected()`: Called when the connection is lost due to network issues / server errors (after several automatic retries), or when `stopListening()` is called
+
+You can set or update the listener at any time, even after `startListening()` has been called:
+
+```kotlin
+val connectionListener = object : BackendConnectionListener {
+    override fun onConnected() {
+        println("✓ Connected to Wire backend")
+        // Log event, or perform other actions
+    }
+
+    override fun onDisconnected() {
+        println("✗ Disconnected from Wire backend")
+        // Log event, wait and call startListening again or perform other actions
+    }
+}
+
+// Set the listener
+wireAppSdk.setBackendConnectionListener(connectionListener)
+
+// You can remove the listener by passing null
+wireAppSdk.setBackendConnectionListener(null)
+```
+
+**Note:** The SDK automatically attempts to reconnect when the connection is lost, so you don't need to manually call `startListening()` again unless you explicitly stopped the SDK.
+
 ## Deploy example
 
 After building your Application leveraging the SDK, you need to find a place to let it run. At its core, the SDK is working as a client for the Wire Backend, with some storage for crypto data and for conversations (local `SQLite` database). This means that generally it needs only to be able to reach the public internet, specifically the Wire backend host you chose.
