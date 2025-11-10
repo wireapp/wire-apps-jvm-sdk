@@ -97,8 +97,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: TextMessageEdited: {}", wireMessage)
     }
 
-    open suspend fun onCompositeEdited(wireMessage: WireMessage.CompositeEdited) {
-        logger.debug("Received event: onCompositeEdited: {}", wireMessage)
+    open suspend fun onCompositeMessageEdited(wireMessage: WireMessage.CompositeEdited) {
+        logger.debug("Received event: CompositeMessageEdited: {}", wireMessage)
     }
 
     open suspend fun onReaction(wireMessage: WireMessage.Reaction) {
