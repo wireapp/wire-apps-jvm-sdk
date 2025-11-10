@@ -72,8 +72,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: ButtonClickConfirmed")
     }
 
-    open fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.debug("Received event: onKnock: {}", wireMessage)
+    open fun onPingReceived(wireMessage: WireMessage.Knock) {
+        logger.debug("Received event: PingReceived: {}", wireMessage)
     }
 
     open fun onLocation(wireMessage: WireMessage.Location) {

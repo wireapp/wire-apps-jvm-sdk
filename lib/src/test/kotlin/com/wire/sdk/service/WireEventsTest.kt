@@ -110,7 +110,7 @@ class WireEventsTest {
                 .koin
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onKnock(
+            wireEvents.onPingReceived(
                 wireMessage = WireMessage.Knock(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -230,7 +230,7 @@ class WireEventsTest {
                     )
                 }
 
-                override suspend fun onKnock(wireMessage: WireMessage.Knock) {
+                override suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
                     assertTrue { wireMessage.hotKnock }
                 }
 

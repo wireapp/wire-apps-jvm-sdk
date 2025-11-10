@@ -77,8 +77,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
      *
      * @param wireMessage the message received
      */
-    open suspend fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.debug("Received event: onKnock: {}", wireMessage)
+    open suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
+        logger.debug("Received event: PingReceived: {}", wireMessage)
     }
 
     open suspend fun onLocation(wireMessage: WireMessage.Location) {
