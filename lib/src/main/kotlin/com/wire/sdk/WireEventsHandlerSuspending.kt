@@ -85,8 +85,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: LocationMessageReceived: {}", wireMessage)
     }
 
-    open suspend fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.debug("Received event: onDeletedMessage: {}", wireMessage)
+    open suspend fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
+        logger.debug("Received event: MessageDeleted: {}", wireMessage)
     }
 
     open suspend fun onReceiptConfirmation(wireMessage: WireMessage) {

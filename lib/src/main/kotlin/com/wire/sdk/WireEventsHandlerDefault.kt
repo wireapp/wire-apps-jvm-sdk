@@ -80,8 +80,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: LocationMessageReceived: {}", wireMessage)
     }
 
-    open fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.debug("Received event: onDeletedMessage: {}", wireMessage)
+    open fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
+        logger.debug("Received event: MessageDeleted: {}", wireMessage)
     }
 
     open fun onReceiptConfirmation(wireMessage: WireMessage) {

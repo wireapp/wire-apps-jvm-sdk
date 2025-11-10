@@ -167,8 +167,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         manager.sendMessageSuspending(message = message)
     }
 
-    override suspend fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.info("Received onDeletedMessageSuspending Message: $wireMessage")
+    override suspend fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
+        logger.info("Received Message Deletion event: $wireMessage")
 
         val message = WireMessage.Text.create(
             conversationId = wireMessage.conversationId,
