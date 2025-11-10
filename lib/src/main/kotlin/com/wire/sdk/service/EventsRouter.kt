@@ -115,11 +115,11 @@ internal class EventsRouter internal constructor(
                         users = event.data.users
                     )
                     when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onMemberLeave(
+                        is WireEventsHandlerDefault -> wireEventsHandler.onUserLeftConversation(
                             conversationId = event.qualifiedConversation,
                             members = event.data.users
                         )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onMemberLeave(
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onUserLeftConversation(
                             conversationId = event.qualifiedConversation,
                             members = event.data.users
                         )

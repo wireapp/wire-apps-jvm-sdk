@@ -127,10 +127,10 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
     /**
      * One or more users have left a conversation accessible by the Wire App.
      */
-    open suspend fun onMemberLeave(
+    open suspend fun onUserLeftConversation(
         conversationId: QualifiedId,
         members: List<QualifiedId>
     ) {
-        logger.debug("Received event: onMemberLeave")
+        logger.debug("Received event: UserLeftConversation")
     }
 }

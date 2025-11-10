@@ -122,10 +122,10 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
     /**
      * One or more users have left a conversation accessible by the Wire App.
      */
-    open fun onMemberLeave(
+    open fun onUserLeftConversation(
         conversationId: QualifiedId,
         members: List<QualifiedId>
     ) {
-        logger.debug("Received event: onMemberLeave")
+        logger.debug("Received event: UserLeftConversation")
     }
 }
