@@ -112,11 +112,11 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
      * One or more users have joined a conversation accessible by the Wire App.
      * This event is triggered when the App is already in the conversation and new users joins.
      */
-    open fun onMemberJoin(
+    open fun onUserJoinedConversation(
         conversationId: QualifiedId,
         members: List<ConversationMember>
     ) {
-        logger.debug("Received event: onMemberJoin")
+        logger.debug("Received event: UserJoinedConversation")
     }
 
     /**

@@ -97,11 +97,11 @@ internal class EventsRouter internal constructor(
                     }
                     conversationStorage.saveMembers(event.qualifiedConversation, members)
                     when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onMemberJoin(
+                        is WireEventsHandlerDefault -> wireEventsHandler.onUserJoinedConversation(
                             conversationId = event.qualifiedConversation,
                             members = members
                         )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onMemberJoin(
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onUserJoinedConversation(
                             conversationId = event.qualifiedConversation,
                             members = members
                         )
