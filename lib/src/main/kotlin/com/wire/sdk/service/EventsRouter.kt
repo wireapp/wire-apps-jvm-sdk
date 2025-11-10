@@ -284,7 +284,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(wireMessage)
                 is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
                 is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(wireMessage)
-                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaise(wireMessage)
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(wireMessage)
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
@@ -303,7 +303,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(wireMessage)
                 is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
                 is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(wireMessage)
-                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaise(wireMessage)
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(wireMessage)
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }

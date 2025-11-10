@@ -104,8 +104,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: InCallReactionReceived: {}", wireMessage)
     }
 
-    open fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {
-        logger.debug("Received event: onInCallHandRaise: {}", wireMessage)
+    open fun onInCallHandRaiseReceived(wireMessage: WireMessage.InCallHandRaise) {
+        logger.debug("Received event: InCallHandRaiseReceived: {}", wireMessage)
     }
 
     /**

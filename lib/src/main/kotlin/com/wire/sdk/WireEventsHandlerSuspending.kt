@@ -109,8 +109,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: InCallReactionReceived: {}", wireMessage)
     }
 
-    open suspend fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {
-        logger.debug("Received event: onInCallHandRaise: {}", wireMessage)
+    open suspend fun onInCallHandRaiseReceived(wireMessage: WireMessage.InCallHandRaise) {
+        logger.debug("Received event: InCallHandRaiseReceived: {}", wireMessage)
     }
 
     /**
