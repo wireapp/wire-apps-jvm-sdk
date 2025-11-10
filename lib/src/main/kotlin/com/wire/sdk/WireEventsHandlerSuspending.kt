@@ -101,12 +101,12 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: CompositeMessageEdited: {}", wireMessage)
     }
 
-    open suspend fun onReaction(wireMessage: WireMessage.Reaction) {
-        logger.debug("Received event: onReaction: {}", wireMessage)
+    open suspend fun onMessageReactionReceived(wireMessage: WireMessage.Reaction) {
+        logger.debug("Received event: MessageReactionReceived: {}", wireMessage)
     }
 
-    open suspend fun onInCallEmoji(wireMessage: WireMessage.InCallEmoji) {
-        logger.debug("Received event: onInCallEmoji: {}", wireMessage)
+    open suspend fun onInCallReactionReceived(wireMessage: WireMessage.InCallEmoji) {
+        logger.debug("Received event: InCallReactionReceived: {}", wireMessage)
     }
 
     open suspend fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {

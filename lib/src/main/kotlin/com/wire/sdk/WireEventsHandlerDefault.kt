@@ -96,12 +96,12 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: CompositeMessageEdited: {}", wireMessage)
     }
 
-    open fun onReaction(wireMessage: WireMessage.Reaction) {
-        logger.debug("Received event: onReaction: {}", wireMessage)
+    open fun onMessageReactionReceived(wireMessage: WireMessage.Reaction) {
+        logger.debug("Received event: MessageReactionReceived: {}", wireMessage)
     }
 
-    open fun onInCallEmoji(wireMessage: WireMessage.InCallEmoji) {
-        logger.debug("Received event: onInCallEmoji: {}", wireMessage)
+    open fun onInCallReactionReceived(wireMessage: WireMessage.InCallEmoji) {
+        logger.debug("Received event: InCallReactionReceived: {}", wireMessage)
     }
 
     open fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {
