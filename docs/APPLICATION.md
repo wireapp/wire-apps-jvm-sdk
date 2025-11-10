@@ -261,7 +261,7 @@ The SDK provides a way to monitor the connection state to the Wire backend throu
 
 The listener receives two types of notifications:
 - `onConnected()`: Called when the WebSocket connection is successfully established
-- `onDisconnected()`: Called when the connection is lost due to network issues, server errors (5xx), or when `stopListening()` is called
+- `onDisconnected()`: Called when the connection is lost due to network issues / server errors (after several automatic retries), or when `stopListening()` is called
 
 You can set or update the listener at any time, even after `startListening()` has been called:
 
