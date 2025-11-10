@@ -33,7 +33,7 @@ package com.wire.sdk
  *         println("Disconnected from Wire backend")
  *     }
  * }
- * wireAppSdk.setConnectionListener(listener)
+ * wireAppSdk.setBackendConnectionListener(listener)
  * ```
  */
 interface BackendConnectionListener {
@@ -49,8 +49,8 @@ interface BackendConnectionListener {
      * Called when the SDK loses connection to the Wire backend.
      *
      * This callback is invoked when:
-     * - The WebSocket connection is closed due to network issues
-     * - The backend returns an error
+     * - The WebSocket connection is closed due to network issues or Wire servers return 5xx.
+     *     This includes automatic retries to re-establish the connection
      * - The SDK is stopped via [WireAppSdk.stopListening]
      *
      * The SDK will automatically attempt to reconnect unless it has been stopped.

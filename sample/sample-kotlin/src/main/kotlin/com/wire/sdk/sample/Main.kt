@@ -63,5 +63,5 @@ fun main() {
     logger.info(applicationManager.getUser(selfUser).toString())
     logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
 
-    // Use wireAppSdk.stop() to stop the SDK or just stop it with Ctrl+C/Cmd+C
+    // Use wireAppSdk.stopListening() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

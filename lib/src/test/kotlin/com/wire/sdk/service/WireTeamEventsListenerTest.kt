@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
+import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientDemo
 import com.wire.sdk.config.IsolatedKoinContext
@@ -35,9 +36,11 @@ import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSocketException
 import io.ktor.websocket.Frame
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -165,7 +168,11 @@ class WireTeamEventsListenerTest {
                 appStorage = appStorage
             )
             val eventsRouter = mockk<EventsRouter>()
+            val mockConnectionListener = mockk<BackendConnectionListener>()
+            coEvery { mockConnectionListener.onConnected() } just Runs
+            coEvery { mockConnectionListener.onDisconnected() } just Runs
             val listener = WireTeamEventsListener(backendClient, eventsRouter)
+            listener.setBackendConnectionListener(mockConnectionListener)
 
             // Assert
             assertThrows<InterruptedException> {
@@ -176,6 +183,8 @@ class WireTeamEventsListenerTest {
                 1 + MAX_RETRY_NUMBER_ON_SERVER_ERROR,
                 postRequestedFor(WireMock.anyUrl())
             )
+
+            coVerify(atLeast = 1, atMost = 1) { mockConnectionListener.onDisconnected() }
 
             // Clean up
             wireMockServer.stop()
