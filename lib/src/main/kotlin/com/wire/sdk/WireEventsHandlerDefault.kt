@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory
 abstract class WireEventsHandlerDefault : WireEventsHandler() {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    open fun onMessage(wireMessage: WireMessage.Text) {
-        logger.debug("Received event: onMessage")
+    open fun onTextMessageReceived(wireMessage: WireMessage.Text) {
+        logger.debug("Received event: TextMessageReceived")
     }
 
     /**

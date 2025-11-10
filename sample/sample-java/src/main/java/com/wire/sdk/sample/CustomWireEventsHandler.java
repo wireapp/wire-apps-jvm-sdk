@@ -27,8 +27,8 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(CustomWireEventsHandler.class);
 
     @Override
-    public void onMessage(@NotNull WireMessage.Text wireMessage) {
-        logger.info("Message received. conversationId:{}", wireMessage.conversationId());
+    public void onTextMessageReceived(@NotNull WireMessage.Text wireMessage) {
+        logger.info("Text message received. conversationId:{}", wireMessage.conversationId());
 
         final WireMessage reply = WireMessage.Text.createReply(
                 wireMessage.conversationId(),
