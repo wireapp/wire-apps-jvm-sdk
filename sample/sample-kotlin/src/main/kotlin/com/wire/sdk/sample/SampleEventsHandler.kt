@@ -140,7 +140,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         logger.info("Received ButtonAction Message : $wireMessage")
     }
 
-    override suspend fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
+    override suspend fun onButtonClickConfirmed(wireMessage: WireMessage.ButtonActionConfirmation) {
         logger.info("Received ButtonActionConfirmation Message : $wireMessage")
     }
 

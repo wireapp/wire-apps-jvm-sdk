@@ -68,8 +68,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: ButtonClicked")
     }
 
-    open suspend fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
-        logger.debug("Received event: onButtonActionConfirmation: {}", wireMessage)
+    open suspend fun onButtonClickConfirmed(wireMessage: WireMessage.ButtonActionConfirmation) {
+        logger.debug("Received event: ButtonClickConfirmed: {}", wireMessage)
     }
 
     /**

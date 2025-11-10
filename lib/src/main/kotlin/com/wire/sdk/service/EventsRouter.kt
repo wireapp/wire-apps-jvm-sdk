@@ -275,7 +275,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(wireMessage)
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
-                    wireEventsHandler.onButtonActionConfirmation(wireMessage)
+                    wireEventsHandler.onButtonClickConfirmed(wireMessage)
                 is WireMessage.Knock -> wireEventsHandler.onKnock(wireMessage)
                 is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
                 is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
@@ -294,7 +294,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(wireMessage)
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
-                    wireEventsHandler.onButtonActionConfirmation(wireMessage)
+                    wireEventsHandler.onButtonClickConfirmed(wireMessage)
                 is WireMessage.Knock -> wireEventsHandler.onKnock(wireMessage)
                 is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
                 is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
