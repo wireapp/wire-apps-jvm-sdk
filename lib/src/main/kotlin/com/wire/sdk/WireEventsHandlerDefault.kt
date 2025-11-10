@@ -84,8 +84,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: MessageDeleted: {}", wireMessage)
     }
 
-    open fun onReceiptConfirmation(wireMessage: WireMessage) {
-        logger.debug("Received event: onReceiptConfirmation: {}", wireMessage)
+    open fun onMessageDelivered(wireMessage: WireMessage) {
+        logger.debug("Received event: MessageDelivered: {}", wireMessage)
     }
 
     open fun onTextEdited(wireMessage: WireMessage.TextEdited) {
