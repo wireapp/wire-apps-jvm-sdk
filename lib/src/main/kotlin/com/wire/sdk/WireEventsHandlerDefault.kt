@@ -52,8 +52,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
     /**
      * A user deleted a conversation accessible by the Wire App.
      */
-    open fun onConversationDelete(conversationId: QualifiedId) {
-        logger.debug("Received event: onConversationDelete")
+    open fun onConversationDeleted(conversationId: QualifiedId) {
+        logger.debug("Received event: ConversationDeleted")
     }
 
     open fun onAsset(wireMessage: WireMessage.Asset) {

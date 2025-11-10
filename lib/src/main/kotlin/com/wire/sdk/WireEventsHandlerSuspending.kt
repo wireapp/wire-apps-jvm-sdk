@@ -52,8 +52,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
     /**
      * A user deleted a conversation accessible by the Wire App.
      */
-    open suspend fun onConversationDelete(conversationId: QualifiedId) {
-        logger.debug("Received event: onConversationDelete")
+    open suspend fun onConversationDeleted(conversationId: QualifiedId) {
+        logger.debug("Received event: ConversationDeleted")
     }
 
     open suspend fun onAsset(wireMessage: WireMessage.Asset) {

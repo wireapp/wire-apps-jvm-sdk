@@ -78,10 +78,10 @@ internal class EventsRouter internal constructor(
                     logger.info("Delete conversation: $event")
                     conversationStorage.delete(event.qualifiedConversation)
                     when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onConversationDelete(
+                        is WireEventsHandlerDefault -> wireEventsHandler.onConversationDeleted(
                             event.qualifiedConversation
                         )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onConversationDelete(
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onConversationDeleted(
                             event.qualifiedConversation
                         )
                     }
