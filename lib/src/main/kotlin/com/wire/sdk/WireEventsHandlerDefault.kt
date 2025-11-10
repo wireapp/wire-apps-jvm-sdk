@@ -88,8 +88,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: MessageDelivered: {}", wireMessage)
     }
 
-    open fun onTextEdited(wireMessage: WireMessage.TextEdited) {
-        logger.debug("Received event: onTextEdited: {}", wireMessage)
+    open fun onTextMessageEdited(wireMessage: WireMessage.TextEdited) {
+        logger.debug("Received event: TextMessageEdited: {}", wireMessage)
     }
 
     open fun onCompositeEdited(wireMessage: WireMessage.CompositeEdited) {
