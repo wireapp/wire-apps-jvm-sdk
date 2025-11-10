@@ -76,8 +76,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: PingReceived: {}", wireMessage)
     }
 
-    open fun onLocation(wireMessage: WireMessage.Location) {
-        logger.debug("Received event: onLocation: {}", wireMessage)
+    open fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
+        logger.debug("Received event: LocationMessageReceived: {}", wireMessage)
     }
 
     open fun onDeletedMessage(wireMessage: WireMessage.Deleted) {

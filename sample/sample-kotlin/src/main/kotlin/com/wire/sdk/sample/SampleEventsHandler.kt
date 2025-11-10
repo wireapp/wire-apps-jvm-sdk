@@ -155,8 +155,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         manager.sendMessageSuspending(message = knock)
     }
 
-    override suspend fun onLocation(wireMessage: WireMessage.Location) {
-        logger.info("Received onLocationSuspending Message : $wireMessage")
+    override suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
+        logger.info("Received Location Message : $wireMessage")
 
         val message = WireMessage.Text.createReply(
             conversationId = wireMessage.conversationId,

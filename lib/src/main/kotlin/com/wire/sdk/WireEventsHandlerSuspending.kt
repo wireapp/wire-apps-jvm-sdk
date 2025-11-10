@@ -81,8 +81,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: PingReceived: {}", wireMessage)
     }
 
-    open suspend fun onLocation(wireMessage: WireMessage.Location) {
-        logger.debug("Received event: onLocation: {}", wireMessage)
+    open suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
+        logger.debug("Received event: LocationMessageReceived: {}", wireMessage)
     }
 
     open suspend fun onDeletedMessage(wireMessage: WireMessage.Deleted) {

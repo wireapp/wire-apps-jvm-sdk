@@ -128,7 +128,7 @@ class WireEventsTest {
                 .koin
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onLocation(
+            wireEvents.onLocationMessageReceived(
                 wireMessage = WireMessage.Location(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -234,7 +234,7 @@ class WireEventsTest {
                     assertTrue { wireMessage.hotKnock }
                 }
 
-                override suspend fun onLocation(wireMessage: WireMessage.Location) {
+                override suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
                     assertEquals(EXPECTED_LOCATION_LATITUDE, wireMessage.latitude)
                     assertEquals(EXPECTED_LOCATION_LONGITUDE, wireMessage.longitude)
                 }
