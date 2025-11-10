@@ -60,8 +60,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: AssetMessageReceived")
     }
 
-    open fun onComposite(wireMessage: WireMessage.Composite) {
-        logger.debug("Received event: onComposite")
+    open fun onCompositeMessageReceived(wireMessage: WireMessage.Composite) {
+        logger.debug("Received event: CompositeMessageReceived")
     }
 
     open fun onButtonAction(wireMessage: WireMessage.ButtonAction) {

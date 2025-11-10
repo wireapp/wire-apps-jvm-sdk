@@ -272,7 +272,7 @@ internal class EventsRouter internal constructor(
             is WireEventsHandlerDefault -> when (wireMessage) {
                 is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
                 is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
-                is WireMessage.Composite -> wireEventsHandler.onComposite(wireMessage)
+                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(wireMessage)
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonAction(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
                     wireEventsHandler.onButtonActionConfirmation(wireMessage)
@@ -291,7 +291,7 @@ internal class EventsRouter internal constructor(
             is WireEventsHandlerSuspending -> when (wireMessage) {
                 is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
                 is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
-                is WireMessage.Composite -> wireEventsHandler.onComposite(wireMessage)
+                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(wireMessage)
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonAction(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
                     wireEventsHandler.onButtonActionConfirmation(wireMessage)

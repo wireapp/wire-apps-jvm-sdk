@@ -127,7 +127,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
     }
 
-    override suspend fun onComposite(wireMessage: WireMessage.Composite) {
+    override suspend fun onCompositeMessageReceived(wireMessage: WireMessage.Composite) {
         logger.info("Received Composite Message : $wireMessage")
 
         logger.info("Received Composite Items:")
