@@ -97,8 +97,8 @@ fun main() {
         apiHost = "https://your-wire-backend.example.com",
         cryptographyStoragePassword = "secure-password",
         object : WireEventsHandlerDefault() {
-            override fun onMessage(wireMessage: WireMessage) {
-                println("Message received: $wireMessage")
+            override fun onTextMessageReceived(wireMessage: WireMessage) {
+                println("Text message received: $wireMessage")
                 
                 // Add your message handling logic here, like storing the message,
                 //   sending back another message, or triggering some workflow
@@ -116,8 +116,8 @@ especially if you handle events in a complex way:
 class MyWireEventsHandler : WireEventsHandlerDefault() {
     private val logger = LoggerFactory.getLogger(MyWireEventsHandler::class.java)
 
-    override fun onMessage(wireMessage: WireMessage.Text) {
-        logger.info("Message received: $wireMessage")
+    override fun onTextMessageReceived(wireMessage: WireMessage.Text) {
+        logger.info("Text message received: $wireMessage")
     }
 }
 ```
@@ -173,8 +173,8 @@ This is done inside the method override of `WireEventsHandler` using a local `ma
 
 #### Text
 ```kotlin
-override suspend fun onMessageSuspending(wireMessage: WireMessage.Text) {
-    println("Message received: $wireMessage")
+override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
+    println("Text Message received: $wireMessage")
     
     // Add your message handling logic here, like storing the message,
     //   sending back another message, or triggering some workflow
@@ -184,7 +184,7 @@ override suspend fun onMessageSuspending(wireMessage: WireMessage.Text) {
     )
 }
 ```
-> **_Java:_**  Use `override fun onMessage(wireMessage: WireMessage.Text) { .. }`
+> **_Java:_**  Use `override fun onTextMessageReceived(wireMessage: WireMessage.Text) { .. }`
 
 > **_Other Event Types:_** Other event types can be listened through `on[EventType]Suspending` or `on[EventType]`
 
@@ -213,7 +213,7 @@ override suspend fun onAssetSuspending(wireMessage: WireMessage.Asset) {
     }
 }
 ```
-> **_Java:_** Use `override fun onAsset(wireMessage: WireMessage.Asset) { .. }`
+> **_Java:_** Use `override fun onAssetMessageReceived(wireMessage: WireMessage.Asset) { .. }`
 
 #### Creation of a Conversation
 

@@ -78,10 +78,10 @@ internal class EventsRouter internal constructor(
                     logger.info("Delete conversation: $event")
                     conversationStorage.delete(event.qualifiedConversation)
                     when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onConversationDelete(
+                        is WireEventsHandlerDefault -> wireEventsHandler.onConversationDeleted(
                             event.qualifiedConversation
                         )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onConversationDelete(
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onConversationDeleted(
                             event.qualifiedConversation
                         )
                     }
@@ -97,14 +97,16 @@ internal class EventsRouter internal constructor(
                     }
                     conversationStorage.saveMembers(event.qualifiedConversation, members)
                     when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onMemberJoin(
+                        is WireEventsHandlerDefault -> wireEventsHandler.onUserJoinedConversation(
                             conversationId = event.qualifiedConversation,
                             members = members
                         )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onMemberJoin(
-                            conversationId = event.qualifiedConversation,
-                            members = members
-                        )
+                        is WireEventsHandlerSuspending ->
+                            wireEventsHandler
+                                .onUserJoinedConversation(
+                                    conversationId = event.qualifiedConversation,
+                                    members = members
+                                )
                     }
                 }
 
@@ -115,11 +117,11 @@ internal class EventsRouter internal constructor(
                         users = event.data.users
                     )
                     when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onMemberLeave(
+                        is WireEventsHandlerDefault -> wireEventsHandler.onUserLeftConversation(
                             conversationId = event.qualifiedConversation,
                             members = event.data.users
                         )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onMemberLeave(
+                        is WireEventsHandlerSuspending -> wireEventsHandler.onUserLeftConversation(
                             conversationId = event.qualifiedConversation,
                             members = event.data.users
                         )
@@ -236,11 +238,11 @@ internal class EventsRouter internal constructor(
 
         groupId?.run {
             when (wireEventsHandler) {
-                is WireEventsHandlerDefault -> wireEventsHandler.onConversationJoin(
+                is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(
                     conversation = conversationData,
                     members = members
                 )
-                is WireEventsHandlerSuspending -> wireEventsHandler.onConversationJoin(
+                is WireEventsHandlerSuspending -> wireEventsHandler.onAppAddedToConversation(
                     conversation = conversationData,
                     members = members
                 )
@@ -253,7 +255,7 @@ internal class EventsRouter internal constructor(
     /**
      * Forwards the message to the appropriate handler (blocking or suspending) based on its type.
      */
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private suspend fun forwardMessage(
         message: ByteArray,
         conversationId: QualifiedId,
@@ -270,40 +272,56 @@ internal class EventsRouter internal constructor(
 
         when (wireEventsHandler) {
             is WireEventsHandlerDefault -> when (wireMessage) {
-                is WireMessage.Text -> wireEventsHandler.onMessage(wireMessage)
-                is WireMessage.Asset -> wireEventsHandler.onAsset(wireMessage)
-                is WireMessage.Composite -> wireEventsHandler.onComposite(wireMessage)
-                is WireMessage.ButtonAction -> wireEventsHandler.onButtonAction(wireMessage)
+                is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
+                is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
+                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(
+                    wireMessage
+                )
+                is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
-                    wireEventsHandler.onButtonActionConfirmation(wireMessage)
-                is WireMessage.Knock -> wireEventsHandler.onKnock(wireMessage)
-                is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
-                is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
-                is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
-                is WireMessage.TextEdited -> wireEventsHandler.onTextEdited(wireMessage)
-                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeEdited(wireMessage)
-                is WireMessage.Reaction -> wireEventsHandler.onReaction(wireMessage)
-                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallEmoji(wireMessage)
-                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaise(wireMessage)
+                    wireEventsHandler.onButtonClickConfirmed(wireMessage)
+                is WireMessage.Knock -> wireEventsHandler.onPingReceived(wireMessage)
+                is WireMessage.Location -> wireEventsHandler.onLocationMessageReceived(wireMessage)
+                is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
+                is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
+                is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
+                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(
+                    wireMessage
+                )
+                is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
+                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
+                    wireMessage
+                )
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
+                    wireMessage
+                )
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }
             is WireEventsHandlerSuspending -> when (wireMessage) {
-                is WireMessage.Text -> wireEventsHandler.onMessage(wireMessage)
-                is WireMessage.Asset -> wireEventsHandler.onAsset(wireMessage)
-                is WireMessage.Composite -> wireEventsHandler.onComposite(wireMessage)
-                is WireMessage.ButtonAction -> wireEventsHandler.onButtonAction(wireMessage)
+                is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
+                is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
+                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(
+                    wireMessage
+                )
+                is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
-                    wireEventsHandler.onButtonActionConfirmation(wireMessage)
-                is WireMessage.Knock -> wireEventsHandler.onKnock(wireMessage)
-                is WireMessage.Location -> wireEventsHandler.onLocation(wireMessage)
-                is WireMessage.Deleted -> wireEventsHandler.onDeletedMessage(wireMessage)
-                is WireMessage.Receipt -> wireEventsHandler.onReceiptConfirmation(wireMessage)
-                is WireMessage.TextEdited -> wireEventsHandler.onTextEdited(wireMessage)
-                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeEdited(wireMessage)
-                is WireMessage.Reaction -> wireEventsHandler.onReaction(wireMessage)
-                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallEmoji(wireMessage)
-                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaise(wireMessage)
+                    wireEventsHandler.onButtonClickConfirmed(wireMessage)
+                is WireMessage.Knock -> wireEventsHandler.onPingReceived(wireMessage)
+                is WireMessage.Location -> wireEventsHandler.onLocationMessageReceived(wireMessage)
+                is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
+                is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
+                is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
+                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(
+                    wireMessage
+                )
+                is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
+                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
+                    wireMessage
+                )
+                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
+                    wireMessage
+                )
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
             }

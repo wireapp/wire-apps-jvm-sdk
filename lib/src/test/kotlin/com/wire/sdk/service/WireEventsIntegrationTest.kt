@@ -404,7 +404,7 @@ class WireEventsIntegrationTest {
 
         private val wireEventsHandler =
             object : WireEventsHandlerSuspending() {
-                override suspend fun onMessage(wireMessage: WireMessage.Text) {
+                override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
                     // Verify
                     assertEquals(
                         MOCK_DECRYPTED_MESSAGE,

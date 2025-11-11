@@ -62,8 +62,8 @@ fun main() {
         apiHost = "YOUR_API_HOST",
         cryptographyStoragePassword = "YOUR_32_CHAR_STORAGE_PASSWORD",
         object : WireEventsHandlerDefault() {
-            override fun onMessage(wireMessage: WireMessage.Text) {
-                println("Message received: $wireMessage")
+            override fun onTextMessageReceived(wireMessage: WireMessage.Text) {
+                println("Text message received: $wireMessage")
                 
                 // Add your message handling logic here, like storing the message,
                 //   sending back another message, or triggering some workflow
@@ -81,17 +81,17 @@ especially if you handle events in a complex way:
 class MyWireEventsHandler : WireEventsHandlerDefault() {
     private val logger = LoggerFactory.getLogger(MyWireEventsHandler::class.java)
 
-    override fun onMessage(wireMessage: WireMessage.Text) {
-        logger.info("Message received: $wireMessage")
+    override fun onTextMessageReceived(wireMessage: WireMessage.Text) {
+        logger.info("Text message received: $wireMessage")
     }
 }
 ```
 ## 6. Echoing a received message
 
-In your `onMessage` implementation from `MyWireEventsHandler` you can echo a message as:
+In your `onTextMessageReceived` implementation from `MyWireEventsHandler` you can echo a message as:
 
 ```kotlin
-override fun onMessage(wireMessage: WireMessage.Text) {
+override fun onTextMessageReceived(wireMessage: WireMessage.Text) {
     val message = WireMessage.Text.createReply(
         conversationId = wireMessage.conversationId,
         text = "${wireMessage.text} -- Sent from the SDK",

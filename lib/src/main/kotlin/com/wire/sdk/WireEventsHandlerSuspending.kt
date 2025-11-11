@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory
 abstract class WireEventsHandlerSuspending : WireEventsHandler() {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    open suspend fun onMessage(wireMessage: WireMessage.Text) {
-        logger.debug("Received event: onMessage")
+    open suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
+        logger.debug("Received event: TextMessageReceived")
     }
 
     /**
@@ -42,34 +42,34 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
      * @param conversation the conversation id with some extra data
      * @param members the participants of the conversation, excluding the App
      */
-    open suspend fun onConversationJoin(
+    open suspend fun onAppAddedToConversation(
         conversation: ConversationData,
         members: List<ConversationMember>
     ) {
-        logger.debug("Received event: onConversationJoin")
+        logger.debug("Received event: AppAddedToConversation")
     }
 
     /**
      * A user deleted a conversation accessible by the Wire App.
      */
-    open suspend fun onConversationDelete(conversationId: QualifiedId) {
-        logger.debug("Received event: onConversationDelete")
+    open suspend fun onConversationDeleted(conversationId: QualifiedId) {
+        logger.debug("Received event: ConversationDeleted")
     }
 
-    open suspend fun onAsset(wireMessage: WireMessage.Asset) {
-        logger.debug("Received event: onAsset")
+    open suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
+        logger.debug("Received event: AssetMessageReceived")
     }
 
-    open suspend fun onComposite(wireMessage: WireMessage.Composite) {
-        logger.debug("Received event: onComposite")
+    open suspend fun onCompositeMessageReceived(wireMessage: WireMessage.Composite) {
+        logger.debug("Received event: CompositeMessageReceived")
     }
 
-    open suspend fun onButtonAction(wireMessage: WireMessage.ButtonAction) {
-        logger.debug("Received event: onButtonAction")
+    open suspend fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
+        logger.debug("Received event: ButtonClicked")
     }
 
-    open suspend fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
-        logger.debug("Received event: onButtonActionConfirmation: {}", wireMessage)
+    open suspend fun onButtonClickConfirmed(wireMessage: WireMessage.ButtonActionConfirmation) {
+        logger.debug("Received event: ButtonClickConfirmed: {}", wireMessage)
     }
 
     /**
@@ -77,60 +77,60 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
      *
      * @param wireMessage the message received
      */
-    open suspend fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.debug("Received event: onKnock: {}", wireMessage)
+    open suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
+        logger.debug("Received event: PingReceived: {}", wireMessage)
     }
 
-    open suspend fun onLocation(wireMessage: WireMessage.Location) {
-        logger.debug("Received event: onLocation: {}", wireMessage)
+    open suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
+        logger.debug("Received event: LocationMessageReceived: {}", wireMessage)
     }
 
-    open suspend fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.debug("Received event: onDeletedMessage: {}", wireMessage)
+    open suspend fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
+        logger.debug("Received event: MessageDeleted: {}", wireMessage)
     }
 
-    open suspend fun onReceiptConfirmation(wireMessage: WireMessage) {
-        logger.debug("Received event: onReceiptConfirmation: {}", wireMessage)
+    open suspend fun onMessageDelivered(wireMessage: WireMessage) {
+        logger.debug("Received event: MessageDelivered: {}", wireMessage)
     }
 
-    open suspend fun onTextEdited(wireMessage: WireMessage.TextEdited) {
-        logger.debug("Received event: onTextEdited: {}", wireMessage)
+    open suspend fun onTextMessageEdited(wireMessage: WireMessage.TextEdited) {
+        logger.debug("Received event: TextMessageEdited: {}", wireMessage)
     }
 
-    open suspend fun onCompositeEdited(wireMessage: WireMessage.CompositeEdited) {
-        logger.debug("Received event: onCompositeEdited: {}", wireMessage)
+    open suspend fun onCompositeMessageEdited(wireMessage: WireMessage.CompositeEdited) {
+        logger.debug("Received event: CompositeMessageEdited: {}", wireMessage)
     }
 
-    open suspend fun onReaction(wireMessage: WireMessage.Reaction) {
-        logger.debug("Received event: onReaction: {}", wireMessage)
+    open suspend fun onMessageReactionReceived(wireMessage: WireMessage.Reaction) {
+        logger.debug("Received event: MessageReactionReceived: {}", wireMessage)
     }
 
-    open suspend fun onInCallEmoji(wireMessage: WireMessage.InCallEmoji) {
-        logger.debug("Received event: onInCallEmoji: {}", wireMessage)
+    open suspend fun onInCallReactionReceived(wireMessage: WireMessage.InCallEmoji) {
+        logger.debug("Received event: InCallReactionReceived: {}", wireMessage)
     }
 
-    open suspend fun onInCallHandRaise(wireMessage: WireMessage.InCallHandRaise) {
-        logger.debug("Received event: onInCallHandRaise: {}", wireMessage)
+    open suspend fun onInCallHandRaiseReceived(wireMessage: WireMessage.InCallHandRaise) {
+        logger.debug("Received event: InCallHandRaiseReceived: {}", wireMessage)
     }
 
     /**
      * One or more users have joined a conversation accessible by the Wire App.
      * This event is triggered when the App is already in the conversation and new users joins.
      */
-    open suspend fun onMemberJoin(
+    open suspend fun onUserJoinedConversation(
         conversationId: QualifiedId,
         members: List<ConversationMember>
     ) {
-        logger.debug("Received event: onMemberJoin")
+        logger.debug("Received event: UserJoinedConversation")
     }
 
     /**
      * One or more users have left a conversation accessible by the Wire App.
      */
-    open suspend fun onMemberLeave(
+    open suspend fun onUserLeftConversation(
         conversationId: QualifiedId,
         members: List<QualifiedId>
     ) {
-        logger.debug("Received event: onMemberLeave")
+        logger.debug("Received event: UserLeftConversation")
     }
 }

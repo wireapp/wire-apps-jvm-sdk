@@ -47,7 +47,7 @@ class WireAppSdkTest {
                 apiHost = API_HOST,
                 cryptographyStoragePassword = TestUtils.CRYPTOGRAPHY_STORAGE_PASSWORD,
                 object : WireEventsHandlerDefault() {
-                    override fun onMessage(wireMessage: WireMessage.Text) {
+                    override fun onTextMessageReceived(wireMessage: WireMessage.Text) {
                         println(wireMessage)
                     }
                 }
@@ -80,7 +80,7 @@ class WireAppSdkTest {
                 apiHost = API_HOST,
                 cryptographyStoragePassword = TestUtils.CRYPTOGRAPHY_STORAGE_PASSWORD,
                 object : WireEventsHandlerDefault() {
-                    override fun onMessage(wireMessage: WireMessage.Text) {
+                    override fun onTextMessageReceived(wireMessage: WireMessage.Text) {
                         println(wireMessage)
                     }
                 }
@@ -101,7 +101,7 @@ class WireAppSdkTest {
                 apiHost = API_HOST,
                 cryptographyStoragePassword = TestUtils.CRYPTOGRAPHY_STORAGE_PASSWORD,
                 wireEventsHandler = object : WireEventsHandlerDefault() {
-                    override fun onMessage(wireMessage: WireMessage.Text) {
+                    override fun onTextMessageReceived(wireMessage: WireMessage.Text) {
                         println(wireMessage)
                     }
                 }

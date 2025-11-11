@@ -26,7 +26,6 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
-import com.wire.sdk.service.EventsRouter
 import com.wire.sdk.utils.KtxSerializer
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -48,7 +47,7 @@ class WireEventsTest {
                 .koin
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onConversationJoin(
+            wireEvents.onAppAddedToConversation(
                 conversation = ConversationData(
                     id = CONVERSATION_ID,
                     name = "Test conversation",
@@ -59,7 +58,7 @@ class WireEventsTest {
                 members = emptyList()
             )
 
-            wireEvents.onMessage(
+            wireEvents.onTextMessageReceived(
                 wireMessage = WireMessage.Text(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -81,7 +80,7 @@ class WireEventsTest {
                 .koin
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onAsset(
+            wireEvents.onAssetMessageReceived(
                 wireMessage = WireMessage.Asset(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -111,7 +110,7 @@ class WireEventsTest {
                 .koin
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onKnock(
+            wireEvents.onPingReceived(
                 wireMessage = WireMessage.Knock(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -129,7 +128,7 @@ class WireEventsTest {
                 .koin
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
-            wireEvents.onLocation(
+            wireEvents.onLocationMessageReceived(
                 wireMessage = WireMessage.Location(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
@@ -210,32 +209,32 @@ class WireEventsTest {
 
         private val wireEventsHandler =
             object : WireEventsHandlerSuspending() {
-                override suspend fun onConversationJoin(
+                override suspend fun onAppAddedToConversation(
                     conversation: ConversationData,
                     members: List<ConversationMember>
                 ) {
                     assertEquals(CONVERSATION_ID, conversation.id)
                 }
 
-                override suspend fun onMessage(wireMessage: WireMessage.Text) {
+                override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE,
                         wireMessage.text
                     )
                 }
 
-                override suspend fun onAsset(wireMessage: WireMessage.Asset) {
+                override suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE,
                         wireMessage.name
                     )
                 }
 
-                override suspend fun onKnock(wireMessage: WireMessage.Knock) {
+                override suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
                     assertTrue { wireMessage.hotKnock }
                 }
 
-                override suspend fun onLocation(wireMessage: WireMessage.Location) {
+                override suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
                     assertEquals(EXPECTED_LOCATION_LATITUDE, wireMessage.latitude)
                     assertEquals(EXPECTED_LOCATION_LONGITUDE, wireMessage.longitude)
                 }

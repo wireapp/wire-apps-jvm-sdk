@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory
 class SampleEventsHandler : WireEventsHandlerSuspending() {
     private val logger = LoggerFactory.getLogger("SampleEventsHandler")
 
-    override suspend fun onMessage(wireMessage: WireMessage.Text) {
+    override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
         logger.info("Received Text Message : $wireMessage")
 
         if (isCreateOneToOneConversation(text = wireMessage.text)) {
@@ -106,7 +106,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         manager.sendMessageSuspending(message = reaction)
     }
 
-    override suspend fun onAsset(wireMessage: WireMessage.Asset) {
+    override suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
         logger.info("Received Asset Message : $wireMessage")
 
         val message = WireMessage.Text.createReply(
@@ -127,7 +127,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
     }
 
-    override suspend fun onComposite(wireMessage: WireMessage.Composite) {
+    override suspend fun onCompositeMessageReceived(wireMessage: WireMessage.Composite) {
         logger.info("Received Composite Message : $wireMessage")
 
         logger.info("Received Composite Items:")
@@ -136,16 +136,16 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
     }
 
-    override suspend fun onButtonAction(wireMessage: WireMessage.ButtonAction) {
+    override suspend fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
         logger.info("Received ButtonAction Message : $wireMessage")
     }
 
-    override suspend fun onButtonActionConfirmation(wireMessage: WireMessage.ButtonActionConfirmation) {
+    override suspend fun onButtonClickConfirmed(wireMessage: WireMessage.ButtonActionConfirmation) {
         logger.info("Received ButtonActionConfirmation Message : $wireMessage")
     }
 
-    override suspend fun onKnock(wireMessage: WireMessage.Knock) {
-        logger.info("Received onKnockSuspending Message : $wireMessage")
+    override suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
+        logger.info("Received Ping: $wireMessage")
 
         val knock = WireMessage.Knock.create(
             conversationId = wireMessage.conversationId,
@@ -155,8 +155,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         manager.sendMessageSuspending(message = knock)
     }
 
-    override suspend fun onLocation(wireMessage: WireMessage.Location) {
-        logger.info("Received onLocationSuspending Message : $wireMessage")
+    override suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
+        logger.info("Received Location Message : $wireMessage")
 
         val message = WireMessage.Text.createReply(
             conversationId = wireMessage.conversationId,
@@ -167,8 +167,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         manager.sendMessageSuspending(message = message)
     }
 
-    override suspend fun onDeletedMessage(wireMessage: WireMessage.Deleted) {
-        logger.info("Received onDeletedMessageSuspending Message: $wireMessage")
+    override suspend fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
+        logger.info("Received Message Deletion event: $wireMessage")
 
         val message = WireMessage.Text.create(
             conversationId = wireMessage.conversationId,
