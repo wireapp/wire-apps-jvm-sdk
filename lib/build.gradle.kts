@@ -40,7 +40,7 @@ repositories {
 }
 
 val ktorVersion = "3.2.3"
-val wireMockVersion = "3.13.1"
+val wireMockVersion = "3.13.2"
 
 dependencies {
     constraints {
