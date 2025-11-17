@@ -23,7 +23,7 @@ plugins {
     id("com.gradleup.shadow") version "9.0.0-beta6"
     id("org.jlleitschuh.gradle.ktlint") version "13.1.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
-    id("app.cash.sqldelight") version "2.1.0"
+    id("app.cash.sqldelight") version "2.2.1"
     id("com.google.protobuf") version "0.9.5"
 
     // Maven Central
@@ -60,8 +60,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("com.wire:core-crypto-jvm:8.0.1")
     implementation("com.wire:core-crypto-uniffi-jvm:8.0.1")
-    implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
-    implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.1.0")
+    implementation("app.cash.sqldelight:sqlite-driver:2.2.1")
+    implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.2.1")
     implementation("org.zalando:logbook-core:3.12.3")
     implementation("org.zalando:logbook-ktor-client:3.12.3")
     implementation("org.zalando:logbook-json:3.12.3")
@@ -92,7 +92,7 @@ sqldelight {
     databases {
         create("AppsSdkDatabase") {
             packageName.set("com.wire.sdk")
-            dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.1.0")
+            dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.2.1")
         }
     }
 }
