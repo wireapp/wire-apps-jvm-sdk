@@ -61,9 +61,13 @@ class WireAppSdk(
         val storageDirectory = File("storage")
 
         if (!storageDirectory.exists()) {
-            if (!storageDirectory.mkdirs()) {
-                throw IllegalStateException("Failed to create storage directory at: ${storageDirectory.absolutePath}")
+            logger.info("Creating storage root directory at: ${storageDirectory.absolutePath}")
+            val created = storageDirectory.mkdirs()
+            check(created) {
+                "Failed to create storage directory: ${storageDirectory.absolutePath}"
             }
+        } else {
+            logger.info("Storage directory already exists: ${storageDirectory.absolutePath}")
         }
     }
 
