@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
@@ -45,6 +46,8 @@ class WireAppSdk(
                 "characters long."
         }
 
+        initializeStorageDirectory()
+
         IsolatedKoinContext.start()
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
@@ -52,6 +55,20 @@ class WireAppSdk(
         IsolatedKoinContext.setCryptographyStoragePassword(cryptographyStoragePassword)
 
         initDynamicModules(wireEventsHandler)
+    }
+
+    private fun initializeStorageDirectory() {
+        val storageDirectory = File("storage")
+
+        if (!storageDirectory.exists()) {
+            logger.info("Creating storage root directory at: ${storageDirectory.absolutePath}")
+            val created = storageDirectory.mkdirs()
+            check(created) {
+                "Failed to create storage directory: ${storageDirectory.absolutePath}"
+            }
+        } else {
+            logger.info("Storage directory already exists: ${storageDirectory.absolutePath}")
+        }
     }
 
     @Synchronized
