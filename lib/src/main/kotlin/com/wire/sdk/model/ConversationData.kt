@@ -23,7 +23,7 @@ data class ConversationData(
     val id: QualifiedId,
     val name: String?,
     val teamId: TeamId?,
-    val mlsGroupId: MLSGroupId,
+    internal val mlsGroupId: MLSGroupId,
     val type: Type
 ) {
     enum class Type {
