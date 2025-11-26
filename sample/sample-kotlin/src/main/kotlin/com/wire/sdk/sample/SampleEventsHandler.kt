@@ -229,13 +229,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
         val split = wireMessage.text.split(" ")
 
-        logger.debug("RECEIVED_SPLIT -> ANTES ========")
-        split.forEach {
-            logger.debug("RECEIVED_SPLIT -> $it")
-        }
-        logger.debug("RECEIVED_SPLIT -> DEPOIS ========")
-
-        val conversationId3 = manager.createGroupConversation(
+        val conversationId = manager.createGroupConversation(
             name = split[1],
             userIds = listOf(
                 QualifiedId(
@@ -246,7 +240,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
 
         manager.updateConversationMemberRole(
-            conversationId = conversationId3,
+            conversationId = conversationId,
             conversationMember = ConversationMember(
                 userId = wireMessage.sender,
                 role = ConversationRole.ADMIN
