@@ -41,6 +41,7 @@ import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
+import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.persistence.AppStorage
@@ -424,6 +425,24 @@ internal class BackendClientDemo(
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<OneToOneConversationResponse>()
+    }
+
+    override suspend fun updateConversationMemberRole(
+        conversationId: QualifiedId,
+        userId: QualifiedId,
+        updateConversationMemberRoleRequest: UpdateConversationMemberRoleRequest
+    ) {
+        val token = loginUser()
+        val conversationPath = "conversations/${conversationId.domain}/${conversationId.id}"
+        val memberPath = "members/${userId.domain}/${userId.id}"
+
+        httpClient.put("/$API_VERSION/$conversationPath/$memberPath") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(updateConversationMemberRoleRequest)
+            contentType(ContentType.Application.Json)
+        }
     }
 
     override suspend fun getConversationIds(): List<QualifiedId> {

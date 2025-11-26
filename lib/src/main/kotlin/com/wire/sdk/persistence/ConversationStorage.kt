@@ -34,6 +34,11 @@ interface ConversationStorage {
         members: List<ConversationMember>
     )
 
+    fun updateMember(
+        conversationId: QualifiedId,
+        conversationMember: ConversationMember
+    )
+
     fun getAll(): List<ConversationData>
 
     fun getAllMembers(): List<ConversationMember>

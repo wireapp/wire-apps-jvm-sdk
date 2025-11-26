@@ -428,4 +428,36 @@ class WireApplicationManager internal constructor(
             name = name,
             userIds = userIds
         )
+
+    /**
+     * Updates the member role in a conversation, to be called only after a conversation is created
+     * or established.
+     *
+     * @param conversationId ID of the conversation where the member is present
+     * @param conversationMember Conversation member in which it's role will change
+     */
+    fun updateConversationMemberRole(
+        conversationId: QualifiedId,
+        conversationMember: ConversationMember
+    ) {
+        runBlocking {
+            updateConversationMemberRoleSuspending(
+                conversationId = conversationId,
+                conversationMember = conversationMember
+            )
+        }
+    }
+
+    /**
+     * See [updateConversationMemberRole]
+     */
+    suspend fun updateConversationMemberRoleSuspending(
+        conversationId: QualifiedId,
+        conversationMember: ConversationMember
+    ) {
+        conversationService.updateConversationMemberRole(
+            conversationId = conversationId,
+            conversationMember = conversationMember
+        )
+    }
 }

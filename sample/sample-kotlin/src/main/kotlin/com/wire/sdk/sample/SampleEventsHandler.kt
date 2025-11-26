@@ -18,10 +18,12 @@ package com.wire.sdk.sample
 
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.model.AssetResource
+import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireMessage.Asset.AssetMetadata
 import com.wire.sdk.model.asset.AssetRetention
+import com.wire.sdk.model.http.conversation.ConversationRole
 import java.io.File
 import java.util.*
 import org.slf4j.LoggerFactory
@@ -227,13 +229,27 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
         val split = wireMessage.text.split(" ")
 
-        manager.createGroupConversation(
+        logger.debug("RECEIVED_SPLIT -> ANTES ========")
+        split.forEach {
+            logger.debug("RECEIVED_SPLIT -> $it")
+        }
+        logger.debug("RECEIVED_SPLIT -> DEPOIS ========")
+
+        val conversationId3 = manager.createGroupConversation(
             name = split[1],
             userIds = listOf(
                 QualifiedId(
                     id = UUID.fromString(split[2]),
                     domain = split[3]
                 )
+            )
+        )
+
+        manager.updateConversationMemberRole(
+            conversationId = conversationId3,
+            conversationMember = ConversationMember(
+                userId = wireMessage.sender,
+                role = ConversationRole.ADMIN
             )
         )
     }
