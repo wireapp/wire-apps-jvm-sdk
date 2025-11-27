@@ -103,7 +103,7 @@ class WireEventsTest {
     }
 
     @Test
-    fun givenWireEventsHandlerIsInjectedThenCallingNewKnockMethodItSucceeds() =
+    fun givenWireEventsHandlerIsInjectedThenCallingNewPingMethodItSucceeds() =
         runBlocking {
             val wireEvents = IsolatedKoinContext
                 .koinApp
