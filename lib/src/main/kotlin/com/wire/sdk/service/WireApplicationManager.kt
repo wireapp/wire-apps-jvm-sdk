@@ -173,6 +173,7 @@ class WireApplicationManager internal constructor(
      *
      * @throws [WireException] If the request fails or an error occurs while fetching the asset.
      */
+    @JvmName("downloadAsset")
     fun downloadAsset(assetRemoteData: WireMessage.Asset.RemoteData): AssetResource {
         return runBlocking {
             downloadAssetSuspending(assetRemoteData)
