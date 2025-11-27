@@ -352,14 +352,12 @@ sealed interface WireMessage {
              * Creates a basic Knock message with minimal required parameters.
              *
              * @param conversationId The qualified ID of the conversation
-             * @param hotKnock
              * @param expiresAfterMillis The time in milliseconds for an ephemeral message
              * @return A new Knock message with a random UUID
              */
             @JvmStatic
             fun create(
                 conversationId: QualifiedId,
-                hotKnock: Boolean,
                 expiresAfterMillis: Long? = null
             ) = Knock(
                 id = UUID.randomUUID(),

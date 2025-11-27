@@ -148,8 +148,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         logger.info("Received Ping: $wireMessage")
 
         val knock = WireMessage.Knock.create(
-            conversationId = wireMessage.conversationId,
-            hotKnock = true
+            conversationId = wireMessage.conversationId
         )
 
         manager.sendMessageSuspending(message = knock)
