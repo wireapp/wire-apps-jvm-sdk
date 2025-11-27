@@ -269,6 +269,7 @@ object ProtobufSerializer {
             .apply {
                 val knock = Knock
                     .newBuilder()
+                    .setHotKnock(false)
                     .build()
 
                 wireMessage.expiresAfterMillis?.let {
