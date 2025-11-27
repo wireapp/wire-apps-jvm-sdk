@@ -311,7 +311,6 @@ object ProtobufDeserializer {
             id = UUID.fromString(genericMessage.messageId),
             conversationId = conversationId,
             sender = sender,
-            hotKnock = genericMessage.knock.hotKnock,
             expiresAfterMillis = expiresAfterMillis
         )
 
@@ -472,7 +471,6 @@ object ProtobufDeserializer {
             ephemeralMessage.hasKnock() -> {
                 WireMessage.Knock.create(
                     conversationId = conversationId,
-                    hotKnock = ephemeralMessage.knock.hotKnock,
                     expiresAfterMillis = ephemeralMessage.expireAfterMillis
                 )
             }

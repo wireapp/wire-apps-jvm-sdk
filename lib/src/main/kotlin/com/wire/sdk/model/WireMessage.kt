@@ -344,8 +344,7 @@ sealed interface WireMessage {
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
-        override val expiresAfterMillis: Long? = null,
-        val hotKnock: Boolean
+        override val expiresAfterMillis: Long? = null
     ) : WireMessage,
         Ephemeral {
         companion object {
@@ -353,14 +352,12 @@ sealed interface WireMessage {
              * Creates a basic Knock message with minimal required parameters.
              *
              * @param conversationId The qualified ID of the conversation
-             * @param hotKnock
              * @param expiresAfterMillis The time in milliseconds for an ephemeral message
              * @return A new Knock message with a random UUID
              */
             @JvmStatic
             fun create(
                 conversationId: QualifiedId,
-                hotKnock: Boolean,
                 expiresAfterMillis: Long? = null
             ) = Knock(
                 id = UUID.randomUUID(),
@@ -369,7 +366,6 @@ sealed interface WireMessage {
                     id = UUID.randomUUID(),
                     domain = UUID.randomUUID().toString()
                 ),
-                hotKnock = hotKnock,
                 expiresAfterMillis = expiresAfterMillis
             )
         }
