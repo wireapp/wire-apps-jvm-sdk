@@ -344,8 +344,7 @@ sealed interface WireMessage {
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
-        override val expiresAfterMillis: Long? = null,
-        val hotKnock: Boolean
+        override val expiresAfterMillis: Long? = null
     ) : WireMessage,
         Ephemeral {
         companion object {
@@ -369,7 +368,6 @@ sealed interface WireMessage {
                     id = UUID.randomUUID(),
                     domain = UUID.randomUUID().toString()
                 ),
-                hotKnock = hotKnock,
                 expiresAfterMillis = expiresAfterMillis
             )
         }

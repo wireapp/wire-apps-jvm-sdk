@@ -311,7 +311,6 @@ object ProtobufDeserializer {
             id = UUID.fromString(genericMessage.messageId),
             conversationId = conversationId,
             sender = sender,
-            hotKnock = genericMessage.knock.hotKnock,
             expiresAfterMillis = expiresAfterMillis
         )
 

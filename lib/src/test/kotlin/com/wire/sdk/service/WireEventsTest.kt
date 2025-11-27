@@ -30,7 +30,6 @@ import com.wire.sdk.utils.KtxSerializer
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
@@ -114,8 +113,7 @@ class WireEventsTest {
                 wireMessage = WireMessage.Knock(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
-                    sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
-                    hotKnock = true
+                    sender = QualifiedId(UUID.randomUUID(), "anta.wire.link")
                 )
             )
         }
@@ -231,7 +229,10 @@ class WireEventsTest {
                 }
 
                 override suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
-                    assertTrue { wireMessage.hotKnock }
+                    assertEquals(
+                        CONVERSATION_ID,
+                        wireMessage.conversationId
+                    )
                 }
 
                 override suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
