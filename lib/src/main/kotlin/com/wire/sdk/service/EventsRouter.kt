@@ -280,7 +280,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
                     wireEventsHandler.onButtonClickConfirmed(wireMessage)
-                is WireMessage.Knock -> wireEventsHandler.onPingReceived(wireMessage)
+                is WireMessage.Ping -> wireEventsHandler.onPingReceived(wireMessage)
                 is WireMessage.Location -> wireEventsHandler.onLocationMessageReceived(wireMessage)
                 is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
@@ -307,7 +307,7 @@ internal class EventsRouter internal constructor(
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
                 is WireMessage.ButtonActionConfirmation ->
                     wireEventsHandler.onButtonClickConfirmed(wireMessage)
-                is WireMessage.Knock -> wireEventsHandler.onPingReceived(wireMessage)
+                is WireMessage.Ping -> wireEventsHandler.onPingReceived(wireMessage)
                 is WireMessage.Location -> wireEventsHandler.onLocationMessageReceived(wireMessage)
                 is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)

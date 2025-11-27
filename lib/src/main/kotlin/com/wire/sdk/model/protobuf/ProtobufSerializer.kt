@@ -56,7 +56,7 @@ object ProtobufSerializer {
             is WireMessage.ButtonAction -> packButtonAction(wireMessage, genericMessage)
             is WireMessage.ButtonActionConfirmation ->
                 packButtonActionConfirmation(wireMessage, genericMessage)
-            is WireMessage.Knock -> packKnock(wireMessage, genericMessage)
+            is WireMessage.Ping -> packKnock(wireMessage, genericMessage)
             is WireMessage.Location -> packLocation(wireMessage, genericMessage)
             is WireMessage.Deleted -> packDeleted(wireMessage, genericMessage)
             is WireMessage.Receipt -> packReceipt(wireMessage, genericMessage)
@@ -262,7 +262,7 @@ object ProtobufSerializer {
             )
 
     private fun packKnock(
-        wireMessage: WireMessage.Knock,
+        wireMessage: WireMessage.Ping,
         genericMessage: GenericMessage.Builder
     ): GenericMessage.Builder =
         genericMessage

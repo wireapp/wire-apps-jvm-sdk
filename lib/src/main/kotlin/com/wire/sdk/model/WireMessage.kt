@@ -340,7 +340,7 @@ sealed interface WireMessage {
     ) : WireMessage
 
     @JvmRecord
-    data class Knock @JvmOverloads constructor(
+    data class Ping @JvmOverloads constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
@@ -362,7 +362,7 @@ sealed interface WireMessage {
                 conversationId: QualifiedId,
                 hotKnock: Boolean,
                 expiresAfterMillis: Long? = null
-            ) = Knock(
+            ) = Ping(
                 id = UUID.randomUUID(),
                 conversationId = conversationId,
                 sender = QualifiedId(

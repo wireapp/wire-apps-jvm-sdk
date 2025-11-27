@@ -111,7 +111,7 @@ class WireEventsTest {
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onPingReceived(
-                wireMessage = WireMessage.Knock(
+                wireMessage = WireMessage.Ping(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
                     sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
@@ -230,7 +230,7 @@ class WireEventsTest {
                     )
                 }
 
-                override suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
+                override suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
                     assertTrue { wireMessage.hotKnock }
                 }
 
