@@ -72,7 +72,7 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: ButtonClickConfirmed")
     }
 
-    open fun onPingReceived(wireMessage: WireMessage.Knock) {
+    open fun onPingReceived(wireMessage: WireMessage.Ping) {
         logger.debug("Received event: PingReceived: {}", wireMessage)
     }
 

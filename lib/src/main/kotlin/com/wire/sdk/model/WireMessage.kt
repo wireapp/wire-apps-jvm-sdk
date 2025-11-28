@@ -340,7 +340,7 @@ sealed interface WireMessage {
     ) : WireMessage
 
     @JvmRecord
-    data class Knock @JvmOverloads constructor(
+    data class Ping @JvmOverloads constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
@@ -349,17 +349,17 @@ sealed interface WireMessage {
         Ephemeral {
         companion object {
             /**
-             * Creates a basic Knock message with minimal required parameters.
+             * Creates a basic Ping message with minimal required parameters.
              *
              * @param conversationId The qualified ID of the conversation
              * @param expiresAfterMillis The time in milliseconds for an ephemeral message
-             * @return A new Knock message with a random UUID
+             * @return A new Ping message with a random UUID
              */
             @JvmStatic
             fun create(
                 conversationId: QualifiedId,
                 expiresAfterMillis: Long? = null
-            ) = Knock(
+            ) = Ping(
                 id = UUID.randomUUID(),
                 conversationId = conversationId,
                 sender = QualifiedId(

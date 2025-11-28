@@ -144,14 +144,14 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         logger.info("Received ButtonActionConfirmation Message : $wireMessage")
     }
 
-    override suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
+    override suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
         logger.info("Received Ping: $wireMessage")
 
-        val knock = WireMessage.Knock.create(
+        val ping = WireMessage.Ping.create(
             conversationId = wireMessage.conversationId
         )
 
-        manager.sendMessageSuspending(message = knock)
+        manager.sendMessageSuspending(message = ping)
     }
 
     override suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {

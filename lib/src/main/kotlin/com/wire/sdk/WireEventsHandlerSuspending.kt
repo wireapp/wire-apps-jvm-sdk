@@ -73,11 +73,11 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
     }
 
     /**
-     * A user has sent a knock (also called "ping") event to a conversation.
+     * A user has sent a ping event to a conversation.
      *
      * @param wireMessage the message received
      */
-    open suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
+    open suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
         logger.debug("Received event: PingReceived: {}", wireMessage)
     }
 
