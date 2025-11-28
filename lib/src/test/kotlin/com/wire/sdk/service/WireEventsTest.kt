@@ -228,7 +228,7 @@ class WireEventsTest {
                     )
                 }
 
-                override suspend fun onPingReceived(wireMessage: WireMessage.Knock) {
+                override suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
                     assertEquals(
                         CONVERSATION_ID,
                         wireMessage.conversationId
