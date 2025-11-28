@@ -147,9 +147,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     override suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
         logger.info("Received Ping: $wireMessage")
 
-        val ping = WireMessage.Ping.create(
-            conversationId = wireMessage.conversationId,
-            hotKnock = true
+        val knock = WireMessage.Knock.create(
+            conversationId = wireMessage.conversationId
         )
 
         manager.sendMessageSuspending(message = ping)
