@@ -32,6 +32,7 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
+import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -98,6 +99,12 @@ interface BackendClient {
     ): ConversationResponse
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
+
+    suspend fun updateConversationMemberRole(
+        conversationId: QualifiedId,
+        userId: QualifiedId,
+        updateConversationMemberRoleRequest: UpdateConversationMemberRoleRequest
+    )
 
     suspend fun getConversationIds(): List<QualifiedId>
 

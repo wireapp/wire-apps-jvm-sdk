@@ -64,10 +64,17 @@ data class CreateConversationRequest private constructor(
             ConversationAccessRole.SERVICE
         )
 
-        fun createGroup(name: String): CreateConversationRequest =
+        fun createGroup(
+            name: String,
+            teamId: TeamId
+        ): CreateConversationRequest =
             CreateConversationRequest(
                 name = name,
-                groupConversationType = GroupConversationType.REGULAR_GROUP
+                groupConversationType = GroupConversationType.REGULAR_GROUP,
+                conversationTeamInfo = ConversationTeamInfo(
+                    managed = false,
+                    teamId = teamId.value.toString()
+                )
             )
 
         fun createChannel(

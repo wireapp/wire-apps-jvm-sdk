@@ -33,6 +33,7 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.KeyPackage
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
+import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.conversation.getDecodedMlsGroupId
 import com.wire.sdk.model.http.conversation.getRemovalKey
 import com.wire.sdk.persistence.AppStorage
@@ -79,8 +80,12 @@ internal class ConversationService internal constructor(
         name: String,
         userIds: List<QualifiedId>
     ): QualifiedId {
+        val teamId = getSelfTeamId()
         val conversationCreatedResponse = backendClient.createGroupConversation(
-            createConversationRequest = CreateConversationRequest.Companion.createGroup(name = name)
+            createConversationRequest = CreateConversationRequest.Companion.createGroup(
+                name = name,
+                teamId = teamId
+            )
         )
 
         val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
@@ -240,6 +245,24 @@ internal class ConversationService internal constructor(
             }
 
         appStorage.setShouldRejoinConversations(should = false)
+    }
+
+    suspend fun updateConversationMemberRole(
+        conversationId: QualifiedId,
+        conversationMember: ConversationMember
+    ) {
+        val updateConversationMemberRoleRequest = UpdateConversationMemberRoleRequest(
+            conversationRole = conversationMember.role
+        )
+        backendClient.updateConversationMemberRole(
+            conversationId = conversationId,
+            userId = conversationMember.userId,
+            updateConversationMemberRoleRequest = updateConversationMemberRoleRequest
+        )
+        conversationStorage.updateMember(
+            conversationId = conversationId,
+            conversationMember = conversationMember
+        )
     }
 
     private suspend fun fetchConversationsToRejoin(): List<ConversationResponse> {

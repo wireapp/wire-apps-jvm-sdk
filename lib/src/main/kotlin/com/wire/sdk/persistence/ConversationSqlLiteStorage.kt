@@ -29,6 +29,7 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import java.util.Base64
 import java.util.UUID
 
+@Suppress("TooManyFunctions")
 internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationStorage {
     private val conversationQueries: ConversationQueries = db.conversationQueries
     private val conversationMemberQueries: ConversationMemberQueries = db.conversationMemberQueries
@@ -69,6 +70,21 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
                 )
             }
         }
+    }
+
+    override fun updateMember(
+        conversationId: QualifiedId,
+        conversationMember: ConversationMember
+    ) {
+        if (getById(conversationId) == null) return
+
+        conversationMemberQueries.updateRole(
+            role = conversationMember.role.name,
+            user_id = conversationMember.userId.id.toString(),
+            user_domain = conversationMember.userId.domain,
+            conversation_id = conversationId.id.toString(),
+            conversation_domain = conversationId.domain
+        )
     }
 
     override fun getAll(): List<ConversationData> =

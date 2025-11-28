@@ -34,6 +34,7 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
+import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.HttpClient
@@ -170,6 +171,14 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     override suspend fun getOneToOneConversation(
         userId: QualifiedId
     ): OneToOneConversationResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun updateConversationMemberRole(
+        conversationId: QualifiedId,
+        userId: QualifiedId,
+        updateConversationMemberRoleRequest: UpdateConversationMemberRoleRequest
+    ) {
         TODO("Not yet implemented")
     }
 
