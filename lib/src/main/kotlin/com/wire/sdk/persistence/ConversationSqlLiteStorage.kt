@@ -72,7 +72,7 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
     }
 
     override fun getAll(): List<ConversationData> =
-        conversationQueries.selectAll().executeAsList().map { conversationMapper(it) }
+        conversationQueries.selectAll().executeAsList().mapNotNull { conversationMapper(it) }
 
     override fun getById(conversationId: QualifiedId): ConversationData? {
         return runCatching {
@@ -110,14 +110,21 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
         }
     }
 
+    /**
+     * Allows to retrieve previously saved conversation from database as [ConversationData] object.
+     *
+     * Returns Null in case of invalid ID or conversation type.
+     */
     private fun conversationMapper(conv: Conversation) =
-        ConversationData(
-            id = QualifiedId(UUID.fromString(conv.id), conv.domain),
-            name = conv.name,
-            teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
-            mlsGroupId = Base64.getDecoder().decode(conv.mls_group_id).toGroupId(),
-            type = ConversationData.Type.fromString(value = conv.type)
-        )
+        runCatching {
+            ConversationData(
+                id = QualifiedId(UUID.fromString(conv.id), conv.domain),
+                name = conv.name,
+                teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
+                mlsGroupId = Base64.getDecoder().decode(conv.mls_group_id).toGroupId(),
+                type = ConversationData.Type.valueOf(value = conv.type)
+            )
+        }.getOrNull()
 
     private fun conversationMemberMapper(member: Conversation_member) =
         ConversationMember(
