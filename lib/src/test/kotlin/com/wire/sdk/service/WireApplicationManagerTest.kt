@@ -368,7 +368,7 @@ class WireApplicationManagerTest {
                 },
                 "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
-                "type": 0
+                "type": 0,
                 "protocol": "mls"
             }
             """.trimIndent()

@@ -67,13 +67,13 @@ internal class EventsRouter internal constructor(
                     newTeamInvite(teamId)
                 }
                 is EventContentDTO.Conversation.MemberUpdateDTO -> {
-                    if (event.roleChange.role?.isNotEmpty() == true) {
+                    event.roleChange.role?.let { newRole ->
                         conversationService.saveMembers(
                             conversationId = event.qualifiedConversation,
                             members = listOf(
                                 ConversationMember(
                                     userId = event.roleChange.qualifiedUserId,
-                                    role = ConversationRole.fromApi(event.roleChange.role)
+                                    role = ConversationRole.fromApi(newRole)
                                 )
                             )
                         )
