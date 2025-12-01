@@ -30,6 +30,7 @@ import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AppClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
+import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.utils.MlsTransportLastWelcome
 import io.ktor.http.HttpStatusCode
 import io.ktor.util.encodeBase64
@@ -45,7 +46,7 @@ import kotlin.test.assertTrue
 
 class WireApplicationManagerTest {
     @Test
-    fun whenCreatingGroupConversationIsHandledSuccessfullyThenReturnsConversationId() =
+    fun whenCreatingGroupConversationSuccessfullyThenReturnsConversationIdAndUpdateMemberRole() =
         runTest {
             // Given
             TestUtils.setupWireMockStubs(wireMockServer)
@@ -94,7 +95,7 @@ class WireApplicationManagerTest {
             val cryptoClient = IsolatedKoinContext.koinApp.koin.get<CryptoClient>()
 
             // when
-            val result = manager.createGroupConversation(
+            val createdConversationId = manager.createGroupConversation(
                 name = CONVERSATION_NAME,
                 userIds = listOf(
                     USER_1,
@@ -102,15 +103,46 @@ class WireApplicationManagerTest {
                 )
             )
 
+            val conversationIdPath = "${createdConversationId.domain}/${createdConversationId.id}"
+            val userIdPath = "${USER_2.domain}/${USER_2.id}"
+            wireMockServer.stubFor(
+                WireMock.put(
+                    WireMock.urlPathTemplate(
+                        "/$V" +
+                            "/conversations/$conversationIdPath" +
+                            "/members/$userIdPath"
+                    )
+                ).willReturn(
+                    WireMock.ok()
+                )
+            )
+
+            manager.updateConversationMemberRole(
+                conversationId = createdConversationId,
+                userId = USER_2,
+                newRole = ConversationRole.ADMIN
+            )
+
             // then
             assertEquals(
                 CONVERSATION_ID.id,
-                result.id
+                createdConversationId.id
             )
             assertTrue(
                 cryptoClient.conversationExists(
                     GROUP_CONVERSATION_MLS_GROUP_ID
                 )
+            )
+
+            val conversationMembers = manager
+                .getStoredConversationMembers(conversationId = createdConversationId)
+            assertEquals(
+                ConversationRole.ADMIN,
+                conversationMembers.first().role
+            )
+            assertEquals(
+                ConversationRole.ADMIN,
+                conversationMembers.last().role
             )
         }
 
@@ -336,7 +368,7 @@ class WireApplicationManagerTest {
                 },
                 "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
-                "type": 0
+                "type": 0,
                 "protocol": "mls"
             }
             """.trimIndent()

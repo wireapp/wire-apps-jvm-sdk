@@ -17,7 +17,8 @@
 package com.wire.sdk.model.http
 
 import com.wire.sdk.model.QualifiedId
-import com.wire.sdk.model.http.conversation.ConversationCreateData
+import com.wire.sdk.model.http.conversation.ConversationResponse
+import com.wire.sdk.model.http.conversation.ConversationRoleChange
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.model.http.conversation.MemberLeaveEventData
 import com.wire.sdk.utils.UUIDSerializer
@@ -50,7 +51,7 @@ sealed class EventContentDTO {
         data class NewConversationDTO(
             @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
             @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("data") val data: ConversationCreateData,
+            @SerialName("data") val data: ConversationResponse,
             @SerialName("time") val time: Instant
         ) : Conversation()
 
@@ -79,6 +80,16 @@ sealed class EventContentDTO {
             @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
             @SerialName("time") val time: Instant,
             @SerialName("data") val data: MemberJoinEventData
+        ) : Conversation()
+
+        @Serializable
+        @SerialName("conversation.member-update")
+        data class MemberUpdateDTO(
+            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
+            @SerialName("time") val time: String,
+            @SerialName("from") val from: String,
+            @SerialName("data") val roleChange: ConversationRoleChange
         ) : Conversation()
 
         @Serializable

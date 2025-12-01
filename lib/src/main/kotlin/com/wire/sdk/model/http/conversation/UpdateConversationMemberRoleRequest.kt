@@ -16,17 +16,11 @@
 
 package com.wire.sdk.model.http.conversation
 
-import com.wire.sdk.model.QualifiedId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MemberJoinEventData(
-    @SerialName("users") val users: List<Member>
-)
-
-@Serializable
-data class Member(
-    @SerialName("qualified_id") val userId: QualifiedId,
-    @SerialName("conversation_role") val conversationRole: ConversationRole
+data class UpdateConversationMemberRoleRequest(
+    @SerialName("conversation_role")
+    val conversationRole: ConversationRole
 )

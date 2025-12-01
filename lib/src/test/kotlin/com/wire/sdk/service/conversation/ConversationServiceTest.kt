@@ -25,7 +25,6 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.persistence.AppStorage
-import com.wire.sdk.service.conversation.ConversationService
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

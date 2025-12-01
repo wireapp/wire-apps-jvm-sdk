@@ -21,9 +21,23 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class ConversationRole {
-    @SerialName("wire_member")
+    @SerialName(WIRE_MEMBER_VALUE)
     MEMBER,
 
-    @SerialName("wire_admin")
-    ADMIN
+    @SerialName(WIRE_ADMIN_VALUE)
+    ADMIN,
+
+    UNKNOWN;
+
+    companion object {
+        private const val WIRE_ADMIN_VALUE = "wire_admin"
+        private const val WIRE_MEMBER_VALUE = "wire_member"
+
+        fun fromApi(role: String): ConversationRole =
+            when (role) {
+                WIRE_MEMBER_VALUE -> MEMBER
+                WIRE_ADMIN_VALUE -> ADMIN
+                else -> UNKNOWN
+            }
+    }
 }
