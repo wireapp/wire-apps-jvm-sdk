@@ -17,7 +17,6 @@ package com.wire.sdk.model
 
 import com.wire.crypto.MLSGroupId
 import com.wire.sdk.model.http.conversation.ConversationResponse
-import java.lang.IllegalStateException
 
 @JvmRecord
 data class ConversationData(
@@ -37,7 +36,7 @@ data class ConversationData(
                     ConversationResponse.Type.GROUP -> GROUP
                     ConversationResponse.Type.ONE_TO_ONE -> ONE_TO_ONE
                     ConversationResponse.Type.SELF -> {
-                         error("App cannot be added to Self conversation.")
+                        error("App cannot be added to Self conversation.")
                     }
                 }
         }
