@@ -28,20 +28,19 @@ import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
-import com.wire.sdk.model.ConversationData
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
-import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.getDecodedMlsGroupId
 import com.wire.sdk.model.protobuf.ProtobufDeserializer
-import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.utils.obfuscateGroupId
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.service.conversation.ConversationService
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
 import kotlin.time.Instant
@@ -49,7 +48,7 @@ import org.slf4j.LoggerFactory
 
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
-    private val conversationStorage: ConversationStorage,
+    private val conversationService: ConversationService,
     private val backendClient: BackendClient,
     private val wireEventsHandler: WireEventsHandler,
     private val cryptoClient: CryptoClient,
@@ -67,16 +66,31 @@ internal class EventsRouter internal constructor(
                     logger.info("Team invite from: $teamId")
                     newTeamInvite(teamId)
                 }
+                is EventContentDTO.Conversation.MemberUpdateDTO -> {
+                    if (event.roleChange.role?.isNotEmpty() == true) {
+                        conversationService.saveMembers(
+                            conversationId = event.qualifiedConversation,
+                            members = listOf(
+                                ConversationMember(
+                                    userId = event.roleChange.qualifiedUserId,
+                                    role = ConversationRole.fromApi(event.roleChange.role)
+                                )
+                            )
+                        )
+                    }
+                }
                 is EventContentDTO.Conversation.NewConversationDTO -> {
-                    // The Application has created a conversation or got invited to one.
-                    // The mls-welcome event is used to allow the Application react
-                    // to the invitation, this event is simply logged
                     logger.info("Joining conversation: $event")
+
+                    conversationService.saveConversationWithMembers(
+                        qualifiedConversation = event.qualifiedConversation,
+                        conversationResponse = event.data
+                    )
                 }
 
                 is EventContentDTO.Conversation.DeleteConversation -> {
                     logger.info("Delete conversation: $event")
-                    conversationStorage.delete(event.qualifiedConversation)
+                    conversationService.deleteConversation(event.qualifiedConversation)
                     when (wireEventsHandler) {
                         is WireEventsHandlerDefault -> wireEventsHandler.onConversationDeleted(
                             event.qualifiedConversation
@@ -95,7 +109,7 @@ internal class EventsRouter internal constructor(
                             role = it.conversationRole
                         )
                     }
-                    conversationStorage.saveMembers(event.qualifiedConversation, members)
+                    conversationService.saveMembers(event.qualifiedConversation, members)
                     when (wireEventsHandler) {
                         is WireEventsHandlerDefault -> wireEventsHandler.onUserJoinedConversation(
                             conversationId = event.qualifiedConversation,
@@ -112,7 +126,7 @@ internal class EventsRouter internal constructor(
 
                 is EventContentDTO.Conversation.MemberLeave -> {
                     logger.info("Leaving event from: ${event.qualifiedConversation}")
-                    conversationStorage.deleteMembers(
+                    conversationService.deleteMembers(
                         conversationId = event.qualifiedConversation,
                         users = event.data.users
                     )
@@ -199,32 +213,10 @@ internal class EventsRouter internal constructor(
         val conversation = backendClient.getConversation(qualifiedConversation)
         val mlsGroupId = groupId ?: conversation.getDecodedMlsGroupId()
 
-        val conversationName = if (conversation.type == ConversationResponse.Type.ONE_TO_ONE) {
-            backendClient.getUserData(userId = conversation.members.others.first().id).name
-        } else {
-            conversation.name
-        }
-
-        val conversationData =
-            ConversationData(
-                id = qualifiedConversation,
-                name = conversationName,
-                mlsGroupId = mlsGroupId,
-                teamId = conversation.teamId?.let { TeamId(it) },
-                type = ConversationData.Type.fromApi(value = conversation.type)
-            )
-        val members = conversation.members.others.map {
-            ConversationMember(
-                userId = it.id,
-                role = it.conversationRole
-            )
-        }
-        logger.debug("Conversation data: {}", conversationData)
-        logger.debug("Conversation members: {}", members)
-
-        // Saves the conversation in the local database, used later to decrypt messages
-        conversationStorage.save(conversationData)
-        conversationStorage.saveMembers(qualifiedConversation, members)
+        val (conversationData, members) = conversationService.saveConversationWithMembers(
+            qualifiedConversation = qualifiedConversation,
+            conversationResponse = conversation
+        )
 
         if (cryptoClient.hasTooFewKeyPackageCount()) {
             cryptoClient.getAppClientId()?.let { appClientId ->
@@ -363,7 +355,7 @@ internal class EventsRouter internal constructor(
             conversationId.domain
         )
 
-        val conversation = conversationStorage.getById(conversationId)
+        val conversation = conversationService.getConversationById(conversationId)
         var mlsGroupId = conversation?.mlsGroupId
 
         if (mlsGroupId == null) {

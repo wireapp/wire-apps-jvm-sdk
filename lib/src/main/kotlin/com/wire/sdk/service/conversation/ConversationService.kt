@@ -25,11 +25,13 @@ import com.wire.sdk.crypto.CoreCryptoClient
 import com.wire.sdk.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
+import com.wire.sdk.model.ConversationData
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationResponse
+import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.KeyPackage
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
@@ -98,6 +100,12 @@ internal class ConversationService internal constructor(
 
         val conversationId = conversationCreatedResponse.id
         logger.info("Group Conversation created with ID: $conversationId")
+
+        saveConversationWithMembers(
+            qualifiedConversation = conversationId,
+            conversationResponse = conversationCreatedResponse
+        )
+
         return conversationId
     }
 
@@ -133,6 +141,12 @@ internal class ConversationService internal constructor(
 
             val conversationId = conversationCreatedResponse.id
             logger.info("Channel Conversation created with ID: $conversationId")
+
+            saveConversationWithMembers(
+                qualifiedConversation = conversationId,
+                conversationResponse = conversationCreatedResponse
+            )
+
             return conversationId
         } catch (exception: WireException.ClientError) {
             if (exception.response.isOperationDenied()) {
@@ -249,19 +263,25 @@ internal class ConversationService internal constructor(
 
     suspend fun updateConversationMemberRole(
         conversationId: QualifiedId,
-        conversationMember: ConversationMember
+        userId: QualifiedId,
+        newRole: ConversationRole
     ) {
         val updateConversationMemberRoleRequest = UpdateConversationMemberRoleRequest(
-            conversationRole = conversationMember.role
+            conversationRole = newRole
         )
         backendClient.updateConversationMemberRole(
             conversationId = conversationId,
-            userId = conversationMember.userId,
+            userId = userId,
             updateConversationMemberRoleRequest = updateConversationMemberRoleRequest
         )
-        conversationStorage.updateMember(
+        conversationStorage.saveMembers(
             conversationId = conversationId,
-            conversationMember = conversationMember
+            members = listOf(
+                ConversationMember(
+                    userId = userId,
+                    role = newRole
+                )
+            )
         )
     }
 
@@ -343,6 +363,69 @@ internal class ConversationService internal constructor(
 
         return claimedKeyPackages.map { it.keyPackage.decodeBase64Bytes() }
     }
+
+    suspend fun saveConversationWithMembers(
+        qualifiedConversation: QualifiedId,
+        conversationResponse: ConversationResponse
+    ): Pair<ConversationData, List<ConversationMember>> {
+        val conversationName =
+            if (conversationResponse.type == ConversationResponse.Type.ONE_TO_ONE) {
+                backendClient
+                    .getUserData(
+                        userId = conversationResponse.members.others.first().id
+                    ).name
+            } else {
+                conversationResponse.name
+            }
+
+        val conversationData =
+            ConversationData(
+                id = qualifiedConversation,
+                name = conversationName,
+                mlsGroupId = conversationResponse.getDecodedMlsGroupId(),
+                teamId = conversationResponse.teamId?.let { TeamId(it) },
+                type = ConversationData.Type.fromApi(value = conversationResponse.type)
+            )
+        val members = conversationResponse.members.others.map {
+            ConversationMember(
+                userId = it.id,
+                role = it.conversationRole
+            )
+        }
+
+        logger.debug("Conversation data: {}", conversationData)
+        logger.debug("Conversation members: {}", members)
+
+        // Saves the conversation in the local database, used later to decrypt messages
+        conversationStorage.save(conversationData)
+        conversationStorage.saveMembers(qualifiedConversation, members)
+
+        return Pair(conversationData, members)
+    }
+
+    fun saveMembers(
+        conversationId: QualifiedId,
+        members: List<ConversationMember>
+    ) = conversationStorage.saveMembers(
+        conversationId = conversationId,
+        members = members
+    )
+
+    fun deleteConversation(conversationId: QualifiedId) =
+        conversationStorage.delete(conversationId = conversationId)
+
+    fun deleteMembers(
+        conversationId: QualifiedId,
+        users: List<QualifiedId>
+    ) = conversationStorage.deleteMembers(
+        conversationId = conversationId,
+        users = users
+    )
+
+    fun getConversationById(conversationId: QualifiedId) =
+        conversationStorage.getById(conversationId = conversationId)
+
+    fun getAll() = conversationStorage.getAll()
 
     private suspend fun getCipherSuiteCode(): Int =
         backendClient

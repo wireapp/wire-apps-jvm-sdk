@@ -21,12 +21,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MemberJoinEventData(
-    @SerialName("users") val users: List<Member>
-)
-
-@Serializable
-data class Member(
-    @SerialName("qualified_id") val userId: QualifiedId,
-    @SerialName("conversation_role") val conversationRole: ConversationRole
+data class ConversationRoleChange(
+    @SerialName("qualified_target") val qualifiedUserId: QualifiedId,
+    @SerialName("conversation_role") val role: String?
 )

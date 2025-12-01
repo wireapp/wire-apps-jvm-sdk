@@ -29,9 +29,9 @@ import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.AppDataResponse
+import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.model.protobuf.ProtobufSerializer
-import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.AESDecrypt
@@ -51,7 +51,6 @@ import kotlinx.coroutines.withContext
  */
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
-    private val conversationStorage: ConversationStorage,
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
@@ -59,7 +58,7 @@ class WireApplicationManager internal constructor(
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
-    fun getStoredConversations(): List<ConversationData> = conversationStorage.getAll()
+    fun getStoredConversations(): List<ConversationData> = conversationService.getAll()
 
     fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
         conversationService.getStoredConversationMembers(conversationId = conversationId)
@@ -136,7 +135,10 @@ class WireApplicationManager internal constructor(
      * @return the id of the message sent, useful to edit/delete it later.
      */
     suspend fun sendMessageSuspending(message: WireMessage): UUID {
-        val conversation = conversationStorage.getById(conversationId = message.conversationId)
+        val conversation = conversationService.getConversationById(
+            conversationId = message.conversationId
+        )
+
         conversation?.mlsGroupId?.let { mlsGroupId ->
             val encryptedMessage = cryptoClient.encryptMls(
                 mlsGroupId = mlsGroupId,
@@ -434,16 +436,19 @@ class WireApplicationManager internal constructor(
      * or established.
      *
      * @param conversationId ID of the conversation where the member is present
-     * @param conversationMember Conversation member in which it's role will change
+     * @param userId ID of the user where the role will be changed
+     * @param newRole ConversationROle to be changed to
      */
     fun updateConversationMemberRole(
         conversationId: QualifiedId,
-        conversationMember: ConversationMember
+        userId: QualifiedId,
+        newRole: ConversationRole
     ) {
         runBlocking {
             updateConversationMemberRoleSuspending(
                 conversationId = conversationId,
-                conversationMember = conversationMember
+                userId = userId,
+                newRole = newRole
             )
         }
     }
@@ -453,11 +458,13 @@ class WireApplicationManager internal constructor(
      */
     suspend fun updateConversationMemberRoleSuspending(
         conversationId: QualifiedId,
-        conversationMember: ConversationMember
+        userId: QualifiedId,
+        newRole: ConversationRole
     ) {
         conversationService.updateConversationMemberRole(
             conversationId = conversationId,
-            conversationMember = conversationMember
+            userId = userId,
+            newRole = newRole
         )
     }
 }

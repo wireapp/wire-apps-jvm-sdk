@@ -241,10 +241,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         manager.updateConversationMemberRole(
             conversationId = conversationId,
-            conversationMember = ConversationMember(
-                userId = wireMessage.sender,
-                role = ConversationRole.ADMIN
-            )
+            userId = wireMessage.sender,
+            newRole = ConversationRole.ADMIN
         )
     }
 

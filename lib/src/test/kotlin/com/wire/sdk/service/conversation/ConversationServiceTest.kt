@@ -19,16 +19,12 @@ package com.wire.sdk.service.conversation
 import com.wire.crypto.toGroupId
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
-import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
-import com.wire.sdk.model.http.conversation.ConversationRole
-import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.persistence.AppStorage
-import com.wire.sdk.persistence.ConversationStorage
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -188,74 +184,7 @@ class ConversationServiceTest {
             }
         }
 
-    @Test
-    fun whenUpdatingConversationMemberRoleThenUpdatesLocalDatabase() =
-        runTest {
-            val backendClient = mockk<BackendClient> {
-                coEvery {
-                    updateConversationMemberRole(
-                        conversationId = CONVERSATION_ID,
-                        userId = USER_ID,
-                        updateConversationMemberRoleRequest = UpdateConversationMemberRoleRequest(
-                            conversationRole = ConversationRole.ADMIN
-                        )
-                    )
-                } returns Unit
-            }
-
-            val conversationStorage = mockk<ConversationStorage> {
-                every {
-                    updateMember(
-                        conversationId = CONVERSATION_ID,
-                        conversationMember = ConversationMember(
-                            userId = USER_ID,
-                            role = ConversationRole.ADMIN
-                        )
-                    )
-                } returns Unit
-            }
-
-            val service = ConversationService(
-                backendClient = backendClient,
-                conversationStorage = conversationStorage,
-                appStorage = mockk(),
-                cryptoClient = mockk()
-            )
-
-            service.updateConversationMemberRole(
-                conversationId = CONVERSATION_ID,
-                conversationMember = ConversationMember(
-                    userId = USER_ID,
-                    role = ConversationRole.ADMIN
-                )
-            )
-
-            verify(exactly = 1) {
-                conversationStorage.updateMember(
-                    conversationId = CONVERSATION_ID,
-                    conversationMember = ConversationMember(
-                        userId = USER_ID,
-                        role = ConversationRole.ADMIN
-                    )
-                )
-            }
-            coVerify(exactly = 1) {
-                backendClient.updateConversationMemberRole(
-                    conversationId = CONVERSATION_ID,
-                    userId = USER_ID,
-                    updateConversationMemberRoleRequest = UpdateConversationMemberRoleRequest(
-                        conversationRole = ConversationRole.ADMIN
-                    )
-                )
-            }
-        }
-
     private companion object {
-        val USER_ID =
-            QualifiedId(
-                id = UUID.randomUUID(),
-                domain = "wire.com"
-            )
         val CONVERSATION_ID =
             QualifiedId(
                 id = UUID.randomUUID(),

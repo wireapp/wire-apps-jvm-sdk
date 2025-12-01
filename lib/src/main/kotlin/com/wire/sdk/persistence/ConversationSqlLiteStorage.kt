@@ -72,21 +72,6 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
         }
     }
 
-    override fun updateMember(
-        conversationId: QualifiedId,
-        conversationMember: ConversationMember
-    ) {
-        if (getById(conversationId) == null) return
-
-        conversationMemberQueries.updateRole(
-            role = conversationMember.role.name,
-            user_id = conversationMember.userId.id.toString(),
-            user_domain = conversationMember.userId.domain,
-            conversation_id = conversationId.id.toString(),
-            conversation_domain = conversationId.domain
-        )
-    }
-
     override fun getAll(): List<ConversationData> =
         conversationQueries.selectAll().executeAsList().map { conversationMapper(it) }
 
