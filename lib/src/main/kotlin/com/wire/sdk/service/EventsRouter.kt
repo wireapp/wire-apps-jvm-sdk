@@ -34,11 +34,11 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
-import com.wire.sdk.model.http.conversation.getDecodedMlsGroupId
 import com.wire.sdk.model.protobuf.ProtobufDeserializer
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.utils.obfuscateGroupId
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.service.conversation.ConversationService
 import io.ktor.client.plugins.ResponseException
@@ -151,10 +151,7 @@ internal class EventsRouter internal constructor(
                         event = event
                     )
 
-                    handleJoiningConversation(
-                        qualifiedConversation = event.qualifiedConversation,
-                        groupId = groupId
-                    )
+                    handleJoiningConversation(qualifiedConversation = event.qualifiedConversation)
                 }
 
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
@@ -206,16 +203,11 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private suspend fun handleJoiningConversation(
-        qualifiedConversation: QualifiedId,
-        groupId: MLSGroupId?
-    ): MLSGroupId {
-        val conversation = backendClient.getConversation(qualifiedConversation)
-        val mlsGroupId = groupId ?: conversation.getDecodedMlsGroupId()
-
+    private suspend fun handleJoiningConversation(qualifiedConversation: QualifiedId) {
+        val conversationResponse = backendClient.getConversation(qualifiedConversation)
         val (conversationData, members) = conversationService.saveConversationWithMembers(
             qualifiedConversation = qualifiedConversation,
-            conversationResponse = conversation
+            conversationResponse = conversationResponse
         )
 
         if (cryptoClient.hasTooFewKeyPackageCount()) {
@@ -228,20 +220,30 @@ internal class EventsRouter internal constructor(
             }
         }
 
-        groupId?.run {
-            when (wireEventsHandler) {
-                is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(
-                    conversation = conversationData,
-                    members = members
-                )
-                is WireEventsHandlerSuspending -> wireEventsHandler.onAppAddedToConversation(
-                    conversation = conversationData,
-                    members = members
-                )
-            }
-        }
+        val conversationModel = Conversation.fromDTO(conversationData)
 
-        return mlsGroupId
+        when (wireEventsHandler) {
+            is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(
+                conversation = conversationModel,
+                members = members
+            )
+            is WireEventsHandlerSuspending -> wireEventsHandler.onAppAddedToConversation(
+                conversation = conversationModel,
+                members = members
+            )
+        }
+    }
+
+    private suspend fun handleRejoiningConversation(
+        qualifiedConversation: QualifiedId
+    ): MLSGroupId {
+        val conversationResponse = backendClient.getConversation(qualifiedConversation)
+        val conversation = conversationService.saveConversationWithMembers(
+            qualifiedConversation = qualifiedConversation,
+            conversationResponse = conversationResponse
+        ).first
+
+        return conversation.mlsGroupId
     }
 
     /**
@@ -356,14 +358,7 @@ internal class EventsRouter internal constructor(
         )
 
         val conversation = conversationService.getConversationById(conversationId)
-        var mlsGroupId = conversation?.mlsGroupId
-
-        if (mlsGroupId == null) {
-            mlsGroupId = handleJoiningConversation(
-                qualifiedConversation = conversationId,
-                groupId = null
-            )
-        }
+        val mlsGroupId = conversation?.mlsGroupId ?: handleRejoiningConversation(conversationId)
 
         logger.debug("Returning mlsGroupId: ${mlsGroupId.obfuscateGroupId()}")
         return mlsGroupId
