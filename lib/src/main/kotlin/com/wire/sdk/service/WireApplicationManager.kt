@@ -19,6 +19,7 @@ import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AssetResource
+import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.ConversationData
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.EncryptionKey
@@ -58,7 +59,11 @@ class WireApplicationManager internal constructor(
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
-    fun getStoredConversations(): List<ConversationData> = conversationService.getAll()
+    fun getStoredConversations(): List<Conversation> =
+        conversationService
+            .getAll()
+            .filter { it.type != ConversationData.Type.SELF }
+            .map { Conversation.fromDTO(it) }
 
     fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
         conversationService.getStoredConversationMembers(conversationId = conversationId)

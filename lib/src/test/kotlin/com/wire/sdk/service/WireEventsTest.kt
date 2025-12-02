@@ -16,11 +16,10 @@
 
 package com.wire.sdk.service
 
-import com.wire.crypto.toGroupId
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.model.ConversationData
+import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
@@ -47,12 +46,11 @@ class WireEventsTest {
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onAppAddedToConversation(
-                conversation = ConversationData(
+                conversation = Conversation(
                     id = CONVERSATION_ID,
                     name = "Test conversation",
                     teamId = null,
-                    mlsGroupId = ByteArray(32) { 1 }.toGroupId(),
-                    type = ConversationData.Type.GROUP
+                    type = Conversation.Type.GROUP
                 ),
                 members = emptyList()
             )
@@ -214,7 +212,7 @@ class WireEventsTest {
         private val wireEventsHandler =
             object : WireEventsHandlerSuspending() {
                 override suspend fun onAppAddedToConversation(
-                    conversation: ConversationData,
+                    conversation: Conversation,
                     members: List<ConversationMember>
                 ) {
                     assertEquals(CONVERSATION_ID, conversation.id)
