@@ -28,16 +28,23 @@ data class ConversationData(
 ) {
     enum class Type {
         GROUP,
+        SELF,
         ONE_TO_ONE;
 
         companion object {
+            fun fromString(value: String): Type =
+                when (value) {
+                    SELF.name -> SELF
+                    ONE_TO_ONE.name -> ONE_TO_ONE
+                    GROUP.name -> GROUP
+                    else -> GROUP
+                }
+
             fun fromApi(value: ConversationResponse.Type): Type =
                 when (value) {
                     ConversationResponse.Type.GROUP -> GROUP
+                    ConversationResponse.Type.SELF -> SELF
                     ConversationResponse.Type.ONE_TO_ONE -> ONE_TO_ONE
-                    ConversationResponse.Type.SELF -> {
-                        error("App cannot be added to Self conversation.")
-                    }
                 }
         }
     }
