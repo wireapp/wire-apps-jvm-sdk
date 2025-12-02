@@ -18,6 +18,5 @@ package com.wire.sdk.model
 
 import kotlinx.serialization.Serializable
 
-@JvmInline
 @Serializable
-value class AssetResource(val value: ByteArray)
+class AssetResource(val value: ByteArray)
