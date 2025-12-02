@@ -39,20 +39,7 @@ public class Main {
 
     private void initApp() {
         final var wireAppSdk = initSdkInstance();
-        // Create a connection listener to monitor backend connection status
-        final var connectionListener = new BackendConnectionListener() {
-            @Override
-            public void onConnected() {
-                logger.info("Backend connection established - Ready to send/receive messages");
-            }
-
-            @Override
-            public void onDisconnected() {
-                logger.warn("Backend connection lost - Attempting to reconnect...");
-                // Optionally implement custom reconnection logic, alerting, or fallback behavior here
-            }
-        };
-        wireAppSdk.setBackendConnectionListener(connectionListener);
+        wireAppSdk.setBackendConnectionListener(new DefaultBackendConnectionListener());
         wireAppSdk.startListening();
     }
 
@@ -64,6 +51,19 @@ public class Main {
                 WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD,
                 new CustomWireEventsHandler()
         );
+    }
+
+    private class DefaultBackendConnectionListener implements BackendConnectionListener {
+        @Override
+        public void onConnected() {
+            logger.info("Backend connection established - Ready to send/receive messages");
+        }
+
+        @Override
+        public void onDisconnected() {
+            logger.warn("Backend connection lost - Attempting to reconnect...");
+            // Optionally implement custom reconnection logic, alerting, or fallback behavior here
+        }
     }
 
 }
