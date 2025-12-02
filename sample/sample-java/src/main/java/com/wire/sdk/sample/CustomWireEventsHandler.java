@@ -17,10 +17,20 @@
 package com.wire.sdk.sample;
 
 import com.wire.sdk.WireEventsHandlerDefault;
+import com.wire.sdk.exception.WireException;
+import com.wire.sdk.model.ConversationData;
+import com.wire.sdk.model.ConversationMember;
+import com.wire.sdk.model.QualifiedId;
 import com.wire.sdk.model.WireMessage;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
 
 public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
@@ -29,16 +39,196 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     @Override
     public void onTextMessageReceived(@NotNull WireMessage.Text wireMessage) {
         logger.info("Text message received. conversationId:{}", wireMessage.conversationId());
+        sendSimpleReply(wireMessage.conversationId(),
+                "Auto reply: " + wireMessage.text() + " -- Sent from the Sample-Java App",
+                wireMessage);
+    }
 
+    @Override
+    public void onAppAddedToConversation(@NotNull ConversationData conversation, @NotNull List<ConversationMember> members) {
+        logger.info("App added to conversation. conversationId: {}, membersCount: {}", conversation.id(), members.size());
+        welcomeTheChannel(conversation.id());
+    }
+
+    @Override
+    public void onConversationDeleted(@NotNull QualifiedId conversationId) {
+        logger.info("Conversation deleted. conversationId: {}", conversationId);
+    }
+
+
+    @Override
+    public void onAssetMessageReceived(WireMessage.Asset wireMessage) {
+        logger.info("Asset message received. conversationId: {}", wireMessage.conversationId());
+        sendSimpleReply(wireMessage.conversationId(),
+                "Received Asset:" + wireMessage.name(),
+                wireMessage);
+        saveAsset(wireMessage);
+    }
+
+    @Override
+    public void onCompositeMessageReceived(WireMessage.Composite wireMessage) {
+        logger.info("Composite message received. conversationId: {}", wireMessage.conversationId());
+        wireMessage.items().forEach(item -> logger.info(" -> item: " + item));
+    }
+
+    @Override
+    public void onButtonClicked(WireMessage.ButtonAction wireMessage) {
+        logger.info("Button clicked. conversationId: {}", wireMessage.conversationId());
+    }
+
+    @Override
+    public void onButtonClickConfirmed(WireMessage.ButtonActionConfirmation wireMessage) {
+        logger.info("Button click confirmed. conversationId: {}", wireMessage.conversationId());
+    }
+
+    @Override
+    public void onPingReceived(WireMessage.Ping wireMessage) {
+        logger.info("Ping received. conversationId: {}", wireMessage.conversationId());
+        sendSimplePing(wireMessage.conversationId());
+    }
+
+    @Override
+    public void onLocationMessageReceived(WireMessage.Location wireMessage) {
+        logger.info("Location message received. conversationId: {}", wireMessage.conversationId());
+        final var reply =
+                "Received Location: " + wireMessage.latitude() + ", " + wireMessage.longitude() +
+                        "\nname: " + wireMessage.name() +
+                        "\nzoom: " + wireMessage.zoom();
+
+        sendSimpleReply(wireMessage.conversationId(), reply, wireMessage);
+    }
+
+    @Override
+    public void onMessageDeleted(WireMessage.Deleted wireMessage) {
+        logger.info("Message deleted. conversationId: {}", wireMessage.conversationId());
+        final var reply = "Message deleted with id: " + wireMessage.messageId();
+        sendSimpleReply(wireMessage.conversationId(), reply, wireMessage);
+    }
+
+    @Override
+    public void onMessageDelivered(@NotNull WireMessage wireMessage) {
+        logger.info("Message delivered. conversationId: {}", wireMessage.getConversationId());
+    }
+
+    @Override
+    public void onTextMessageEdited(WireMessage.TextEdited wireMessage) {
+        logger.info("Text message edited. conversationId: {}", wireMessage.conversationId());
+    }
+
+    @Override
+    public void onCompositeMessageEdited(WireMessage.CompositeEdited wireMessage) {
+        logger.info("Composite message edited. conversationId: {}", wireMessage.conversationId());
+    }
+
+    @Override
+    public void onMessageReactionReceived(WireMessage.Reaction wireMessage) {
+        logger.info("Reaction received. conversationId: {}", wireMessage.getConversationId());
+    }
+
+    @Override
+    public void onInCallReactionReceived(WireMessage.InCallEmoji wireMessage) {
+        logger.info("In-call emoji reaction received. conversationId: {}", wireMessage.getConversationId());
+    }
+
+    @Override
+    public void onInCallHandRaiseReceived(WireMessage.InCallHandRaise wireMessage) {
+        logger.info("In-call hand raise received. conversationId: {}", wireMessage.getConversationId());
+    }
+
+    @Override
+    public void onUserJoinedConversation(@NotNull QualifiedId conversationId, @NotNull List<ConversationMember> members) {
+        logger.info("User(s) joined conversation. conversationId: {}, membersCount: {}", conversationId, members.size());
+        members.forEach(member -> {
+            try {
+                final var name = getManager().getUser(member.userId()).getName();
+                welcomeTheNewJoiner(conversationId, name);
+            } catch (WireException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public void onUserLeftConversation(@NotNull QualifiedId conversationId, @NotNull List<QualifiedId> members) {
+        logger.info("User left conversation. conversationId: {}, membersCount: {}", conversationId, members.size());
+    }
+
+
+
+    /*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+     * HELPER METHODS
+     */
+
+    private void saveAsset(WireMessage.Asset wireMessage) {
+        final var remoteData = wireMessage.remoteData();
+        if (remoteData == null) {
+            return;
+        }
+
+        final var assetResource = getManager().downloadAsset(remoteData);
+        final var fileName = wireMessage.name() == null
+                ? "unknown-" + UUID.randomUUID()
+                : wireMessage.name().trim();
+
+        final File outputDir = new File("build/downloaded_assets/java_sample");
+        outputDir.mkdirs();
+        File outputFile = new File(outputDir, fileName);
+
+        try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+            fos.write(assetResource.getValue());
+        } catch (IOException e) {
+            logger.error("Failed to write asset file", e);
+        }
+
+        logger.info("Downloaded asset with size: {} bytes, saved to: {}",
+                assetResource.getValue().length,
+                outputFile.getAbsolutePath()
+        );
+    }
+
+    private void welcomeTheNewJoiner(QualifiedId conversationId, String name) {
+        sendSimpleTextMessage(conversationId,
+                "🎉 **Hello " + name + "! Welcome to the conversation!** 👋");
+        logger.info("Welcome message sent to new joiner. conversationId: {}", conversationId);
+    }
+
+    private void welcomeTheChannel(QualifiedId conversationId) {
+        sendSimpleTextMessage(conversationId,
+                "🧩 **Hello from Wire Integrations Team!** 👋\n" +
+                        "This is a welcome message from the Sample-Java App.");
+        logger.info("Welcome message sent. conversationId: {}", conversationId);
+    }
+
+    private void sendSimpleTextMessage(QualifiedId conversationId, String textMessage) {
+        final WireMessage message = WireMessage.Text.create(
+                conversationId,
+                textMessage,
+                List.of(),
+                List.of(),
+                null);
+
+        getManager().sendMessage(message);
+        logger.info("Message sent. conversationId: {}", conversationId);
+    }
+
+    private void sendSimpleReply(QualifiedId conversationId, String messageText, WireMessage inReplyTo) {
         final WireMessage reply = WireMessage.Text.createReply(
-                wireMessage.conversationId(),
-                wireMessage.text() + " -- Sent from the Sample-Java App",
-                wireMessage.mentions(),
-                wireMessage.linkPreviews(),
-                wireMessage,
+                conversationId,
+                messageText,
+                List.of(),
+                List.of(),
+                inReplyTo,
                 null);
 
         getManager().sendMessage(reply);
-        logger.info("Reply sent. conversationId:{}", wireMessage.conversationId());
+        logger.info("Reply sent. conversationId: {}", conversationId);
     }
+
+    private void sendSimplePing(QualifiedId conversationId) {
+        final WireMessage ping = WireMessage.Ping.create(conversationId, null);
+
+        getManager().sendMessage(ping);
+        logger.info("Ping sent. conversationId: {}", conversationId);
+    }
+
 }
