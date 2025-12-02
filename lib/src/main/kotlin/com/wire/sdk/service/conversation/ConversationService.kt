@@ -229,7 +229,6 @@ internal class ConversationService internal constructor(
 
         conversations
             .filter { conversation -> conversation.protocol == CryptoProtocol.MLS }
-            .filter { conversation -> conversation.type != ConversationResponse.Type.SELF }
             .forEach { conversation ->
                 establishOrJoinMlsConversation(
                     conversationId = conversation.id,
@@ -271,6 +270,14 @@ internal class ConversationService internal constructor(
 
                 cryptoClient.joinMlsConversationRequest(
                     groupInfo = conversationGroupInfo.toGroupInfo()
+                )
+            }
+
+            conversation.type == ConversationResponse.Type.SELF -> {
+                establishMlsConversation(
+                    userIds = emptyList(),
+                    mlsGroupId = mlsGroupId,
+                    publicKeysResponse = null
                 )
             }
 
