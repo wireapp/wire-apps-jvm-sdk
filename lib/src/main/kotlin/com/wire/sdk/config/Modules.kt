@@ -97,7 +97,7 @@ val sdkModule =
         single { ConversationService(get(), get(), get(), get()) }
 
         // Manager
-        single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
+        single { WireApplicationManager(get(), get(), get(), get(), get()) }
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10

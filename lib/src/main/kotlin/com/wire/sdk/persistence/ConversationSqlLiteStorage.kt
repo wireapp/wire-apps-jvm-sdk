@@ -29,6 +29,7 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import java.util.Base64
 import java.util.UUID
 
+@Suppress("TooManyFunctions")
 internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationStorage {
     private val conversationQueries: ConversationQueries = db.conversationQueries
     private val conversationMemberQueries: ConversationMemberQueries = db.conversationMemberQueries

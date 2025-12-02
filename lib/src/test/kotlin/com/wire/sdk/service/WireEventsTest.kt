@@ -156,6 +156,10 @@ class WireEventsTest {
                       "conversation": ${CONVERSATION_ID.id},
                       "from": "95d52e20-8428-4619-9a81-dbc2298a3f28",
                       "data": {
+                        "qualified_id": {
+                          "domain": "${CONVERSATION_ID.domain}",
+                          "id": "${CONVERSATION_ID.id}"
+                        },
                         "name": "Test conversation",
                         "members": {
                             "others": [
@@ -187,7 +191,9 @@ class WireEventsTest {
                                 "status_ref": "0.0",
                                 "status_time": "1970-01-01T00:00:00.000Z"
                             }
-                        }
+                        },
+                        "protocol": "mls",
+                        "type": 0
                       },
                       "qualified_conversation": {
                         "domain": "${CONVERSATION_ID.domain}",

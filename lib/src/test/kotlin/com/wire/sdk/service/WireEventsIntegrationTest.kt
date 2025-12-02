@@ -23,13 +23,14 @@ import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
-import com.wire.sdk.model.http.conversation.ConversationCreateData
-import com.wire.sdk.model.http.conversation.ConversationCreateMembers
+import com.wire.sdk.model.http.conversation.ConversationMembers
+import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.Member
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
@@ -362,9 +363,15 @@ class WireEventsIntegrationTest {
                             qualifiedConversation = CONVERSATION_ID,
                             qualifiedFrom = USER_ID,
                             time = EXPECTED_NEW_CONVERSATION_VALUE,
-                            data = ConversationCreateData(
-                                "DEMO",
-                                ConversationCreateMembers(emptyList())
+                            data = ConversationResponse(
+                                id = CONVERSATION_ID,
+                                name = "Test Conversation",
+                                epoch = 0,
+                                members = ConversationMembers(emptyList()),
+                                groupId = MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64,
+                                teamId = TEAM_ID.value,
+                                type = ConversationResponse.Type.GROUP,
+                                protocol = CryptoProtocol.MLS
                             )
                         )
                     ),
