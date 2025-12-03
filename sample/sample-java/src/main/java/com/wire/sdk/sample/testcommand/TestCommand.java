@@ -32,9 +32,9 @@ public enum TestCommand {
     }
 
     public static TestCommand getCommand(String commandString) {
-        for (TestCommand c : values()) {
+        for (TestCommand command : values()) {
             if (c.commandStr.equalsIgnoreCase(commandString)) {
-                return c;
+                return command;
             }
         }
         return null;
