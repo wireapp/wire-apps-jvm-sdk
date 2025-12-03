@@ -222,7 +222,7 @@ class WireApplicationManager internal constructor(
     fun sendAsset(
         conversationId: QualifiedId,
         asset: AssetResource,
-        metadata: WireMessage.Asset.AssetMetadata,
+        metadata: WireMessage.Asset.AssetMetadata? = null,
         name: String,
         mimeType: String,
         retention: AssetRetention
