@@ -144,7 +144,7 @@ class WireApplicationManager internal constructor(
             conversationId = message.conversationId
         )
 
-        conversation?.mlsGroupId?.let { mlsGroupId ->
+        conversation.mlsGroupId.let { mlsGroupId ->
             val encryptedMessage = cryptoClient.encryptMls(
                 mlsGroupId = mlsGroupId,
                 message = ProtobufSerializer
