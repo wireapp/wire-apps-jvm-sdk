@@ -230,7 +230,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
         logger.info("Welcome message sent to new joiner. conversationId: {}", conversationId);
     }
 
-    private void welcomeTheChannel(QualifiedId conversationId) {
+    private void welcomeTheConversation(QualifiedId conversationId) {
         sendSimpleTextMessage(conversationId,
                 "🧩 **Hello from Wire Integrations Team!** 👋\n" +
                         "This is a welcome message from the Sample-Java App.");
