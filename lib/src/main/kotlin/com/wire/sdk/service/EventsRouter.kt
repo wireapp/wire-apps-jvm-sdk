@@ -209,7 +209,7 @@ internal class EventsRouter internal constructor(
             qualifiedConversation = qualifiedConversation
         )
         val conversationResponse = backendClient.getConversation(qualifiedConversation)
-        val (conversationData, members) = conversationService.saveConversationWithMembers(
+        val (conversationEntity, members) = conversationService.saveConversationWithMembers(
             qualifiedConversation = qualifiedConversation,
             conversationResponse = conversationResponse
         )
@@ -224,7 +224,7 @@ internal class EventsRouter internal constructor(
             }
         }
 
-        val conversationModel = Conversation.fromDTO(conversationData)
+        val conversationModel = Conversation.fromEntity(conversationEntity)
 
         when (wireEventsHandler) {
             is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(

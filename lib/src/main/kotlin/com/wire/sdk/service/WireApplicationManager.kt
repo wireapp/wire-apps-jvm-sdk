@@ -20,7 +20,7 @@ import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AssetResource
 import com.wire.sdk.model.Conversation
-import com.wire.sdk.model.ConversationData
+import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.EncryptionKey
 import com.wire.sdk.model.QualifiedId
@@ -62,8 +62,8 @@ class WireApplicationManager internal constructor(
     fun getStoredConversations(): List<Conversation> =
         conversationService
             .getAll()
-            .filter { it.type != ConversationData.Type.SELF }
-            .map { Conversation.fromDTO(it) }
+            .filter { it.type != ConversationEntity.Type.SELF }
+            .map { Conversation.fromEntity(it) }
 
     fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
         conversationService.getStoredConversationMembers(conversationId = conversationId)

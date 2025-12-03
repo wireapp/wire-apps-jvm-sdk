@@ -19,7 +19,7 @@ import com.wire.crypto.MLSGroupId
 import com.wire.sdk.model.http.conversation.ConversationResponse
 
 @JvmRecord
-internal data class ConversationData(
+internal data class ConversationEntity(
     val id: QualifiedId,
     val name: String?,
     val teamId: TeamId?,

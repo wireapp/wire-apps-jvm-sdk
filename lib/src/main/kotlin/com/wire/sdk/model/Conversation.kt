@@ -28,15 +28,15 @@ data class Conversation(
     }
 
     companion object {
-        internal fun fromDTO(conversationData: ConversationData): Conversation =
+        internal fun fromEntity(conversationEntity: ConversationEntity): Conversation =
             Conversation(
-                id = conversationData.id,
-                name = conversationData.name,
-                teamId = conversationData.teamId,
-                type = when (conversationData.type) {
-                    ConversationData.Type.GROUP -> Type.GROUP
-                    ConversationData.Type.ONE_TO_ONE -> Type.ONE_TO_ONE
-                    ConversationData.Type.SELF -> {
+                id = conversationEntity.id,
+                name = conversationEntity.name,
+                teamId = conversationEntity.teamId,
+                type = when (conversationEntity.type) {
+                    ConversationEntity.Type.GROUP -> Type.GROUP
+                    ConversationEntity.Type.ONE_TO_ONE -> Type.ONE_TO_ONE
+                    ConversationEntity.Type.SELF -> {
                         error("App cannot be added to Self conversation.")
                     }
                 }
