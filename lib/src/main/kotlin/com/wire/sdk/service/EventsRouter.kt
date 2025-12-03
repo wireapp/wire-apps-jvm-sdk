@@ -17,7 +17,6 @@
 package com.wire.sdk.service
 
 import com.wire.crypto.CoreCryptoException
-import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
 import com.wire.crypto.toGroupInfo
@@ -36,7 +35,6 @@ import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.protobuf.ProtobufDeserializer
 import com.wire.sdk.persistence.TeamStorage
-import com.wire.sdk.utils.obfuscateGroupId
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.http.conversation.ConversationRole
@@ -240,18 +238,6 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private suspend fun handleRejoiningConversation(
-        qualifiedConversation: QualifiedId
-    ): MLSGroupId {
-        val conversationResponse = backendClient.getConversation(qualifiedConversation)
-        val conversation = conversationService.saveConversationWithMembers(
-            qualifiedConversation = qualifiedConversation,
-            conversationResponse = conversationResponse
-        ).first
-
-        return conversation.mlsGroupId
-    }
-
     /**
      * Forwards the message to the appropriate handler (blocking or suspending) based on its type.
      */
@@ -329,45 +315,26 @@ internal class EventsRouter internal constructor(
     }
 
     /**
-     * Processes the MLS welcome package and returns the group ID.
-     * Orphan welcomes are recovered by sending a join request to the Backend,
-     * which still returns the groupId after accepting the proposal.
+     * Processes the MLS welcome package.
+     * Orphan welcomes are recovered by sending a join request to the Backend.
      */
-    private suspend fun fetchGroupIdFromWelcome(
-        cryptoClient: CryptoClient,
+    private suspend fun processWelcomeMessage(
         welcome: Welcome,
-        event: EventContentDTO.Conversation.MlsWelcome
-    ): MLSGroupId {
-        return try {
+        qualifiedConversation: QualifiedId
+    ) {
+        try {
             cryptoClient.processWelcomeMessage(welcome)
         } catch (ex: CoreCryptoException.Mls) {
             if (ex.exception is MlsException.OrphanWelcome) {
                 logger.info("Cannot process welcome, ask to join the conversation")
                 val groupInfo =
-                    backendClient.getConversationGroupInfo(event.qualifiedConversation)
+                    backendClient.getConversationGroupInfo(qualifiedConversation)
                 cryptoClient.joinMlsConversationRequest(groupInfo.toGroupInfo())
             } else {
                 logger.error("Cannot process welcome -- ${ex.exception}", ex)
                 throw WireException.CryptographicSystemError("Cannot process welcome")
             }
         }
-    }
-
-    /**
-     * Fetches the group ID of the conversation in the local database.
-     */
-    private suspend fun fetchGroupIdFromConversation(conversationId: QualifiedId): MLSGroupId {
-        logger.debug(
-            "Searching for group ID of conversation: {}:{}",
-            conversationId.id,
-            conversationId.domain
-        )
-
-        val conversation = conversationService.getConversationById(conversationId)
-        val mlsGroupId = conversation?.mlsGroupId ?: handleRejoiningConversation(conversationId)
-
-        logger.debug("Returning mlsGroupId: ${mlsGroupId.obfuscateGroupId()}")
-        return mlsGroupId
     }
 
     private suspend fun newTeamInvite(teamId: TeamId) {

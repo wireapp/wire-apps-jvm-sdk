@@ -22,7 +22,7 @@ import com.wire.sdk.model.QualifiedId
 interface ConversationStorage {
     /**
      * Save (UPSERT) a conversation with its teamId and mlsGroupId.
-     * The mlsGroupId might come from a Rest API call or from a local MLS group creation (welcome)
+     * The mlsGroupId comes from a Rest API call
      */
     fun save(conversation: ConversationData)
 

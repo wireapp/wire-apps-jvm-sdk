@@ -422,8 +422,14 @@ internal class ConversationService internal constructor(
         users = users
     )
 
-    fun getConversationById(conversationId: QualifiedId) =
-        conversationStorage.getById(conversationId = conversationId)
+    suspend fun getConversationById(conversationId: QualifiedId) =
+        conversationStorage.getById(conversationId = conversationId) ?: run {
+            val conversationResponse = backendClient.getConversation(conversationId)
+            saveConversationWithMembers(
+                qualifiedConversation = conversationId,
+                conversationResponse = conversationResponse
+            ).first
+        }
 
     fun getAll() = conversationStorage.getAll()
 
