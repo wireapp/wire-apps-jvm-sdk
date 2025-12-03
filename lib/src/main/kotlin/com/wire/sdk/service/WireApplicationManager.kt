@@ -164,7 +164,7 @@ class WireApplicationManager internal constructor(
                     backendClient.sendMessage(mlsMessage = encryptedMessage)
                 }
             }
-        } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
+        }
         return message.id
     }
 
