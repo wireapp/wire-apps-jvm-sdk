@@ -54,7 +54,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
         if (wireMessage.expiresAfterMillis() != null) {
             sendEphemeralTextMessage(
                     wireMessage.conversationId(),
-                    "**This is a sample ephemeral message** -- Sent from the Sample-Java Ap");
+                    "**This is a sample ephemeral message** -- Sent from the Sample-Java App");
             return;
         }
 
