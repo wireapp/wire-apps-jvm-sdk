@@ -19,7 +19,7 @@ import com.wire.sdk.model.ConversationData
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 
-interface ConversationStorage {
+internal interface ConversationStorage {
     /**
      * Save (UPSERT) a conversation with its teamId and mlsGroupId.
      * The mlsGroupId comes from a Rest API call
