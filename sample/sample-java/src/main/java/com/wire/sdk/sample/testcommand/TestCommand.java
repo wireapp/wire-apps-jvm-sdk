@@ -33,7 +33,7 @@ public enum TestCommand {
 
     public static TestCommand getCommand(String commandString) {
         for (TestCommand command : values()) {
-            if (c.commandStr.equalsIgnoreCase(commandString)) {
+            if (command.commandStr.equalsIgnoreCase(commandString)) {
                 return command;
             }
         }
