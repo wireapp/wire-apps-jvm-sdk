@@ -86,7 +86,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     @Override
     public void onAppAddedToConversation(@NotNull ConversationData conversation, @NotNull List<ConversationMember> members) {
         logger.info("App added to conversation. conversationId: {}, membersCount: {}", conversation.id(), members.size());
-        welcomeTheChannel(conversation.id());
+        welcomeTheConversation(conversation.id());
     }
 
     @Override
