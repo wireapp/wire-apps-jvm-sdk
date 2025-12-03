@@ -14,9 +14,23 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.model
+package com.wire.sdk.sample.testcommand;
 
-import kotlinx.serialization.Serializable
+import com.wire.sdk.model.WireMessage;
+import com.wire.sdk.service.WireApplicationManager;
 
-@Serializable
-class AssetResource(val value: ByteArray)
+public class TestCommandHandler {
+
+    private final TestCommandProcessor processor;
+
+    public TestCommandHandler(WireApplicationManager applicationManager) {
+        this.processor = new TestCommandProcessor(applicationManager);
+    }
+
+    public void handle(TestCommand command, WireMessage.Text message) {
+        if (command != null) {
+            processor.process(command, message);
+        }
+    }
+
+}

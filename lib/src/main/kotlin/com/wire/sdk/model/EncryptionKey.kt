@@ -18,6 +18,5 @@ package com.wire.sdk.model
 
 import kotlinx.serialization.Serializable
 
-@JvmInline
 @Serializable
-value class EncryptionKey(val value: ByteArray)
+class EncryptionKey(val value: ByteArray)

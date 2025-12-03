@@ -192,25 +192,25 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     private fun isCreateOneToOneConversation(text: String): Boolean =
-        text.contains("create-one2one-conversation")
+        text.startsWith("create-one2one-conversation")
 
     private fun isCreateGroupConversation(text: String): Boolean =
-        text.contains("create-group-conversation")
+        text.startsWith("create-group-conversation")
 
     private fun isCreateChannelConversation(text: String): Boolean =
-        text.contains("create-channel-conversation")
+        text.startsWith("create-channel-conversation")
 
     private fun isAssetImage(text: String): Boolean =
-        text.contains("asset-image")
+        text.startsWith("asset-image")
 
     private fun isAssetAudio(text: String): Boolean =
-        text.contains("asset-audio")
+        text.startsWith("asset-audio")
 
     private fun isAssetVideo(text: String): Boolean =
-        text.contains("asset-video")
+        text.startsWith("asset-video")
 
     private fun isAssetPDFDocumentTestMessage(text: String): Boolean =
-        text.contains("asset-document-pdf")
+        text.startsWith("asset-document-pdf")
 
     private fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
         // Expected message: `create-one2one-conversation [USER_ID] [DOMAIN]
