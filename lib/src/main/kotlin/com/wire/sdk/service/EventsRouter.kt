@@ -145,17 +145,16 @@ internal class EventsRouter internal constructor(
                 is EventContentDTO.Conversation.MlsWelcome -> {
                     logger.info("Joining MLS conversation: ${event.qualifiedConversation}")
                     val welcome = Base64.getDecoder().decode(event.data).toWelcome()
-                    val groupId = fetchGroupIdFromWelcome(
-                        cryptoClient = cryptoClient,
+                    handleWelcomeEvent(
                         welcome = welcome,
-                        event = event
+                        qualifiedConversation = event.qualifiedConversation
                     )
-
-                    handleJoiningConversation(qualifiedConversation = event.qualifiedConversation)
                 }
 
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
-                    val groupId = fetchGroupIdFromConversation(event.qualifiedConversation)
+                    val groupId = conversationService
+                        .getConversationById(event.qualifiedConversation)
+                        .mlsGroupId
                     try {
                         val message = cryptoClient.decryptMls(
                             mlsGroupId = groupId,
@@ -203,7 +202,14 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private suspend fun handleJoiningConversation(qualifiedConversation: QualifiedId) {
+    private suspend fun handleWelcomeEvent(
+        welcome: Welcome,
+        qualifiedConversation: QualifiedId
+    ) {
+        processWelcomeMessage(
+            welcome = welcome,
+            qualifiedConversation = qualifiedConversation
+        )
         val conversationResponse = backendClient.getConversation(qualifiedConversation)
         val (conversationData, members) = conversationService.saveConversationWithMembers(
             qualifiedConversation = qualifiedConversation,
