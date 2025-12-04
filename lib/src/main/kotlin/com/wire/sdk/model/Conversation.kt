@@ -16,6 +16,7 @@
 
 package com.wire.sdk.model
 
+@JvmRecord
 data class Conversation(
     val id: QualifiedId,
     val name: String?,
