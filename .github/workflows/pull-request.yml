@@ -21,7 +21,7 @@ jobs:
           ./gradlew detekt
       - name: Build
         run: |
-          ./gradlew build --info
+          ./gradlew clean build --info
       - name: Store reports
         if: failure()
         uses: actions/upload-artifact@v5
