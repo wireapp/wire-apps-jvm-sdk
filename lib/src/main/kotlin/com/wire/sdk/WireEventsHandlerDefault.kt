@@ -16,7 +16,7 @@
 
 package com.wire.sdk
 
-import com.wire.sdk.model.ConversationData
+import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
@@ -43,7 +43,7 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
      * @param members the participants of the conversation, excluding the App
      */
     open fun onAppAddedToConversation(
-        conversation: ConversationData,
+        conversation: Conversation,
         members: List<ConversationMember>
     ) {
         logger.debug("Received event: AppAddedToConversation")

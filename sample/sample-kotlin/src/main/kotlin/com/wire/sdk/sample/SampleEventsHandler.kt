@@ -18,7 +18,6 @@ package com.wire.sdk.sample
 
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.model.AssetResource
-import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireMessage.Asset.AssetMetadata

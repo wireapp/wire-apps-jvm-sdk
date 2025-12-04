@@ -19,7 +19,8 @@ import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AssetResource
-import com.wire.sdk.model.ConversationData
+import com.wire.sdk.model.Conversation
+import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.EncryptionKey
 import com.wire.sdk.model.QualifiedId
@@ -58,7 +59,11 @@ class WireApplicationManager internal constructor(
 ) {
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
-    fun getStoredConversations(): List<ConversationData> = conversationService.getAll()
+    fun getStoredConversations(): List<Conversation> =
+        conversationService
+            .getAll()
+            .filter { it.type != ConversationEntity.Type.SELF }
+            .map { Conversation.fromEntity(it) }
 
     fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
         conversationService.getStoredConversationMembers(conversationId = conversationId)
@@ -139,7 +144,7 @@ class WireApplicationManager internal constructor(
             conversationId = message.conversationId
         )
 
-        conversation?.mlsGroupId?.let { mlsGroupId ->
+        conversation.mlsGroupId.let { mlsGroupId ->
             val encryptedMessage = cryptoClient.encryptMls(
                 mlsGroupId = mlsGroupId,
                 message = ProtobufSerializer
@@ -159,7 +164,7 @@ class WireApplicationManager internal constructor(
                     backendClient.sendMessage(mlsMessage = encryptedMessage)
                 }
             }
-        } ?: throw WireException.EntityNotFound("Couldn't find Conversation MLS Group ID")
+        }
         return message.id
     }
 

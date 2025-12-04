@@ -21,7 +21,7 @@ import com.wire.sdk.Conversation
 import com.wire.sdk.ConversationMemberQueries
 import com.wire.sdk.ConversationQueries
 import com.wire.sdk.Conversation_member
-import com.wire.sdk.model.ConversationData
+import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
@@ -34,7 +34,7 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
     private val conversationQueries: ConversationQueries = db.conversationQueries
     private val conversationMemberQueries: ConversationMemberQueries = db.conversationMemberQueries
 
-    override fun save(conversation: ConversationData) {
+    override fun save(conversation: ConversationEntity) {
         conversationQueries.insert(
             id = conversation.id.id.toString(),
             domain = conversation.id.domain,
@@ -72,10 +72,10 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
         }
     }
 
-    override fun getAll(): List<ConversationData> =
+    override fun getAll(): List<ConversationEntity> =
         conversationQueries.selectAll().executeAsList().map { conversationMapper(it) }
 
-    override fun getById(conversationId: QualifiedId): ConversationData? {
+    override fun getById(conversationId: QualifiedId): ConversationEntity? {
         return runCatching {
             conversationQueries
                 .selectByIdAndDomain(conversationId.id.toString(), conversationId.domain)
@@ -112,12 +112,12 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
     }
 
     private fun conversationMapper(conv: Conversation) =
-        ConversationData(
+        ConversationEntity(
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),
             name = conv.name,
             teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
             mlsGroupId = Base64.getDecoder().decode(conv.mls_group_id).toGroupId(),
-            type = ConversationData.Type.fromString(value = conv.type)
+            type = ConversationEntity.Type.fromString(value = conv.type)
         )
 
     private fun conversationMemberMapper(member: Conversation_member) =

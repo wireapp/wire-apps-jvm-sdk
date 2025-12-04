@@ -50,6 +50,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.assertThrows
 
 /**
  * This integrations test verifies the behavior of the WireEventsHandler and EventsRouter classes.
@@ -276,6 +277,57 @@ class WireEventsIntegrationTest {
             assertEquals(1, conversationMember.size)
         }
 
+    @Test
+    fun givenAppAddedToSelfConversationThenExceptionIsThrown() =
+        runTest {
+            // Setup
+            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
+
+            wireMockServer.stubFor(
+                WireMock.get(
+                    WireMock.urlPathTemplate(
+                        "/${TestUtils.V}/conversations/{conversationDomain}/{conversationId}"
+                    )
+                ).willReturn(
+                    WireMock.okJson(SELF_CONVERSATION_RESPONSE)
+                )
+            )
+
+            // Create SDK with our custom handler
+            TestUtils.setupSdk(wireEventsHandler)
+
+            // Load Koin Modules
+            val mockCoreCryptoClient = MockCoreCryptoClient.Companion.create(
+                userId = UUID.randomUUID().toString(),
+                ciphersuiteCode = 1
+            )
+            IsolatedKoinContext.koin.loadModules(
+                listOf(
+                    module {
+                        single<CryptoClient> { mockCoreCryptoClient }
+                    }
+                )
+            )
+
+            // Execute
+            val conversationStorage = IsolatedKoinContext.koinApp.koin.get<ConversationStorage>()
+            val conversationPrevious = conversationStorage.getById(CONVERSATION_ID)
+            assertNull(conversationPrevious)
+
+            val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
+
+            runBlocking {
+                eventsRouter.route(
+                    eventResponse = NEW_CONVERSATION_EVENT
+                )
+                assertThrows<IllegalStateException> {
+                    eventsRouter.route(
+                        eventResponse = NEW_WELCOME_EVENT
+                    )
+                }
+            }
+        }
+
     companion object {
         private val EXPECTED_NEW_CONVERSATION_VALUE = Instant.DISTANT_FUTURE
         private const val MOCK_DECRYPTED_MESSAGE = "Decrypted message content"
@@ -377,6 +429,32 @@ class WireEventsIntegrationTest {
                     "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",
                     "type": 0,
+                    "protocol": "mls"
+                }
+            """.trimIndent()
+        private val SELF_CONVERSATION_RESPONSE =
+            """
+                {
+                    "qualified_id": {
+                        "id": "${CONVERSATION_ID.id}",
+                        "domain": "${CONVERSATION_ID.domain}"
+                    },
+                    "name": "Test conversation",
+                    "epoch": 0,
+                    "members": {
+                        "others": [
+                            {
+                                "qualified_id": {
+                                    "id": "${UUID.randomUUID()}",
+                                    "domain": "${CONVERSATION_ID.domain}"
+                                },
+                                "conversation_role": "wire_admin"
+                            }
+                        ]
+                    },
+                    "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
+                    "team": "${TEAM_ID.value}",
+                    "type": 1,
                     "protocol": "mls"
                 }
             """.trimIndent()

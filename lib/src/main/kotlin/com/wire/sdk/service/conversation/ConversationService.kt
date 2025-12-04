@@ -25,7 +25,7 @@ import com.wire.sdk.crypto.CoreCryptoClient
 import com.wire.sdk.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
-import com.wire.sdk.model.ConversationData
+import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
@@ -367,7 +367,7 @@ internal class ConversationService internal constructor(
     suspend fun saveConversationWithMembers(
         qualifiedConversation: QualifiedId,
         conversationResponse: ConversationResponse
-    ): Pair<ConversationData, List<ConversationMember>> {
+    ): Pair<ConversationEntity, List<ConversationMember>> {
         val conversationName =
             if (conversationResponse.type == ConversationResponse.Type.ONE_TO_ONE) {
                 backendClient
@@ -378,13 +378,13 @@ internal class ConversationService internal constructor(
                 conversationResponse.name
             }
 
-        val conversationData =
-            ConversationData(
+        val conversationEntity =
+            ConversationEntity(
                 id = qualifiedConversation,
                 name = conversationName,
                 mlsGroupId = conversationResponse.getDecodedMlsGroupId(),
                 teamId = conversationResponse.teamId?.let { TeamId(it) },
-                type = ConversationData.Type.fromApi(value = conversationResponse.type)
+                type = ConversationEntity.Type.fromApi(value = conversationResponse.type)
             )
         val members = conversationResponse.members.others.map {
             ConversationMember(
@@ -393,14 +393,14 @@ internal class ConversationService internal constructor(
             )
         }
 
-        logger.debug("Conversation data: {}", conversationData)
+        logger.debug("Conversation data: {}", conversationEntity)
         logger.debug("Conversation members: {}", members)
 
         // Saves the conversation in the local database, used later to decrypt messages
-        conversationStorage.save(conversationData)
+        conversationStorage.save(conversationEntity)
         conversationStorage.saveMembers(qualifiedConversation, members)
 
-        return Pair(conversationData, members)
+        return Pair(conversationEntity, members)
     }
 
     fun saveMembers(
@@ -422,8 +422,14 @@ internal class ConversationService internal constructor(
         users = users
     )
 
-    fun getConversationById(conversationId: QualifiedId) =
-        conversationStorage.getById(conversationId = conversationId)
+    suspend fun getConversationById(conversationId: QualifiedId) =
+        conversationStorage.getById(conversationId = conversationId) ?: run {
+            val conversationResponse = backendClient.getConversation(conversationId)
+            saveConversationWithMembers(
+                qualifiedConversation = conversationId,
+                conversationResponse = conversationResponse
+            ).first
+        }
 
     fun getAll() = conversationStorage.getAll()
 

@@ -1,6 +1,7 @@
 /*
  * Wire
  * Copyright (C) 2025 Wire Swiss GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -15,37 +16,31 @@
 
 package com.wire.sdk.model
 
-import com.wire.crypto.MLSGroupId
-import com.wire.sdk.model.http.conversation.ConversationResponse
-
 @JvmRecord
-data class ConversationData(
+data class Conversation(
     val id: QualifiedId,
     val name: String?,
     val teamId: TeamId?,
-    internal val mlsGroupId: MLSGroupId,
     val type: Type
 ) {
     enum class Type {
         GROUP,
-        SELF,
-        ONE_TO_ONE;
+        ONE_TO_ONE
+    }
 
-        companion object {
-            fun fromString(value: String): Type =
-                when (value) {
-                    SELF.name -> SELF
-                    ONE_TO_ONE.name -> ONE_TO_ONE
-                    GROUP.name -> GROUP
-                    else -> GROUP
+    companion object {
+        internal fun fromEntity(conversationEntity: ConversationEntity): Conversation =
+            Conversation(
+                id = conversationEntity.id,
+                name = conversationEntity.name,
+                teamId = conversationEntity.teamId,
+                type = when (conversationEntity.type) {
+                    ConversationEntity.Type.GROUP -> Type.GROUP
+                    ConversationEntity.Type.ONE_TO_ONE -> Type.ONE_TO_ONE
+                    ConversationEntity.Type.SELF -> {
+                        error("App cannot be added to Self conversation.")
+                    }
                 }
-
-            fun fromApi(value: ConversationResponse.Type): Type =
-                when (value) {
-                    ConversationResponse.Type.GROUP -> GROUP
-                    ConversationResponse.Type.SELF -> SELF
-                    ConversationResponse.Type.ONE_TO_ONE -> ONE_TO_ONE
-                }
-        }
+            )
     }
 }

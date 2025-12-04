@@ -18,7 +18,7 @@ package com.wire.sdk.sample;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.exception.WireException;
-import com.wire.sdk.model.ConversationData;
+import com.wire.sdk.model.Conversation;
 import com.wire.sdk.model.ConversationMember;
 import com.wire.sdk.model.QualifiedId;
 import com.wire.sdk.model.WireMessage;
@@ -84,7 +84,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     }
 
     @Override
-    public void onAppAddedToConversation(@NotNull ConversationData conversation, @NotNull List<ConversationMember> members) {
+    public void onAppAddedToConversation(@NotNull Conversation conversation, @NotNull List<ConversationMember> members) {
         logger.info("App added to conversation. conversationId: {}, membersCount: {}", conversation.id(), members.size());
         welcomeTheConversation(conversation.id());
     }

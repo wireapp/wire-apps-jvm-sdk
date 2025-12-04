@@ -15,16 +15,16 @@
 
 package com.wire.sdk.persistence
 
-import com.wire.sdk.model.ConversationData
+import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 
-interface ConversationStorage {
+internal interface ConversationStorage {
     /**
      * Save (UPSERT) a conversation with its teamId and mlsGroupId.
-     * The mlsGroupId might come from a Rest API call or from a local MLS group creation (welcome)
+     * The mlsGroupId comes from a Rest API call
      */
-    fun save(conversation: ConversationData)
+    fun save(conversation: ConversationEntity)
 
     /**
      * Save (UPSERT) all the members of a conversation.
@@ -34,7 +34,7 @@ interface ConversationStorage {
         members: List<ConversationMember>
     )
 
-    fun getAll(): List<ConversationData>
+    fun getAll(): List<ConversationEntity>
 
     fun getAllMembers(): List<ConversationMember>
 
@@ -42,7 +42,7 @@ interface ConversationStorage {
      * Get conversation by its ID. To be able to send messages to a conversation,
      * it must be fully created, meaning both the teamId and mlsGroupId must be present.
      */
-    fun getById(conversationId: QualifiedId): ConversationData?
+    fun getById(conversationId: QualifiedId): ConversationEntity?
 
     /**
      * Get all the members of a conversation by its ID.
