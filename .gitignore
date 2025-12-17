@@ -56,3 +56,5 @@ Thumbs.db
 
 # Allow automatic IntelliJ's automatic copyright
 !.idea/copyright/**
+
+CLAUDE.md

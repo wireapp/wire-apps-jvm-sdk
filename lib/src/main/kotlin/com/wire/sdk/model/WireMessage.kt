@@ -160,7 +160,8 @@ sealed interface WireMessage {
         val summary: String? = null,
         val image: LinkPreviewAsset? = null
     ) {
-        data class LinkPreviewAsset(
+        @JvmRecord
+        data class LinkPreviewAsset @JvmOverloads constructor(
             val name: String? = null,
             val mimeType: String,
             val metadata: Asset.AssetMetadata? = null,
@@ -169,12 +170,12 @@ sealed interface WireMessage {
             val assetHeight: Int,
             val assetWidth: Int,
             val assetName: String? = null,
-            var assetKey: String? = null,
-            var assetToken: String? = null,
-            var assetDomain: String? = null,
-            var otrKey: ByteArray = ByteArray(0),
-            var sha256Key: ByteArray = ByteArray(0),
-            var encryptionAlgorithm: MessageEncryptionAlgorithm =
+            val assetKey: String? = null,
+            val assetToken: String? = null,
+            val assetDomain: String? = null,
+            val otrKey: ByteArray = ByteArray(0),
+            val sha256Key: ByteArray = ByteArray(0),
+            val encryptionAlgorithm: MessageEncryptionAlgorithm =
                 MessageEncryptionAlgorithm.AES_CBC
         )
     }
@@ -572,6 +573,7 @@ sealed interface WireMessage {
         }
     }
 
+    @JvmRecord
     data class Reaction(
         override val id: UUID,
         override val conversationId: QualifiedId,
@@ -606,6 +608,7 @@ sealed interface WireMessage {
         }
     }
 
+    @JvmRecord
     data class InCallEmoji(
         override val id: UUID,
         override val conversationId: QualifiedId,
@@ -613,6 +616,7 @@ sealed interface WireMessage {
         val emojis: Map<String, Int>
     ) : WireMessage
 
+    @JvmRecord
     data class InCallHandRaise(
         override val id: UUID,
         override val conversationId: QualifiedId,
