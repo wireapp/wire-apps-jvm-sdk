@@ -23,6 +23,7 @@ import com.wire.sdk.model.AppData
 
 private const val DEVICE_ID = "device_id"
 private const val SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
+private const val LAST_NOTIFICATION_ID = "last_notification_id"
 
 class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     private val appQueries: AppQueries = db.appQueries
@@ -54,6 +55,14 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
 
     override fun setShouldRejoinConversations(should: Boolean) =
         save(SHOULD_REJOIN_CONVERSATIONS, should.toString())
+
+    override fun getLastNotificationId(): String? =
+        runCatching {
+            getByKey(LAST_NOTIFICATION_ID).value
+        }.getOrNull()
+
+    override fun setLastNotificationId(lastNotificationId: String) =
+        save(LAST_NOTIFICATION_ID, lastNotificationId)
 
     private fun appMapper(app: App) =
         AppData(

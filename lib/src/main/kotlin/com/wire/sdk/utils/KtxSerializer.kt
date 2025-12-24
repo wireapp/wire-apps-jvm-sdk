@@ -16,7 +16,6 @@
 
 package com.wire.sdk.utils
 
-import com.wire.sdk.model.http.ConsumableNotificationResponse
 import com.wire.sdk.model.http.EventContentDTO
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
@@ -46,5 +45,4 @@ internal val eventSerializationModule =
         polymorphic(EventContentDTO::class) {
             defaultDeserializer { EventContentDTO.Unknown.serializer() }
         }
-        polymorphic(ConsumableNotificationResponse::class)
     }

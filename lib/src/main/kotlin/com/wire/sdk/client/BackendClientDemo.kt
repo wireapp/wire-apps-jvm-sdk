@@ -27,9 +27,11 @@ import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.AppDataResponse
 import com.wire.sdk.model.http.ClientUpdateRequest
+import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsKeyPackageRequest
 import com.wire.sdk.model.http.MlsPublicKeys
+import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
@@ -92,27 +94,20 @@ internal class BackendClientDemo(
     private var cachedFeatures: FeaturesResponse? = null
     private var cachedAccessToken: String? = null
     private var cachedDeviceId: String? = null
-    private var notificationSyncMarker: UUID? = null
-
-    override fun getNotificationSyncMarker(): UUID? = notificationSyncMarker
 
     override suspend fun connectWebSocket(
         handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
     ) {
         logger.info("Connecting to the webSocket, waiting for events")
 
-        notificationSyncMarker = UUID.randomUUID()
+        logger.debug("CLIENT_ID -> $cachedDeviceId")
         val token = loginUser()
-
-        val url = "/$API_VERSION/events" +
-            "?client=$cachedDeviceId" +
-            "&access_token=$token" +
-            "&sync_marker=$notificationSyncMarker"
+        val path = "/await?access_token=$token&client=$cachedDeviceId"
 
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
                 ?.replace("-https", "-ssl"),
-            path = url
+            path = path
         ) {
             handleFrames(this)
         }
@@ -513,6 +508,35 @@ internal class BackendClientDemo(
         return conversations
     }
 
+    override suspend fun getLastNotification(): EventResponse {
+        val token = loginUser()
+        val lastNotification = httpClient.get("notifications/last") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            cachedDeviceId?.let { parameter(CLIENT_QUERY_KEY, it) }
+        }.body<EventResponse>()
+
+        return lastNotification
+    }
+
+    override suspend fun getPaginatedNotifications(
+        querySize: Int,
+        querySince: String?
+    ): NotificationsResponse {
+        val token = loginUser()
+        val notifications = httpClient.get("notifications") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            parameter(SIZE_QUERY_KEY, querySize)
+            cachedDeviceId?.let { parameter(CLIENT_QUERY_KEY, it) }
+            querySince?.let { parameter(SINCE_QUERY_KEY, it) }
+        }.body<NotificationsResponse>()
+
+        return notifications
+    }
+
     internal class AssetBody internal constructor(
         private val assetContent: ByteArray,
         assetSize: Long,
@@ -558,6 +582,10 @@ internal class BackendClientDemo(
         const val HEADER_ASSET_TOKEN = "Asset-Token"
         const val TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
         const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
+
+        const val SIZE_QUERY_KEY = "size"
+        const val CLIENT_QUERY_KEY = "client"
+        const val SINCE_QUERY_KEY = "since"
 
         val DEMO_USER_ID: UUID =
             UUID.fromString(

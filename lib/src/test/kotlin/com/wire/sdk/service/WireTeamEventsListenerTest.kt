@@ -25,10 +25,10 @@ import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientDemo
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.config.MAX_RETRY_NUMBER_ON_SERVER_ERROR
-import com.wire.sdk.model.http.ConsumableNotificationResponse
+import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.EventContentDTO
-import com.wire.sdk.model.http.EventDataDTO
 import com.wire.sdk.model.http.EventResponse
+import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.KtxSerializer
 import io.ktor.client.HttpClient
@@ -49,65 +49,110 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.UUID
-import kotlin.test.assertEquals
+import kotlin.time.Instant
 
 class WireTeamEventsListenerTest {
     @Test
-    fun eventNotificationAreParsedAndRoutedAndAcknowledged() =
+    fun syncedAndWebSocketEventsAreDeduplicatedBeforeRouting() =
         runTest {
             // Arrange
             val backendClient = mockk<BackendClient>()
             val eventsRouter = mockk<EventsRouter>()
+            val appStorage = mockk<AppStorage>()
+            val mockConnectionListener = mockk<BackendConnectionListener>()
             val session = mockk<DefaultClientWebSocketSession>()
-            val eventResponse = EventResponse(
+            val lastNotificationId = UUID.randomUUID().toString()
+            val webSocketEventResponse = EventResponse(
                 id = UUID.randomUUID().toString(),
                 payload = listOf(EventContentDTO.TeamInvite(teamId = UUID.randomUUID()))
             )
-            val incomingChannel = Channel<Frame>(Channel.UNLIMITED)
-            val outgoingChannel = Channel<Frame>(Channel.UNLIMITED)
 
-            val missedNotification = ConsumableNotificationResponse.MissedNotification
-            val encodedMissing = encodeNotification(missedNotification)
-            val eventNotification = ConsumableNotificationResponse.EventNotification(
-                data = EventDataDTO(
-                    event = eventResponse,
-                    deliveryTag = 1U
-                )
+            val conversationId = QualifiedId(
+                id = UUID.randomUUID(),
+                domain = "wire.com"
             )
-            val encodedEvent = encodeNotification(eventNotification)
+            val userId = QualifiedId(
+                id = UUID.randomUUID(),
+                domain = "wire.com"
+            )
+            val notificationEventResponse1 = EventResponse(
+                id = UUID.randomUUID().toString(),
+                payload = listOf(
+                    EventContentDTO.Conversation.NewMLSMessageDTO(
+                        qualifiedConversation = conversationId,
+                        qualifiedFrom = userId,
+                        time = Instant.DISTANT_PAST,
+                        message = "random message 1",
+                        subconversation = null
+                    )
+                ),
+                transient = false
+            )
+            val notificationEventResponse2 = EventResponse(
+                id = UUID.randomUUID().toString(),
+                payload = listOf(
+                    EventContentDTO.Conversation.NewMLSMessageDTO(
+                        qualifiedConversation = conversationId,
+                        qualifiedFrom = userId,
+                        time = Instant.DISTANT_PAST,
+                        message = "random message 1",
+                        subconversation = null
+                    )
+                ),
+                transient = false
+            )
+
+            val incomingChannel = Channel<Frame>(Channel.UNLIMITED)
 
             every { session.incoming } returns incomingChannel
-            every { session.outgoing } returns outgoingChannel
+            coEvery { mockConnectionListener.onConnected() } just Runs
+            coEvery { mockConnectionListener.onDisconnected() } just Runs
             coEvery { eventsRouter.route(any()) } returns Unit
+            coEvery {
+                backendClient.getPaginatedNotifications(any(), any())
+            } returns NotificationsResponse(
+                hasMore = false,
+                events = listOf(
+                    notificationEventResponse1,
+                    notificationEventResponse2,
+                    webSocketEventResponse
+                ),
+                time = Instant.DISTANT_PAST
+            )
             coEvery { backendClient.connectWebSocket(captureLambda()) } coAnswers {
                 lambda<suspend (DefaultClientWebSocketSession) -> Unit>().captured.invoke(session)
             }
+            coEvery { appStorage.getLastNotificationId() } returns lastNotificationId
+            coEvery { appStorage.setLastNotificationId(any()) } returns Unit
 
-            val listener = WireTeamEventsListener(backendClient, eventsRouter)
+            val listener = WireTeamEventsListener(backendClient, eventsRouter, appStorage)
+            listener.setBackendConnectionListener(mockConnectionListener)
 
             // Act
-            launch { listener.connect() }
+            val connectJob = backgroundScope.launch { listener.connect() }
 
-            incomingChannel.send(Frame.Binary(false, encodedMissing.encodeToByteArray()))
-            incomingChannel.send(Frame.Binary(false, encodedEvent.encodeToByteArray()))
+            incomingChannel.send(
+                Frame.Binary(
+                    false,
+                    encodeEvent(webSocketEventResponse).encodeToByteArray()
+                )
+            )
             delay(100) // Allow time for processing
 
-            // Assert, only the event is routed, but all three frames are acknowledged
-            coVerify(exactly = 1) { eventsRouter.route(any()) }
+            // Assert the events are routed and there is no duplicate
+            coVerify(exactly = 1) { eventsRouter.route(notificationEventResponse1) }
+            coVerify(exactly = 1) { eventsRouter.route(notificationEventResponse2) }
+            coVerify(exactly = 1) { eventsRouter.route(webSocketEventResponse) }
 
-            // Count frames in the outgoing channel
-            val count = generateSequence {
-                outgoingChannel.tryReceive().getOrNull()
-            }.count()
-
-            assertEquals(2, count)
-
+            // Close channel & job
             incomingChannel.close()
-            outgoingChannel.close()
+            connectJob.join()
+
+            // Verify onDisconnected is correctly invoked after incomingChannel.onCompletion
+            coVerify(atLeast = 1, atMost = 1) { mockConnectionListener.onDisconnected() }
         }
 
-    private fun encodeNotification(notification: ConsumableNotificationResponse): String =
-        KtxSerializer.json.encodeToString(notification)
+    private fun encodeEvent(event: EventResponse): String = KtxSerializer.json.encodeToString(event)
 
     @Test
     fun webSocketExceptionIsRethrown() =
@@ -115,11 +160,12 @@ class WireTeamEventsListenerTest {
             // Arrange
             val backendClient = mockk<BackendClient>()
             val eventsRouter = mockk<EventsRouter>()
+            val appStorage = mockk<AppStorage>()
 
             coEvery { backendClient.connectWebSocket(any()) } throws
                 WebSocketException("Connection refused")
 
-            val listener = WireTeamEventsListener(backendClient, eventsRouter)
+            val listener = WireTeamEventsListener(backendClient, eventsRouter, appStorage)
 
             // Act & Assert
             assertThrows<InterruptedException> {
@@ -133,11 +179,12 @@ class WireTeamEventsListenerTest {
             // Arrange
             val backendClient = mockk<BackendClient>()
             val eventsRouter = mockk<EventsRouter>()
+            val appStorage = mockk<AppStorage>()
 
             coEvery { backendClient.connectWebSocket(any()) } throws
                 ConnectTimeoutException("Some other error")
 
-            val listener = WireTeamEventsListener(backendClient, eventsRouter)
+            val listener = WireTeamEventsListener(backendClient, eventsRouter, appStorage)
 
             // Act and Assert
             // Should not throw exception
@@ -171,7 +218,7 @@ class WireTeamEventsListenerTest {
             val mockConnectionListener = mockk<BackendConnectionListener>()
             coEvery { mockConnectionListener.onConnected() } just Runs
             coEvery { mockConnectionListener.onDisconnected() } just Runs
-            val listener = WireTeamEventsListener(backendClient, eventsRouter)
+            val listener = WireTeamEventsListener(backendClient, eventsRouter, appStorage)
             listener.setBackendConnectionListener(mockConnectionListener)
 
             // Assert
