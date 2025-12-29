@@ -135,7 +135,7 @@ internal class WireTeamEventsListener internal constructor(
                 }.onSuccess {
                     processedEventIds.add(event.id)
                     appStorage.setLastNotificationId(event.id)
-                    lastNotificationId = notifications.events.last().id
+                    lastNotificationId = event.id
                 }.onFailure { error ->
                     logger.error("Failed to process event ${event.id}", error)
                 }
