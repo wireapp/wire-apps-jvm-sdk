@@ -27,7 +27,6 @@ import java.util.Collections
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.isActive
 import kotlinx.io.IOException
 import org.slf4j.LoggerFactory
 
@@ -54,8 +53,6 @@ internal class WireTeamEventsListener internal constructor(
                 logger.info("WebSocket connection established")
 
                 syncMissedNotifications()
-
-                logger.info("Websocket is Live. Session: ${session.isActive}")
 
                 session.incoming
                     .consumeAsFlow()
