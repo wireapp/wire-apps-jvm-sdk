@@ -152,8 +152,6 @@ class WireTeamEventsListenerTest {
             coVerify(atLeast = 1, atMost = 1) { mockConnectionListener.onDisconnected() }
         }
 
-    private fun encodeEvent(event: EventResponse): String = KtxSerializer.json.encodeToString(event)
-
     @Test
     fun webSocketExceptionIsRethrown() =
         runTest {
@@ -237,4 +235,6 @@ class WireTeamEventsListenerTest {
             wireMockServer.stop()
             IsolatedKoinContext.stop()
         }
+
+    private fun encodeEvent(event: EventResponse): String = KtxSerializer.json.encodeToString(event)
 }

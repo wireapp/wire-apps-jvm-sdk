@@ -71,6 +71,7 @@ import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
 import java.util.Base64
 import java.util.UUID
+import kotlin.time.Clock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
@@ -525,16 +526,24 @@ internal class BackendClientDemo(
         querySince: String?
     ): NotificationsResponse {
         val token = loginUser()
-        val notifications = httpClient.get("notifications") {
-            headers {
-                append(HttpHeaders.Authorization, "Bearer $token")
-            }
-            parameter(SIZE_QUERY_KEY, querySize)
-            cachedDeviceId?.let { parameter(CLIENT_QUERY_KEY, it) }
-            querySince?.let { parameter(SINCE_QUERY_KEY, it) }
-        }.body<NotificationsResponse>()
-
-        return notifications
+        try {
+            val notifications = httpClient.get("notifications") {
+                headers {
+                    append(HttpHeaders.Authorization, "Bearer $token")
+                }
+                parameter(SIZE_QUERY_KEY, querySize)
+                cachedDeviceId?.let { parameter(CLIENT_QUERY_KEY, it) }
+                querySince?.let { parameter(SINCE_QUERY_KEY, it) }
+            }.body<NotificationsResponse>()
+            return notifications
+        } catch (exception: WireException.ClientError) {
+            logger.info("Notifications not found.", exception)
+            return NotificationsResponse(
+                hasMore = false,
+                events = emptyList(),
+                time = Clock.System.now()
+            )
+        }
     }
 
     internal class AssetBody internal constructor(
