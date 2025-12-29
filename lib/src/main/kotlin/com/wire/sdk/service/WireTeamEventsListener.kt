@@ -64,14 +64,10 @@ internal class WireTeamEventsListener internal constructor(
                         backendConnectionListener?.onDisconnected()
                     }
                     .collect { frame ->
-                        when (frame) {
-                            is Frame.Binary -> {
-                                handleEvent(frame)
-                            }
-
-                            else -> {
-                                logger.error("Received unsupported frame type: $frame")
-                            }
+                        if (frame is Frame.Binary) {
+                            handleEvent(frame)
+                        } else {
+                            logger.error("Received unsupported frame type: $frame")
                         }
                     }
             }
@@ -127,12 +123,13 @@ internal class WireTeamEventsListener internal constructor(
                     eventsRouter.route(event)
                 }.onSuccess {
                     processedEventIds.add(event.id)
-                    appStorage.setLastNotificationId(event.id)
-                    lastNotificationId = event.id
                 }.onFailure { error ->
                     logger.error("Failed to process event ${event.id}", error)
                 }
             }
+
+            lastNotificationId = notifications.events.last().id
+            appStorage.setLastNotificationId(lastNotificationId)
             hasMore = notifications.hasMore
         }
     }

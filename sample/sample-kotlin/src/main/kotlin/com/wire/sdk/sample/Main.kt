@@ -50,18 +50,18 @@ fun main() {
     wireAppSdk.startListening() // Will keep a coroutine running in the background until explicitly stopped
     val applicationManager = wireAppSdk.getApplicationManager()
 
-//    applicationManager.getStoredTeams().forEach {
-//        logger.info("Team: $it")
-//    }
-//    applicationManager.getStoredConversations().forEach {
-//        logger.info("Conversation: $it")
-//    }
-//    val selfUser = QualifiedId(
-//        id = UUID.fromString("2afce87f-3195-4c51-9e7c-3b01faf13ac5"),
-//        domain = "staging.zinfra.io"
-//    )
-//    logger.info(applicationManager.getUser(selfUser).toString())
-//    logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
+    applicationManager.getStoredTeams().forEach {
+        logger.info("Team: $it")
+    }
+    applicationManager.getStoredConversations().forEach {
+        logger.info("Conversation: $it")
+    }
+    val selfUser = QualifiedId(
+        id = UUID.fromString("2afce87f-3195-4c51-9e7c-3b01faf13ac5"),
+        domain = "staging.zinfra.io"
+    )
+    logger.info(applicationManager.getUser(selfUser).toString())
+    logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
 
     // Use wireAppSdk.stopListening() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

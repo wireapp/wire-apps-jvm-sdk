@@ -106,8 +106,8 @@ internal class BackendClientDemo(
 
         val path = URLBuilder().apply {
             path("/await")
-            parameters.append("access_token", token)
-            cachedDeviceId?.let { parameters.append("client", it) }
+            parameters.append(ACCESS_TOKEN_QUERY_KEY, token)
+            cachedDeviceId?.let { parameters.append(CLIENT_QUERY_KEY, it) }
         }.buildString()
 
         httpClient.wss(
@@ -597,6 +597,7 @@ internal class BackendClientDemo(
         const val TOKEN_EXPIRATION_MS = 14 * 60 * 1000 // 14 minutes in milliseconds
         const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
 
+        const val ACCESS_TOKEN_QUERY_KEY = "access_token"
         const val SIZE_QUERY_KEY = "size"
         const val CLIENT_QUERY_KEY = "client"
         const val SINCE_QUERY_KEY = "since"
