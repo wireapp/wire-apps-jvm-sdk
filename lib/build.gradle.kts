@@ -24,7 +24,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
     id("app.cash.sqldelight") version "2.2.1"
-    id("com.google.protobuf") version "0.9.5"
+    id("com.google.protobuf") version "0.9.6"
 
     // Maven Central
     id("com.vanniktech.maven.publish") version "0.35.0"
