@@ -27,6 +27,7 @@ import java.util.Collections
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.isActive
 import kotlinx.io.IOException
 import org.slf4j.LoggerFactory
 
@@ -54,7 +55,7 @@ internal class WireTeamEventsListener internal constructor(
 
                 syncMissedNotifications()
 
-                logger.info("Websocket is Live")
+                logger.info("Websocket is Live. Session: ${session.isActive}")
 
                 session.incoming
                     .consumeAsFlow()
@@ -64,7 +65,6 @@ internal class WireTeamEventsListener internal constructor(
                             "WebSocket connection closed, stopping Wire Team Events Listener"
                         )
                         backendConnectionListener?.onDisconnected()
-                        logger.warn("Websocket past completed")
                     }
                     .collect { frame ->
                         when (frame) {
@@ -117,11 +117,7 @@ internal class WireTeamEventsListener internal constructor(
      * Fetches and syncs missed notifications while the SDK was offline.
      */
     suspend fun syncMissedNotifications() {
-        var lastNotificationId: String = appStorage.getLastNotificationId() ?: run {
-            val lastNotificationEvent = backendClient.getLastNotification()
-            appStorage.setLastNotificationId(lastNotificationEvent.id)
-            lastNotificationEvent.id
-        }
+        var lastNotificationId: String = getLastNotificationId()
 
         var hasMore = true
         while (hasMore) {
@@ -143,6 +139,13 @@ internal class WireTeamEventsListener internal constructor(
             hasMore = notifications.hasMore
         }
     }
+
+    private suspend fun getLastNotificationId(): String =
+        appStorage.getLastNotificationId() ?: run {
+            val lastNotificationEvent = backendClient.getLastNotification()
+            appStorage.setLastNotificationId(lastNotificationEvent.id)
+            lastNotificationEvent.id
+        }
 
     /**
      * Handles incoming binary frames, deserializes them into [EventResponse],

@@ -65,8 +65,10 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.URLBuilder
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
+import io.ktor.http.path
 import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
 import java.util.Base64
@@ -100,10 +102,13 @@ internal class BackendClientDemo(
         handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
     ) {
         logger.info("Connecting to the webSocket, waiting for events")
-
-        logger.debug("CLIENT_ID -> $cachedDeviceId")
         val token = loginUser()
-        val path = "/await?access_token=$token&client=$cachedDeviceId"
+
+        val path = URLBuilder().apply {
+            path("/await")
+            parameters.append("access_token", token)
+            cachedDeviceId?.let { parameters.append("client", it) }
+        }.buildString()
 
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
@@ -537,7 +542,7 @@ internal class BackendClientDemo(
             }.body<NotificationsResponse>()
             return notifications
         } catch (exception: WireException.ClientError) {
-            logger.info("Notifications not found.", exception)
+            logger.warn("Notifications not found.", exception)
             return NotificationsResponse(
                 hasMore = false,
                 events = emptyList(),
