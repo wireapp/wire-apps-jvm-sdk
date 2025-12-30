@@ -23,8 +23,10 @@ import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.AppDataResponse
+import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
+import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
@@ -36,11 +38,8 @@ import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import java.util.UUID
 
 interface BackendClient {
-    fun getNotificationSyncMarker(): UUID?
-
     suspend fun connectWebSocket(handleFrames: suspend (DefaultClientWebSocketSession) -> Unit)
 
     suspend fun getAvailableApiVersions(): ApiVersionResponse
@@ -110,7 +109,19 @@ interface BackendClient {
 
     suspend fun getConversationsById(conversationIds: List<QualifiedId>): List<ConversationResponse>
 
+    suspend fun getLastNotification(): EventResponse
+
+    suspend fun getPaginatedNotifications(
+        querySize: Int = NOTIFICATION_MINIMUM_QUERY_SIZE,
+        querySince: String?
+    ): NotificationsResponse
+
     companion object {
-        const val API_VERSION = "v10"
+        const val API_VERSION = "v13"
+
+        /**
+         * The backend doesn't allow queries smaller than a minimum value.
+         */
+        const val NOTIFICATION_MINIMUM_QUERY_SIZE = 100
     }
 }

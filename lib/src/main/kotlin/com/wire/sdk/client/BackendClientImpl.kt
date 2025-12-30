@@ -25,8 +25,10 @@ import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.AppDataResponse
+import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
+import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
@@ -45,7 +47,6 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.http.HttpHeaders
-import java.util.UUID
 import org.slf4j.LoggerFactory
 
 /**
@@ -53,8 +54,6 @@ import org.slf4j.LoggerFactory
  */
 internal class BackendClientImpl(private val httpClient: HttpClient) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
-    override fun getNotificationSyncMarker(): UUID? = TODO("Not yet implemented")
 
     override suspend fun connectWebSocket(
         handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
@@ -189,6 +188,17 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     override suspend fun getConversationsById(
         conversationIds: List<QualifiedId>
     ): List<ConversationResponse> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getLastNotification(): EventResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPaginatedNotifications(
+        querySize: Int,
+        querySince: String?
+    ): NotificationsResponse {
         TODO("Not yet implemented")
     }
 }

@@ -22,8 +22,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class CapabilitiesRequest {
     @SerialName("legalhold-implicit-consent")
-    LEGALHOLD_IMPLICIT_CONSENT,
-
-    @SerialName("consumable-notifications")
-    CONSUMABLE_NOTIFICATIONS
+    LEGALHOLD_IMPLICIT_CONSENT
 }

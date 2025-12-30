@@ -32,8 +32,7 @@ data class RegisterClientRequest(
 ) {
     companion object {
         val DEFAULT_CAPABILITIES = listOf<CapabilitiesRequest>(
-            CapabilitiesRequest.LEGALHOLD_IMPLICIT_CONSENT,
-            CapabilitiesRequest.CONSUMABLE_NOTIFICATIONS
+            CapabilitiesRequest.LEGALHOLD_IMPLICIT_CONSENT
         )
     }
 }
