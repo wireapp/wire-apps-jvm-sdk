@@ -411,7 +411,7 @@ internal class ConversationService internal constructor(
         members = members
     )
 
-    fun deleteConversation(conversationId: QualifiedId) =
+    fun onConversationDeleted(conversationId: QualifiedId) =
         conversationStorage.delete(conversationId = conversationId)
 
     fun deleteMembers(
