@@ -65,10 +65,8 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.URLBuilder
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
-import io.ktor.http.path
 import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
 import java.util.Base64
@@ -104,11 +102,9 @@ internal class BackendClientDemo(
         logger.info("Connecting to the webSocket, waiting for events")
         val token = loginUser()
 
-        val path = URLBuilder().apply {
-            path("/await")
-            parameters.append(ACCESS_TOKEN_QUERY_KEY, token)
-            cachedDeviceId?.let { parameters.append(CLIENT_QUERY_KEY, it) }
-        }.buildString()
+        val path = "/await" +
+            "?$ACCESS_TOKEN_QUERY_KEY=$token" +
+            (cachedDeviceId?.let { "&$CLIENT_QUERY_KEY=$it" } ?: "")
 
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
