@@ -481,11 +481,21 @@ class WireApplicationManager internal constructor(
      * @param conversationId ID of the conversation where the member is present
      * @param teamId ID of the team
      */
-    suspend fun deleteConversation(
-        conversationId: QualifiedId,
-        teamId: TeamId
-    ) {
-        conversationService.deleteGroupConversation(teamId = teamId, conversationId = conversationId)
+    fun deleteConversation(conversationId: QualifiedId) {
+        runBlocking {
+            deleteConversationSuspending(
+                conversationId = conversationId
+            )
+        }
+    }
+
+    /**
+     * See [deleteConversation]
+     */
+    suspend fun deleteConversationSuspending(conversationId: QualifiedId) {
+        conversationService.deleteGroupConversation(
+            conversationId = conversationId
+        )
     }
 
     // TODO :: 1.Verfiy the exception is propaget until here.

@@ -418,17 +418,18 @@ internal class ConversationService internal constructor(
     fun onConversationDeleted(conversationId: QualifiedId) =
         conversationStorage.delete(conversationId = conversationId)
 
-    suspend fun deleteGroupConversation(
-        teamId: TeamId,
-        conversationId: QualifiedId
-    ) {
+    suspend fun deleteGroupConversation(conversationId: QualifiedId) {
         conversationStorage.getById(conversationId)?.let {
             if (it.type != ConversationEntity.Type.GROUP) {
                 return
             }
 
             val appUserID: UUID? = IsolatedKoinContext.getApplicationId()
-            if (appUserID == null || !isAdminUser(appUserID, conversationId)) {
+            val teamId: TeamId? = it.teamId
+            if (appUserID == null ||
+                teamId == null ||
+                !isAdminUser(appUserID, conversationId)
+            ) {
                 return
             }
 
