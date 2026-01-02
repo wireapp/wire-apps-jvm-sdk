@@ -100,6 +100,8 @@ internal interface CryptoClient : AutoCloseable {
 
     suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong
 
+    suspend fun wipeConversation(mlsGroupId: MLSGroupId)
+
     companion object {
         const val DEFAULT_KEYPACKAGE_COUNT = 100u
         const val PROTEUS_PREKEYS_FROM_COUNT = 0

@@ -55,4 +55,6 @@ internal interface ConversationStorage {
         conversationId: QualifiedId,
         users: List<QualifiedId>
     )
+
+    fun deleteAllMembersInConversation(conversationId: QualifiedId)
 }

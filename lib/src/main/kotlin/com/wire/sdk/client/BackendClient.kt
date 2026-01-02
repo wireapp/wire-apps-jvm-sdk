@@ -109,6 +109,11 @@ interface BackendClient {
 
     suspend fun getConversationsById(conversationIds: List<QualifiedId>): List<ConversationResponse>
 
+    suspend fun deleteConversation(
+        teamId: TeamId,
+        conversationId: QualifiedId
+    )
+
     suspend fun getLastNotification(): EventResponse
 
     suspend fun getPaginatedNotifications(

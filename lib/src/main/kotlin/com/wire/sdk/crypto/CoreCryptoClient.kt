@@ -18,6 +18,7 @@ import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.model.http.client.toCryptography
 import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.Base64
 
@@ -28,6 +29,7 @@ internal class CoreCryptoClient private constructor(
     private val ciphersuite: Ciphersuite,
     private var coreCrypto: CoreCrypto
 ) : CryptoClient {
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private var appClientId: AppClientId? = null
 
     private fun setAppClientId(appClientId: AppClientId) {
@@ -200,6 +202,14 @@ internal class CoreCryptoClient private constructor(
         coreCrypto.transaction {
             it.conversationEpoch(mlsGroupId)
         }
+
+    override suspend fun wipeConversation(mlsGroupId: MLSGroupId) {
+        logger.debug("Conversation will be deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
+        coreCrypto.transaction {
+            it.wipeConversation(mlsGroupId)
+        }
+        logger.debug("Conversation is deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
+    }
 
     override fun close() {
         runBlocking { coreCrypto.close() }

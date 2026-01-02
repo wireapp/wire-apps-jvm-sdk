@@ -29,3 +29,7 @@ DO UPDATE SET role=excluded.role;
 delete:
 DELETE FROM conversation_member
 WHERE user_id = ? AND user_domain = ? AND conversation_id = ? AND conversation_domain = ?;
+
+deleteMembersFromConversation:
+DELETE FROM conversation_member
+WHERE conversation_id = ? AND conversation_domain = ?;
