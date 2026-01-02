@@ -111,6 +111,10 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
         }
     }
 
+    override fun deleteAllMembersInConversation(conversationId: QualifiedId) {
+        TODO("Not yet implemented")
+    }
+
     private fun conversationMapper(conv: Conversation) =
         ConversationEntity(
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),

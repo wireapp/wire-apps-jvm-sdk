@@ -21,6 +21,7 @@ import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CoreCryptoClient
 import com.wire.sdk.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.sdk.crypto.CryptoClient
@@ -416,6 +417,59 @@ internal class ConversationService internal constructor(
 
     fun onConversationDeleted(conversationId: QualifiedId) =
         conversationStorage.delete(conversationId = conversationId)
+
+    suspend fun deleteGroupConversation(
+        teamId: TeamId,
+        conversationId: QualifiedId
+    ) {
+        conversationStorage.getById(conversationId)?.let {
+            if (it.type != ConversationEntity.Type.GROUP) {
+                return
+            }
+
+            val appUserID: UUID? = IsolatedKoinContext.getApplicationId()
+            if (appUserID == null || !isAdminUser(appUserID, conversationId)) {
+                return
+            }
+
+            logger.info(
+                "Conversation will be deleted. teamId: {}, conversationId: {}",
+                teamId,
+                conversationId
+            )
+
+            backendClient.deleteConversation(teamId, conversationId)
+            deleteAllConversationDataFromLocalStorages(conversationId, it.mlsGroupId)
+
+            logger.info(
+                "Conversation is deleted. teamId: {}, conversationId: {}",
+                teamId,
+                conversationId
+            )
+        }
+        // TODO : TEST CASE: change the app role to normal member and try deleting the conversation
+    }
+
+    private fun isAdminUser(
+        userId: UUID,
+        conversationId: QualifiedId
+    ): Boolean {
+        return getStoredConversationMembers(conversationId).any {
+            it.userId == userId && it.role == ConversationRole.ADMIN
+        }
+    }
+
+    private suspend fun deleteAllConversationDataFromLocalStorages(
+        conversationId: QualifiedId,
+        mlsGroupId: MLSGroupId
+    ) {
+        if (cryptoClient.conversationExists(mlsGroupId)) {
+            cryptoClient.wipeConversation(mlsGroupId)
+        }
+
+        conversationStorage.deleteAllMembersInConversation(conversationId)
+        conversationStorage.delete(conversationId = conversationId)
+    }
 
     fun deleteMembers(
         conversationId: QualifiedId,

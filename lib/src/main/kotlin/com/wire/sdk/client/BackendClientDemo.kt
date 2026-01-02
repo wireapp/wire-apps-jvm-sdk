@@ -55,6 +55,7 @@ import io.ktor.client.plugins.cookies.get
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
@@ -508,6 +509,32 @@ internal class BackendClientDemo(
         }
 
         return conversations
+    }
+
+    override suspend fun deleteConversation(
+        teamId: TeamId,
+        conversationId: QualifiedId
+    ) {
+        logger.info(
+            "Conversation will be deleted in the backend. teamId:{}, conversationId:{}",
+            teamId,
+            conversationId
+        )
+
+        val token = loginUser()
+        val path = "/$API_VERSION/teams/$teamId/conversations/${conversationId.id}"
+
+        httpClient.delete(path) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }
+
+        logger.info(
+            "Conversation is deleted in the backend. teamId:{}, conversationId:{}",
+            teamId,
+            conversationId
+        )
     }
 
     override suspend fun getLastNotification(): EventResponse {

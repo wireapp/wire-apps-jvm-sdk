@@ -145,6 +145,10 @@ internal class MockCoreCryptoClient private constructor(
 
     override suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong = 0UL
 
+    override suspend fun wipeConversation(mlsGroupId: MLSGroupId) {
+        TODO("Not yet implemented")
+    }
+
     companion object {
         suspend fun create(
             userId: String,

@@ -473,4 +473,20 @@ class WireApplicationManager internal constructor(
             newRole = newRole
         )
     }
+
+    /**
+     * Deletes the conversation that belongs to a team.
+     * After successful completion, backend informs all participants in the channel.
+     *
+     * @param conversationId ID of the conversation where the member is present
+     * @param teamId ID of the team
+     */
+    suspend fun deleteConversation(
+        conversationId: QualifiedId,
+        teamId: TeamId
+    ) {
+        conversationService.deleteGroupConversation(teamId = teamId, conversationId = conversationId)
+    }
+
+    // TODO :: 1.Verfiy the exception is propaget until here.
 }
