@@ -128,8 +128,10 @@ internal class WireTeamEventsListener internal constructor(
                 }
             }
 
-            lastNotificationId = notifications.events.last().id
-            appStorage.setLastNotificationId(lastNotificationId)
+            if (notifications.events.isNotEmpty()) {
+                lastNotificationId = notifications.events.last().id
+                appStorage.setLastNotificationId(lastNotificationId)
+            }
             hasMore = notifications.hasMore
         }
     }
