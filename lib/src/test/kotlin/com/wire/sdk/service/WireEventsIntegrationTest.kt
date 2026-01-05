@@ -146,7 +146,7 @@ class WireEventsIntegrationTest {
             assertEquals(conversation?.teamId, TEAM_ID)
             var conversationMember = conversationStorage.getMembersByConversationId(conversationId)
             // First member received when fetching whole conversation after welcome
-            assertEquals(1, conversationMember.size)
+            assertEquals(2, conversationMember.size)
 
             val newUser1 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
             val newUser2 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
@@ -176,7 +176,7 @@ class WireEventsIntegrationTest {
                 )
             }
             conversationMember = conversationStorage.getMembersByConversationId(conversationId)
-            assertEquals(4, conversationMember.size)
+            assertEquals(5, conversationMember.size)
 
             runBlocking {
                 eventsRouter.route(
@@ -199,7 +199,7 @@ class WireEventsIntegrationTest {
                 )
             }
             conversationMember = conversationStorage.getMembersByConversationId(conversationId)
-            assertEquals(2, conversationMember.size)
+            assertEquals(3, conversationMember.size)
         }
 
     @Test
@@ -274,7 +274,7 @@ class WireEventsIntegrationTest {
             assertEquals(conversation?.teamId, TEAM_ID)
 
             val conversationMember = conversationStorage.getMembersByConversationId(CONVERSATION_ID)
-            assertEquals(1, conversationMember.size)
+            assertEquals(3, conversationMember.size)
         }
 
     @Test
@@ -367,7 +367,12 @@ class WireEventsIntegrationTest {
                                 id = CONVERSATION_ID,
                                 name = "Test Conversation",
                                 epoch = 0,
-                                members = ConversationMembers(emptyList()),
+                                members = ConversationMembers(
+                                    others = emptyList(),
+                                    self = TestUtils.dummyConversationMemberSelf(
+                                        ConversationRole.MEMBER
+                                    )
+                                ),
                                 groupId = MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64,
                                 teamId = TEAM_ID.value,
                                 type = ConversationResponse.Type.GROUP,
@@ -424,7 +429,13 @@ class WireEventsIntegrationTest {
                                 },
                                 "conversation_role": "wire_admin"
                             }
-                        ]
+                        ],
+                        "self": {"conversation_role": "wire_member",
+                                  "qualified_id": {
+                                    "domain": "example.com",
+                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
+                                  }
+                                }
                     },
                     "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",
@@ -450,7 +461,13 @@ class WireEventsIntegrationTest {
                                 },
                                 "conversation_role": "wire_admin"
                             }
-                        ]
+                        ],
+                        "self": {"conversation_role": "wire_member",
+                                  "qualified_id": {
+                                    "domain": "example.com",
+                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
+                                  }
+                                }
                     },
                     "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",
@@ -476,7 +493,13 @@ class WireEventsIntegrationTest {
                                 },
                                 "conversation_role": "wire_admin"
                             }
-                        ]
+                        ],
+                        "self": {"conversation_role": "wire_member",
+                                  "qualified_id": {
+                                    "domain": "example.com",
+                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
+                                  }
+                                }
                     },
                     "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",

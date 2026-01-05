@@ -22,6 +22,9 @@ import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.http.conversation.ConversationMemberSelf
+import com.wire.sdk.model.http.conversation.ConversationRole
 import java.util.UUID
 
 object TestUtils {
@@ -175,6 +178,14 @@ object TestUtils {
             cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
             eventsHandler
         )
+    }
+
+    fun dummyConversationMemberSelf(conversationRole: ConversationRole): ConversationMemberSelf {
+        val qualifiedId = QualifiedId(
+            id = UUID.randomUUID(),
+            domain = "wire.com"
+        )
+        return ConversationMemberSelf(qualifiedId, conversationRole)
     }
 
     private val APPLICATION_ID = UUID.randomUUID()

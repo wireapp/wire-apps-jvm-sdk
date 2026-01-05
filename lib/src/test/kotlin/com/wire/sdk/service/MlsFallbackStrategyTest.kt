@@ -18,6 +18,7 @@ package com.wire.sdk.service
 
 import com.wire.crypto.toGroupId
 import com.wire.crypto.toGroupInfo
+import com.wire.sdk.TestUtils
 import com.wire.sdk.client.BackendClientDemo
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.model.CryptoProtocol
@@ -25,6 +26,7 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
+import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.service.MlsFallbackStrategy
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -162,7 +164,10 @@ class MlsFallbackStrategyTest {
             groupId = MLS_GROUP_ID.toString(),
             name = "Random Conversation",
             epoch = 0L,
-            members = ConversationMembers(others = emptyList()),
+            members = ConversationMembers(
+                others = emptyList(),
+                self = TestUtils.dummyConversationMemberSelf(ConversationRole.MEMBER)
+            ),
             type = ConversationResponse.Type.GROUP,
             protocol = CryptoProtocol.MLS
         )

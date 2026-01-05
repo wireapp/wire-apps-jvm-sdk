@@ -137,7 +137,7 @@ class WireApplicationManagerTest {
             val conversationMembers = manager
                 .getStoredConversationMembers(conversationId = createdConversationId)
             assertEquals(
-                ConversationRole.ADMIN,
+                ConversationRole.MEMBER,
                 conversationMembers.first().role
             )
             assertEquals(
@@ -364,9 +364,15 @@ class WireApplicationManagerTest {
                 "name": "Test conversation",
                 "epoch": 0,
                 "members": {
-                    "others": []
-                },
-                "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
+                    "others": [],
+                    "self": {"conversation_role": "wire_member",
+                              "qualified_id": {
+                                "domain": "example.com",
+                                "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
+                              }
+                            }
+              },
+              "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
                 "type": 0,
                 "protocol": "mls"
@@ -383,7 +389,13 @@ class WireApplicationManagerTest {
                 "name": "Test conversation",
                 "epoch": 0,
                 "members": {
-                    "others": []
+                    "others": [],
+                        "self": {"conversation_role": "wire_member",
+                                  "qualified_id": {
+                                    "domain": "example.com",
+                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
+                                  }
+                                }
                 },
                 "group_id": "$CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
@@ -403,7 +415,13 @@ class WireApplicationManagerTest {
                     "name": "Test conversation",
                     "epoch": 0,
                     "members": {
-                        "others": []
+                        "others": [],
+                        "self": {"conversation_role": "wire_member",
+                                  "qualified_id": {
+                                    "domain": "example.com",
+                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
+                                  }
+                                }
                     },
                     "group_id": "$ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",

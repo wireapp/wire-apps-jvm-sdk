@@ -73,17 +73,3 @@ data class OneToOneConversationResponse(
     @SerialName("conversation")
     val conversation: ConversationResponse
 )
-
-@Serializable
-data class ConversationMembers(
-    @SerialName("others")
-    val others: List<ConversationMemberOther>
-)
-
-@Serializable
-data class ConversationMemberOther(
-    @SerialName("qualified_id")
-    val id: QualifiedId,
-    @SerialName("conversation_role")
-    val conversationRole: ConversationRole
-)
