@@ -160,11 +160,14 @@ internal suspend fun getOrInitCryptoClient(
     val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
         .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
 
-    val userId = System.getenv("WIRE_SDK_USER_ID")
-    val userDomain = System.getenv("WIRE_SDK_ENVIRONMENT")
+    // Fetch and store the backend domain from the api-version endpoint
+    val backendDomain = backendClient.getAvailableApiVersions().domain
+    IsolatedKoinContext.setBackendDomain(backendDomain)
+    logger.info("Retrieved backend domain: $backendDomain")
 
-    requireNotNull(userId)
-    requireNotNull(userDomain)
+    val userId = System.getenv("WIRE_SDK_USER_ID")
+
+    requireNotNull(userId) { "WIRE_SDK_USER_ID environment variable must be set" }
 
     val cryptoClient = CoreCryptoClient.Companion.create(
         userId = userId,
@@ -177,7 +180,7 @@ internal suspend fun getOrInitCryptoClient(
         val appClientId = AppClientId.Companion.create(
             userId = userId,
             deviceId = storedDeviceId,
-            userDomain = userDomain
+            userDomain = backendDomain
         )
         // App has a client, load MLS client
         cryptoClient.initializeMlsClient(
@@ -215,7 +218,7 @@ internal suspend fun getOrInitCryptoClient(
         val appClientId = AppClientId.Companion.create(
             userId = userId,
             deviceId = deviceId,
-            userDomain = userDomain
+            userDomain = backendDomain
         )
         appStorage.saveDeviceId(deviceId = deviceId)
 

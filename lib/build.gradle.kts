@@ -211,6 +211,5 @@ tasks {
     test {
         environment("WIRE_SDK_USER_ID", UUID.randomUUID().toString())
         environment("WIRE_SDK_PASSWORD", "randomPassword")
-        environment("WIRE_SDK_ENVIRONMENT", "randomEnvironment")
     }
 }

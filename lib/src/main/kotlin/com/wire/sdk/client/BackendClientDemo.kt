@@ -610,8 +610,8 @@ internal class BackendClientDemo(
         val DEMO_USER_PASSWORD: String =
             System.getenv("WIRE_SDK_PASSWORD") ?: "Aqa123456!"
 
-        val DEMO_ENVIRONMENT: String =
-            System.getenv("WIRE_SDK_ENVIRONMENT") ?: "staging.zinfra.io"
+        val DEMO_ENVIRONMENT: String
+            get() = IsolatedKoinContext.getBackendDomain() ?: "staging.zinfra.io"
 
         private const val FETCH_CONVERSATIONS_START_INDEX = 0
         private const val FETCH_CONVERSATIONS_END_INDEX = 1000

@@ -21,6 +21,7 @@ import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CoreCryptoClient
 import com.wire.sdk.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.sdk.crypto.CryptoClient
@@ -84,7 +85,7 @@ internal class ConversationService internal constructor(
     ): QualifiedId {
         val teamId = getSelfTeamId()
         val conversationCreatedResponse = backendClient.createGroupConversation(
-            createConversationRequest = CreateConversationRequest.Companion.createGroup(
+            createConversationRequest = CreateConversationRequest.createGroup(
                 name = name,
                 teamId = teamId
             )
@@ -125,7 +126,7 @@ internal class ConversationService internal constructor(
         try {
             val teamId = getSelfTeamId()
             val conversationCreatedResponse = backendClient.createGroupConversation(
-                createConversationRequest = CreateConversationRequest.Companion.createChannel(
+                createConversationRequest = CreateConversationRequest.createChannel(
                     name = name,
                     teamId = teamId
                 )
@@ -188,7 +189,7 @@ internal class ConversationService internal constructor(
         publicKeysResponse: MlsPublicKeysResponse?
     ) {
         val cipherSuiteCode = getCipherSuiteCode()
-        val cipherSuite = CoreCryptoClient.Companion.getMlsCipherSuiteName(code = cipherSuiteCode)
+        val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
         val publicKeys = (publicKeysResponse ?: backendClient.getPublicKeys()).run {
             getRemovalKey(cipherSuite = cipherSuite)
@@ -210,7 +211,9 @@ internal class ConversationService internal constructor(
             val users = userIds + listOf(
                 QualifiedId(
                     id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
-                    domain = System.getenv("WIRE_SDK_ENVIRONMENT")
+                    domain = requireNotNull(IsolatedKoinContext.getBackendDomain()) {
+                        "Backend domain must be set"
+                    }
                 )
             )
 

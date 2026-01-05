@@ -49,8 +49,9 @@ The SDK needs to be initialized with your application's credentials, the backend
 WIRE_SDK_USER_ID=abcd-1234-efgh-5678
 WIRE_SDK_EMAIL=your_email@domain.com
 WIRE_SDK_PASSWORD=dummyPassword
-WIRE_SDK_ENVIRONMENT=my.domain.link
 ```
+
+Note: The backend domain is automatically retrieved from the Wire backend's `api-version` endpoint during SDK initialization, so you don't need to configure it manually.
 
 Initializing an instance of WireAppSdk is enough to get access to local stored teams and conversations and to send messages or similar actions.
 

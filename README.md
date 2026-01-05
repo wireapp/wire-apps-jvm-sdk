@@ -70,8 +70,9 @@ dependencies {
 WIRE_SDK_USER_ID=abcd-1234-efgh-5678
 WIRE_SDK_EMAIL=your_email@domain.com
 WIRE_SDK_PASSWORD=randomPassword
-WIRE_SDK_ENVIRONMENT=my.domain.link
 ```
+
+Note: The backend domain is automatically retrieved from the Wire backend's `api-version` endpoint during SDK initialization.
 
 ## Build the project
 
