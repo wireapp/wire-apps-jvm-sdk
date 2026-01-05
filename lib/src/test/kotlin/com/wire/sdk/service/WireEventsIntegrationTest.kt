@@ -411,6 +411,18 @@ class WireEventsIntegrationTest {
                     ),
                 transient = true
             )
+
+        private val CONVERSATION_MEMBER_SELF_JSON =
+            """
+            {
+              "conversation_role": "wire_member",
+              "qualified_id": {
+                "domain": "example.com",
+                "id": "11111118-04e3-4b5d-9268-83111111c4ab"
+              }
+            }
+            """.trimIndent()
+
         private val CONVERSATION_RESPONSE =
             """
                 {
@@ -430,12 +442,7 @@ class WireEventsIntegrationTest {
                                 "conversation_role": "wire_admin"
                             }
                         ],
-                        "self": {"conversation_role": "wire_member",
-                                  "qualified_id": {
-                                    "domain": "example.com",
-                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
-                                  }
-                                }
+                        "self": $CONVERSATION_MEMBER_SELF_JSON
                     },
                     "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",
@@ -462,12 +469,7 @@ class WireEventsIntegrationTest {
                                 "conversation_role": "wire_admin"
                             }
                         ],
-                        "self": {"conversation_role": "wire_member",
-                                  "qualified_id": {
-                                    "domain": "example.com",
-                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
-                                  }
-                                }
+                        "self": $CONVERSATION_MEMBER_SELF_JSON
                     },
                     "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",
@@ -494,12 +496,7 @@ class WireEventsIntegrationTest {
                                 "conversation_role": "wire_admin"
                             }
                         ],
-                        "self": {"conversation_role": "wire_member",
-                                  "qualified_id": {
-                                    "domain": "example.com",
-                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
-                                  }
-                                }
+                        "self": $CONVERSATION_MEMBER_SELF_JSON
                     },
                     "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",

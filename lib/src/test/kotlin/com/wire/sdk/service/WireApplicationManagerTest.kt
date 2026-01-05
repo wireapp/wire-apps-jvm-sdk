@@ -354,6 +354,17 @@ class WireApplicationManagerTest {
         val CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64 =
             Base64.getEncoder().encodeToString(CHANNEL_CONVERSATION_MLS_GROUP_ID.copyBytes())
 
+        private val CONVERSATION_MEMBER_SELF_JSON =
+            """
+            {
+              "conversation_role": "wire_member",
+              "qualified_id": {
+                "domain": "example.com",
+                "id": "99999998-04e3-4b5d-9268-83199999c4ab"
+              }
+            }
+            """.trimIndent()
+
         private val CREATE_GROUP_CONVERSATION_RESPONSE =
             """
             {
@@ -365,12 +376,7 @@ class WireApplicationManagerTest {
                 "epoch": 0,
                 "members": {
                     "others": [],
-                    "self": {"conversation_role": "wire_member",
-                              "qualified_id": {
-                                "domain": "example.com",
-                                "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
-                              }
-                            }
+                    "self": $CONVERSATION_MEMBER_SELF_JSON
               },
               "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
@@ -390,12 +396,7 @@ class WireApplicationManagerTest {
                 "epoch": 0,
                 "members": {
                     "others": [],
-                        "self": {"conversation_role": "wire_member",
-                                  "qualified_id": {
-                                    "domain": "example.com",
-                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
-                                  }
-                                }
+                    "self": $CONVERSATION_MEMBER_SELF_JSON
                 },
                 "group_id": "$CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
@@ -416,12 +417,7 @@ class WireApplicationManagerTest {
                     "epoch": 0,
                     "members": {
                         "others": [],
-                        "self": {"conversation_role": "wire_member",
-                                  "qualified_id": {
-                                    "domain": "example.com",
-                                    "id": "99db9768-04e3-4b5d-9268-831b6a25c4ab"
-                                  }
-                                }
+                        "self": $CONVERSATION_MEMBER_SELF_JSON
                     },
                     "group_id": "$ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",
