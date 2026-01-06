@@ -41,6 +41,7 @@ import com.wire.sdk.model.http.conversation.getDecodedMlsGroupId
 import com.wire.sdk.model.http.conversation.getRemovalKey
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
+import com.wire.sdk.utils.obfuscateId
 import io.ktor.util.decodeBase64Bytes
 import java.util.UUID
 import kotlin.collections.plus
@@ -423,24 +424,36 @@ internal class ConversationService internal constructor(
 
     suspend fun deleteGroupConversation(conversationId: QualifiedId) {
         conversationStorage.getById(conversationId)?.let {
-            if (it.type != ConversationEntity.Type.GROUP) {
-                return
-            }
-
             val appUserID: UUID? = IsolatedKoinContext.getApplicationId()
             val teamId: TeamId? = it.teamId
-            if (appUserID == null ||
-                teamId == null ||
-                !isAdminUser(appUserID, conversationId)
+
+            logger.info(
+                "Attempting to delete conversation. conversationId: {}, conversationType: {}, teamId: {}, appUserID: {}",
+                conversationId,
+                it.type,
+                teamId,
+                appUserID?.obfuscateId()
+            )
+
+            if (it.type != ConversationEntity.Type.GROUP ||
+                appUserID == null ||
+                teamId == null
             ) {
+                logger.warn(
+                    "Skipping conversation deletion: invalid preconditions. conversationId: {}",
+                    conversationId
+                )
                 return
             }
 
-            logger.info(
-                "Conversation will be deleted. teamId: {}, conversationId: {}",
-                teamId,
-                conversationId
-            )
+            if (!isAdminUser(appUserID, conversationId)) {
+                logger.warn(
+                    "Skipping conversation deletion: user is not admin. conversationId: {}, appUserID: {}",
+                    conversationId,
+                    appUserID.obfuscateId()
+                )
+                return
+            }
 
             backendClient.deleteConversation(teamId, conversationId)
             deleteAllConversationDataFromLocalStorages(conversationId, it.mlsGroupId)
