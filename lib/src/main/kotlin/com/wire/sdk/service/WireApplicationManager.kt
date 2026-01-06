@@ -497,6 +497,4 @@ class WireApplicationManager internal constructor(
             conversationId = conversationId
         )
     }
-
-    // TODO :: 1.Verfiy the exception is propaget until here.
 }

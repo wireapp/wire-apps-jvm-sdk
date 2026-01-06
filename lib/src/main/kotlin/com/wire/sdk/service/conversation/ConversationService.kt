@@ -467,7 +467,6 @@ internal class ConversationService internal constructor(
                 conversationId
             )
         }
-        // TODO : TEST CASE: change the app role to normal member and try deleting the conversation
     }
 
     private fun isAdminUser(
