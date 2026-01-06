@@ -136,8 +136,10 @@ class WireApplicationManagerTest {
 
             val conversationMembers = manager
                 .getStoredConversationMembers(conversationId = createdConversationId)
+
+            assertEquals(2, conversationMembers.size)
             assertEquals(
-                ConversationRole.ADMIN,
+                ConversationRole.MEMBER,
                 conversationMembers.first().role
             )
             assertEquals(
@@ -354,6 +356,17 @@ class WireApplicationManagerTest {
         val CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64 =
             Base64.getEncoder().encodeToString(CHANNEL_CONVERSATION_MLS_GROUP_ID.copyBytes())
 
+        private val CONVERSATION_MEMBER_SELF_JSON =
+            """
+            {
+              "conversation_role": "wire_member",
+              "qualified_id": {
+                "domain": "example.com",
+                "id": "99999998-04e3-4b5d-9268-83199999c4ab"
+              }
+            }
+            """.trimIndent()
+
         private val CREATE_GROUP_CONVERSATION_RESPONSE =
             """
             {
@@ -364,9 +377,10 @@ class WireApplicationManagerTest {
                 "name": "Test conversation",
                 "epoch": 0,
                 "members": {
-                    "others": []
-                },
-                "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
+                    "others": [],
+                    "self": $CONVERSATION_MEMBER_SELF_JSON
+              },
+              "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
                 "type": 0,
                 "protocol": "mls"
@@ -383,7 +397,8 @@ class WireApplicationManagerTest {
                 "name": "Test conversation",
                 "epoch": 0,
                 "members": {
-                    "others": []
+                    "others": [],
+                    "self": $CONVERSATION_MEMBER_SELF_JSON
                 },
                 "group_id": "$CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64",
                 "team": "${TEAM_ID.value}",
@@ -403,7 +418,8 @@ class WireApplicationManagerTest {
                     "name": "Test conversation",
                     "epoch": 0,
                     "members": {
-                        "others": []
+                        "others": [],
+                        "self": $CONVERSATION_MEMBER_SELF_JSON
                     },
                     "group_id": "$ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64",
                     "team": "${TEAM_ID.value}",

@@ -386,7 +386,10 @@ internal class ConversationService internal constructor(
                 teamId = conversationResponse.teamId?.let { TeamId(it) },
                 type = ConversationEntity.Type.fromApi(value = conversationResponse.type)
             )
-        val members = conversationResponse.members.others.map {
+
+        val members = (
+            conversationResponse.members.others + listOf(conversationResponse.members.self)
+        ).map {
             ConversationMember(
                 userId = it.id,
                 role = it.conversationRole
