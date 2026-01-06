@@ -136,6 +136,8 @@ class WireApplicationManagerTest {
 
             val conversationMembers = manager
                 .getStoredConversationMembers(conversationId = createdConversationId)
+
+            assertEquals(2, conversationMembers.size)
             assertEquals(
                 ConversationRole.MEMBER,
                 conversationMembers.first().role
