@@ -415,8 +415,11 @@ internal class ConversationService internal constructor(
         members = members
     )
 
-    fun onConversationDeleted(conversationId: QualifiedId) =
-        conversationStorage.delete(conversationId = conversationId)
+    suspend fun onConversationDeleted(conversationId: QualifiedId) {
+        conversationStorage.getById(conversationId)?.let {
+            deleteAllConversationDataFromLocalStorages(conversationId, it.mlsGroupId)
+        }
+    }
 
     suspend fun deleteGroupConversation(conversationId: QualifiedId) {
         conversationStorage.getById(conversationId)?.let {
