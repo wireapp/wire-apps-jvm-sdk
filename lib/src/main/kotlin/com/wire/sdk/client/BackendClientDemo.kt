@@ -522,7 +522,7 @@ internal class BackendClientDemo(
         )
 
         val token = loginUser()
-        val path = "/$API_VERSION/teams/$teamId/conversations/${conversationId.id}"
+        val path = "/$API_VERSION/teams/${teamId.value}/conversations/${conversationId.id}"
 
         httpClient.delete(path) {
             headers {

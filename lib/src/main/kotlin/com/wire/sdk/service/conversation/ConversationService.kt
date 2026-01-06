@@ -456,7 +456,7 @@ internal class ConversationService internal constructor(
         conversationId: QualifiedId
     ): Boolean {
         return getStoredConversationMembers(conversationId).any {
-            it.userId == userId && it.role == ConversationRole.ADMIN
+            it.userId.id == userId && it.role == ConversationRole.ADMIN
         }
     }
 
