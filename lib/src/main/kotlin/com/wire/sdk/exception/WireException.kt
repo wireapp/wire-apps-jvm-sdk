@@ -35,9 +35,17 @@ sealed class WireException @JvmOverloads constructor(
     ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     class Forbidden(
-        message: String? = null,
+        message: String? = DEFAULT_MESSAGE,
         throwable: Throwable? = null
-    ) : WireException(message ?: throwable?.localizedMessage, throwable)
+    ) : WireException(message ?: throwable?.localizedMessage, throwable) {
+        companion object {
+            const val DEFAULT_MESSAGE = "User does not have permission to perform this action"
+        }
+
+        fun userIsNotAdmin(): Forbidden {
+            return Forbidden("User is not an admin")
+        }
+    }
 
     /**
      * Arguments / Parameter Error
@@ -48,9 +56,13 @@ sealed class WireException @JvmOverloads constructor(
     ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     class InvalidParameter(
-        message: String? = null,
+        message: String? = DEFAULT_MESSAGE,
         throwable: Throwable? = null
-    ) : WireException(message ?: throwable?.localizedMessage, throwable)
+    ) : WireException(message ?: throwable?.localizedMessage, throwable) {
+        companion object {
+            const val DEFAULT_MESSAGE = "One or more parameters are invalid."
+        }
+    }
 
     /**
      * Database Error

@@ -428,7 +428,8 @@ internal class ConversationService internal constructor(
             val teamId: TeamId? = it.teamId
 
             logger.info(
-                "Attempting to delete conversation. conversationId: {}, conversationType: {}, teamId: {}, appUserID: {}",
+                "Attempting to delete conversation. conversationId: {}, conversationType: {}, " +
+                    "teamId: {}, appUserID: {}",
                 conversationId,
                 it.type,
                 teamId,
@@ -443,16 +444,18 @@ internal class ConversationService internal constructor(
                     "Skipping conversation deletion: invalid preconditions. conversationId: {}",
                     conversationId
                 )
-                return
+                throw WireException.InvalidParameter()
             }
 
             if (!isAdminUser(appUserID, conversationId)) {
                 logger.warn(
-                    "Skipping conversation deletion: user is not admin. conversationId: {}, appUserID: {}",
+                    "Skipping conversation deletion: user is not admin. conversationId: {}, " +
+                        "appUserID: {}",
                     conversationId,
                     appUserID.obfuscateId()
                 )
-                return
+
+                throw WireException.Forbidden().userIsNotAdmin()
             }
 
             backendClient.deleteConversation(teamId, conversationId)
