@@ -19,6 +19,7 @@ package com.wire.sdk.sample.testcommand;
 public enum TestCommand {
     CREATE_ONE_TO_ONE_CONVERSATION("create-one2one-conversation"),
     CREATE_GROUP_CONVERSATION("create-group-conversation"),
+    DELETE_GROUP_CONVERSATION("delete-group-conversation"),
     CREATE_CHANNEL_CONVERSATION("create-channel-conversation"),
     ASSET_IMAGE("asset-image"),
     ASSET_AUDIO("asset-audio"),
