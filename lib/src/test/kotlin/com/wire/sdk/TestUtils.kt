@@ -32,6 +32,20 @@ object TestUtils {
 
     fun setupWireMockStubs(wireMockServer: WireMockServer) {
         wireMockServer.stubFor(
+            WireMock.get(WireMock.urlMatching("/$V/api-version")).willReturn(
+                WireMock.okJson(
+                    """
+                    {
+                        "development": [8],
+                        "domain": "staging.zinfra.io",
+                        "federation": true,
+                        "supported": [1,2,3,4,5,6,7]
+                    }
+                    """.trimIndent()
+                )
+            )
+        )
+        wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/$V/apps")).willReturn(
                 WireMock.okJson(
                     """

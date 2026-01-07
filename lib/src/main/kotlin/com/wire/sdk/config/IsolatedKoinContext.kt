@@ -21,6 +21,7 @@ import org.koin.dsl.koinApplication
 import org.koin.fileProperties
 import java.util.UUID
 
+@Suppress("TooManyFunctions")
 internal object IsolatedKoinContext {
     private var _koinApp: KoinApplication? = null
     val koinApp: KoinApplication
@@ -71,6 +72,15 @@ internal object IsolatedKoinContext {
     fun getCryptographyStoragePassword(): ByteArray? =
         this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_PASSWORD)
 
+    fun setBackendDomain(value: String) {
+        this.koinApp.koin.setProperty(BACKEND_DOMAIN, value)
+    }
+
+    fun getBackendDomain(): String =
+        checkNotNull(koinApp.koin.getProperty(BACKEND_DOMAIN)) {
+            "Wire Backend domain is not set in Koin properties"
+        }
+
     /**
      * Property Constants
      */
@@ -78,4 +88,5 @@ internal object IsolatedKoinContext {
     private const val API_HOST = "API_HOST"
     private const val API_TOKEN = "API_TOKEN"
     private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "CRYPTOGRAPHY_STORAGE_PASSWORD"
+    private const val BACKEND_DOMAIN = "BACKEND_DOMAIN"
 }
