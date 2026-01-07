@@ -241,7 +241,7 @@ class ConversationServiceTest {
                 cryptoClient = cryptoClient
             )
 
-            service.deleteGroupConversation(CONVERSATION_ID)
+            service.deleteConversation(CONVERSATION_ID)
 
             coVerify(exactly = 1) {
                 backendClient.deleteConversation(TEAM_ID, CONVERSATION_ID)
@@ -275,7 +275,9 @@ class ConversationServiceTest {
                 cryptoClient = mockk()
             )
 
-            service.deleteGroupConversation(CONVERSATION_ID)
+            kotlin.test.assertFailsWith<WireException.EntityNotFound> {
+                service.deleteConversation(CONVERSATION_ID)
+            }
 
             verify(exactly = 1) {
                 conversationStorage.getById(CONVERSATION_ID)
@@ -326,7 +328,7 @@ class ConversationServiceTest {
             )
 
             kotlin.test.assertFailsWith<WireException.InvalidParameter> {
-                service.deleteGroupConversation(CONVERSATION_ID)
+                service.deleteConversation(CONVERSATION_ID)
             }
             coVerify(exactly = 0) {
                 backendClient.deleteConversation(any(), any())
@@ -380,7 +382,7 @@ class ConversationServiceTest {
             )
 
             kotlin.test.assertFailsWith<WireException.Forbidden> {
-                service.deleteGroupConversation(CONVERSATION_ID)
+                service.deleteConversation(CONVERSATION_ID)
             }
             coVerify(exactly = 0) {
                 backendClient.deleteConversation(any(), any())

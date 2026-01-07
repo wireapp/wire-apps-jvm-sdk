@@ -40,10 +40,8 @@ sealed class WireException @JvmOverloads constructor(
     ) : WireException(message ?: throwable?.localizedMessage, throwable) {
         companion object {
             const val DEFAULT_MESSAGE = "User does not have permission to perform this action"
-        }
 
-        fun userIsNotAdmin(): Forbidden {
-            return Forbidden("User is not an admin")
+            fun userIsNotAdmin() = Forbidden("User is not an admin")
         }
     }
 
@@ -73,9 +71,13 @@ sealed class WireException @JvmOverloads constructor(
     ) : WireException(message ?: throwable?.localizedMessage, throwable)
 
     class EntityNotFound(
-        message: String? = null,
+        message: String? = DEFAULT_MESSAGE,
         throwable: Throwable? = null
-    ) : WireException(message ?: throwable?.localizedMessage, throwable)
+    ) : WireException(message ?: throwable?.localizedMessage, throwable) {
+        companion object {
+            const val DEFAULT_MESSAGE = "Entity not found."
+        }
+    }
 
     /**
      * Client Error

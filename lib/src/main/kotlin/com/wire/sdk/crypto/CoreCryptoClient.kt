@@ -207,8 +207,8 @@ internal class CoreCryptoClient private constructor(
         logger.debug("Conversation will be deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
         coreCrypto.transaction {
             it.wipeConversation(mlsGroupId)
+            logger.debug("Conversation is deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
         }
-        logger.debug("Conversation is deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
     }
 
     override fun close() {

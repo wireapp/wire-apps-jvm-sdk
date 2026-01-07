@@ -479,7 +479,6 @@ class WireApplicationManager internal constructor(
      * After successful completion, backend informs all participants in the channel.
      *
      * @param conversationId ID of the conversation where the member is present
-     * @param teamId ID of the team
      */
     fun deleteConversation(conversationId: QualifiedId) {
         runBlocking {
@@ -493,7 +492,7 @@ class WireApplicationManager internal constructor(
      * See [deleteConversation]
      */
     suspend fun deleteConversationSuspending(conversationId: QualifiedId) {
-        conversationService.deleteGroupConversation(
+        conversationService.deleteConversation(
             conversationId = conversationId
         )
     }
