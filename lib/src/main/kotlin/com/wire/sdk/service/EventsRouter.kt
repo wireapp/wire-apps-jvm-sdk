@@ -87,8 +87,8 @@ internal class EventsRouter internal constructor(
                 }
 
                 is EventContentDTO.Conversation.DeleteConversation -> {
-                    logger.info("Delete conversation: $event")
-                    conversationService.deleteConversation(event.qualifiedConversation)
+                    logger.info("Received event: ConversationDeleted, $event")
+                    conversationService.processDeletedConversation(event.qualifiedConversation)
                     when (wireEventsHandler) {
                         is WireEventsHandlerDefault -> wireEventsHandler.onConversationDeleted(
                             event.qualifiedConversation

@@ -43,6 +43,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             return
         }
 
+        if (isDeleteGroupConversation(text = wireMessage.text)) {
+            processDeleteGroupConversation(wireMessage = wireMessage)
+            return
+        }
+
         if (isCreateChannelConversation(text = wireMessage.text)) {
             processCreateChannelConversation(wireMessage = wireMessage)
             return
@@ -196,6 +201,9 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     private fun isCreateGroupConversation(text: String): Boolean =
         text.startsWith("create-group-conversation")
 
+    private fun isDeleteGroupConversation(text: String): Boolean =
+        text.startsWith("delete-group-conversation")
+
     private fun isCreateChannelConversation(text: String): Boolean =
         text.startsWith("create-channel-conversation")
 
@@ -242,6 +250,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             userId = wireMessage.sender,
             newRole = ConversationRole.ADMIN
         )
+    }
+
+    private fun processDeleteGroupConversation(wireMessage: WireMessage.Text) {
+        // Expected message: `delete-group-conversation`
+        manager.deleteConversation(wireMessage.conversationId)
     }
 
     private fun processCreateChannelConversation(wireMessage: WireMessage.Text) {

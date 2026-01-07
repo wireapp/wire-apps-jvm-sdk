@@ -41,6 +41,7 @@ import com.wire.sdk.model.http.conversation.getDecodedMlsGroupId
 import com.wire.sdk.model.http.conversation.getRemovalKey
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
+import com.wire.sdk.utils.obfuscateId
 import io.ktor.util.decodeBase64Bytes
 import java.util.UUID
 import kotlin.collections.plus
@@ -415,8 +416,82 @@ internal class ConversationService internal constructor(
         members = members
     )
 
-    fun deleteConversation(conversationId: QualifiedId) =
+    suspend fun processDeletedConversation(conversationId: QualifiedId) {
+        conversationStorage.getById(conversationId)?.let {
+            deleteAllConversationDataFromLocalStorages(conversationId, it.mlsGroupId)
+        }
+    }
+
+    @Suppress("ThrowsCount")
+    suspend fun deleteConversation(conversationId: QualifiedId) {
+        logger.info("Attempting to delete conversation. conversationId: {}", conversationId)
+
+        val conversation = conversationStorage.getById(conversationId)
+        if (conversation == null) {
+            logger.info(
+                "Skipping conversation deletion: conversation not found. conversationId: {}",
+                conversationId
+            )
+            throw WireException.EntityNotFound()
+        }
+
+        val appUserID: UUID? = IsolatedKoinContext.getApplicationId()
+        val teamId: TeamId? = conversation.teamId
+        if (conversation.type != ConversationEntity.Type.GROUP ||
+            appUserID == null ||
+            teamId == null
+        ) {
+            logger.warn(
+                "Skipping conversation deletion: invalid preconditions. conversationId: {}, " +
+                    "conversationType:{}, teamId: {}, appUserID: {}",
+                conversationId,
+                conversation.type,
+                teamId,
+                appUserID
+            )
+            throw WireException.InvalidParameter()
+        }
+
+        if (!isAdminUser(appUserID, conversationId)) {
+            logger.warn(
+                "Skipping conversation deletion: user is not admin. conversationId: {}, " +
+                    "appUserID: {}",
+                conversationId,
+                appUserID.obfuscateId()
+            )
+            throw WireException.Forbidden.userIsNotAdmin()
+        }
+
+        backendClient.deleteConversation(teamId, conversationId)
+        deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
+
+        logger.info(
+            "Conversation is deleted. teamId: {}, conversationId: {}",
+            teamId,
+            conversationId
+        )
+    }
+
+    private fun isAdminUser(
+        userId: UUID,
+        conversationId: QualifiedId
+    ): Boolean {
+        return getStoredConversationMembers(conversationId).any {
+            it.userId.id == userId && it.role == ConversationRole.ADMIN
+        }
+    }
+
+    private suspend fun deleteAllConversationDataFromLocalStorages(
+        conversationId: QualifiedId,
+        mlsGroupId: MLSGroupId
+    ) {
+        if (cryptoClient.conversationExists(mlsGroupId)) {
+            cryptoClient.wipeConversation(mlsGroupId)
+        }
+
+        conversationStorage.deleteAllMembersInConversation(conversationId)
         conversationStorage.delete(conversationId = conversationId)
+    }
 
     fun deleteMembers(
         conversationId: QualifiedId,
