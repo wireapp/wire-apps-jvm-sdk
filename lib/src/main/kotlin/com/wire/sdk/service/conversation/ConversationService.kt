@@ -211,9 +211,7 @@ internal class ConversationService internal constructor(
             val users = userIds + listOf(
                 QualifiedId(
                     id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
-                    domain = requireNotNull(IsolatedKoinContext.getBackendDomain()) {
-                        "Backend domain must be set"
-                    }
+                    domain = IsolatedKoinContext.getBackendDomain()
                 )
             )
 

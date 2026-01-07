@@ -163,7 +163,7 @@ internal suspend fun getOrInitCryptoClient(
     // Fetch and store the backend domain from the api-version endpoint
     val backendDomain = backendClient.getAvailableApiVersions().domain
     IsolatedKoinContext.setBackendDomain(backendDomain)
-    logger.info("Retrieved backend domain: $backendDomain")
+    logger.info("Retrieved Wire backend domain: $backendDomain")
 
     val userId = System.getenv("WIRE_SDK_USER_ID")
 

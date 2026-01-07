@@ -76,7 +76,10 @@ internal object IsolatedKoinContext {
         this.koinApp.koin.setProperty(BACKEND_DOMAIN, value)
     }
 
-    fun getBackendDomain(): String? = this.koinApp.koin.getProperty(BACKEND_DOMAIN)
+    fun getBackendDomain(): String =
+        checkNotNull(koinApp.koin.getProperty(BACKEND_DOMAIN)) {
+            "Wire Backend domain is not set in Koin properties"
+        }
 
     /**
      * Property Constants

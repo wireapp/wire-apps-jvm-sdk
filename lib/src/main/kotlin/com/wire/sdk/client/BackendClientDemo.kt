@@ -123,7 +123,7 @@ internal class BackendClientDemo(
     override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
         return AppDataResponse(
-            appClientId = "$DEMO_USER_ID:$cachedDeviceId@$DEMO_ENVIRONMENT",
+            appClientId = "$DEMO_USER_ID:$cachedDeviceId@${IsolatedKoinContext.getBackendDomain()}",
             appType = "FULL",
             appCommand = "demo"
         )
@@ -609,9 +609,6 @@ internal class BackendClientDemo(
 
         val DEMO_USER_PASSWORD: String =
             System.getenv("WIRE_SDK_PASSWORD") ?: "Aqa123456!"
-
-        val DEMO_ENVIRONMENT: String
-            get() = IsolatedKoinContext.getBackendDomain() ?: "staging.zinfra.io"
 
         private const val FETCH_CONVERSATIONS_START_INDEX = 0
         private const val FETCH_CONVERSATIONS_END_INDEX = 1000
