@@ -47,6 +47,10 @@ dependencies {
         api("commons-io:commons-io:2.21.0")
     }
 
+    // Kotlin stdlib and serialization are required for Java consumers
+    api(kotlin("stdlib"))
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+
     implementation(platform("io.insert-koin:koin-bom:4.1.1"))
     implementation("io.insert-koin:koin-core:4.1.1")
     implementation("ch.qos.logback:logback-classic:1.5.23")
@@ -57,7 +61,6 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("com.wire:core-crypto-jvm:8.0.1")
     implementation("com.wire:core-crypto-uniffi-jvm:8.0.1")
     implementation("app.cash.sqldelight:sqlite-driver:2.2.1")
@@ -90,7 +93,7 @@ java {
 
 sqldelight {
     databases {
-        create("AppsSdkDatabase") {
+        register("AppsSdkDatabase") {
             packageName.set("com.wire.sdk")
             dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.2.1")
         }
