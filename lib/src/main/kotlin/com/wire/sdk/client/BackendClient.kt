@@ -109,6 +109,11 @@ interface BackendClient {
 
     suspend fun getConversationsById(conversationIds: List<QualifiedId>): List<ConversationResponse>
 
+    suspend fun leaveConversation(
+        userId: QualifiedId,
+        conversationId: QualifiedId
+    )
+
     suspend fun deleteConversation(
         teamId: TeamId,
         conversationId: QualifiedId

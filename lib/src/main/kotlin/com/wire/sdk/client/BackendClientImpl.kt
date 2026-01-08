@@ -145,6 +145,13 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         TODO("Not yet implemented")
     }
 
+    override suspend fun leaveConversation(
+        userId: QualifiedId,
+        conversationId: QualifiedId
+    ) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun deleteConversation(
         teamId: TeamId,
         conversationId: QualifiedId
