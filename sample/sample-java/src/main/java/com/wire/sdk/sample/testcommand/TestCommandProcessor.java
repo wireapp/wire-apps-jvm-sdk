@@ -41,6 +41,7 @@ class TestCommandProcessor {
         switch (testCommand) {
             case CREATE_ONE_TO_ONE_CONVERSATION -> processCreateOneToOneConversation(wireMessage);
             case CREATE_GROUP_CONVERSATION -> processCreateGroupConversation(wireMessage);
+            case LEAVE_GROUP_CONVERSATION -> processLeaveGroupConversation(wireMessage);
             case DELETE_GROUP_CONVERSATION -> processDeleteGroupConversation(wireMessage);
             case CREATE_CHANNEL_CONVERSATION -> processCreateChannelConversation(wireMessage);
             case ASSET_IMAGE -> processAssetImage(wireMessage);
@@ -62,6 +63,11 @@ class TestCommandProcessor {
         final var split = wireMessage.text().split(" ");
         final var userIds = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
         this.manager.createGroupConversation(split[1], userIds);
+    }
+
+    private void processLeaveGroupConversation(WireMessage.Text wireMessage) {
+        // Expected message: `leave-group-conversation`
+        this.manager.leaveConversation(wireMessage.conversationId());
     }
 
     private void processDeleteGroupConversation(WireMessage.Text wireMessage) {
