@@ -275,10 +275,10 @@ internal class EventsRouter internal constructor(
                 )
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
-                is WireMessage.Composite -> logger.trace("Composite event received.")
+                is WireMessage.Composite -> logger.debug("Composite event received.")
                 is WireMessage.ButtonActionConfirmation ->
-                    logger.trace("ButtonActionConfirmation event received.")
-                is WireMessage.CompositeEdited -> logger.trace("CompositeEdited event received.")
+                    logger.debug("ButtonActionConfirmation event received.")
+                is WireMessage.CompositeEdited -> logger.debug("CompositeEdited event received.")
             }
             is WireEventsHandlerSuspending -> when (wireMessage) {
                 is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
@@ -298,10 +298,10 @@ internal class EventsRouter internal constructor(
                 )
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
-                is WireMessage.Composite -> logger.trace("Composite event received.")
+                is WireMessage.Composite -> logger.debug("Composite event received.")
                 is WireMessage.ButtonActionConfirmation ->
-                    logger.trace("ButtonActionConfirmation event received.")
-                is WireMessage.CompositeEdited -> logger.trace("CompositeEdited event received.")
+                    logger.debug("ButtonActionConfirmation event received.")
+                is WireMessage.CompositeEdited -> logger.debug("CompositeEdited event received.")
             }
         }
     }
