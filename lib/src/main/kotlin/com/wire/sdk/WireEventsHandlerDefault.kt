@@ -60,16 +60,8 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         logger.debug("Received event: AssetMessageReceived")
     }
 
-    open fun onCompositeMessageReceived(wireMessage: WireMessage.Composite) {
-        logger.debug("Received event: CompositeMessageReceived")
-    }
-
     open fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
         logger.debug("Received event: ButtonClicked")
-    }
-
-    open fun onButtonClickConfirmed(wireMessage: WireMessage.ButtonActionConfirmation) {
-        logger.debug("Received event: ButtonClickConfirmed")
     }
 
     open fun onPingReceived(wireMessage: WireMessage.Ping) {
@@ -90,10 +82,6 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
 
     open fun onTextMessageEdited(wireMessage: WireMessage.TextEdited) {
         logger.debug("Received event: TextMessageEdited: {}", wireMessage)
-    }
-
-    open fun onCompositeMessageEdited(wireMessage: WireMessage.CompositeEdited) {
-        logger.debug("Received event: CompositeMessageEdited: {}", wireMessage)
     }
 
     open fun onMessageReactionReceived(wireMessage: WireMessage.Reaction) {
