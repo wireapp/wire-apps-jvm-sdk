@@ -104,19 +104,8 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     }
 
     @Override
-    public void onCompositeMessageReceived(WireMessage.Composite wireMessage) {
-        logger.info("Received Composite Message. conversationId: {}", wireMessage.conversationId());
-        wireMessage.items().forEach(item -> logger.info(" -> item: " + item));
-    }
-
-    @Override
     public void onButtonClicked(WireMessage.ButtonAction wireMessage) {
         super.onButtonClicked(wireMessage);
-    }
-
-    @Override
-    public void onButtonClickConfirmed(WireMessage.ButtonActionConfirmation wireMessage) {
-        super.onButtonClickConfirmed(wireMessage);
     }
 
     @Override
@@ -151,11 +140,6 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     @Override
     public void onTextMessageEdited(WireMessage.TextEdited wireMessage) {
         super.onTextMessageEdited(wireMessage);
-    }
-
-    @Override
-    public void onCompositeMessageEdited(WireMessage.CompositeEdited wireMessage) {
-        super.onCompositeMessageEdited(wireMessage);
     }
 
     @Override

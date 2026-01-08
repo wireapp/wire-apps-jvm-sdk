@@ -60,16 +60,8 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: AssetMessageReceived")
     }
 
-    open suspend fun onCompositeMessageReceived(wireMessage: WireMessage.Composite) {
-        logger.debug("Received event: CompositeMessageReceived")
-    }
-
     open suspend fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
         logger.debug("Received event: ButtonClicked")
-    }
-
-    open suspend fun onButtonClickConfirmed(wireMessage: WireMessage.ButtonActionConfirmation) {
-        logger.debug("Received event: ButtonClickConfirmed: {}", wireMessage)
     }
 
     /**
@@ -95,10 +87,6 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
 
     open suspend fun onTextMessageEdited(wireMessage: WireMessage.TextEdited) {
         logger.debug("Received event: TextMessageEdited: {}", wireMessage)
-    }
-
-    open suspend fun onCompositeMessageEdited(wireMessage: WireMessage.CompositeEdited) {
-        logger.debug("Received event: CompositeMessageEdited: {}", wireMessage)
     }
 
     open suspend fun onMessageReactionReceived(wireMessage: WireMessage.Reaction) {

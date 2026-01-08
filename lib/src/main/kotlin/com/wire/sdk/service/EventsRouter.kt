@@ -260,20 +260,12 @@ internal class EventsRouter internal constructor(
             is WireEventsHandlerDefault -> when (wireMessage) {
                 is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
                 is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
-                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(
-                    wireMessage
-                )
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
-                is WireMessage.ButtonActionConfirmation ->
-                    wireEventsHandler.onButtonClickConfirmed(wireMessage)
                 is WireMessage.Ping -> wireEventsHandler.onPingReceived(wireMessage)
                 is WireMessage.Location -> wireEventsHandler.onLocationMessageReceived(wireMessage)
                 is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
                 is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
-                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(
-                    wireMessage
-                )
                 is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
                 is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
                     wireMessage
@@ -283,24 +275,20 @@ internal class EventsRouter internal constructor(
                 )
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
+                is WireMessage.Composite -> logger.debug("Composite event received.")
+                is WireMessage.ButtonActionConfirmation ->
+                    logger.debug("ButtonActionConfirmation event received.")
+                is WireMessage.CompositeEdited -> logger.debug("CompositeEdited event received.")
             }
             is WireEventsHandlerSuspending -> when (wireMessage) {
                 is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
                 is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
-                is WireMessage.Composite -> wireEventsHandler.onCompositeMessageReceived(
-                    wireMessage
-                )
                 is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
-                is WireMessage.ButtonActionConfirmation ->
-                    wireEventsHandler.onButtonClickConfirmed(wireMessage)
                 is WireMessage.Ping -> wireEventsHandler.onPingReceived(wireMessage)
                 is WireMessage.Location -> wireEventsHandler.onLocationMessageReceived(wireMessage)
                 is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
                 is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
                 is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
-                is WireMessage.CompositeEdited -> wireEventsHandler.onCompositeMessageEdited(
-                    wireMessage
-                )
                 is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
                 is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
                     wireMessage
@@ -310,6 +298,10 @@ internal class EventsRouter internal constructor(
                 )
                 is WireMessage.Ignored -> logger.warn("Ignored event received.")
                 is WireMessage.Unknown -> logger.warn("Unknown event received.")
+                is WireMessage.Composite -> logger.debug("Composite event received.")
+                is WireMessage.ButtonActionConfirmation ->
+                    logger.debug("ButtonActionConfirmation event received.")
+                is WireMessage.CompositeEdited -> logger.debug("CompositeEdited event received.")
             }
         }
     }

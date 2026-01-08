@@ -133,21 +133,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
     }
 
-    override suspend fun onCompositeMessageReceived(wireMessage: WireMessage.Composite) {
-        logger.info("Received Composite Message : $wireMessage")
-
-        logger.info("Received Composite Items:")
-        wireMessage.items.forEach {
-            logger.info("Composite Item: $it")
-        }
-    }
-
     override suspend fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
         logger.info("Received ButtonAction Message : $wireMessage")
-    }
-
-    override suspend fun onButtonClickConfirmed(wireMessage: WireMessage.ButtonActionConfirmation) {
-        logger.info("Received ButtonActionConfirmation Message : $wireMessage")
     }
 
     override suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
