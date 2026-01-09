@@ -496,4 +496,27 @@ class WireApplicationManager internal constructor(
             conversationId = conversationId
         )
     }
+
+    /**
+     * Leaves the conversation.
+     * After successful completion, backend informs all participants in the channel.
+     *
+     * @param conversationId ID of the conversation where the member is present
+     */
+    fun leaveConversation(conversationId: QualifiedId) {
+        runBlocking {
+            leaveConversationSuspending(
+                conversationId = conversationId
+            )
+        }
+    }
+
+    /**
+     * See [leaveConversation]
+     */
+    suspend fun leaveConversationSuspending(conversationId: QualifiedId) {
+        conversationService.leaveConversation(
+            conversationId = conversationId
+        )
+    }
 }

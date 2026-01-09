@@ -43,6 +43,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             return
         }
 
+        if (isLeaveGroupConversation(text = wireMessage.text)) {
+            processLeaveGroupConversation(wireMessage = wireMessage)
+            return
+        }
+
         if (isDeleteGroupConversation(text = wireMessage.text)) {
             processDeleteGroupConversation(wireMessage = wireMessage)
             return
@@ -188,6 +193,9 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     private fun isCreateGroupConversation(text: String): Boolean =
         text.startsWith("create-group-conversation")
 
+    private fun isLeaveGroupConversation(text: String): Boolean =
+        text.startsWith("leave-group-conversation")
+
     private fun isDeleteGroupConversation(text: String): Boolean =
         text.startsWith("delete-group-conversation")
 
@@ -237,6 +245,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             userId = wireMessage.sender,
             newRole = ConversationRole.ADMIN
         )
+    }
+
+    private fun processLeaveGroupConversation(wireMessage: WireMessage.Text) {
+        // Expected message: `leave-group-conversation`
+        manager.leaveConversation(wireMessage.conversationId)
     }
 
     private fun processDeleteGroupConversation(wireMessage: WireMessage.Text) {

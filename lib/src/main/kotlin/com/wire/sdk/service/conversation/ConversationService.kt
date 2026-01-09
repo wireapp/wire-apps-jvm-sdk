@@ -422,13 +422,59 @@ internal class ConversationService internal constructor(
         }
     }
 
+    suspend fun leaveConversation(conversationId: QualifiedId) {
+        logger.info("Attempting to leave conversation. conversationId: {}", conversationId)
+
+        val conversation = getConversationById(conversationId)
+        val appUserID: UUID? = IsolatedKoinContext.getApplicationId()
+        if (appUserID == null ||
+            conversation.type != ConversationEntity.Type.GROUP
+        ) {
+            logger.warn(
+                "Skipping leaving conversation: invalid preconditions. conversationId: {}, " +
+                    "conversationType:{}, appUserID: {}",
+                conversationId,
+                conversation.type,
+                appUserID
+            )
+            throw WireException.InvalidParameter()
+        }
+
+        requireAppIsInConversation(conversationId)
+        val appUser = QualifiedId(appUserID, IsolatedKoinContext.getBackendDomain())
+        backendClient.leaveConversation(appUser, conversationId)
+        deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
+
+        logger.info(
+            "App user left the conversation. user: {}, conversationId: {}",
+            appUser,
+            conversationId
+        )
+    }
+
+    private fun requireAppIsInConversation(conversationId: QualifiedId) {
+        val appUserId = IsolatedKoinContext.getApplicationId()
+        val isAppInConversation = getStoredConversationMembers(conversationId).any {
+            it.userId.id == appUserId
+        }
+
+        if (!isAppInConversation) {
+            logger.warn(
+                "App User is not in the conversation. conversationId: {}, appUserID: {}",
+                conversationId,
+                appUserId?.obfuscateId()
+            )
+            throw WireException.Forbidden.userIsNotInConversation()
+        }
+    }
+
     @Suppress("ThrowsCount")
     suspend fun deleteConversation(conversationId: QualifiedId) {
         logger.info("Attempting to delete conversation. conversationId: {}", conversationId)
 
         val conversation = conversationStorage.getById(conversationId)
         if (conversation == null) {
-            logger.info(
+            logger.warn(
                 "Skipping conversation deletion: conversation not found. conversationId: {}",
                 conversationId
             )

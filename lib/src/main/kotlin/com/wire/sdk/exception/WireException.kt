@@ -42,6 +42,8 @@ sealed class WireException @JvmOverloads constructor(
             const val DEFAULT_MESSAGE = "User does not have permission to perform this action"
 
             fun userIsNotAdmin() = Forbidden("User is not an admin")
+
+            fun userIsNotInConversation() = Forbidden("User is not in this conversation")
         }
     }
 

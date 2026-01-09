@@ -68,6 +68,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
+import io.ktor.http.headers
 import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
 import java.util.Base64
@@ -509,6 +510,35 @@ internal class BackendClientDemo(
         }
 
         return conversations
+    }
+
+    override suspend fun leaveConversation(
+        userId: QualifiedId,
+        conversationId: QualifiedId
+    ) {
+        logger.info(
+            "App user will be removed from the conversation in the backend. " +
+                "userId:{}, conversationId:{}",
+            userId,
+            conversationId
+        )
+
+        val token = loginUser()
+        val path = "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+            "/members/${userId.domain}/${userId.id}"
+
+        httpClient.delete(path) {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }
+
+        logger.info(
+            "App user is removed from the conversation in the backend. " +
+                "userId:{}, conversationId:{}",
+            userId,
+            conversationId
+        )
     }
 
     override suspend fun deleteConversation(
