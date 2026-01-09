@@ -193,6 +193,187 @@ class ConversationServiceTest {
         }
 
     @Test
+    fun whenLeavingConversationSuccessfullyThenInvokeBackendAndCleanup() =
+        runTest {
+            val appUserId = UUID.randomUUID()
+
+            val conversationEntity = ConversationEntity(
+                id = CONVERSATION_ID,
+                name = "Test-Group-Conversation",
+                mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                teamId = TEAM_ID,
+                type = ConversationEntity.Type.GROUP
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getById(CONVERSATION_ID) } returns conversationEntity
+                every { getMembersByConversationId(CONVERSATION_ID) } returns listOf(
+                    ConversationMember(
+                        userId = QualifiedId(appUserId, "wire.com"),
+                        role = ConversationRole.MEMBER
+                    )
+                )
+                every { deleteAllMembersInConversation(CONVERSATION_ID) } returns Unit
+                every { delete(CONVERSATION_ID) } returns Unit
+            }
+
+            val backendClient = mockk<BackendClient> {
+                coEvery {
+                    leaveConversation(QualifiedId(appUserId, "wire.com"), CONVERSATION_ID)
+                } returns
+                    Unit
+            }
+
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery { conversationExists(CONVERSATION_MLS_GROUP_ID) } returns true
+                coEvery { wipeConversation(CONVERSATION_MLS_GROUP_ID) } returns Unit
+            }
+
+            mockkObject(IsolatedKoinContext)
+            every { IsolatedKoinContext.getApplicationId() } returns appUserId
+            every { IsolatedKoinContext.getBackendDomain() } returns "wire.com"
+
+            val service = ConversationService(
+                backendClient = backendClient,
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = cryptoClient
+            )
+
+            service.leaveConversation(CONVERSATION_ID)
+
+            coVerify(exactly = 1) {
+                backendClient.leaveConversation(QualifiedId(appUserId, "wire.com"), CONVERSATION_ID)
+                cryptoClient.wipeConversation(CONVERSATION_MLS_GROUP_ID)
+            }
+            verify(exactly = 1) {
+                conversationStorage.deleteAllMembersInConversation(CONVERSATION_ID)
+                conversationStorage.delete(CONVERSATION_ID)
+            }
+        }
+
+    @Test
+    fun whenLeavingConversationAndAppUserNotInConversationThenThrowForbidden() =
+        runTest {
+            val appUserId = UUID.randomUUID()
+            val anotherUserId = UUID.randomUUID()
+
+            val conversationEntity = ConversationEntity(
+                id = CONVERSATION_ID,
+                name = "Test-Group-Conversation",
+                mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                teamId = TEAM_ID,
+                type = ConversationEntity.Type.GROUP
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getById(CONVERSATION_ID) } returns conversationEntity
+                every { getMembersByConversationId(CONVERSATION_ID) } returns listOf(
+                    ConversationMember(
+                        userId = QualifiedId(anotherUserId, "wire.com"),
+                        role = ConversationRole.MEMBER
+                    )
+                )
+            }
+
+            val backendClient = mockk<BackendClient> {
+                coEvery { leaveConversation(any(), any()) } returns Unit
+            }
+
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery { conversationExists(any()) } returns true
+                coEvery { wipeConversation(any()) } returns Unit
+            }
+
+            mockkObject(IsolatedKoinContext)
+            every { IsolatedKoinContext.getApplicationId() } returns appUserId
+            every { IsolatedKoinContext.getBackendDomain() } returns "wire.com"
+
+            val service = ConversationService(
+                backendClient = mockk(),
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = mockk()
+            )
+
+            kotlin.test.assertFailsWith<WireException.Forbidden> {
+                service.leaveConversation(CONVERSATION_ID)
+            }
+
+            coVerify(exactly = 0) {
+                backendClient.leaveConversation(any(), any())
+                cryptoClient.wipeConversation(any())
+            }
+            verify(exactly = 0) {
+                conversationStorage.deleteAllMembersInConversation(any())
+                conversationStorage.delete(any())
+            }
+        }
+
+    @Test
+    fun whenLeavingConversationAndAppUserIdIsNullThenThrowInvalidParameter() =
+        runTest {
+            val conversationEntity = ConversationEntity(
+                id = CONVERSATION_ID,
+                name = "Test-Group-Conversation",
+                mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                teamId = TEAM_ID,
+                type = ConversationEntity.Type.GROUP
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getById(CONVERSATION_ID) } returns conversationEntity
+            }
+
+            mockkObject(IsolatedKoinContext)
+            every { IsolatedKoinContext.getApplicationId() } returns null
+
+            val service = ConversationService(
+                backendClient = mockk(),
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = mockk()
+            )
+
+            kotlin.test.assertFailsWith<WireException.InvalidParameter> {
+                service.leaveConversation(CONVERSATION_ID)
+            }
+        }
+
+    @Test
+    fun whenLeavingConversationAndTypeIsNotGroupThenThrowInvalidParameter() =
+        runTest {
+            val appUserId = UUID.randomUUID()
+
+            val conversationEntity = ConversationEntity(
+                id = CONVERSATION_ID,
+                name = "Test-OneToOne-Conversation",
+                mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                teamId = TEAM_ID,
+                type = ConversationEntity.Type.ONE_TO_ONE
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getById(CONVERSATION_ID) } returns conversationEntity
+            }
+
+            mockkObject(IsolatedKoinContext)
+            every { IsolatedKoinContext.getApplicationId() } returns appUserId
+            every { IsolatedKoinContext.getBackendDomain() } returns "wire.com"
+
+            val service = ConversationService(
+                backendClient = mockk(),
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = mockk()
+            )
+
+            kotlin.test.assertFailsWith<WireException.InvalidParameter> {
+                service.leaveConversation(CONVERSATION_ID)
+            }
+        }
+
+    @Test
     fun whenDeletingGroupConversationAndUserIsAdminThenDeleteEverywhere() =
         runTest {
             val appUserId = UUID.randomUUID()
