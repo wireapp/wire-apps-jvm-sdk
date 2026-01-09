@@ -517,7 +517,7 @@ internal class BackendClientDemo(
         conversationId: QualifiedId
     ) {
         logger.info(
-            "User will be removed from the conversation in the backend. " +
+            "App user will be removed from the conversation in the backend. " +
                 "userId:{}, conversationId:{}",
             userId,
             conversationId
@@ -534,7 +534,8 @@ internal class BackendClientDemo(
         }
 
         logger.info(
-            "User is removed from the conversation in the backend. userId:{}, conversationId:{}",
+            "App user is removed from the conversation in the backend. " +
+                "userId:{}, conversationId:{}",
             userId,
             conversationId
         )

@@ -446,7 +446,7 @@ internal class ConversationService internal constructor(
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
         logger.info(
-            "User left the conversation. user: {}, conversationId: {}",
+            "App user left the conversation. user: {}, conversationId: {}",
             appUser,
             conversationId
         )
