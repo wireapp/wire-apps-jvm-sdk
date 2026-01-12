@@ -2,6 +2,7 @@ package com.wire.sdk.crypto
 
 import com.wire.crypto.Ciphersuite
 import com.wire.crypto.Ciphersuites
+import com.wire.crypto.ClientId
 import com.wire.crypto.CoreCrypto
 import com.wire.crypto.DatabaseKey
 import com.wire.crypto.GroupInfo
@@ -14,6 +15,7 @@ import com.wire.crypto.toExternalSenderKey
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoQualifiedId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.model.http.client.toCryptography
@@ -180,6 +182,20 @@ internal class CoreCryptoClient private constructor(
     ) {
         coreCrypto.transaction {
             it.addMember(mlsGroupId, keyPackages)
+        }
+    }
+
+    override suspend fun removeMembersFromConversation(
+        mlsGroupId: MLSGroupId,
+        clientIds: List<CryptoQualifiedId>
+    ) {
+        coreCrypto.transaction {
+            it.removeMember(
+                id = mlsGroupId,
+                members = clientIds.map { client ->
+                    ClientId(client.value.toByteArray())
+                }
+            )
         }
     }
 

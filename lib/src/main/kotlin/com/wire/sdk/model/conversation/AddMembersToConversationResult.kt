@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,26 +14,11 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.model
+package com.wire.sdk.model.conversation
 
-import com.wire.sdk.utils.obfuscateClientId
-import kotlinx.serialization.Serializable
+import com.wire.sdk.model.QualifiedId
 
-@JvmInline
-@Serializable
-value class AppClientId(val value: String) {
-    override fun toString(): String = value.obfuscateClientId()
-
-    companion object {
-        fun create(
-            userId: String,
-            deviceId: String,
-            userDomain: String
-        ): AppClientId =
-            AppClientId(
-                value = "$userId:$deviceId@$userDomain"
-            )
-    }
-}
-
-typealias CryptoQualifiedId = AppClientId
+data class AddMembersToConversationResult(
+    val successUsers: List<QualifiedId>,
+    val failedUsers: List<QualifiedId>
+)

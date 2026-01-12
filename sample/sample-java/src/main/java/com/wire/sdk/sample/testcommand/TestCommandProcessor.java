@@ -44,6 +44,8 @@ class TestCommandProcessor {
             case LEAVE_GROUP_CONVERSATION -> processLeaveGroupConversation(wireMessage);
             case DELETE_GROUP_CONVERSATION -> processDeleteGroupConversation(wireMessage);
             case CREATE_CHANNEL_CONVERSATION -> processCreateChannelConversation(wireMessage);
+            case ADD_MEMBER_IN_CONVERSATION -> processAddMemberInConversation(wireMessage);
+            case REMOVE_MEMBER_FROM_CONVERSATION -> processRemoveMemberFromConversation(wireMessage);
             case ASSET_IMAGE -> processAssetImage(wireMessage);
             case ASSET_AUDIO -> processAssetAudio(wireMessage);
             case ASSET_VIDEO -> processAssetVideo(wireMessage);
@@ -80,6 +82,26 @@ class TestCommandProcessor {
         final var split = wireMessage.text().split(" ");
         final var userIds = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
         this.manager.createChannelConversation(split[1], userIds);
+    }
+
+    private void processAddMemberInConversation(WireMessage.Text wireMessage) {
+        // Expected message: `add-members-to-conversation [USER_ID] [DOMAIN]
+        final var split = wireMessage.text().split(" ");
+        final var members = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
+        this.manager.addMembersToConversation(
+                wireMessage.conversationId(),
+                members
+        );
+    }
+
+    private void processRemoveMemberFromConversation(WireMessage.Text wireMessage) {
+        // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN]
+        final var split = wireMessage.text().split(" ");
+        final var members = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
+        this.manager.addMembersToConversation(
+                wireMessage.conversationId(),
+                members
+        );
     }
 
     private void processAssetImage(WireMessage.Text wireMessage) {

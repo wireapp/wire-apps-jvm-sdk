@@ -22,6 +22,8 @@ public enum TestCommand {
     DELETE_GROUP_CONVERSATION("delete-group-conversation"),
     LEAVE_GROUP_CONVERSATION("leave-group-conversation"),
     CREATE_CHANNEL_CONVERSATION("create-channel-conversation"),
+    ADD_MEMBER_IN_CONVERSATION("add-members-to-conversation"),
+    REMOVE_MEMBER_FROM_CONVERSATION("remove-members-from-conversation"),
     ASSET_IMAGE("asset-image"),
     ASSET_AUDIO("asset-audio"),
     ASSET_VIDEO("asset-video"),

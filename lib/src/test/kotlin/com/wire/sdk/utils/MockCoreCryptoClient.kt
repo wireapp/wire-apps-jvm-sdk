@@ -35,6 +35,7 @@ import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import com.wire.sdk.model.CryptoQualifiedId
 import com.wire.sdk.utils.toByteArray
 import java.io.File
 import java.util.Base64
@@ -146,6 +147,13 @@ internal class MockCoreCryptoClient private constructor(
     override suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong = 0UL
 
     override suspend fun wipeConversation(mlsGroupId: MLSGroupId) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun removeMembersFromConversation(
+        mlsGroupId: MLSGroupId,
+        clientIds: List<CryptoQualifiedId>
+    ) {
         TODO("Not yet implemented")
     }
 

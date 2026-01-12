@@ -45,6 +45,7 @@ import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
+import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.Mls
@@ -602,6 +603,33 @@ internal class BackendClientDemo(
                 time = Clock.System.now()
             )
         }
+    }
+
+    override suspend fun getUserClients(userId: QualifiedId): List<UserClientResponse> {
+        val token = loginUser()
+        val clients = httpClient.get("/users/${userId.domain}/${userId.id}/clients") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }.body<List<UserClientResponse>>()
+
+        return clients
+    }
+
+    override suspend fun getUsersClients(
+        usersIds: List<QualifiedId>
+    ): Map<String, Map<String, List<UserClientResponse>>> {
+        val token = loginUser()
+        val usersClients = httpClient.post("/users/list-clients") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(usersIds)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<Map<String, Map<String, List<UserClientResponse>>>>()
+
+        return usersClients
     }
 
     internal class AssetBody internal constructor(

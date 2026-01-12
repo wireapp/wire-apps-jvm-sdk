@@ -29,8 +29,11 @@ import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.CryptoProtocol
+import com.wire.sdk.model.CryptoQualifiedId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
+import com.wire.sdk.model.conversation.AddMembersToConversationResult
+import com.wire.sdk.model.conversation.ClaimedKeyPackagesResult
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
@@ -211,22 +214,22 @@ internal class ConversationService internal constructor(
 
             val users = userIds + listOf(
                 QualifiedId(
-                    id = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
+                    id = IsolatedKoinContext.getApplicationId(),
                     domain = IsolatedKoinContext.getBackendDomain()
                 )
             )
 
-            val claimedKeyPackages: List<ByteArray> = claimKeyPackages(
+            val claimedKeyPackagesResult = claimKeyPackages(
                 userIds = users,
                 cipherSuiteCode = cipherSuiteCode
             )
 
-            if (claimedKeyPackages.isEmpty()) {
+            if (claimedKeyPackagesResult.keyPackages.isEmpty()) {
                 cryptoClient.updateKeyingMaterial(mlsGroupId)
             } else {
                 cryptoClient.addMemberToMlsConversation(
                     mlsGroupId = mlsGroupId,
-                    keyPackages = claimedKeyPackages.map { keyPackage ->
+                    keyPackages = claimedKeyPackagesResult.keyPackages.map { keyPackage ->
                         keyPackage.toMLSKeyPackage()
                     }
                 )
@@ -344,8 +347,11 @@ internal class ConversationService internal constructor(
     private suspend fun claimKeyPackages(
         userIds: List<QualifiedId>,
         cipherSuiteCode: Int
-    ): List<ByteArray> {
+    ): ClaimedKeyPackagesResult {
         val claimedKeyPackages = mutableListOf<KeyPackage>()
+        val successUsers = mutableListOf<QualifiedId>()
+        val failedUsers = mutableListOf<QualifiedId>()
+
         userIds.forEach { user ->
             try {
                 val result = backendClient.claimKeyPackages(
@@ -354,16 +360,24 @@ internal class ConversationService internal constructor(
                 )
 
                 if (result.keyPackages.isNotEmpty()) {
+                    successUsers.add(user)
                     claimedKeyPackages.addAll(result.keyPackages)
                 }
             } catch (exception: Exception) {
                 // Ignoring when claiming key packages fails for a user
                 // as for now there is no retry
-                logger.error("Error when claiming key packages: $exception")
+                failedUsers.add(user)
+                logger.error(
+                    "Error when claiming key packages for userId: $user: $exception"
+                )
             }
         }
 
-        return claimedKeyPackages.map { it.keyPackage.decodeBase64Bytes() }
+        return ClaimedKeyPackagesResult(
+            keyPackages = claimedKeyPackages.map { it.keyPackage.decodeBase64Bytes() },
+            successUsers = successUsers,
+            failedUsers = failedUsers
+        )
     }
 
     suspend fun saveConversationWithMembers(
@@ -452,79 +466,30 @@ internal class ConversationService internal constructor(
         )
     }
 
-    private fun requireAppIsInConversation(conversationId: QualifiedId) {
-        val appUserId = IsolatedKoinContext.getApplicationId()
-        val isAppInConversation = getStoredConversationMembers(conversationId).any {
-            it.userId.id == appUserId
-        }
-
-        if (!isAppInConversation) {
-            logger.warn(
-                "App User is not in the conversation. conversationId: {}, appUserID: {}",
-                conversationId,
-                appUserId?.obfuscateId()
-            )
-            throw WireException.Forbidden.userIsNotInConversation()
-        }
-    }
-
     @Suppress("ThrowsCount")
     suspend fun deleteConversation(conversationId: QualifiedId) {
         logger.info("Attempting to delete conversation. conversationId: {}", conversationId)
 
-        val conversation = conversationStorage.getById(conversationId)
-        if (conversation == null) {
-            logger.warn(
-                "Skipping conversation deletion: conversation not found. conversationId: {}",
-                conversationId
-            )
-            throw WireException.EntityNotFound()
+        val conversation = getConversationById(conversationId = conversationId)
+
+        requireConversationIsGroupOrChannel(
+            conversationId = conversationId,
+            conversationType = conversation.type
+        )
+        requireAppIsAdminInConversation(conversationId = conversationId)
+
+        requireNotNull(conversation.teamId) {
+            "Conversation teamId must not be null."
         }
 
-        val appUserID: UUID? = IsolatedKoinContext.getApplicationId()
-        val teamId: TeamId? = conversation.teamId
-        if (conversation.type != ConversationEntity.Type.GROUP ||
-            appUserID == null ||
-            teamId == null
-        ) {
-            logger.warn(
-                "Skipping conversation deletion: invalid preconditions. conversationId: {}, " +
-                    "conversationType:{}, teamId: {}, appUserID: {}",
-                conversationId,
-                conversation.type,
-                teamId,
-                appUserID
-            )
-            throw WireException.InvalidParameter()
-        }
-
-        if (!isAdminUser(appUserID, conversationId)) {
-            logger.warn(
-                "Skipping conversation deletion: user is not admin. conversationId: {}, " +
-                    "appUserID: {}",
-                conversationId,
-                appUserID.obfuscateId()
-            )
-            throw WireException.Forbidden.userIsNotAdmin()
-        }
-
-        backendClient.deleteConversation(teamId, conversationId)
+        backendClient.deleteConversation(conversation.teamId, conversationId)
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
         logger.info(
             "Conversation is deleted. teamId: {}, conversationId: {}",
-            teamId,
+            conversation.teamId,
             conversationId
         )
-    }
-
-    private fun isAdminUser(
-        userId: UUID,
-        conversationId: QualifiedId
-    ): Boolean {
-        return getStoredConversationMembers(conversationId).any {
-            it.userId.id == userId && it.role == ConversationRole.ADMIN
-        }
     }
 
     private suspend fun deleteAllConversationDataFromLocalStorages(
@@ -539,6 +504,55 @@ internal class ConversationService internal constructor(
         conversationStorage.delete(conversationId = conversationId)
     }
 
+    private fun requireAppIsAdminInConversation(conversationId: QualifiedId) {
+        val appUserId = IsolatedKoinContext.getApplicationId()
+
+        val isAppAdminInConversation = getStoredConversationMembers(conversationId).any {
+            it.userId.id == appUserId && it.role == ConversationRole.ADMIN
+        }
+
+        if (!isAppAdminInConversation) {
+            logger.warn(
+                "App User is not an admin in the conversation. conversationId: {}, " +
+                    "appUserID: {}",
+                conversationId,
+                appUserId.obfuscateId()
+            )
+            throw WireException.Forbidden.userIsNotAdmin()
+        }
+    }
+
+    private fun requireAppIsInConversation(conversationId: QualifiedId) {
+        val appUserId = IsolatedKoinContext.getApplicationId()
+        val isAppInConversation = getStoredConversationMembers(conversationId).any {
+            it.userId.id == appUserId
+        }
+
+        if (!isAppInConversation) {
+            logger.warn(
+                "App User is not in the conversation. conversationId: {}, appUserID: {}",
+                conversationId,
+                appUserId.obfuscateId()
+            )
+            throw WireException.Forbidden.userIsNotInConversation()
+        }
+    }
+
+    private fun requireConversationIsGroupOrChannel(
+        conversationId: QualifiedId,
+        conversationType: ConversationEntity.Type
+    ) {
+        if (conversationType != ConversationEntity.Type.GROUP) {
+            logger.warn(
+                "Skipping operation, conversation is not a GROUP or CHANNEL. conversationId: {}, " +
+                    "conversationType:{}",
+                conversationId,
+                conversationType
+            )
+            throw WireException.InvalidParameter()
+        }
+    }
+
     fun deleteMembers(
         conversationId: QualifiedId,
         users: List<QualifiedId>
@@ -547,7 +561,7 @@ internal class ConversationService internal constructor(
         users = users
     )
 
-    suspend fun getConversationById(conversationId: QualifiedId) =
+    suspend fun getConversationById(conversationId: QualifiedId): ConversationEntity =
         conversationStorage.getById(conversationId = conversationId) ?: run {
             val conversationResponse = backendClient.getConversation(conversationId)
             saveConversationWithMembers(
@@ -558,10 +572,125 @@ internal class ConversationService internal constructor(
 
     fun getAll() = conversationStorage.getAll()
 
+    suspend fun addMembersToConversation(
+        conversationId: QualifiedId,
+        members: List<QualifiedId>
+    ): AddMembersToConversationResult {
+        if (members.isEmpty()) {
+            throw WireException.InvalidParameter(
+                "List of members can not be empty."
+            )
+        }
+
+        val conversation = getConversationById(conversationId = conversationId)
+
+        requireConversationIsGroupOrChannel(
+            conversationId = conversationId,
+            conversationType = conversation.type
+        )
+        requireAppIsAdminInConversation(conversationId = conversationId)
+
+        val cipherSuiteCode = getCipherSuiteCode()
+        val claimedKeyPackagesResult = claimKeyPackages(
+            userIds = members,
+            cipherSuiteCode = cipherSuiteCode
+        )
+
+        try {
+            cryptoClient.addMemberToMlsConversation(
+                mlsGroupId = conversation.mlsGroupId,
+                keyPackages = claimedKeyPackagesResult.keyPackages.map { keyPackage ->
+                    keyPackage.toMLSKeyPackage()
+                }
+            )
+        } catch (exception: MlsException.Other) {
+            throw WireException.InvalidParameter(
+                message = "Unable to claim Key Packages for list of members",
+                throwable = exception
+            )
+        }
+
+        conversationStorage.saveMembers(
+            conversationId = conversationId,
+            members = members.map { member ->
+                ConversationMember(
+                    userId = member,
+                    role = ConversationRole.MEMBER
+                )
+            }
+        )
+
+        return AddMembersToConversationResult(
+            successUsers = claimedKeyPackagesResult.successUsers,
+            failedUsers = claimedKeyPackagesResult.failedUsers
+        )
+    }
+
+    suspend fun removeMembersFromConversation(
+        conversationId: QualifiedId,
+        members: List<QualifiedId>
+    ) {
+        if (members.isEmpty()) {
+            throw WireException.InvalidParameter(
+                "List of members can not be empty."
+            )
+        }
+
+        val conversation = getConversationById(conversationId = conversationId)
+
+        requireConversationIsGroupOrChannel(
+            conversationId = conversationId,
+            conversationType = conversation.type
+        )
+        requireAppIsAdminInConversation(conversationId = conversationId)
+
+        val clients: List<CryptoQualifiedId> = if (members.size == SINGLE_MEMBER) {
+            val clients = backendClient.getUserClients(userId = members.first())
+
+            clients.map { client ->
+                CryptoQualifiedId.create(
+                    userId = members.first().id.toString(),
+                    deviceId = client.id,
+                    userDomain = members.first().domain
+                )
+            }
+        } else {
+            val usersClients = backendClient.getUsersClients(
+                usersIds = members
+            )
+
+            usersClients.flatMap { (domain, users) ->
+                users.flatMap { (userId, clients) ->
+                    clients.map { client ->
+                        CryptoQualifiedId.create(
+                            userId = userId,
+                            deviceId = client.id,
+                            userDomain = domain
+                        )
+                    }
+                }
+            }
+        }
+
+        cryptoClient.removeMembersFromConversation(
+            mlsGroupId = conversation.mlsGroupId,
+            clientIds = clients
+        )
+
+        conversationStorage.deleteMembers(
+            conversationId = conversationId,
+            users = members
+        )
+    }
+
     private suspend fun getCipherSuiteCode(): Int =
         backendClient
             .getApplicationFeatures()
             .mlsFeatureResponse
             .mlsFeatureConfigResponse
             .defaultCipherSuite
+
+    private companion object {
+        const val SINGLE_MEMBER = 1
+    }
 }

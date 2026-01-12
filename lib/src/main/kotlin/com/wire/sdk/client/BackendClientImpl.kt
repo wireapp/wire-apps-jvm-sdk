@@ -38,6 +38,7 @@ import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
+import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -213,6 +214,16 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         querySize: Int,
         querySince: String?
     ): NotificationsResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getUserClients(userId: QualifiedId): List<UserClientResponse> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getUsersClients(
+        usersIds: List<QualifiedId>
+    ): Map<String, Map<String, List<UserClientResponse>>> {
         TODO("Not yet implemented")
     }
 }
