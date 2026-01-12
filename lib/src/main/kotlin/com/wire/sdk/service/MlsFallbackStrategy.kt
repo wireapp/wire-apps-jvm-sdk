@@ -16,7 +16,7 @@
 
 package com.wire.sdk.service
 
-import com.wire.crypto.MLSGroupId
+import com.wire.crypto.ConversationId
 import com.wire.crypto.toGroupInfo
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
@@ -36,11 +36,11 @@ class MlsFallbackStrategy internal constructor(
      * current epoch value is different from remote epoch value, then a join by External Commit
      * is sent to CoreCrypto.
      *
-     * @param mlsGroupId [MLSGroupId] Conversation GroupId
+     * @param mlsGroupId [ConversationId] Conversation GroupId
      * @param conversationId [QualifiedId] Conversation QualifiedId
      */
     suspend fun verifyConversationOutOfSync(
-        mlsGroupId: MLSGroupId,
+        mlsGroupId: ConversationId,
         conversationId: QualifiedId
     ) {
         val conversationExists = cryptoClient.conversationExists(mlsGroupId = mlsGroupId)

@@ -2,19 +2,18 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$3</ID>
-    <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$4</ID>
-    <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$5</ID>
-    <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$6</ID>
-    <ID>MagicNumber:CoreCryptoClient.kt$CoreCryptoClient.Companion$7</ID>
-    <ID>TooGenericExceptionCaught:WireAppSdk.kt$WireAppSdk$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:WireExceptionMapper.kt$exception: Exception</ID>
+    <ID>LongParameterList:CreateConversationRequest.kt$CreateConversationRequest$( @SerialName("qualified_users") val qualifiedUsers: List&lt;QualifiedId> = emptyList(), @SerialName("name") val name: String?, @SerialName("access") val access: List&lt;ConversationAccess> = DEFAULT_ACCESS_LIST, @SerialName("access_role") val accessRole: List&lt;ConversationAccessRole> = DEFAULT_ACCESS_ROLE_LIST, @SerialName("group_conv_type") val groupConversationType: GroupConversationType?, @SerialName("add_permission") val channelAddPermissionTypeDTO: ChannelAddPermissionType = ChannelAddPermissionType.ADMINS, @SerialName("team") val conversationTeamInfo: ConversationTeamInfo? = null, @SerialName("message_timer") val messageTimer: Long? = null, @SerialName("receipt_mode") val receiptMode: ReceiptMode = ReceiptMode.DISABLED, @SerialName("conversation_role") val conversationRole: String = DEFAULT_MEMBER_ROLE, @SerialName("protocol") val protocol: CryptoProtocol = CryptoProtocol.MLS, @SerialName("cells") val cellEnabled: Boolean = false, @SerialName("skip_creator") val skipCreator: Boolean = false )</ID>
+    <ID>MagicNumber:MlsCryptoClient.kt$MlsCryptoClient.Companion$3</ID>
+    <ID>MagicNumber:MlsCryptoClient.kt$MlsCryptoClient.Companion$4</ID>
+    <ID>MagicNumber:MlsCryptoClient.kt$MlsCryptoClient.Companion$5</ID>
+    <ID>MagicNumber:MlsCryptoClient.kt$MlsCryptoClient.Companion$6</ID>
+    <ID>MagicNumber:MlsCryptoClient.kt$MlsCryptoClient.Companion$7</ID>
     <ID>TooGenericExceptionCaught:WireTeamEventsListener.kt$WireTeamEventsListener$e: Exception</ID>
     <ID>TooManyFunctions:BackendClient.kt$BackendClient</ID>
     <ID>TooManyFunctions:BackendClientDemo.kt$BackendClientDemo : BackendClient</ID>
     <ID>TooManyFunctions:BackendClientImpl.kt$BackendClientImpl : BackendClient</ID>
-    <ID>TooManyFunctions:CoreCryptoClient.kt$CoreCryptoClient : CryptoClient</ID>
     <ID>TooManyFunctions:CryptoClient.kt$CryptoClient : AutoCloseable</ID>
+    <ID>TooManyFunctions:MlsCryptoClient.kt$MlsCryptoClient : CryptoClient</ID>
     <ID>TooManyFunctions:WireApplicationManager.kt$WireApplicationManager</ID>
   </CurrentIssues>
 </SmellBaseline>

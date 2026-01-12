@@ -1,10 +1,9 @@
 package com.wire.sdk.crypto
 
+import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCryptoException
-import com.wire.crypto.MLSGroupId
-import com.wire.crypto.MLSKeyPackage
+import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsException
-import com.wire.crypto.toGroupId
 import com.wire.crypto.toGroupInfo
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.AppClientId
@@ -30,14 +29,14 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 import org.junit.jupiter.api.AfterAll
 
-class CoreCryptoClientTest {
+class MlsCryptoClientTest {
     private val testMlsTransport = MlsTransportLastWelcome()
 
     @Test
     fun whenCryptoStoragePasswordIsSet_thenClientWorks() {
         runBlocking {
             val userId = UUID.randomUUID().toString()
-            val cryptoClient = CoreCryptoClient.create(
+            val cryptoClient = MlsCryptoClient.create(
                 userId = userId,
                 ciphersuiteCode = 1
             )
@@ -58,15 +57,15 @@ class CoreCryptoClientTest {
             val userId = UUID.randomUUID().toString()
             val ciphersuiteCode = 1
 
-            val cryptoClient = CoreCryptoClient.create(
+            val cryptoClient = MlsCryptoClient.create(
                 userId = userId,
                 ciphersuiteCode = ciphersuiteCode
             )
             cryptoClient.close()
 
             IsolatedKoinContext.setCryptographyStoragePassword("anotherPasswordOfRandom32BytesCH")
-            assertThrows<com.wire.crypto.uniffi.CoreCryptoException.Mls> {
-                CoreCryptoClient.create(
+            assertThrows<CoreCryptoException.Mls> {
+                MlsCryptoClient.create(
                     userId = userId,
                     ciphersuiteCode = ciphersuiteCode
                 )
@@ -83,7 +82,7 @@ class CoreCryptoClientTest {
 
             // Create a new client and join the conversation
             val userId = UUID.randomUUID().toString()
-            val mlsClient = CoreCryptoClient.create(
+            val mlsClient = MlsCryptoClient.create(
                 userId = userId,
                 ciphersuiteCode = 1
             )
@@ -92,7 +91,7 @@ class CoreCryptoClientTest {
                 mlsTransport = testMlsTransport
             )
 
-            val groupIdGenerated: MLSGroupId = mlsClient.joinMlsConversationRequest(groupInfo)
+            val groupIdGenerated: ConversationId = mlsClient.joinMlsConversationRequest(groupInfo)
             assertTrue { mlsClient.conversationExists(groupIdGenerated) }
 
             // Encrypt a message for the joined conversation
@@ -115,7 +114,7 @@ class CoreCryptoClientTest {
                 // Unfortunately it's not possible for a client to decrypt a message it encrypted itself
                 // By getting the duplicated message exception we know that the encryption works,
                 // but we cannot attest that the decrypted message is the same as the original
-                assert(it.exception is MlsException.DuplicateMessage)
+                assert(it.mlsError is MlsException.DuplicateMessage)
             }
             mlsClient.close()
         }
@@ -126,7 +125,7 @@ class CoreCryptoClientTest {
         runBlocking {
             // Create two clients, Bob and Alice
             val bobUserId = UUID.randomUUID().toString()
-            val bobClient = CoreCryptoClient.create(
+            val bobClient = MlsCryptoClient.create(
                 userId = bobUserId,
                 ciphersuiteCode = 1
             )
@@ -138,7 +137,7 @@ class CoreCryptoClientTest {
             )
 
             val aliceUserId = UUID.randomUUID().toString()
-            val aliceClient = CoreCryptoClient.create(
+            val aliceClient = MlsCryptoClient.create(
                 userId = aliceUserId,
                 ciphersuiteCode = 1
             )
@@ -150,21 +149,22 @@ class CoreCryptoClientTest {
             )
 
             // Create a new conversation with Bob, then add Alice to it
-            val groupId = "JfflcPtUivbg+1U3Iyrzsh5D2ui/OGS5Rvf52ipH5KY=".toGroupId()
+            val mlsGroupId =
+                ConversationId("JfflcPtUivbg+1U3Iyrzsh5D2ui/OGS5Rvf52ipH5KY=".toByteArray())
             val externalSenders: ByteArray =
                 Base64.getDecoder().decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
-            bobClient.createConversation(groupId, externalSenders)
-            assertTrue { bobClient.conversationExists(groupId) }
-            val keyPackages: List<MLSKeyPackage> = aliceClient.mlsGenerateKeyPackages(1u)
-            assertFalse { aliceClient.conversationExists(groupId) }
+            bobClient.createConversation(mlsGroupId, externalSenders)
+            assertTrue { bobClient.conversationExists(mlsGroupId) }
+            val keyPackages: List<KeyPackage> = aliceClient.mlsGenerateKeyPackages(1u)
+            assertFalse { aliceClient.conversationExists(mlsGroupId) }
 
             assertNotEquals(bobClient.mlsGetPublicKey(), aliceClient.mlsGetPublicKey())
-            bobClient.addMemberToMlsConversation(groupId, keyPackages)
+            bobClient.addMemberToMlsConversation(mlsGroupId, keyPackages)
 
             // Alice accepts joining the conversation
             val welcomeMessage = testMlsTransport.getLastWelcome()
             aliceClient.processWelcomeMessage(welcomeMessage)
-            assert(aliceClient.conversationExists(groupId))
+            assert(aliceClient.conversationExists(mlsGroupId))
 
             // Alice encrypts a message for the joined conversation
             val plainMessage = "random_message"
@@ -174,14 +174,14 @@ class CoreCryptoClientTest {
             )
             val encryptedMessage: ByteArray =
                 aliceClient.encryptMls(
-                    groupId,
+                    mlsGroupId,
                     ProtobufSerializer.toGenericMessageByteArray(wireMessage = wireTextMessage)
                 )
             assert(encryptedMessage.size > 10)
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
 
             // Bob decrypts the message
-            val decrypted: ByteArray? = bobClient.decryptMls(groupId, encryptedBase64Message)
+            val decrypted: ByteArray? = bobClient.decryptMls(mlsGroupId, encryptedBase64Message)
 
             val genericMessage = GenericMessage.parseFrom(decrypted)
             val wireMessage = ProtobufDeserializer.processGenericMessage(
@@ -200,10 +200,10 @@ class CoreCryptoClientTest {
             assertEquals((wireMessage as WireMessage.Text).text, plainMessage)
 
             assertThrows<CoreCryptoException.Mls> {
-                bobClient.decryptMls(groupId, encryptedBase64Message)
+                bobClient.decryptMls(mlsGroupId, encryptedBase64Message)
             }.also {
                 // Message was already decrypted by Bob, trying again should fail
-                assert(it.exception is MlsException.DuplicateMessage)
+                assert(it.mlsError is MlsException.DuplicateMessage)
             }
             bobClient.close()
             aliceClient.close()

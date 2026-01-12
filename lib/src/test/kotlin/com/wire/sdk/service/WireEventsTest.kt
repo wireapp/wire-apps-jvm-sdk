@@ -143,8 +143,8 @@ class WireEventsTest {
             domain = "anta.wire.link"
         )
 
-        private val EXPECTED_LOCATION_LATITUDE = 11.12345F
-        private val EXPECTED_LOCATION_LONGITUDE = 12.12345F
+        private const val EXPECTED_LOCATION_LATITUDE = 11.12345F
+        private const val EXPECTED_LOCATION_LONGITUDE = 12.12345F
 
         private val DUMMY_CONVERSATION_CREATE_EVENT_RESPONSE =
             """{

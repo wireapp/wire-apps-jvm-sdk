@@ -16,9 +16,9 @@
 
 package com.wire.sdk.crypto
 
+import com.wire.crypto.ConversationId
 import com.wire.crypto.GroupInfo
-import com.wire.crypto.MLSGroupId
-import com.wire.crypto.MLSKeyPackage
+import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
 import com.wire.sdk.model.AppClientId
@@ -29,12 +29,12 @@ internal interface CryptoClient : AutoCloseable {
     fun getAppClientId(): AppClientId?
 
     suspend fun encryptMls(
-        mlsGroupId: MLSGroupId,
+        mlsGroupId: ConversationId,
         message: ByteArray
     ): ByteArray
 
     suspend fun decryptMls(
-        mlsGroupId: MLSGroupId,
+        mlsGroupId: ConversationId,
         encryptedMessage: String
     ): ByteArray?
 
@@ -46,7 +46,7 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun generateProteusPreKeys(
         from: Int = PROTEUS_PREKEYS_FROM_COUNT,
         count: Int = PROTEUS_PREKEYS_MAX_COUNT
-    ): ArrayList<PreKeyCrypto>
+    ): List<PreKeyCrypto>
 
     suspend fun generateProteusLastPreKey(): PreKeyCrypto
 
@@ -62,22 +62,22 @@ internal interface CryptoClient : AutoCloseable {
 
     suspend fun mlsGenerateKeyPackages(
         packageCount: UInt = DEFAULT_KEYPACKAGE_COUNT
-    ): List<MLSKeyPackage>
+    ): List<KeyPackage>
 
     /**
      * Create a request to join an MLS conversation.
      */
-    suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): MLSGroupId
+    suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): ConversationId
 
     /**
      * Create an MLS conversation, adding the client as the first member.
      */
     suspend fun createConversation(
-        groupId: MLSGroupId,
+        mlsGroupId: ConversationId,
         externalSenders: ByteArray
     )
 
-    suspend fun updateKeyingMaterial(mlsGroupId: MLSGroupId)
+    suspend fun updateKeyingMaterial(mlsGroupId: ConversationId)
 
     /**
      * Alternative way to add a member to an MLS conversation.
@@ -85,22 +85,22 @@ internal interface CryptoClient : AutoCloseable {
      * this method directly adds a member to a conversation.
      */
     suspend fun addMemberToMlsConversation(
-        mlsGroupId: MLSGroupId,
-        keyPackages: List<MLSKeyPackage>
+        mlsGroupId: ConversationId,
+        keyPackages: List<KeyPackage>
     )
 
     /**
      * Process an MLS welcome message, adding this client to a conversation, and return the groupId.
      */
-    suspend fun processWelcomeMessage(welcome: Welcome): MLSGroupId
+    suspend fun processWelcomeMessage(welcome: Welcome): ConversationId
 
     suspend fun hasTooFewKeyPackageCount(): Boolean
 
-    suspend fun conversationExists(mlsGroupId: MLSGroupId): Boolean
+    suspend fun conversationExists(mlsGroupId: ConversationId): Boolean
 
-    suspend fun conversationEpoch(mlsGroupId: MLSGroupId): ULong
+    suspend fun conversationEpoch(mlsGroupId: ConversationId): ULong
 
-    suspend fun wipeConversation(mlsGroupId: MLSGroupId)
+    suspend fun wipeConversation(mlsGroupId: ConversationId)
 
     companion object {
         const val DEFAULT_KEYPACKAGE_COUNT = 100u

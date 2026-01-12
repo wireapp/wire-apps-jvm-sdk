@@ -22,21 +22,29 @@ import com.wire.crypto.MlsTransport
 import com.wire.crypto.MlsTransportData
 import com.wire.crypto.MlsTransportResponse
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.exception.WireException
 
 internal class MlsTransportImpl(private val backendClient: BackendClient) : MlsTransport {
     override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
-        backendClient.uploadCommitBundle(
-            commitBundle = parseBundleIntoSingleByteArray(
-                bundle = commitBundle
+        try {
+            backendClient.uploadCommitBundle(
+                commitBundle = parseBundleIntoSingleByteArray(
+                    bundle = commitBundle
+                )
             )
-        )
-
-        return MlsTransportResponse.Success
+            return MlsTransportResponse.Success
+        } catch (ex: WireException) {
+            return MlsTransportResponse.Abort(ex.message ?: "Unknown Backend error occurred")
+        }
     }
 
     override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse {
-        backendClient.sendMessage(mlsMessage)
-        return MlsTransportResponse.Success
+        try {
+            backendClient.sendMessage(mlsMessage)
+            return MlsTransportResponse.Success
+        } catch (ex: WireException) {
+            return MlsTransportResponse.Abort(ex.message ?: "Unknown Backend error occurred")
+        }
     }
 
     /**
@@ -48,7 +56,7 @@ internal class MlsTransportImpl(private val backendClient: BackendClient) : MlsT
      */
     private fun parseBundleIntoSingleByteArray(bundle: CommitBundle): ByteArray {
         return bundle.commit +
-            bundle.groupInfoBundle.payload.copyBytes() +
+            bundle.groupInfo.payload.copyBytes() +
             (bundle.welcome?.copyBytes() ?: ByteArray(0))
     }
 

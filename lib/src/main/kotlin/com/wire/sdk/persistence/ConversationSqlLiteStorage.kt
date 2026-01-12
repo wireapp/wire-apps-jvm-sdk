@@ -15,7 +15,7 @@
 
 package com.wire.sdk.persistence
 
-import com.wire.crypto.toGroupId
+import com.wire.crypto.ConversationId
 import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.Conversation
 import com.wire.sdk.ConversationMemberQueries
@@ -125,7 +125,7 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             id = QualifiedId(UUID.fromString(conv.id), conv.domain),
             name = conv.name,
             teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
-            mlsGroupId = Base64.getDecoder().decode(conv.mls_group_id).toGroupId(),
+            mlsGroupId = ConversationId(Base64.getDecoder().decode(conv.mls_group_id)),
             type = ConversationEntity.Type.fromString(value = conv.type)
         )
 

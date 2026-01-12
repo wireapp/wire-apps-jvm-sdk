@@ -16,7 +16,7 @@
 
 package com.wire.sdk.service.conversation
 
-import com.wire.crypto.toGroupId
+import com.wire.crypto.ConversationId
 import com.wire.sdk.TestUtils
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.config.IsolatedKoinContext
@@ -401,7 +401,7 @@ class ConversationServiceTest {
                 domain = "wire.com"
             )
         val TEAM_ID = TeamId(UUID.randomUUID())
-        val CONVERSATION_MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
+        val CONVERSATION_MLS_GROUP_ID = ConversationId(UUID.randomUUID().toString().toByteArray())
         val CONVERSATION_MLS_GROUP_ID_BASE64 =
             Base64.getEncoder().encodeToString(CONVERSATION_MLS_GROUP_ID.copyBytes())
         val CONVERSATION_RESPONSE = ConversationResponse(

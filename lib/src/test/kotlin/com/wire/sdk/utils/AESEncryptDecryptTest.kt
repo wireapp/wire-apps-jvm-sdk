@@ -16,8 +16,6 @@
 
 package com.wire.sdk.utils
 
-import com.wire.sdk.utils.AESDecrypt
-import com.wire.sdk.utils.AESEncrypt
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -35,7 +33,7 @@ class AESEncryptDecryptTest {
         val encryptedData = AESEncrypt.encryptData(originalData, aesKey)
 
         // Calculate SHA-256 hash of encrypted data
-        val calculatedHash = AESEncrypt.calculateSha256Hash(encryptedData)
+        AESEncrypt.calculateSha256Hash(encryptedData)
 
         // Decrypt the data
         val decryptedData = AESDecrypt.decryptData(encryptedData, aesKey)
