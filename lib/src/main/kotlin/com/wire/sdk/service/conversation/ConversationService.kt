@@ -612,7 +612,7 @@ internal class ConversationService internal constructor(
 
         conversationStorage.saveMembers(
             conversationId = conversationId,
-            members = members.map { member ->
+            members = claimedKeyPackagesResult.successUsers.map { member ->
                 ConversationMember(
                     userId = member,
                     role = ConversationRole.MEMBER
