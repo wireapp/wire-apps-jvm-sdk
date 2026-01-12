@@ -36,4 +36,9 @@ value class AppClientId(val value: String) {
     }
 }
 
+/**
+ * To be used when generating ClientIds to pass to CoreCrypto methods.
+ *
+ * As this is a typealias, both classes present the same usage but to separate domain usage.
+ */
 typealias CryptoQualifiedId = AppClientId

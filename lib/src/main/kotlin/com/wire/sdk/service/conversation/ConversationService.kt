@@ -572,7 +572,7 @@ internal class ConversationService internal constructor(
     ): AddMembersToConversationResult {
         if (members.isEmpty()) {
             throw WireException.InvalidParameter(
-                "List of members can not be empty."
+                "List of members cannot be empty."
             )
         }
 
@@ -650,7 +650,7 @@ internal class ConversationService internal constructor(
     ) {
         if (members.isEmpty()) {
             throw WireException.InvalidParameter(
-                "List of members can not be empty."
+                "List of members cannot be empty."
             )
         }
 
