@@ -98,7 +98,7 @@ class TestCommandProcessor {
         // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN]
         final var split = wireMessage.text().split(" ");
         final var members = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
-        this.manager.addMembersToConversation(
+        this.manager.removeMembersFromConversation(
                 wireMessage.conversationId(),
                 members
         );
