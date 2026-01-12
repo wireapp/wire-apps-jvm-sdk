@@ -217,12 +217,12 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         TODO("Not yet implemented")
     }
 
-    override suspend fun getUserClients(userId: QualifiedId): List<UserClientResponse> {
+    override suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getUsersClients(
-        usersIds: List<QualifiedId>
+    override suspend fun getClientsByUserIds(
+        userIds: List<QualifiedId>
     ): Map<String, Map<String, List<UserClientResponse>>> {
         TODO("Not yet implemented")
     }

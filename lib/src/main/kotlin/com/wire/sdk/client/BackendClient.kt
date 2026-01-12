@@ -127,10 +127,10 @@ interface BackendClient {
         querySince: String?
     ): NotificationsResponse
 
-    suspend fun getUserClients(userId: QualifiedId): List<UserClientResponse>
+    suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse>
 
-    suspend fun getUsersClients(
-        usersIds: List<QualifiedId>
+    suspend fun getClientsByUserIds(
+        userIds: List<QualifiedId>
     ): Map<String, Map<String, List<UserClientResponse>>>
 
     companion object {

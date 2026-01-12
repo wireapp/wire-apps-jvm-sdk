@@ -605,7 +605,7 @@ internal class BackendClientDemo(
         }
     }
 
-    override suspend fun getUserClients(userId: QualifiedId): List<UserClientResponse> {
+    override suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
         val token = loginUser()
         val clients = httpClient.get("/users/${userId.domain}/${userId.id}/clients") {
             headers {
@@ -616,15 +616,15 @@ internal class BackendClientDemo(
         return clients
     }
 
-    override suspend fun getUsersClients(
-        usersIds: List<QualifiedId>
+    override suspend fun getClientsByUserIds(
+        userIds: List<QualifiedId>
     ): Map<String, Map<String, List<UserClientResponse>>> {
         val token = loginUser()
         val usersClients = httpClient.post("/users/list-clients") {
             headers {
                 append(HttpHeaders.Authorization, "Bearer $token")
             }
-            setBody(usersIds)
+            setBody(userIds)
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<Map<String, Map<String, List<UserClientResponse>>>>()

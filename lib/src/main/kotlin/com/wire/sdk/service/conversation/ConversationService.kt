@@ -440,19 +440,12 @@ internal class ConversationService internal constructor(
         logger.info("Attempting to leave conversation. conversationId: {}", conversationId)
 
         val conversation = getConversationById(conversationId)
-        val appUserID: UUID? = IsolatedKoinContext.getApplicationId()
-        if (appUserID == null ||
-            conversation.type != ConversationEntity.Type.GROUP
-        ) {
-            logger.warn(
-                "Skipping leaving conversation: invalid preconditions. conversationId: {}, " +
-                    "conversationType:{}, appUserID: {}",
-                conversationId,
-                conversation.type,
-                appUserID
-            )
-            throw WireException.InvalidParameter()
-        }
+        val appUserID: UUID = IsolatedKoinContext.getApplicationId()
+
+        requireConversationIsGroupOrChannel(
+            conversationId = conversationId,
+            conversationType = conversation.type
+        )
 
         requireAppIsInConversation(conversationId)
         val appUser = QualifiedId(appUserID, IsolatedKoinContext.getBackendDomain())
@@ -572,6 +565,7 @@ internal class ConversationService internal constructor(
 
     fun getAll() = conversationStorage.getAll()
 
+    @Suppress("LongMethod")
     suspend fun addMembersToConversation(
         conversationId: QualifiedId,
         members: List<QualifiedId>
@@ -590,10 +584,23 @@ internal class ConversationService internal constructor(
         )
         requireAppIsAdminInConversation(conversationId = conversationId)
 
+        logger.info(
+            "Attempting to add {} member(s) to the conversation. conversationId: {}",
+            members.size,
+            conversationId
+        )
+
         val cipherSuiteCode = getCipherSuiteCode()
         val claimedKeyPackagesResult = claimKeyPackages(
             userIds = members,
             cipherSuiteCode = cipherSuiteCode
+        )
+
+        logger.info(
+            "Adding {} member(s) to the conversation and ignoring {} member(s). conversationId: {}",
+            claimedKeyPackagesResult.successUsers.size,
+            claimedKeyPackagesResult.failedUsers.size,
+            conversationId
         )
 
         try {
@@ -603,13 +610,18 @@ internal class ConversationService internal constructor(
                     keyPackage.toMLSKeyPackage()
                 }
             )
-        } catch (exception: MlsException.Other) {
+        } catch (exception: MlsException) {
             throw WireException.InvalidParameter(
                 message = "Unable to claim Key Packages for list of members",
                 throwable = exception
             )
         }
 
+        logger.info(
+            "Saving {} member(s) into the database. conversationId: {}",
+            claimedKeyPackagesResult.successUsers.size,
+            conversationId
+        )
         conversationStorage.saveMembers(
             conversationId = conversationId,
             members = claimedKeyPackagesResult.successUsers.map { member ->
@@ -618,6 +630,12 @@ internal class ConversationService internal constructor(
                     role = ConversationRole.MEMBER
                 )
             }
+        )
+
+        logger.info(
+            "{} member(s) successfully added to the conversation. conversationId: {}",
+            claimedKeyPackagesResult.successUsers.size,
+            conversationId
         )
 
         return AddMembersToConversationResult(
@@ -644,23 +662,79 @@ internal class ConversationService internal constructor(
         )
         requireAppIsAdminInConversation(conversationId = conversationId)
 
-        val clients: List<CryptoQualifiedId> = if (members.size == SINGLE_MEMBER) {
-            val clients = backendClient.getUserClients(userId = members.first())
+        logger.info(
+            "Attempting to remove {} member(s) from the conversation. conversationId: {}",
+            members.size,
+            conversationId
+        )
+
+        val clients: List<CryptoQualifiedId> = getClientsByUserIds(userIds = members)
+
+        cryptoClient.removeMembersFromConversation(
+            mlsGroupId = conversation.mlsGroupId,
+            clientIds = clients
+        )
+
+        logger.info(
+            "Removing {} member(s) from the database. conversationId: {}",
+            members.size,
+            conversationId
+        )
+
+        conversationStorage.deleteMembers(
+            conversationId = conversationId,
+            users = members
+        )
+
+        logger.info(
+            "{} member(s) successfully removed from the conversation. conversationId: {}",
+            members.size,
+            conversationId
+        )
+    }
+
+    private suspend fun getClientsByUserIds(userIds: List<QualifiedId>): List<CryptoQualifiedId> =
+        if (userIds.size == SINGLE_MEMBER) {
+            logger.info(
+                "Retrieving clients for User: {}",
+                userIds.first()
+            )
+
+            val clients = backendClient.getClientsByUserId(userId = userIds.first())
+
+            logger.info(
+                "Received and mapping {} clients for User: {}",
+                clients.size,
+                userIds.first()
+            )
 
             clients.map { client ->
                 CryptoQualifiedId.create(
-                    userId = members.first().id.toString(),
+                    userId = userIds.first().id.toString(),
                     deviceId = client.id,
-                    userDomain = members.first().domain
+                    userDomain = userIds.first().domain
                 )
             }
         } else {
-            val usersClients = backendClient.getUsersClients(
-                usersIds = members
+            logger.info(
+                "Retrieving clients for {} users.",
+                userIds.size
+            )
+
+            val usersClients = backendClient.getClientsByUserIds(userIds = userIds)
+
+            logger.info(
+                "Received clients for {} users",
+                userIds.size
             )
 
             usersClients.flatMap { (domain, users) ->
                 users.flatMap { (userId, clients) ->
+                    logger.debug(
+                        "Mapping {} clients for User: {}",
+                        clients.size,
+                        userId
+                    )
                     clients.map { client ->
                         CryptoQualifiedId.create(
                             userId = userId,
@@ -670,18 +744,12 @@ internal class ConversationService internal constructor(
                     }
                 }
             }
+        }.also {
+            logger.info(
+                "Returning {} CryptoQualifiedId",
+                it.size
+            )
         }
-
-        cryptoClient.removeMembersFromConversation(
-            mlsGroupId = conversation.mlsGroupId,
-            clientIds = clients
-        )
-
-        conversationStorage.deleteMembers(
-            conversationId = conversationId,
-            users = members
-        )
-    }
 
     private suspend fun getCipherSuiteCode(): Int =
         backendClient

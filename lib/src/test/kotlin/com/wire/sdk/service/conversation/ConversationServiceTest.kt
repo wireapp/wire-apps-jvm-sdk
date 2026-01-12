@@ -896,7 +896,7 @@ class ConversationServiceTest {
             }
 
             val backendClient = mockk<BackendClient> {
-                coEvery { getUserClients(CONVERSATION_MEMBER_1) } returns listOf(client)
+                coEvery { getClientsByUserId(CONVERSATION_MEMBER_1) } returns listOf(client)
             }
 
             val cryptoClient = mockk<CryptoClient> {
@@ -915,7 +915,7 @@ class ConversationServiceTest {
             service.removeMembersFromConversation(CONVERSATION_ID, membersToRemove)
 
             coVerify(exactly = 1) {
-                backendClient.getUserClients(CONVERSATION_MEMBER_1)
+                backendClient.getClientsByUserId(CONVERSATION_MEMBER_1)
                 cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             verify(exactly = 1) {
@@ -958,7 +958,7 @@ class ConversationServiceTest {
             }
 
             val backendClient = mockk<BackendClient> {
-                coEvery { getUsersClients(membersToRemove) } returns usersClientsMap
+                coEvery { getClientsByUserIds(membersToRemove) } returns usersClientsMap
             }
 
             val cryptoClient = mockk<CryptoClient> {
@@ -977,11 +977,11 @@ class ConversationServiceTest {
             service.removeMembersFromConversation(CONVERSATION_ID, membersToRemove)
 
             coVerify(exactly = 1) {
-                backendClient.getUsersClients(membersToRemove)
+                backendClient.getClientsByUserIds(membersToRemove)
                 cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             coVerify(exactly = 0) {
-                backendClient.getUserClients(any())
+                backendClient.getClientsByUserId(any())
             }
             verify(exactly = 1) {
                 conversationStorage.deleteMembers(CONVERSATION_ID, membersToRemove)
@@ -1099,7 +1099,7 @@ class ConversationServiceTest {
             }
 
             val backendClient = mockk<BackendClient> {
-                coEvery { getUserClients(CONVERSATION_MEMBER_1) } returns listOf(client1)
+                coEvery { getClientsByUserId(CONVERSATION_MEMBER_1) } returns listOf(client1)
             }
 
             val cryptoClient = mockk<CryptoClient> {
@@ -1160,7 +1160,7 @@ class ConversationServiceTest {
 
             val backendClient = mockk<BackendClient> {
                 coEvery {
-                    getUserClients(CONVERSATION_MEMBER_1)
+                    getClientsByUserId(CONVERSATION_MEMBER_1)
                 } returns listOf(client1, client2, client3)
             }
 
@@ -1186,7 +1186,7 @@ class ConversationServiceTest {
             assertEquals(3, capturedClients.captured.size)
 
             coVerify(exactly = 1) {
-                backendClient.getUserClients(CONVERSATION_MEMBER_1)
+                backendClient.getClientsByUserId(CONVERSATION_MEMBER_1)
                 cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             verify(exactly = 1) {
