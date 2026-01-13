@@ -700,45 +700,33 @@ internal class ConversationService internal constructor(
         )
     }
 
-    private suspend fun getClientsByUserIds(userIds: List<QualifiedId>): List<CryptoClientId> =
-        if (userIds.size == 1) {
-            logger.info("Retrieving clients for User: {}", userIds.first())
+    private suspend fun getClientsByUserIds(userIds: List<QualifiedId>): List<CryptoClientId> {
+        val usersClients = if (userIds.size == 1) {
+            val user = userIds.first()
+            logger.info("Retrieving clients for User: {}", user)
 
-            val clients = backendClient.getClientsByUserId(userId = userIds.first())
+            val clients = backendClient.getClientsByUserId(userId = user)
 
-            logger.info(
-                "Received and mapping {} clients for User: {}",
-                clients.size,
-                userIds.first()
-            )
-
-            clients.map { client ->
-                CryptoClientId.create(
-                    userId = userIds.first().id.toString(),
-                    deviceId = client.id,
-                    userDomain = userIds.first().domain
-                )
-            }
+            mapOf(user to clients)
         } else {
             logger.info("Retrieving clients for {} users.", userIds.size)
 
-            val usersClients = backendClient.getClientsByUserIds(userIds = userIds)
+            backendClient.getClientsByUserIds(userIds = userIds)
+        }
 
-            logger.info("Received clients for {} users", usersClients.keys.size)
-
-            usersClients.flatMap { (user, clients) ->
-                logger.debug("Mapping {} clients for User: {}", clients.size, user.id)
-                clients.map { client ->
-                    CryptoClientId.create(
-                        userId = user.id.toString(),
-                        deviceId = client.id,
-                        userDomain = user.domain
-                    )
-                }
+        return usersClients.flatMap { (user, clients) ->
+            logger.debug("Mapping {} clients for User: {}", clients.size, user.id)
+            clients.map { client ->
+                CryptoClientId.create(
+                    userId = user.id.toString(),
+                    deviceId = client.id,
+                    userDomain = user.domain
+                )
             }
         }.also {
-            logger.info("Returning {} CryptoClientId", it.size)
+            logger.info("Returning {} clients for {} user(s).", it.size, userIds.size)
         }
+    }
 
     private suspend fun getCipherSuiteCode(): Int =
         backendClient
