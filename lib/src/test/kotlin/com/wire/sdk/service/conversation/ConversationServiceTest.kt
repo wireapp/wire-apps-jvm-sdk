@@ -1123,10 +1123,22 @@ class ConversationServiceTest {
             }
 
             coVerify(exactly = 1) {
-                cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
+                cryptoClient.removeMembersFromConversation(
+                    mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                    clientIds = listOf(client1).map { client ->
+                        CryptoClientId.create(
+                            userId = CONVERSATION_MEMBER_1.id.toString(),
+                            deviceId = client.id,
+                            userDomain = BACKEND_DOMAIN
+                        )
+                    }
+                )
             }
             verify(exactly = 0) {
-                conversationStorage.deleteMembers(any(), any())
+                conversationStorage.deleteMembers(
+                    conversationId = CONVERSATION_ID,
+                    users = listOf(CONVERSATION_MEMBER_1)
+                )
             }
         }
 
@@ -1187,7 +1199,16 @@ class ConversationServiceTest {
 
             coVerify(exactly = 1) {
                 backendClient.getClientsByUserId(CONVERSATION_MEMBER_1)
-                cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
+                cryptoClient.removeMembersFromConversation(
+                    mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                    clientIds = listOf(client1, client2, client3).map { client ->
+                        CryptoClientId.create(
+                            userId = CONVERSATION_MEMBER_1.id.toString(),
+                            deviceId = client.id,
+                            userDomain = BACKEND_DOMAIN
+                        )
+                    }
+                )
             }
             verify(exactly = 1) {
                 conversationStorage.deleteMembers(CONVERSATION_ID, membersToRemove)

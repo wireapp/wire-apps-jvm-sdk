@@ -90,7 +90,7 @@ internal interface CryptoClient : AutoCloseable {
     )
 
     suspend fun removeMembersFromConversation(
-        mlsGroupId: MLSGroupId,
+        mlsGroupId: ConversationId,
         clientIds: List<CryptoClientId>
     )
 

@@ -2,6 +2,7 @@ package com.wire.sdk.crypto
 
 import com.wire.crypto.CUSTOM_CONFIGURATION_DEFAULT
 import com.wire.crypto.Ciphersuite
+import com.wire.crypto.ClientId
 import com.wire.crypto.ConversationConfiguration
 import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCrypto
@@ -211,14 +212,15 @@ internal class MlsCryptoClient private constructor(
             it.addClientsToConversation(mlsGroupId, keyPackages)
         }
     }
+
     override suspend fun removeMembersFromConversation(
-        mlsGroupId: MLSGroupId,
+        mlsGroupId: ConversationId,
         clientIds: List<CryptoClientId>
     ) {
-        coreCrypto.transaction {
-            it.removeMember(
-                id = mlsGroupId,
-                members = clientIds.map { client ->
+        coreCryptoClient.transaction {
+            it.removeClientsFromConversation(
+                conversationId = mlsGroupId,
+                clients = clientIds.map { client ->
                     ClientId(client.value.toByteArray())
                 }
             )
