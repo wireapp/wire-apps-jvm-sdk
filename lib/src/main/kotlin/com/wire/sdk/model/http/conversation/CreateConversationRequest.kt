@@ -23,7 +23,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CreateConversationRequest private constructor(
+class CreateConversationRequest private constructor(
     @SerialName("qualified_users")
     val qualifiedUsers: List<QualifiedId> = emptyList(),
     @SerialName("name")
@@ -90,4 +90,13 @@ data class CreateConversationRequest private constructor(
                 )
             )
     }
+
+    override fun toString(): String =
+        "CreateConversationRequest(qualifiedUsers=$qualifiedUsers, name=$name," +
+            "access=$access, accessRole=$accessRole," +
+            "groupConversationType=$groupConversationType," +
+            "channelAddPermissionTypeDTO=$channelAddPermissionTypeDTO," +
+            "conversationTeamInfo=$conversationTeamInfo, messageTimer=$messageTimer," +
+            "receiptMode=$receiptMode, conversationRole='$conversationRole'," +
+            "protocol=$protocol, cellEnabled=$cellEnabled, skipCreator=$skipCreator)"
 }

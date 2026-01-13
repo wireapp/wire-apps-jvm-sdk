@@ -57,7 +57,7 @@ internal class WireTeamEventsListener internal constructor(
                 session.incoming
                     .consumeAsFlow()
                     .buffer()
-                    .onCompletion { cause ->
+                    .onCompletion { _ ->
                         logger.warn(
                             "WebSocket connection closed, stopping Wire Team Events Listener"
                         )

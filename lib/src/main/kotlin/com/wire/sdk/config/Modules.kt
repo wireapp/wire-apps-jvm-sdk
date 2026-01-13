@@ -21,7 +21,7 @@ import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientDemo
-import com.wire.sdk.crypto.CoreCryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsTransportImpl
 import com.wire.sdk.exception.WireException
@@ -146,7 +146,7 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
 }
 
 /**
- * Initialize the [CoreCryptoClient] if it's not already initialized.
+ * Initialize the [MlsCryptoClient] if it's not already initialized.
  * Uploads the MLS public keys and key packages to the backend.
  *
  * The following times the SDK is started, the client will be loaded from the storage.
@@ -169,7 +169,7 @@ internal suspend fun getOrInitCryptoClient(
 
     requireNotNull(userId) { "WIRE_SDK_USER_ID environment variable must be set" }
 
-    val cryptoClient = CoreCryptoClient.Companion.create(
+    val cryptoClient = MlsCryptoClient.create(
         userId = userId,
         ciphersuiteCode = mlsCipherSuiteCode
     )
@@ -177,7 +177,7 @@ internal suspend fun getOrInitCryptoClient(
     val storedDeviceId = appStorage.getDeviceId()
     if (storedDeviceId != null) {
         logger.info("Loading MLS Client for: ${storedDeviceId.obfuscateClientId()}")
-        val cryptoClientId = CryptoClientId.Companion.create(
+        val cryptoClientId = CryptoClientId.create(
             userId = userId,
             deviceId = storedDeviceId,
             userDomain = backendDomain
@@ -204,7 +204,7 @@ internal suspend fun getOrInitCryptoClient(
                     password = userPassword,
                     lastKey = lastKey.toApi(),
                     preKeys = preKeys.map { it.toApi() },
-                    capabilities = RegisterClientRequest.Companion.DEFAULT_CAPABILITIES
+                    capabilities = RegisterClientRequest.DEFAULT_CAPABILITIES
                 )
             )
         } catch (exception: WireException.ClientError) {
@@ -215,7 +215,7 @@ internal suspend fun getOrInitCryptoClient(
         }
 
         val deviceId = clientResponse.id
-        val cryptoClientId = CryptoClientId.Companion.create(
+        val cryptoClientId = CryptoClientId.create(
             userId = userId,
             deviceId = deviceId,
             userDomain = backendDomain
@@ -239,7 +239,7 @@ internal suspend fun getOrInitCryptoClient(
 
         backendClient.uploadMlsKeyPackages(
             cryptoClientId = cryptoClientId,
-            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.value.copyBytes() }
+            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
         )
 
         appStorage.setShouldRejoinConversations(should = true)

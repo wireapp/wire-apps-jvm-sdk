@@ -253,14 +253,14 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers.
      *
      * This method currently only handles the retrieval of an Image Asset, so for now we are also
-     * receiving a metadata [AssetMetadata] object for other types (Audio | Video).
+     * receiving a [WireMessage.Asset.AssetMetadata] object for other types (Audio | Video).
      *
      * @param conversationId The qualified ID of the conversation
      * @param asset [AssetResource] containing the ByteArray of the asset File
-     * @param metadata [AssetMetadata] Metadata to display the asset in the UI
+     * @param metadata [WireMessage.Asset.AssetMetadata] Metadata to display the asset in the UI
      * @param name Name of the asset
      * @param mimeType MimeType of the asset
-     * @param retention [AssetRetention] What should be the retantion of the asset remotely
+     * @param retention [AssetRetention] What should be the retention of the asset remotely
      *
      * @return The encryption key used to encrypt the asset. Might be useful if you want to
      * download the file later, other clients will receive the same key automatically.

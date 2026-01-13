@@ -16,7 +16,7 @@
 
 package com.wire.sdk.service
 
-import com.wire.crypto.toGroupId
+import com.wire.crypto.ConversationId
 import com.wire.crypto.toGroupInfo
 import com.wire.sdk.TestUtils
 import com.wire.sdk.client.BackendClientDemo
@@ -27,7 +27,6 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
-import com.wire.sdk.service.MlsFallbackStrategy
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -157,7 +156,7 @@ class MlsFallbackStrategyTest {
                 domain = "wire.com"
             )
         private val TEAM_ID = TeamId(UUID.randomUUID())
-        private val MLS_GROUP_ID = ByteArray(32) { 1 }.toGroupId()
+        private val MLS_GROUP_ID = ConversationId(ByteArray(32) { 1 })
         private val CONVERSATION_RESPONSE = ConversationResponse(
             id = CONVERSATION_ID,
             teamId = TEAM_ID.value,

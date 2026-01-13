@@ -16,14 +16,9 @@
 
 package com.wire.sdk.model.http.client
 
-import com.wire.crypto.PreKey
-import io.ktor.util.encodeBase64
-
 data class PreKeyCrypto(
     val id: Int,
     val encodedData: String
 )
 
 fun PreKeyCrypto.toApi(): PreKeyRequest = PreKeyRequest(id, encodedData)
-
-fun PreKey.toCryptography(): PreKeyCrypto = PreKeyCrypto(id.toInt(), data.encodeBase64())

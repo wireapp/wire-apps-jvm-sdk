@@ -150,12 +150,12 @@ internal class EventsRouter internal constructor(
                 }
 
                 is EventContentDTO.Conversation.NewMLSMessageDTO -> {
-                    val groupId = conversationService
+                    val mlsGroupId = conversationService
                         .getConversationById(event.qualifiedConversation)
                         .mlsGroupId
                     try {
                         val message = cryptoClient.decryptMls(
-                            mlsGroupId = groupId,
+                            mlsGroupId = mlsGroupId,
                             encryptedMessage = event.message
                         )
 
@@ -174,7 +174,7 @@ internal class EventsRouter internal constructor(
                     } catch (exception: MlsException) {
                         logger.debug("Message decryption failed, MlsException: ", exception)
                         mlsFallbackStrategy.verifyConversationOutOfSync(
-                            mlsGroupId = groupId,
+                            mlsGroupId = mlsGroupId,
                             conversationId = event.qualifiedConversation
                         )
                     } catch (exception: CoreCryptoException.Mls) {
@@ -183,7 +183,7 @@ internal class EventsRouter internal constructor(
                             exception
                         )
                         mlsFallbackStrategy.verifyConversationOutOfSync(
-                            mlsGroupId = groupId,
+                            mlsGroupId = mlsGroupId,
                             conversationId = event.qualifiedConversation
                         )
                     }
@@ -219,7 +219,7 @@ internal class EventsRouter internal constructor(
                 backendClient.uploadMlsKeyPackages(
                     cryptoClientId = cryptoClientId,
                     mlsKeyPackages =
-                        cryptoClient.mlsGenerateKeyPackages().map { it.value.copyBytes() }
+                        cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
                 )
             }
         }
@@ -317,13 +317,13 @@ internal class EventsRouter internal constructor(
         try {
             cryptoClient.processWelcomeMessage(welcome)
         } catch (ex: CoreCryptoException.Mls) {
-            if (ex.exception is MlsException.OrphanWelcome) {
+            if (ex.mlsError is MlsException.OrphanWelcome) {
                 logger.info("Cannot process welcome, ask to join the conversation")
                 val groupInfo =
                     backendClient.getConversationGroupInfo(qualifiedConversation)
                 cryptoClient.joinMlsConversationRequest(groupInfo.toGroupInfo())
             } else {
-                logger.error("Cannot process welcome -- ${ex.exception}", ex)
+                logger.error("Cannot process welcome -- ${ex.mlsError}", ex)
                 throw WireException.CryptographicSystemError("Cannot process welcome")
             }
         }
