@@ -16,7 +16,7 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.asset.AssetUploadData
@@ -52,14 +52,14 @@ interface BackendClient {
     suspend fun confirmTeam(teamId: TeamId)
 
     suspend fun updateClientWithMlsPublicKey(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsPublicKeys: MlsPublicKeys
     )
 
     suspend fun registerClient(registerClientRequest: RegisterClientRequest): RegisterClientResponse
 
     suspend fun uploadMlsKeyPackages(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsKeyPackages: List<ByteArray>
     )
 

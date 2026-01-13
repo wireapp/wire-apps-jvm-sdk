@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class AppClientId(val value: String) {
+value class CryptoClientId(val value: String) {
     override fun toString(): String = value.obfuscateClientId()
 
     companion object {
@@ -29,16 +29,9 @@ value class AppClientId(val value: String) {
             userId: String,
             deviceId: String,
             userDomain: String
-        ): AppClientId =
-            AppClientId(
+        ): CryptoClientId =
+            CryptoClientId(
                 value = "$userId:$deviceId@$userDomain"
             )
     }
 }
-
-/**
- * To be used when generating ClientIds to pass to CoreCrypto methods.
- *
- * As this is a typealias, both classes present the same usage but to separate domain usage.
- */
-typealias CryptoQualifiedId = AppClientId

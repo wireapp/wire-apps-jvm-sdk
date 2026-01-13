@@ -27,7 +27,7 @@ import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CoreCryptoClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationRole
@@ -316,7 +316,7 @@ class WireApplicationManagerTest {
             ciphersuiteCode = 1
         ).use { cryptoClientUser2 ->
             cryptoClientUser2.initializeMlsClient(
-                appClientId = AppClientId("user_${USER_2.id}"),
+                cryptoClientId = CryptoClientId("user_${USER_2.id}"),
                 mlsTransport = testMlsTransport
             )
             cryptoClientUser2.mlsGenerateKeyPackages(10U)

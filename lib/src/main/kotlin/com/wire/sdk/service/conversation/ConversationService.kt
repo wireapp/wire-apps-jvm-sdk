@@ -28,8 +28,8 @@ import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.CryptoProtocol
-import com.wire.sdk.model.CryptoQualifiedId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
@@ -668,7 +668,7 @@ internal class ConversationService internal constructor(
             conversationId
         )
 
-        val clients: List<CryptoQualifiedId> = getClientsByUserIds(userIds = members)
+        val clients: List<CryptoClientId> = getClientsByUserIds(userIds = members)
 
         cryptoClient.removeMembersFromConversation(
             mlsGroupId = conversation.mlsGroupId,
@@ -693,7 +693,7 @@ internal class ConversationService internal constructor(
         )
     }
 
-    private suspend fun getClientsByUserIds(userIds: List<QualifiedId>): List<CryptoQualifiedId> =
+    private suspend fun getClientsByUserIds(userIds: List<QualifiedId>): List<CryptoClientId> =
         if (userIds.size == SINGLE_MEMBER) {
             logger.info(
                 "Retrieving clients for User: {}",
@@ -709,7 +709,7 @@ internal class ConversationService internal constructor(
             )
 
             clients.map { client ->
-                CryptoQualifiedId.create(
+                CryptoClientId.create(
                     userId = userIds.first().id.toString(),
                     deviceId = client.id,
                     userDomain = userIds.first().domain
@@ -736,7 +736,7 @@ internal class ConversationService internal constructor(
                         userId
                     )
                     clients.map { client ->
-                        CryptoQualifiedId.create(
+                        CryptoClientId.create(
                             userId = userId,
                             deviceId = client.id,
                             userDomain = domain
@@ -746,7 +746,7 @@ internal class ConversationService internal constructor(
             }
         }.also {
             logger.info(
-                "Returning {} CryptoQualifiedId",
+                "Returning {} CryptoClientId",
                 it.size
             )
         }

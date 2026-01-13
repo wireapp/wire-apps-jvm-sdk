@@ -21,13 +21,12 @@ import com.wire.crypto.MLSGroupId
 import com.wire.crypto.MLSKeyPackage
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
-import com.wire.sdk.model.AppClientId
-import com.wire.sdk.model.CryptoQualifiedId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 
 internal interface CryptoClient : AutoCloseable {
-    fun getAppClientId(): AppClientId?
+    fun getAppClientId(): CryptoClientId?
 
     suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
@@ -55,7 +54,7 @@ internal interface CryptoClient : AutoCloseable {
      * MLS Configuration
      */
     suspend fun initializeMlsClient(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsTransport: MlsTransport
     )
 
@@ -92,7 +91,7 @@ internal interface CryptoClient : AutoCloseable {
 
     suspend fun removeMembersFromConversation(
         mlsGroupId: MLSGroupId,
-        clientIds: List<CryptoQualifiedId>
+        clientIds: List<CryptoClientId>
     )
 
     /**

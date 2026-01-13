@@ -25,8 +25,8 @@ import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.CryptoProtocol
-import com.wire.sdk.model.CryptoQualifiedId
 import com.wire.sdk.model.MlsStatus
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.StandardError
@@ -1164,7 +1164,7 @@ class ConversationServiceTest {
                 } returns listOf(client1, client2, client3)
             }
 
-            val capturedClients = slot<List<CryptoQualifiedId>>()
+            val capturedClients = slot<List<CryptoClientId>>()
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
                     removeMembersFromConversation(

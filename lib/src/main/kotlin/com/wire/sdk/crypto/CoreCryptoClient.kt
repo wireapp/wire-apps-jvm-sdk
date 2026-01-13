@@ -14,8 +14,7 @@ import com.wire.crypto.toClientId
 import com.wire.crypto.toExternalSenderKey
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
-import com.wire.sdk.model.AppClientId
-import com.wire.sdk.model.CryptoQualifiedId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.model.http.client.toCryptography
@@ -32,13 +31,13 @@ internal class CoreCryptoClient private constructor(
     private var coreCrypto: CoreCrypto
 ) : CryptoClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private var appClientId: AppClientId? = null
+    private var cryptoClientId: CryptoClientId? = null
 
-    private fun setAppClientId(appClientId: AppClientId) {
-        this@CoreCryptoClient.appClientId = appClientId
+    private fun setAppClientId(cryptoClientId: CryptoClientId) {
+        this@CoreCryptoClient.cryptoClientId = cryptoClientId
     }
 
-    override fun getAppClientId(): AppClientId? = appClientId
+    override fun getAppClientId(): CryptoClientId? = cryptoClientId
 
     override suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
@@ -90,19 +89,19 @@ internal class CoreCryptoClient private constructor(
         }
 
     override suspend fun initializeMlsClient(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsTransport: MlsTransport
     ) {
         coreCrypto.transaction {
             it.mlsInit(
-                appClientId.value.toClientId(),
+                cryptoClientId.value.toClientId(),
                 Ciphersuites(setOf(ciphersuite))
             )
         }
 
         coreCrypto.provideTransport(mlsTransport)
 
-        setAppClientId(appClientId = appClientId)
+        setAppClientId(cryptoClientId = cryptoClientId)
     }
 
     override suspend fun mlsGetPublicKey(): MlsPublicKeys {
@@ -187,7 +186,7 @@ internal class CoreCryptoClient private constructor(
 
     override suspend fun removeMembersFromConversation(
         mlsGroupId: MLSGroupId,
-        clientIds: List<CryptoQualifiedId>
+        clientIds: List<CryptoClientId>
     ) {
         coreCrypto.transaction {
             it.removeMember(

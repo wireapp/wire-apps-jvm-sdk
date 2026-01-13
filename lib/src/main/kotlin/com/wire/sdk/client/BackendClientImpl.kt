@@ -18,7 +18,7 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.asset.AssetUploadData
@@ -96,7 +96,7 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     }
 
     override suspend fun updateClientWithMlsPublicKey(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
         TODO("Not yet implemented")
@@ -109,7 +109,7 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     }
 
     override suspend fun uploadMlsKeyPackages(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsKeyPackages: List<ByteArray>
     ) {
         TODO("Not yet implemented")
