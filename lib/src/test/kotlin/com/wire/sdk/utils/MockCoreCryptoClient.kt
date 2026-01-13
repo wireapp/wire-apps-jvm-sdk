@@ -31,7 +31,7 @@ import com.wire.crypto.invoke
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException.InvalidParameter
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.integrations.protobuf.messages.Messages
@@ -45,13 +45,13 @@ internal class MockCoreCryptoClient private constructor(
     private var coreCryptoClient: CoreCryptoClient
 ) : CryptoClient {
     val conversationExist = mutableSetOf<ConversationId>()
-    private var appClientId: AppClientId? = null
+    private var cryptoClientId: CryptoClientId? = null
 
-    fun setAppClientId(appClientId: AppClientId) {
-        this.appClientId = appClientId
+    fun setCryptoClientId(cryptoClientId: CryptoClientId) {
+        this.cryptoClientId = cryptoClientId
     }
 
-    override fun getAppClientId(): AppClientId? = appClientId
+    override fun getCryptoClientId(): CryptoClientId? = cryptoClientId
 
     override suspend fun initializeProteusClient() {
         // Do nothing
@@ -81,7 +81,7 @@ internal class MockCoreCryptoClient private constructor(
         )
 
     override suspend fun initializeMlsClient(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsTransport: MlsTransport
     ) {
         // Do nothing
@@ -147,6 +147,13 @@ internal class MockCoreCryptoClient private constructor(
     override suspend fun conversationEpoch(mlsGroupId: ConversationId): ULong = 0UL
 
     override suspend fun wipeConversation(mlsGroupId: ConversationId) {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun removeMembersFromConversation(
+        mlsGroupId: ConversationId,
+        clientIds: List<CryptoClientId>
+    ) {
         TODO("Not yet implemented")
     }
 

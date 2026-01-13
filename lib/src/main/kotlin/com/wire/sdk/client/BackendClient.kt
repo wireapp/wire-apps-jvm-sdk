@@ -16,7 +16,7 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.asset.AssetUploadData
@@ -36,6 +36,7 @@ import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
+import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 
@@ -51,14 +52,14 @@ interface BackendClient {
     suspend fun confirmTeam(teamId: TeamId)
 
     suspend fun updateClientWithMlsPublicKey(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsPublicKeys: MlsPublicKeys
     )
 
     suspend fun registerClient(registerClientRequest: RegisterClientRequest): RegisterClientResponse
 
     suspend fun uploadMlsKeyPackages(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsKeyPackages: List<ByteArray>
     )
 
@@ -125,6 +126,12 @@ interface BackendClient {
         querySize: Int = NOTIFICATION_MINIMUM_QUERY_SIZE,
         querySince: String?
     ): NotificationsResponse
+
+    suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse>
+
+    suspend fun getClientsByUserIds(
+        userIds: List<QualifiedId>
+    ): Map<QualifiedId, List<UserClientResponse>>
 
     companion object {
         const val API_VERSION = "v13"

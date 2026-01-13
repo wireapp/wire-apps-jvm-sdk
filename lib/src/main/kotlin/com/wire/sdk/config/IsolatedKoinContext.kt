@@ -50,7 +50,10 @@ internal object IsolatedKoinContext {
         this.koinApp.koin.setProperty(APPLICATION_ID, value)
     }
 
-    fun getApplicationId(): UUID? = this.koinApp.koin.getProperty(APPLICATION_ID)
+    fun getApplicationId(): UUID =
+        checkNotNull(this.koinApp.koin.getProperty(APPLICATION_ID)) {
+            "App ID is not set in Koin properties"
+        }
 
     fun setApiHost(value: String) {
         this.koinApp.koin.setProperty(API_HOST, value)

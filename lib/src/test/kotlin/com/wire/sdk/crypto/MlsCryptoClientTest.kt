@@ -6,7 +6,7 @@ import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.protobuf.ProtobufDeserializer
@@ -41,7 +41,7 @@ class MlsCryptoClientTest {
                 ciphersuiteCode = 1
             )
             cryptoClient.initializeMlsClient(
-                appClientId = AppClientId("user_$userId"),
+                cryptoClientId = CryptoClientId("user_$userId"),
                 mlsTransport = testMlsTransport
             )
 
@@ -87,7 +87,7 @@ class MlsCryptoClientTest {
                 ciphersuiteCode = 1
             )
             mlsClient.initializeMlsClient(
-                appClientId = AppClientId("user_$userId"),
+                cryptoClientId = CryptoClientId("user_$userId"),
                 mlsTransport = testMlsTransport
             )
 
@@ -130,7 +130,7 @@ class MlsCryptoClientTest {
                 ciphersuiteCode = 1
             )
             bobClient.initializeMlsClient(
-                appClientId = AppClientId(
+                cryptoClientId = CryptoClientId(
                     value = "bob_$bobUserId"
                 ),
                 mlsTransport = testMlsTransport
@@ -142,7 +142,7 @@ class MlsCryptoClientTest {
                 ciphersuiteCode = 1
             )
             aliceClient.initializeMlsClient(
-                appClientId = AppClientId(
+                cryptoClientId = CryptoClientId(
                     value = "alice_$aliceUserId"
                 ),
                 mlsTransport = testMlsTransport

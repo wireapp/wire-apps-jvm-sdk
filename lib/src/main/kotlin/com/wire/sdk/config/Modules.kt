@@ -27,7 +27,7 @@ import com.wire.sdk.crypto.MlsTransportImpl
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.exception.mapToWireException
 import com.wire.sdk.logging.LoggingConfiguration
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.toApi
 import com.wire.sdk.persistence.AppSqlLiteStorage
@@ -177,14 +177,14 @@ internal suspend fun getOrInitCryptoClient(
     val storedDeviceId = appStorage.getDeviceId()
     if (storedDeviceId != null) {
         logger.info("Loading MLS Client for: ${storedDeviceId.obfuscateClientId()}")
-        val appClientId = AppClientId.create(
+        val cryptoClientId = CryptoClientId.create(
             userId = userId,
             deviceId = storedDeviceId,
             userDomain = backendDomain
         )
         // App has a client, load MLS client
         cryptoClient.initializeMlsClient(
-            appClientId = appClientId,
+            cryptoClientId = cryptoClientId,
             mlsTransport = mlsTransport
         )
         appStorage.setShouldRejoinConversations(should = false)
@@ -215,7 +215,7 @@ internal suspend fun getOrInitCryptoClient(
         }
 
         val deviceId = clientResponse.id
-        val appClientId = AppClientId.create(
+        val cryptoClientId = CryptoClientId.create(
             userId = userId,
             deviceId = deviceId,
             userDomain = backendDomain
@@ -228,17 +228,17 @@ internal suspend fun getOrInitCryptoClient(
             deviceId.obfuscateClientId()
         )
         cryptoClient.initializeMlsClient(
-            appClientId = appClientId,
+            cryptoClientId = cryptoClientId,
             mlsTransport = mlsTransport
         )
 
         backendClient.updateClientWithMlsPublicKey(
-            appClientId = appClientId,
+            cryptoClientId = cryptoClientId,
             mlsPublicKeys = cryptoClient.mlsGetPublicKey()
         )
 
         backendClient.uploadMlsKeyPackages(
-            appClientId = appClientId,
+            cryptoClientId = cryptoClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
         )
 

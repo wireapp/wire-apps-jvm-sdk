@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class AppClientId(val value: String) {
+value class CryptoClientId(val value: String) {
     override fun toString(): String = value.obfuscateClientId()
 
     companion object {
@@ -29,8 +29,8 @@ value class AppClientId(val value: String) {
             userId: String,
             deviceId: String,
             userDomain: String
-        ): AppClientId =
-            AppClientId(
+        ): CryptoClientId =
+            CryptoClientId(
                 value = "$userId:$deviceId@$userDomain"
             )
     }

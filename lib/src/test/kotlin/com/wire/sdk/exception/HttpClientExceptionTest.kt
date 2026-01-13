@@ -71,7 +71,7 @@ class HttpClientExceptionTest {
 
     @Test
     fun whenResponseIsSuccessfulThenNoExceptionIsThrown() {
-        val stubMlsKeyPackagePath = "/${TestUtils.V}/mls/key-packages/self/{appClientId}"
+        val stubMlsKeyPackagePath = "/${TestUtils.V}/mls/key-packages/self/{cryptoClientId}"
         wireMockServer.stubFor(
             WireMock.post(
                 WireMock.urlPathEqualTo(stubMlsKeyPackagePath)

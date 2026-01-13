@@ -19,7 +19,7 @@ package com.wire.sdk.client
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.asset.AssetUploadData
@@ -45,6 +45,7 @@ import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
+import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.Mls
@@ -68,7 +69,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
-import io.ktor.http.headers
 import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
 import java.util.Base64
@@ -196,7 +196,7 @@ internal class BackendClientDemo(
     }
 
     override suspend fun updateClientWithMlsPublicKey(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
         val token = loginUser()
@@ -209,9 +209,9 @@ internal class BackendClientDemo(
                 contentType(ContentType.Application.Json)
             }
         } catch (ex: WireException.ClientError) {
-            logger.info("MLS public key already set for DEMO user: $appClientId", ex)
+            logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
         }
-        logger.info("Updated client with mls info for client: $appClientId")
+        logger.info("Updated client with mls info for client: $cryptoClientId")
     }
 
     override suspend fun registerClient(
@@ -228,7 +228,7 @@ internal class BackendClientDemo(
     }
 
     override suspend fun uploadMlsKeyPackages(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsKeyPackages: List<ByteArray>
     ) {
         val token = loginUser()
@@ -243,9 +243,9 @@ internal class BackendClientDemo(
                 contentType(ContentType.Application.Json)
             }
         } catch (ex: WireException.ClientError) {
-            logger.info("MLS public key already set for DEMO user: $appClientId", ex)
+            logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
         }
-        logger.info("Updated client with mls key packages for client: $appClientId")
+        logger.info("Updated client with mls key packages for client: $cryptoClientId")
     }
 
     override suspend fun claimKeyPackages(
@@ -602,6 +602,39 @@ internal class BackendClientDemo(
                 time = Clock.System.now()
             )
         }
+    }
+
+    override suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
+        val token = loginUser()
+        val clients = httpClient.get("/users/${userId.domain}/${userId.id}/clients") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+        }.body<List<UserClientResponse>>()
+
+        return clients
+    }
+
+    override suspend fun getClientsByUserIds(
+        userIds: List<QualifiedId>
+    ): Map<QualifiedId, List<UserClientResponse>> {
+        val token = loginUser()
+        val response = httpClient.post("/users/list-clients") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(userIds)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<Map<String, Map<String, List<UserClientResponse>>>>()
+
+        val usersClients = response.flatMap { (domain, users) ->
+            users.map { (userId, clients) ->
+                QualifiedId(UUID.fromString(userId), domain) to clients
+            }
+        }.toMap()
+
+        return usersClients
     }
 
     internal class AssetBody internal constructor(

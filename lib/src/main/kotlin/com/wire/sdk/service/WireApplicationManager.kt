@@ -28,6 +28,7 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
+import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.AppDataResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
@@ -517,6 +518,76 @@ class WireApplicationManager internal constructor(
     suspend fun leaveConversationSuspending(conversationId: QualifiedId) {
         conversationService.leaveConversation(
             conversationId = conversationId
+        )
+    }
+
+    /**
+     * Adds members to a Group or Channel conversation.
+     *
+     * If invoked for a One To One conversation it will throw [WireException.Forbidden]
+     *
+     * @param conversationId ID of the conversation where the members will be added
+     * @param members List of ID of the members to be added to the conversation
+     *
+     * @return AddMembersToConversationResult containing success and failed users
+     *
+     * @throws WireException.Forbidden
+     */
+    fun addMembersToConversation(
+        conversationId: QualifiedId,
+        members: List<QualifiedId>
+    ): AddMembersToConversationResult =
+        runBlocking {
+            addMembersToConversationSuspending(
+                conversationId = conversationId,
+                members = members
+            )
+        }
+
+    /**
+     * See [addMembersToConversation]
+     */
+    suspend fun addMembersToConversationSuspending(
+        conversationId: QualifiedId,
+        members: List<QualifiedId>
+    ): AddMembersToConversationResult =
+        conversationService.addMembersToConversation(
+            conversationId = conversationId,
+            members = members
+        )
+
+    /**
+     * Remove members from a Group or Channel conversation
+     *
+     * If invoked in for a One To One conversation it will throw [WireException.Forbidden]
+     *
+     * @param conversationId ID of the conversation where the members will be removed
+     * @param members List of ID of the members to be removed from the conversation
+     *
+     * @throws WireException.Forbidden
+     */
+    fun removeMembersFromConversation(
+        conversationId: QualifiedId,
+        members: List<QualifiedId>
+    ) {
+        runBlocking {
+            removeMembersFromConversationSuspending(
+                conversationId = conversationId,
+                members = members
+            )
+        }
+    }
+
+    /**
+     * See [removeMembersFromConversation]
+     */
+    suspend fun removeMembersFromConversationSuspending(
+        conversationId: QualifiedId,
+        members: List<QualifiedId>
+    ) {
+        conversationService.removeMembersFromConversation(
+            conversationId = conversationId,
+            members = members
         )
     }
 }

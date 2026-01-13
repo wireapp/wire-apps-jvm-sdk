@@ -18,7 +18,7 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.asset.AssetUploadData
@@ -38,6 +38,7 @@ import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.user.SelfUserResponse
+import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -95,7 +96,7 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     }
 
     override suspend fun updateClientWithMlsPublicKey(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsPublicKeys: MlsPublicKeys
     ) {
         TODO("Not yet implemented")
@@ -108,7 +109,7 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
     }
 
     override suspend fun uploadMlsKeyPackages(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsKeyPackages: List<ByteArray>
     ) {
         TODO("Not yet implemented")
@@ -213,6 +214,16 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         querySize: Int,
         querySince: String?
     ): NotificationsResponse {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getClientsByUserIds(
+        userIds: List<QualifiedId>
+    ): Map<QualifiedId, List<UserClientResponse>> {
         TODO("Not yet implemented")
     }
 }

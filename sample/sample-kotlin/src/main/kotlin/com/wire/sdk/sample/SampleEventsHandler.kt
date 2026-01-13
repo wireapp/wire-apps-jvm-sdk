@@ -33,6 +33,16 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
         logger.info("Received Text Message : $wireMessage")
 
+        if (isAddMembersToConversation(text = wireMessage.text)) {
+            processAddMembersToConversation(wireMessage = wireMessage)
+            return
+        }
+
+        if (isRemoveMembersFromConversation(text = wireMessage.text)) {
+            processRemoveMembersFromConversation(wireMessage = wireMessage)
+            return
+        }
+
         if (isCreateOneToOneConversation(text = wireMessage.text)) {
             processCreateOneToOneConversation(wireMessage = wireMessage)
             return
@@ -187,6 +197,12 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
+    private fun isAddMembersToConversation(text: String): Boolean =
+        text.startsWith("add-members-to-conversation")
+
+    private fun isRemoveMembersFromConversation(text: String): Boolean =
+        text.startsWith("remove-members-from-conversation")
+
     private fun isCreateOneToOneConversation(text: String): Boolean =
         text.startsWith("create-one2one-conversation")
 
@@ -213,6 +229,36 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     private fun isAssetPDFDocumentTestMessage(text: String): Boolean =
         text.startsWith("asset-document-pdf")
+
+    private fun processAddMembersToConversation(wireMessage: WireMessage.Text) {
+        // Expected message: `add-members-to-conversation [USER_ID] [DOMAIN]
+        val split = wireMessage.text.split(" ")
+
+        manager.addMembersToConversation(
+            conversationId = wireMessage.conversationId,
+            members = listOf(
+                QualifiedId(
+                    id = UUID.fromString(split[1]),
+                    domain = split[2]
+                )
+            )
+        )
+    }
+
+    private fun processRemoveMembersFromConversation(wireMessage: WireMessage.Text) {
+        // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN]
+         val split = wireMessage.text.split(" ")
+
+        manager.removeMembersFromConversation(
+            conversationId = wireMessage.conversationId,
+            members = listOf(
+                QualifiedId(
+                    id = UUID.fromString(split[1]),
+                    domain = split[2]
+                )
+            )
+        )
+    }
 
     private fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
         // Expected message: `create-one2one-conversation [USER_ID] [DOMAIN]

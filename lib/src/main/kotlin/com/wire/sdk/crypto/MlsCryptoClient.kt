@@ -2,6 +2,7 @@ package com.wire.sdk.crypto
 
 import com.wire.crypto.CUSTOM_CONFIGURATION_DEFAULT
 import com.wire.crypto.Ciphersuite
+import com.wire.crypto.ClientId
 import com.wire.crypto.ConversationConfiguration
 import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCrypto
@@ -19,7 +20,7 @@ import com.wire.crypto.toExternalSenderKey
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.MlsCryptoClient.Companion.create
 import com.wire.sdk.exception.WireException
-import com.wire.sdk.model.AppClientId
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import io.ktor.util.encodeBase64
@@ -38,13 +39,13 @@ internal class MlsCryptoClient private constructor(
     private var coreCryptoClient: CoreCryptoClient
 ) : CryptoClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private var appClientId: AppClientId? = null
+    private var cryptoClientId: CryptoClientId? = null
 
-    private fun setAppClientId(appClientId: AppClientId) {
-        this@MlsCryptoClient.appClientId = appClientId
+    private fun setCryptoClientId(cryptoClientId: CryptoClientId) {
+        this@MlsCryptoClient.cryptoClientId = cryptoClientId
     }
 
-    override fun getAppClientId(): AppClientId? = appClientId
+    override fun getCryptoClientId(): CryptoClientId? = cryptoClientId
 
     override suspend fun encryptMls(
         mlsGroupId: ConversationId,
@@ -99,12 +100,12 @@ internal class MlsCryptoClient private constructor(
         }
 
     override suspend fun initializeMlsClient(
-        appClientId: AppClientId,
+        cryptoClientId: CryptoClientId,
         mlsTransport: MlsTransport
     ) {
         coreCryptoClient.transaction {
             it.mlsInit(
-                clientId = appClientId.value.toClientId(),
+                clientId = cryptoClientId.value.toClientId(),
                 ciphersuites = listOf(ciphersuite),
                 nbKeyPackage = null
             )
@@ -112,7 +113,7 @@ internal class MlsCryptoClient private constructor(
 
         coreCryptoClient.provideTransport(mlsTransport)
 
-        setAppClientId(appClientId = appClientId)
+        setCryptoClientId(cryptoClientId = cryptoClientId)
     }
 
     override suspend fun mlsGetPublicKey(): MlsPublicKeys {
@@ -209,6 +210,20 @@ internal class MlsCryptoClient private constructor(
     ) {
         coreCryptoClient.transaction {
             it.addClientsToConversation(mlsGroupId, keyPackages)
+        }
+    }
+
+    override suspend fun removeMembersFromConversation(
+        mlsGroupId: ConversationId,
+        clientIds: List<CryptoClientId>
+    ) {
+        coreCryptoClient.transaction {
+            it.removeClientsFromConversation(
+                conversationId = mlsGroupId,
+                clients = clientIds.map { client ->
+                    ClientId(client.value.toByteArray())
+                }
+            )
         }
     }
 

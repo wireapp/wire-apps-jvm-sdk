@@ -119,13 +119,13 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.put(WireMock.urlPathTemplate("/$V/clients/{appClientId}")).willReturn(
+            WireMock.put(WireMock.urlPathTemplate("/$V/clients/{cryptoClientId}")).willReturn(
                 ok()
             )
         )
         wireMockServer.stubFor(
             WireMock.post(
-                WireMock.urlPathTemplate("/$V/mls/key-packages/self/{appClientId}")
+                WireMock.urlPathTemplate("/$V/mls/key-packages/self/{cryptoClientId}")
             ).willReturn(ok())
         )
         wireMockServer.stubFor(
