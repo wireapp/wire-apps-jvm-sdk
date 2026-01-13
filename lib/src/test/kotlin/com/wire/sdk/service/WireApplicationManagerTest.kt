@@ -18,13 +18,13 @@ package com.wire.sdk.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.wire.crypto.MLSKeyPackage
-import com.wire.crypto.toGroupId
+import com.wire.crypto.ConversationId
+import com.wire.crypto.KeyPackage
 import com.wire.sdk.TestUtils
 import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.crypto.CoreCryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AppClientId
@@ -85,7 +85,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = newPackages[0].value.copyBytes().encodeBase64()
+                            keyPackage = newPackages[0].copyBytes().encodeBase64()
                         )
                     )
                 )
@@ -180,7 +180,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = newPackages[1].value.copyBytes().encodeBase64()
+                            keyPackage = newPackages[1].copyBytes().encodeBase64()
                         )
                     )
                 )
@@ -247,7 +247,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = newPackages[2].value.copyBytes().encodeBase64()
+                            keyPackage = newPackages[2].copyBytes().encodeBase64()
                         )
                     )
                 )
@@ -310,8 +310,8 @@ class WireApplicationManagerTest {
             }
         }
 
-    private suspend fun generateUser2Packages(): List<MLSKeyPackage> =
-        CoreCryptoClient.create(
+    private suspend fun generateUser2Packages(): List<KeyPackage> =
+        MlsCryptoClient.create(
             userId = USER_2.id.toString(),
             ciphersuiteCode = 1
         ).use { cryptoClientUser2 ->
@@ -325,7 +325,7 @@ class WireApplicationManagerTest {
     companion object {
         private val wireMockServer = WireMockServer(8086)
         private val testMlsTransport = MlsTransportLastWelcome()
-        private lateinit var newPackages: List<MLSKeyPackage>
+        private lateinit var newPackages: List<KeyPackage>
 
         private const val CONVERSATION_NAME = "Conversation Name"
         private const val DOMAIN = "wire.com"
@@ -344,15 +344,18 @@ class WireApplicationManagerTest {
             domain = DOMAIN
         )
 
-        val GROUP_CONVERSATION_MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
+        val GROUP_CONVERSATION_MLS_GROUP_ID =
+            ConversationId(UUID.randomUUID().toString().toByteArray())
         val GROUP_CONVERSATION_MLS_GROUP_ID_BASE64 =
             Base64.getEncoder().encodeToString(GROUP_CONVERSATION_MLS_GROUP_ID.copyBytes())
 
-        val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
+        val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID =
+            ConversationId(UUID.randomUUID().toString().toByteArray())
         val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64 =
             Base64.getEncoder().encodeToString(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID.copyBytes())
 
-        val CHANNEL_CONVERSATION_MLS_GROUP_ID = UUID.randomUUID().toString().toGroupId()
+        val CHANNEL_CONVERSATION_MLS_GROUP_ID =
+            ConversationId(UUID.randomUUID().toString().toByteArray())
         val CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64 =
             Base64.getEncoder().encodeToString(CHANNEL_CONVERSATION_MLS_GROUP_ID.copyBytes())
 

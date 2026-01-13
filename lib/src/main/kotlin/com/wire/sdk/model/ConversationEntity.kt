@@ -15,7 +15,7 @@
 
 package com.wire.sdk.model
 
-import com.wire.crypto.MLSGroupId
+import com.wire.crypto.ConversationId
 import com.wire.sdk.model.http.conversation.ConversationResponse
 
 @JvmRecord
@@ -23,7 +23,7 @@ internal data class ConversationEntity(
     val id: QualifiedId,
     val name: String?,
     val teamId: TeamId?,
-    val mlsGroupId: MLSGroupId,
+    val mlsGroupId: ConversationId,
     val type: Type
 ) {
     enum class Type {

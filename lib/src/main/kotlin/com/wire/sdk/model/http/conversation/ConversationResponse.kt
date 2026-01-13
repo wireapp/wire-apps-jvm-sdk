@@ -16,8 +16,7 @@
 
 package com.wire.sdk.model.http.conversation
 
-import com.wire.crypto.MLSGroupId
-import com.wire.crypto.toGroupId
+import com.wire.crypto.ConversationId
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
@@ -62,8 +61,8 @@ data class ConversationResponse(
     }
 }
 
-fun ConversationResponse.getDecodedMlsGroupId(): MLSGroupId =
-    this.groupId?.decodeBase64Bytes()?.toGroupId()
+fun ConversationResponse.getDecodedMlsGroupId(): ConversationId =
+    this.groupId?.decodeBase64Bytes()?.let { ConversationId(it) }
         ?: throw WireException.MissingParameter("MLSGroupId should not be empty or null.")
 
 @Serializable

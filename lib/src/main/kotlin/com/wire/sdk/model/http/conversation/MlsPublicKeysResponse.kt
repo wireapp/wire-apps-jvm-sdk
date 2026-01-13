@@ -40,12 +40,12 @@ fun MlsPublicKeysResponse.getRemovalKey(cipherSuite: Ciphersuite): ByteArray? {
         Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521 ->
             this.removal.ecdsaSecp521r1Sha512
 
-        Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519,
-        Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519 ->
+        Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519,
+        Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519 ->
             this.removal.ed25519
 
-        Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_Ed448,
-        Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_Ed448 -> {
+        Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448,
+        Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448 -> {
             throw WireException.CryptographicSystemError("Unsupported ciphersuite")
         }
     }

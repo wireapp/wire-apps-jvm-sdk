@@ -32,7 +32,7 @@ class MlsTransportLastWelcome : MlsTransport {
 
     override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
         commitBundle.welcome?.let {
-            groupWelcomeMap = Welcome(it.value)
+            groupWelcomeMap = it
         }
 
         return MlsTransportResponse.Success

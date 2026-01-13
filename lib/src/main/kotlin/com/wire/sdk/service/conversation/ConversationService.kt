@@ -16,15 +16,15 @@
 
 package com.wire.sdk.service.conversation
 
-import com.wire.crypto.MLSGroupId
+import com.wire.crypto.ConversationId
 import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.crypto.CoreCryptoClient
-import com.wire.sdk.crypto.CoreCryptoClient.Companion.toHexString
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient.Companion.toHexString
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
@@ -43,13 +43,12 @@ import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.utils.obfuscateId
 import io.ktor.util.decodeBase64Bytes
-import java.util.UUID
-import kotlin.collections.plus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
+import java.util.UUID
 
 @Suppress("TooManyFunctions")
 internal class ConversationService internal constructor(
@@ -186,11 +185,11 @@ internal class ConversationService internal constructor(
 
     private suspend fun establishMlsConversation(
         userIds: List<QualifiedId>,
-        mlsGroupId: MLSGroupId,
+        mlsGroupId: ConversationId,
         publicKeysResponse: MlsPublicKeysResponse?
     ) {
         val cipherSuiteCode = getCipherSuiteCode()
-        val cipherSuite = CoreCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
+        val cipherSuite = MlsCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
         val publicKeys = (publicKeysResponse ?: backendClient.getPublicKeys()).run {
             getRemovalKey(cipherSuite = cipherSuite)
@@ -199,7 +198,7 @@ internal class ConversationService internal constructor(
         publicKeys?.let { externalSenders ->
             try {
                 cryptoClient.createConversation(
-                    groupId = mlsGroupId,
+                    mlsGroupId = mlsGroupId,
                     externalSenders = externalSenders
                 )
             } catch (exception: MlsException.ConversationAlreadyExists) {
@@ -298,7 +297,7 @@ internal class ConversationService internal constructor(
 
     private suspend fun establishOrJoinMlsConversation(
         conversationId: QualifiedId,
-        mlsGroupId: MLSGroupId,
+        mlsGroupId: ConversationId,
         conversation: ConversationResponse,
         backendClient: BackendClient,
         cryptoClient: CryptoClient
@@ -529,7 +528,7 @@ internal class ConversationService internal constructor(
 
     private suspend fun deleteAllConversationDataFromLocalStorages(
         conversationId: QualifiedId,
-        mlsGroupId: MLSGroupId
+        mlsGroupId: ConversationId
     ) {
         if (cryptoClient.conversationExists(mlsGroupId)) {
             cryptoClient.wipeConversation(mlsGroupId)
