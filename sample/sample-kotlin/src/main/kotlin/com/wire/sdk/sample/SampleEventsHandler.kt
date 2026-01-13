@@ -247,7 +247,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     private fun processRemoveMembersFromConversation(wireMessage: WireMessage.Text) {
         // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN]
-        val split = wireMessage.text.split(" ")
+         val split = wireMessage.text.split(" ")
 
         manager.removeMembersFromConversation(
             conversationId = wireMessage.conversationId,

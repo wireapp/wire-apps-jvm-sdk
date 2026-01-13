@@ -940,10 +940,8 @@ class ConversationServiceTest {
             val client2 = UserClientResponse(id = "client2")
 
             val usersClientsMap = mapOf(
-                BACKEND_DOMAIN to mapOf(
-                    CONVERSATION_MEMBER_1.id.toString() to listOf(client1),
-                    CONVERSATION_MEMBER_2.id.toString() to listOf(client2)
-                )
+                CONVERSATION_MEMBER_1 to listOf(client1),
+                CONVERSATION_MEMBER_2 to listOf(client2)
             )
 
             val conversationStorage = mockk<ConversationStorage> {

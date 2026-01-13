@@ -17,6 +17,7 @@
 package com.wire.sdk.service.conversation
 
 import com.wire.crypto.ConversationId
+import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
@@ -564,7 +565,7 @@ internal class ConversationService internal constructor(
 
     fun getAll() = conversationStorage.getAll()
 
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "ThrowsCount")
     suspend fun addMembersToConversation(
         conversationId: QualifiedId,
         members: List<QualifiedId>
@@ -584,7 +585,7 @@ internal class ConversationService internal constructor(
         requireAppIsAdminInConversation(conversationId = conversationId)
 
         logger.info(
-            "Attempting to add {} member(s) to the conversation. conversationId: {}",
+            "Attempting to claim key-packages for {} member(s). conversationId: {}",
             members.size,
             conversationId
         )
@@ -596,7 +597,8 @@ internal class ConversationService internal constructor(
         )
 
         logger.info(
-            "Adding {} member(s) to the conversation and ignoring {} member(s). conversationId: {}",
+            "Attempting to add {} member(s) to the conversation and ignoring {} member(s). " +
+                "conversationId: {}",
             claimedKeyPackagesResult.successUsers.size,
             claimedKeyPackagesResult.failedUsers.size,
             conversationId
@@ -614,13 +616,19 @@ internal class ConversationService internal constructor(
                 message = "Unable to claim Key Packages for list of members",
                 throwable = exception
             )
+        } catch (exception: CoreCryptoException.Mls) {
+            val message = if (exception.mlsError.message.equals(DUPLICATE_GROUP_SIGNATURE)) {
+                "Member is already in the conversation."
+            } else {
+                exception.message
+            }
+
+            throw WireException.InvalidParameter(
+                message = message,
+                throwable = exception
+            )
         }
 
-        logger.info(
-            "Saving {} member(s) into the database. conversationId: {}",
-            claimedKeyPackagesResult.successUsers.size,
-            conversationId
-        )
         conversationStorage.saveMembers(
             conversationId = conversationId,
             members = claimedKeyPackagesResult.successUsers.map { member ->
@@ -693,11 +701,8 @@ internal class ConversationService internal constructor(
     }
 
     private suspend fun getClientsByUserIds(userIds: List<QualifiedId>): List<CryptoClientId> =
-        if (userIds.size == SINGLE_MEMBER) {
-            logger.info(
-                "Retrieving clients for User: {}",
-                userIds.first()
-            )
+        if (userIds.size == 1) {
+            logger.info("Retrieving clients for User: {}", userIds.first())
 
             val clients = backendClient.getClientsByUserId(userId = userIds.first())
 
@@ -715,39 +720,24 @@ internal class ConversationService internal constructor(
                 )
             }
         } else {
-            logger.info(
-                "Retrieving clients for {} users.",
-                userIds.size
-            )
+            logger.info("Retrieving clients for {} users.", userIds.size)
 
             val usersClients = backendClient.getClientsByUserIds(userIds = userIds)
 
-            logger.info(
-                "Received clients for {} users",
-                userIds.size
-            )
+            logger.info("Received clients for {} users", usersClients.keys.size)
 
-            usersClients.flatMap { (domain, users) ->
-                users.flatMap { (userId, clients) ->
-                    logger.debug(
-                        "Mapping {} clients for User: {}",
-                        clients.size,
-                        userId
+            usersClients.flatMap { (user, clients) ->
+                logger.debug("Mapping {} clients for User: {}", clients.size, user.id)
+                clients.map { client ->
+                    CryptoClientId.create(
+                        userId = user.id.toString(),
+                        deviceId = client.id,
+                        userDomain = user.domain
                     )
-                    clients.map { client ->
-                        CryptoClientId.create(
-                            userId = userId,
-                            deviceId = client.id,
-                            userDomain = domain
-                        )
-                    }
                 }
             }
         }.also {
-            logger.info(
-                "Returning {} CryptoClientId",
-                it.size
-            )
+            logger.info("Returning {} CryptoClientId", it.size)
         }
 
     private suspend fun getCipherSuiteCode(): Int =
@@ -758,6 +748,6 @@ internal class ConversationService internal constructor(
             .defaultCipherSuite
 
     private companion object {
-        const val SINGLE_MEMBER = 1
+        const val DUPLICATE_GROUP_SIGNATURE = "Duplicate signature key in proposals and group."
     }
 }

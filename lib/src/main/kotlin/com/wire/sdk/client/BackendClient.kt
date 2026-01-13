@@ -131,7 +131,7 @@ interface BackendClient {
 
     suspend fun getClientsByUserIds(
         userIds: List<QualifiedId>
-    ): Map<String, Map<String, List<UserClientResponse>>>
+    ): Map<QualifiedId, List<UserClientResponse>>
 
     companion object {
         const val API_VERSION = "v13"

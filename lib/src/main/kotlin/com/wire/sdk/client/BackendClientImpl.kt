@@ -223,7 +223,7 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
 
     override suspend fun getClientsByUserIds(
         userIds: List<QualifiedId>
-    ): Map<String, Map<String, List<UserClientResponse>>> {
+    ): Map<QualifiedId, List<UserClientResponse>> {
         TODO("Not yet implemented")
     }
 }
