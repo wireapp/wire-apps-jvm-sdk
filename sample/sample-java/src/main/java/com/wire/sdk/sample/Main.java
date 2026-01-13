@@ -30,7 +30,8 @@ public class Main {
     final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_USER_ID"));
     final static String WIRE_API_TOKEN = "myApiToken";
     final static String WIRE_API_HOST = "https://staging-nginz-https.zinfra.io";
-    final static String WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH";
+    final static byte[] WIRE_CRYPTOGRAPHY_STORAGE_KEY =
+        "myDummyPasswordOfRandom32BytesCH".getBytes();
 
     public static void main(String[] args) {
         new Main().initApp();
@@ -48,12 +49,12 @@ public class Main {
                 MY_APPLICATION_ID,
                 WIRE_API_TOKEN,
                 WIRE_API_HOST,
-                WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD,
+                WIRE_CRYPTOGRAPHY_STORAGE_KEY,
                 new CustomWireEventsHandler()
         );
     }
 
-    private class DefaultBackendConnectionListener implements BackendConnectionListener {
+    private static class DefaultBackendConnectionListener implements BackendConnectionListener {
         @Override
         public void onConnected() {
             logger.info("Backend connection established - Ready to send/receive messages");

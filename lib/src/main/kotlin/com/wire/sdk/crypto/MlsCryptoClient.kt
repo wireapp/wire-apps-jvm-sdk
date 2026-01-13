@@ -289,7 +289,7 @@ internal class MlsCryptoClient private constructor(
 
             val coreCryptoClient = CoreCrypto.invoke(
                 keystore = keystorePath,
-                databaseKey = IsolatedKoinContext.getCryptographyStoragePassword()
+                databaseKey = IsolatedKoinContext.getCryptographyStorageKey()
                     ?.let { DatabaseKey(it) }
                     ?: throw WireException.InvalidParameter("Cryptography password missing")
             )

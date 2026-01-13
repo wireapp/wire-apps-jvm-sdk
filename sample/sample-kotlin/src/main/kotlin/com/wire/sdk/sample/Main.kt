@@ -40,7 +40,7 @@ fun main() {
         applicationId = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
         apiToken = "myApiToken",
         apiHost = "https://staging-nginz-https.zinfra.io",
-        cryptographyStoragePassword = "myDummyPasswordOfRandom32BytesCH",
+        cryptographyStorageKey = "myDummyPasswordOfRandom32BytesCH".toByteArray(),
         wireEventsHandler = SampleEventsHandler(),
     )
 

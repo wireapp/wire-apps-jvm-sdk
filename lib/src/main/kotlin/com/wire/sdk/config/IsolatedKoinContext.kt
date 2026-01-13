@@ -67,13 +67,12 @@ internal object IsolatedKoinContext {
 
     fun getApiToken(): String? = this.koinApp.koin.getProperty(API_TOKEN)
 
-    fun setCryptographyStoragePassword(value: String) {
-        val cryptoPassword = value.toByteArray()
-        this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_PASSWORD, cryptoPassword)
+    fun setCryptographyStorageKey(value: ByteArray) {
+        this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_KEY, value)
     }
 
-    fun getCryptographyStoragePassword(): ByteArray? =
-        this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_PASSWORD)
+    fun getCryptographyStorageKey(): ByteArray? =
+        this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_KEY)
 
     fun setBackendDomain(value: String) {
         this.koinApp.koin.setProperty(BACKEND_DOMAIN, value)
@@ -90,6 +89,6 @@ internal object IsolatedKoinContext {
     private const val APPLICATION_ID = "APPLICATION_ID"
     private const val API_HOST = "API_HOST"
     private const val API_TOKEN = "API_TOKEN"
-    private const val CRYPTOGRAPHY_STORAGE_PASSWORD = "CRYPTOGRAPHY_STORAGE_PASSWORD"
+    private const val CRYPTOGRAPHY_STORAGE_KEY = "CRYPTOGRAPHY_STORAGE_KEY"
     private const val BACKEND_DOMAIN = "BACKEND_DOMAIN"
 }
