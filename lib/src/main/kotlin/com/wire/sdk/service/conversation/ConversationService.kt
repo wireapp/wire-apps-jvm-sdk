@@ -669,13 +669,15 @@ internal class ConversationService internal constructor(
         )
         requireAppIsAdminInConversation(conversationId = conversationId)
 
+        val clients: List<CryptoClientId> = getClientsByUserIds(userIds = members)
+
         logger.info(
-            "Attempting to remove {} member(s) from the conversation. conversationId: {}",
+            "Attempting to remove {} member(s) with {} client(s) from the conversation. " +
+                "conversationId: {}",
             members.size,
+            clients.size,
             conversationId
         )
-
-        val clients: List<CryptoClientId> = getClientsByUserIds(userIds = members)
 
         cryptoClient.removeMembersFromConversation(
             mlsGroupId = conversation.mlsGroupId,
