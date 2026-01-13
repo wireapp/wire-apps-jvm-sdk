@@ -4,7 +4,7 @@ import com.wire.sdk.utils.KtxSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import kotlin.test.Test
 
-class AppClientIdTest {
+class CryptoClientIdTest {
     @Test
     fun `test serialization and deserialization of ClientId`() {
         val cryptoClientId = CryptoClientId("test-client-id")

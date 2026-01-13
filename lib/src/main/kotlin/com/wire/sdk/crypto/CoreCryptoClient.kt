@@ -33,11 +33,11 @@ internal class CoreCryptoClient private constructor(
     private val logger = LoggerFactory.getLogger(this::class.java)
     private var cryptoClientId: CryptoClientId? = null
 
-    private fun setAppClientId(cryptoClientId: CryptoClientId) {
+    private fun setCryptoClientId(cryptoClientId: CryptoClientId) {
         this@CoreCryptoClient.cryptoClientId = cryptoClientId
     }
 
-    override fun getAppClientId(): CryptoClientId? = cryptoClientId
+    override fun getCryptoClientId(): CryptoClientId? = cryptoClientId
 
     override suspend fun encryptMls(
         mlsGroupId: MLSGroupId,
@@ -101,7 +101,7 @@ internal class CoreCryptoClient private constructor(
 
         coreCrypto.provideTransport(mlsTransport)
 
-        setAppClientId(cryptoClientId = cryptoClientId)
+        setCryptoClientId(cryptoClientId = cryptoClientId)
     }
 
     override suspend fun mlsGetPublicKey(): MlsPublicKeys {

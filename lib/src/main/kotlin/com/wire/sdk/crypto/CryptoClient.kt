@@ -26,7 +26,7 @@ import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 
 internal interface CryptoClient : AutoCloseable {
-    fun getAppClientId(): CryptoClientId?
+    fun getCryptoClientId(): CryptoClientId?
 
     suspend fun encryptMls(
         mlsGroupId: MLSGroupId,

@@ -215,9 +215,9 @@ internal class EventsRouter internal constructor(
         )
 
         if (cryptoClient.hasTooFewKeyPackageCount()) {
-            cryptoClient.getAppClientId()?.let { appClientId ->
+            cryptoClient.getCryptoClientId()?.let { cryptoClientId ->
                 backendClient.uploadMlsKeyPackages(
-                    cryptoClientId = appClientId,
+                    cryptoClientId = cryptoClientId,
                     mlsKeyPackages =
                         cryptoClient.mlsGenerateKeyPackages().map { it.value.copyBytes() }
                 )

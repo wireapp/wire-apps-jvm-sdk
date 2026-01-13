@@ -46,11 +46,11 @@ internal class MockCoreCryptoClient private constructor(
     val conversationExist = mutableSetOf<MLSGroupId>()
     private var cryptoClientId: CryptoClientId? = null
 
-    fun setAppClientId(cryptoClientId: CryptoClientId) {
+    fun setCryptoClientId(cryptoClientId: CryptoClientId) {
         this.cryptoClientId = cryptoClientId
     }
 
-    override fun getAppClientId(): CryptoClientId? = cryptoClientId
+    override fun getCryptoClientId(): CryptoClientId? = cryptoClientId
 
     override suspend fun initializeProteusClient() {
         // Do nothing
