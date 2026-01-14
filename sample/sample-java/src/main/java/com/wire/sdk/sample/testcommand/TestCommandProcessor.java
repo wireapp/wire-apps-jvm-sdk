@@ -87,7 +87,7 @@ class TestCommandProcessor {
     private void processAddMemberInConversation(WireMessage.Text wireMessage) {
         // Expected message: `add-members-to-conversation [USER_ID] [DOMAIN]
         final var split = wireMessage.text().split(" ");
-        final var members = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
+        final var members = List.of(new QualifiedId(UUID.fromString(split[1]), split[2]));
         this.manager.addMembersToConversation(
                 wireMessage.conversationId(),
                 members
@@ -97,7 +97,7 @@ class TestCommandProcessor {
     private void processRemoveMemberFromConversation(WireMessage.Text wireMessage) {
         // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN]
         final var split = wireMessage.text().split(" ");
-        final var members = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
+        final var members = List.of(new QualifiedId(UUID.fromString(split[1]), split[2]));
         this.manager.removeMembersFromConversation(
                 wireMessage.conversationId(),
                 members
