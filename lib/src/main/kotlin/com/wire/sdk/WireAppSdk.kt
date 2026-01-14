@@ -80,8 +80,7 @@ class WireAppSdk(
 
     init {
         require(cryptographyStorageKey.size == CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
-            "cryptographyStorageKey must be exactly $CRYPTOGRAPHY_STORAGE_KEY_BYTES " +
-                "characters long"
+            "cryptographyStorageKey must be exactly $CRYPTOGRAPHY_STORAGE_KEY_BYTES bytes long"
         }
 
         initializeStorageDirectory()
@@ -90,7 +89,7 @@ class WireAppSdk(
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
         IsolatedKoinContext.setApiToken(apiToken)
-        IsolatedKoinContext.setCryptographyStorageKey(cryptographyStorageKey)
+        IsolatedKoinContext.setCryptographyStorageKey(cryptographyStorageKey.copyOf())
 
         initDynamicModules(wireEventsHandler)
     }
