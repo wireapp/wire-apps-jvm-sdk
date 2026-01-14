@@ -230,11 +230,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     private fun isAssetPDFDocumentTestMessage(text: String): Boolean =
         text.startsWith("asset-document-pdf")
 
-    private fun processAddMembersToConversation(wireMessage: WireMessage.Text) {
+    private suspend fun processAddMembersToConversation(wireMessage: WireMessage.Text) {
         // Expected message: `add-members-to-conversation [USER_ID] [DOMAIN]
         val split = wireMessage.text.split(" ")
 
-        manager.addMembersToConversation(
+        manager.addMembersToConversationSuspending(
             conversationId = wireMessage.conversationId,
             members = listOf(
                 QualifiedId(
@@ -245,11 +245,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
-    private fun processRemoveMembersFromConversation(wireMessage: WireMessage.Text) {
+    private suspend fun processRemoveMembersFromConversation(wireMessage: WireMessage.Text) {
         // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN]
          val split = wireMessage.text.split(" ")
 
-        manager.removeMembersFromConversation(
+        manager.removeMembersFromConversationSuspending(
             conversationId = wireMessage.conversationId,
             members = listOf(
                 QualifiedId(
@@ -260,11 +260,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
-    private fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
+    private suspend fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
         // Expected message: `create-one2one-conversation [USER_ID] [DOMAIN]
         val split = wireMessage.text.split(" ")
 
-        manager.createOneToOneConversation(
+        manager.createOneToOneConversationSuspending(
             userId = QualifiedId(
                 id = UUID.fromString(split[1]),
                 domain = split[2]
@@ -272,11 +272,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
-    private fun processCreateGroupConversation(wireMessage: WireMessage.Text) {
+    private suspend fun processCreateGroupConversation(wireMessage: WireMessage.Text) {
         // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
         val split = wireMessage.text.split(" ")
 
-        val conversationId = manager.createGroupConversation(
+        val conversationId = manager.createGroupConversationSuspending(
             name = split[1],
             userIds = listOf(
                 QualifiedId(
@@ -293,21 +293,21 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
-    private fun processLeaveGroupConversation(wireMessage: WireMessage.Text) {
+    private suspend fun processLeaveGroupConversation(wireMessage: WireMessage.Text) {
         // Expected message: `leave-group-conversation`
-        manager.leaveConversation(wireMessage.conversationId)
+        manager.leaveConversationSuspending(wireMessage.conversationId)
     }
 
-    private fun processDeleteGroupConversation(wireMessage: WireMessage.Text) {
+    private suspend fun processDeleteGroupConversation(wireMessage: WireMessage.Text) {
         // Expected message: `delete-group-conversation`
-        manager.deleteConversation(wireMessage.conversationId)
+        manager.deleteConversationSuspending(wireMessage.conversationId)
     }
 
-    private fun processCreateChannelConversation(wireMessage: WireMessage.Text) {
+    private suspend fun processCreateChannelConversation(wireMessage: WireMessage.Text) {
         // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN]`
         val split = wireMessage.text.split(" ")
 
-        manager.createChannelConversation(
+        manager.createChannelConversationSuspending(
             name = split[1],
             userIds = listOf(
                 QualifiedId(
