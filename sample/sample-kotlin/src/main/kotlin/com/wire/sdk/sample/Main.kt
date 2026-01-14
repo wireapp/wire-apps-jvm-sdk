@@ -19,7 +19,6 @@ import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.WireAppSdk
 import com.wire.sdk.model.QualifiedId
 import org.slf4j.LoggerFactory
-import java.security.SecureRandom
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("WireAppSdkSample")
@@ -37,9 +36,9 @@ fun main() {
         }
     }
 
-    val secureKey = ByteArray(32).apply {
-        SecureRandom().nextBytes(this)
-    }
+    // For demonstration purposes, we use a static secure key. In a production application,
+    // ensure to generate, store, and manage this key securely.
+    val secureKey = ByteArray(32) { 1 }
 
     val wireAppSdk = WireAppSdk(
         applicationId = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),

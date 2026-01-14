@@ -21,7 +21,7 @@ import com.wire.sdk.WireAppSdk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class Main {
@@ -44,9 +44,10 @@ public class Main {
     }
 
     private WireAppSdk initSdkInstance() {
-        SecureRandom randomGenerator = new SecureRandom();
+        // For demonstration purposes, we use a static secure key. In a production application,
+        // ensure to generate, store, and manage this key securely.
         byte[] secureKey = new byte[32];
-        randomGenerator.nextBytes(secureKey);
+        Arrays.fill(secureKey, (byte) 1);
 
         return new WireAppSdk(
                 MY_APPLICATION_ID,
