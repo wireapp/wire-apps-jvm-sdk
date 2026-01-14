@@ -19,6 +19,7 @@ import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.WireAppSdk
 import com.wire.sdk.model.QualifiedId
 import org.slf4j.LoggerFactory
+import java.security.SecureRandom
 import java.util.UUID
 
 private val logger = LoggerFactory.getLogger("WireAppSdkSample")
@@ -36,11 +37,15 @@ fun main() {
         }
     }
 
+    val secureKey = ByteArray(32).apply {
+        SecureRandom().nextBytes(this)
+    }
+
     val wireAppSdk = WireAppSdk(
         applicationId = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
         apiToken = "myApiToken",
         apiHost = "https://staging-nginz-https.zinfra.io",
-        cryptographyStoragePassword = "myDummyPasswordOfRandom32BytesCH",
+        cryptographyStorageKey = secureKey,
         wireEventsHandler = SampleEventsHandler(),
     )
 

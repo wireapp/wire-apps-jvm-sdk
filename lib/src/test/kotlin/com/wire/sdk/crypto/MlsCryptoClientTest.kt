@@ -63,7 +63,9 @@ class MlsCryptoClientTest {
             )
             cryptoClient.close()
 
-            IsolatedKoinContext.setCryptographyStoragePassword("anotherPasswordOfRandom32BytesCH")
+            IsolatedKoinContext.setCryptographyStorageKey(
+                "anotherPasswordOfRandom32BytesCH".toByteArray()
+            )
             assertThrows<CoreCryptoException.Mls> {
                 MlsCryptoClient.create(
                     userId = userId,
@@ -216,7 +218,9 @@ class MlsCryptoClientTest {
         fun before() {
             // Testing that full UTF-8 is accepted on storage password
             IsolatedKoinContext.start()
-            IsolatedKoinContext.setCryptographyStoragePassword("myDummyPasswordOfRandom32BytesCH")
+            IsolatedKoinContext.setCryptographyStorageKey(
+                "myDummyPasswordOfRandom32BytesCH".toByteArray()
+            )
         }
 
         val CONVERSATION_ID = QualifiedId(

@@ -189,7 +189,7 @@ object TestUtils {
             applicationId = APPLICATION_ID,
             apiToken = API_TOKEN,
             apiHost = API_HOST,
-            cryptographyStoragePassword = CRYPTOGRAPHY_STORAGE_PASSWORD,
+            cryptographyStorageKey = CRYPTOGRAPHY_STORAGE_KEY,
             eventsHandler
         )
     }
@@ -205,7 +205,7 @@ object TestUtils {
     private val APPLICATION_ID = UUID.randomUUID()
     private const val API_TOKEN = "dummyToken"
     private const val API_HOST = "http://localhost:8086"
-    const val CRYPTOGRAPHY_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH"
+    val CRYPTOGRAPHY_STORAGE_KEY = "myDummyPasswordOfRandom32BytesCH".toByteArray()
     private val MLS_PUBLIC_KEYS_RESPONSE =
         """
             {

@@ -21,6 +21,7 @@ import com.wire.sdk.WireAppSdk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.SecureRandom;
 import java.util.UUID;
 
 public class Main {
@@ -30,7 +31,6 @@ public class Main {
     final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_USER_ID"));
     final static String WIRE_API_TOKEN = "myApiToken";
     final static String WIRE_API_HOST = "https://staging-nginz-https.zinfra.io";
-    final static String WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH";
 
     public static void main(String[] args) {
         new Main().initApp();
@@ -44,16 +44,20 @@ public class Main {
     }
 
     private WireAppSdk initSdkInstance() {
+        SecureRandom randomGenerator = new SecureRandom();
+        byte[] secureKey = new byte[32];
+        randomGenerator.nextBytes(secureKey);
+
         return new WireAppSdk(
                 MY_APPLICATION_ID,
                 WIRE_API_TOKEN,
                 WIRE_API_HOST,
-                WIRE_CRYPTOGRAPHY_STORAGE_PASSWORD,
+                secureKey,
                 new CustomWireEventsHandler()
         );
     }
 
-    private class DefaultBackendConnectionListener implements BackendConnectionListener {
+    private static class DefaultBackendConnectionListener implements BackendConnectionListener {
         @Override
         public void onConnected() {
             logger.info("Backend connection established - Ready to send/receive messages");

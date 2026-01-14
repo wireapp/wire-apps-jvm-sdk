@@ -29,11 +29,49 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Main entry point for the Wire Apps SDK.
+ *
+ * This class provides the primary interface for Wire third-party applications to connect
+ * to the Wire backend, handle real-time events via WebSocket, and interact with the
+ * Wire messaging platform.
+ *
+ * Example usage:
+ * ```kotlin
+ * val sdk = WireAppSdk(
+ *     applicationId = UUID.fromString("your-app-id"),
+ *     apiToken = "your-api-token",
+ *     apiHost = "https://prod-nginz-https.wire.com",
+ *     cryptographyStorageKey = yourSecureKey, // 32 bytes
+ *     wireEventsHandler = MyEventsHandler()
+ * )
+ *
+ * sdk.startListening() // Start receiving events
+ * // ... your application logic ...
+ * sdk.stopListening() // Stop when done
+ * ```
+ *
+ * The SDK handles:
+ * - MLS (Messaging Layer Security) and Proteus encryption/decryption
+ * - WebSocket connections for real-time event streaming
+ * - HTTP client calls to the Wire backend API
+ * - Local storage for conversation and team data
+ *
+ * @property applicationId The unique identifier for your Wire application
+ * @property apiToken The API token for authenticating with the Wire backend
+ * @property apiHost The Wire backend API host URL (e.g., "https://prod-nginz-https.wire.com")
+ * @property cryptographyStorageKey A 32-byte key used to encrypt the local cryptographic storage.
+ *                                   This key must be consistent across restarts.
+ *                                   It is advisable to use a secure random 256 bits key.
+ * @property wireEventsHandler An implementation of [WireEventsHandler] to receive and process
+ *                              incoming Wire events (messages, assets, etc.)
+ * @throws IllegalArgumentException if [cryptographyStorageKey] is not exactly 32 bytes
+ */
 class WireAppSdk(
     applicationId: UUID,
     apiToken: String,
     apiHost: String,
-    cryptographyStoragePassword: String,
+    cryptographyStorageKey: ByteArray,
     wireEventsHandler: WireEventsHandler
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -41,9 +79,8 @@ class WireAppSdk(
     private var executor = Executors.newSingleThreadExecutor()
 
     init {
-        require(cryptographyStoragePassword.length == CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH) {
-            "cryptographyStoragePassword must be exactly $CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH " +
-                "characters long."
+        require(cryptographyStorageKey.size == CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
+            "cryptographyStorageKey must be exactly $CRYPTOGRAPHY_STORAGE_KEY_BYTES bytes long"
         }
 
         initializeStorageDirectory()
@@ -52,7 +89,7 @@ class WireAppSdk(
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
         IsolatedKoinContext.setApiToken(apiToken)
-        IsolatedKoinContext.setCryptographyStoragePassword(cryptographyStoragePassword)
+        IsolatedKoinContext.setCryptographyStorageKey(cryptographyStorageKey.copyOf())
 
         initDynamicModules(wireEventsHandler)
     }
@@ -71,6 +108,17 @@ class WireAppSdk(
         }
     }
 
+    /**
+     * Launches a separate process that listens for WebSocket events from the Wire backend,
+     * and stays open indefinitely until [stopListening] is called or the application is terminated.
+     *
+     * The events received will be handled automatically and routed
+     * to the provided [WireEventsHandler].
+     *
+     * startListening is mandatory to have the SDK functioning properly, but without it some data
+     * can still be accessed via the [WireApplicationManager].
+     * This method is thread-safe and can be called multiple times;
+     */
     @Synchronized
     fun startListening() {
         if (running.get()) {
@@ -106,6 +154,18 @@ class WireAppSdk(
         }
     }
 
+    /**
+     * Stops listening to WebSocket events from the Wire backend.
+     *
+     * This method gracefully shuts down the WebSocket connection and stops the background
+     * event processing thread. It is safe to call this method multiple times; subsequent
+     * calls while not running will have no effect.
+     *
+     * After calling this method, [startListening] can be called again to resume
+     * event processing.
+     *
+     * This method is thread-safe and synchronized.
+     */
     @Synchronized
     fun stopListening() {
         if (!running.get()) {
@@ -117,8 +177,30 @@ class WireAppSdk(
         executor.shutdownNow()
     }
 
+    /**
+     * Returns whether the SDK is currently listening for WebSocket events.
+     *
+     * @return `true` if [startListening] has been called and the SDK is actively
+     *         listening for events, `false` otherwise
+     */
     fun isRunning(): Boolean = running.get()
 
+    /**
+     * Returns the [WireApplicationManager] instance for interacting with the Wire backend.
+     *
+     * The application manager provides methods for:
+     * - Sending text messages and assets
+     * - Downloading and uploading files
+     * - Creating and managing conversations
+     * - Accessing team information
+     *
+     * This method can be called at any time after SDK initialization, even before
+     * [startListening] is called. However, some operations may require an active
+     * WebSocket connection.
+     *
+     * @return The [WireApplicationManager] instance configured for this SDK
+     * @see WireApplicationManager
+     */
     fun getApplicationManager(): WireApplicationManager = IsolatedKoinContext.koinApp.koin.get()
 
     /**
@@ -147,6 +229,6 @@ class WireAppSdk(
     }
 
     private companion object {
-        const val CRYPTOGRAPHY_STORAGE_PASSWORD_LENGTH = 32
+        const val CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
     }
 }
