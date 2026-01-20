@@ -339,6 +339,7 @@ class WireEventsIntegrationTest {
             // Setup - track order of handler execution
             val handlerEvents = CopyOnWriteArrayList<String>()
             val eventsLatch = CountDownLatch(2)
+            val joinStartedLatch = CountDownLatch(1)
 
             val slowHandler = object : WireEventsHandlerSuspending() {
                 override suspend fun onUserJoinedConversation(
@@ -346,6 +347,7 @@ class WireEventsIntegrationTest {
                     members: List<ConversationMember>
                 ) {
                     handlerEvents.add("join_started")
+                    joinStartedLatch.countDown()
                     // Simulate a very long operation (e.g., external API call)
                     delay(2000)
                     handlerEvents.add("join_completed")
@@ -393,7 +395,13 @@ class WireEventsIntegrationTest {
                 )
             )
 
-            // Immediately send MemberLeave event - this should NOT be blocked
+            // Wait for the join handler to actually start executing before sending leave event
+            assertTrue(
+                joinStartedLatch.await(1000, TimeUnit.MILLISECONDS),
+                "Join handler should start"
+            )
+
+            // Now send MemberLeave event - this should NOT be blocked by the slow join handler
             eventsRouter.route(
                 eventResponse = EventResponse(
                     id = "event_leave",
@@ -479,6 +487,91 @@ class WireEventsIntegrationTest {
             assertTrue(
                 allHandlersCompleted.await(1000, TimeUnit.MILLISECONDS),
                 "All handlers should complete"
+            )
+        }
+
+    @Test
+    fun givenHandlerThrowsExceptionWhenProcessingEventsThenOtherHandlersStillComplete() =
+        runTest {
+            val successfulHandlerCompleted = CountDownLatch(1)
+            val throwingHandlerStarted = CountDownLatch(1)
+
+            val handlerWithException = object : WireEventsHandlerSuspending() {
+                override suspend fun onUserJoinedConversation(
+                    conversationId: QualifiedId,
+                    members: List<ConversationMember>
+                ) {
+                    throwingHandlerStarted.countDown()
+                    // Small delay to ensure this coroutine is running when the other starts
+                    delay(100)
+                    throw RuntimeException("Simulated handler failure")
+                }
+
+                override suspend fun onUserLeftConversation(
+                    conversationId: QualifiedId,
+                    members: List<QualifiedId>
+                ) {
+                    // Wait for the throwing handler to start first
+                    throwingHandlerStarted.await(500, TimeUnit.MILLISECONDS)
+                    // This handler should still complete despite the other one throwing
+                    successfulHandlerCompleted.countDown()
+                }
+            }
+
+            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
+            TestUtils.setupSdk(handlerWithException)
+
+            val conversationId = QualifiedId(
+                id = UUID.randomUUID(),
+                domain = "wire.com"
+            )
+
+            val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
+
+            val user1 = QualifiedId(UUID.randomUUID(), "wire.com")
+            val user2 = QualifiedId(UUID.randomUUID(), "wire.com")
+
+            // Send MemberJoin event (which will throw an exception in handler)
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_join_throw",
+                    payload = listOf(
+                        EventContentDTO.Conversation.MemberJoin(
+                            qualifiedConversation = conversationId,
+                            qualifiedFrom = USER_ID,
+                            time = EXPECTED_NEW_CONVERSATION_VALUE,
+                            data = MemberJoinEventData(
+                                users = listOf(Member(user1, ConversationRole.MEMBER))
+                            )
+                        )
+                    ),
+                    transient = true
+                )
+            )
+
+            // Send MemberLeave event - this should NOT be affected by the exception
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_leave_success",
+                    payload = listOf(
+                        EventContentDTO.Conversation.MemberLeave(
+                            qualifiedConversation = conversationId,
+                            qualifiedFrom = USER_ID,
+                            time = EXPECTED_NEW_CONVERSATION_VALUE,
+                            data = MemberLeaveEventData(
+                                users = listOf(user2),
+                                reason = "deletion"
+                            )
+                        )
+                    ),
+                    transient = true
+                )
+            )
+
+            // Verify the successful handler completed despite the other one throwing
+            assertTrue(
+                successfulHandlerCompleted.await(1000, TimeUnit.MILLISECONDS),
+                "Handler should complete even when sibling coroutine throws"
             )
         }
 

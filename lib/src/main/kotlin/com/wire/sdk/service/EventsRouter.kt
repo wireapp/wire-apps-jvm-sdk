@@ -42,6 +42,7 @@ import com.wire.sdk.service.conversation.ConversationService
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
 import kotlin.time.Instant
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -60,7 +61,11 @@ internal class EventsRouter internal constructor(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     // Coroutine scope for running callbacks without blocking the main event processing
-    private val handlerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val handlerScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, throwable ->
+            logger.error("Uncaught exception in event handler callback", throwable)
+        }
+    )
 
     @Suppress("LongMethod", "NestedBlockDepth", "CyclomaticComplexMethod")
     internal suspend fun route(eventResponse: EventResponse) {
