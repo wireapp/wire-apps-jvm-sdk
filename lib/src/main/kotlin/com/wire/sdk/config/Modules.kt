@@ -82,7 +82,7 @@ val sdkModule =
         single<BackendClient> { BackendClientDemo(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get()) }
+        single { EventsRouter(get(), get(), get(), get(), get(), get()) } onClose { it?.close() }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost())
         } onClose { it?.close() }

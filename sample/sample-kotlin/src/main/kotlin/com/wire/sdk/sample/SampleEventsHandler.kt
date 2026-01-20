@@ -23,6 +23,7 @@ import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireMessage.Asset.AssetMetadata
 import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.http.conversation.ConversationRole
+import kotlinx.coroutines.delay
 import java.io.File
 import java.util.*
 import org.slf4j.LoggerFactory
@@ -158,7 +159,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         val ping = WireMessage.Ping.create(
             conversationId = wireMessage.conversationId
         )
-
+        delay(10000L)
         manager.sendMessageSuspending(message = ping)
     }
 
