@@ -42,6 +42,11 @@ import com.wire.sdk.service.conversation.ConversationService
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
 import kotlin.time.Instant
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
 internal class EventsRouter internal constructor(
@@ -51,8 +56,11 @@ internal class EventsRouter internal constructor(
     private val wireEventsHandler: WireEventsHandler,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy
-) {
+) : AutoCloseable {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    // Coroutine scope for running callbacks without blocking the main event processing
+    private val handlerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @Suppress("LongMethod", "NestedBlockDepth", "CyclomaticComplexMethod")
     internal suspend fun route(eventResponse: EventResponse) {
@@ -89,13 +97,13 @@ internal class EventsRouter internal constructor(
                 is EventContentDTO.Conversation.DeleteConversation -> {
                     logger.info("Received event: ConversationDeleted, $event")
                     conversationService.processDeletedConversation(event.qualifiedConversation)
-                    when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onConversationDeleted(
-                            event.qualifiedConversation
-                        )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onConversationDeleted(
-                            event.qualifiedConversation
-                        )
+                    handlerScope.launch {
+                        when (wireEventsHandler) {
+                            is WireEventsHandlerDefault ->
+                                wireEventsHandler.onConversationDeleted(event.qualifiedConversation)
+                            is WireEventsHandlerSuspending ->
+                                wireEventsHandler.onConversationDeleted(event.qualifiedConversation)
+                        }
                     }
                 }
 
@@ -108,17 +116,19 @@ internal class EventsRouter internal constructor(
                         )
                     }
                     conversationService.saveMembers(event.qualifiedConversation, members)
-                    when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onUserJoinedConversation(
-                            conversationId = event.qualifiedConversation,
-                            members = members
-                        )
-                        is WireEventsHandlerSuspending ->
-                            wireEventsHandler
-                                .onUserJoinedConversation(
+                    handlerScope.launch {
+                        when (wireEventsHandler) {
+                            is WireEventsHandlerDefault ->
+                                wireEventsHandler.onUserJoinedConversation(
                                     conversationId = event.qualifiedConversation,
                                     members = members
                                 )
+                            is WireEventsHandlerSuspending ->
+                                wireEventsHandler.onUserJoinedConversation(
+                                    conversationId = event.qualifiedConversation,
+                                    members = members
+                                )
+                        }
                     }
                 }
 
@@ -128,15 +138,19 @@ internal class EventsRouter internal constructor(
                         conversationId = event.qualifiedConversation,
                         users = event.data.users
                     )
-                    when (wireEventsHandler) {
-                        is WireEventsHandlerDefault -> wireEventsHandler.onUserLeftConversation(
-                            conversationId = event.qualifiedConversation,
-                            members = event.data.users
-                        )
-                        is WireEventsHandlerSuspending -> wireEventsHandler.onUserLeftConversation(
-                            conversationId = event.qualifiedConversation,
-                            members = event.data.users
-                        )
+                    handlerScope.launch {
+                        when (wireEventsHandler) {
+                            is WireEventsHandlerDefault ->
+                                wireEventsHandler.onUserLeftConversation(
+                                    conversationId = event.qualifiedConversation,
+                                    members = event.data.users
+                                )
+                            is WireEventsHandlerSuspending ->
+                                wireEventsHandler.onUserLeftConversation(
+                                    conversationId = event.qualifiedConversation,
+                                    members = event.data.users
+                                )
+                        }
                     }
                 }
 
@@ -226,15 +240,17 @@ internal class EventsRouter internal constructor(
 
         val conversationModel = Conversation.fromEntity(conversationEntity)
 
-        when (wireEventsHandler) {
-            is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(
-                conversation = conversationModel,
-                members = members
-            )
-            is WireEventsHandlerSuspending -> wireEventsHandler.onAppAddedToConversation(
-                conversation = conversationModel,
-                members = members
-            )
+        handlerScope.launch {
+            when (wireEventsHandler) {
+                is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(
+                    conversation = conversationModel,
+                    members = members
+                )
+                is WireEventsHandlerSuspending -> wireEventsHandler.onAppAddedToConversation(
+                    conversation = conversationModel,
+                    members = members
+                )
+            }
         }
     }
 
@@ -242,7 +258,7 @@ internal class EventsRouter internal constructor(
      * Forwards the message to the appropriate handler (blocking or suspending) based on its type.
      */
     @Suppress("CyclomaticComplexMethod", "LongMethod")
-    private suspend fun forwardMessage(
+    private fun forwardMessage(
         message: ByteArray,
         conversationId: QualifiedId,
         sender: QualifiedId,
@@ -256,52 +272,60 @@ internal class EventsRouter internal constructor(
             timestamp = timestamp
         )
 
-        when (wireEventsHandler) {
-            is WireEventsHandlerDefault -> when (wireMessage) {
-                is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
-                is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
-                is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
-                is WireMessage.Ping -> wireEventsHandler.onPingReceived(wireMessage)
-                is WireMessage.Location -> wireEventsHandler.onLocationMessageReceived(wireMessage)
-                is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
-                is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
-                is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
-                is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
-                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
-                    wireMessage
-                )
-                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
-                    wireMessage
-                )
-                is WireMessage.Ignored -> logger.warn("Ignored event received.")
-                is WireMessage.Unknown -> logger.warn("Unknown event received.")
-                is WireMessage.Composite -> logger.debug("Composite event received.")
-                is WireMessage.ButtonActionConfirmation ->
-                    logger.debug("ButtonActionConfirmation event received.")
-                is WireMessage.CompositeEdited -> logger.debug("CompositeEdited event received.")
-            }
-            is WireEventsHandlerSuspending -> when (wireMessage) {
-                is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
-                is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
-                is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
-                is WireMessage.Ping -> wireEventsHandler.onPingReceived(wireMessage)
-                is WireMessage.Location -> wireEventsHandler.onLocationMessageReceived(wireMessage)
-                is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
-                is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
-                is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
-                is WireMessage.Reaction -> wireEventsHandler.onMessageReactionReceived(wireMessage)
-                is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
-                    wireMessage
-                )
-                is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
-                    wireMessage
-                )
-                is WireMessage.Ignored -> logger.warn("Ignored event received.")
-                is WireMessage.Unknown -> logger.warn("Unknown event received.")
-                is WireMessage.Composite -> logger.debug("Composite event received.")
-                is WireMessage.ButtonActionConfirmation ->
-                    logger.debug("ButtonActionConfirmation event received.")
-                is WireMessage.CompositeEdited -> logger.debug("CompositeEdited event received.")
+        handlerScope.launch {
+            when (wireEventsHandler) {
+                is WireEventsHandlerDefault -> when (wireMessage) {
+                    is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
+                    is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
+                    is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
+                    is WireMessage.Ping -> wireEventsHandler.onPingReceived(wireMessage)
+                    is WireMessage.Location ->
+                        wireEventsHandler.onLocationMessageReceived(wireMessage)
+                    is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
+                    is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
+                    is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
+                    is WireMessage.Reaction ->
+                        wireEventsHandler.onMessageReactionReceived(wireMessage)
+                    is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
+                        wireMessage
+                    )
+                    is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
+                        wireMessage
+                    )
+                    is WireMessage.Ignored -> logger.warn("Ignored event received.")
+                    is WireMessage.Unknown -> logger.warn("Unknown event received.")
+                    is WireMessage.Composite -> logger.debug("Composite event received.")
+                    is WireMessage.ButtonActionConfirmation ->
+                        logger.debug("ButtonActionConfirmation event received.")
+                    is WireMessage.CompositeEdited ->
+                        logger.debug("CompositeEdited event received.")
+                }
+                is WireEventsHandlerSuspending -> when (wireMessage) {
+                    is WireMessage.Text -> wireEventsHandler.onTextMessageReceived(wireMessage)
+                    is WireMessage.Asset -> wireEventsHandler.onAssetMessageReceived(wireMessage)
+                    is WireMessage.ButtonAction -> wireEventsHandler.onButtonClicked(wireMessage)
+                    is WireMessage.Ping -> wireEventsHandler.onPingReceived(wireMessage)
+                    is WireMessage.Location ->
+                        wireEventsHandler.onLocationMessageReceived(wireMessage)
+                    is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
+                    is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
+                    is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
+                    is WireMessage.Reaction ->
+                        wireEventsHandler.onMessageReactionReceived(wireMessage)
+                    is WireMessage.InCallEmoji -> wireEventsHandler.onInCallReactionReceived(
+                        wireMessage
+                    )
+                    is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
+                        wireMessage
+                    )
+                    is WireMessage.Ignored -> logger.warn("Ignored event received.")
+                    is WireMessage.Unknown -> logger.warn("Unknown event received.")
+                    is WireMessage.Composite -> logger.debug("Composite event received.")
+                    is WireMessage.ButtonActionConfirmation ->
+                        logger.debug("ButtonActionConfirmation event received.")
+                    is WireMessage.CompositeEdited ->
+                        logger.debug("CompositeEdited event received.")
+                }
             }
         }
     }
@@ -339,5 +363,9 @@ internal class EventsRouter internal constructor(
         } catch (e: WireException) {
             logger.error("Internal error", e)
         }
+    }
+
+    override fun close() {
+        handlerScope.cancel()
     }
 }
