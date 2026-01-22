@@ -160,6 +160,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             conversationId = wireMessage.conversationId
         )
         delay(10000L)
+        logger.info("Sending back Ping: $wireMessage")
         manager.sendMessageSuspending(message = ping)
     }
 

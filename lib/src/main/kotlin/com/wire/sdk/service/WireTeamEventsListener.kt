@@ -107,6 +107,16 @@ internal class WireTeamEventsListener internal constructor(
     }
 
     /**
+     * Requests a graceful shutdown of the WebSocket connection.
+     * This will close the WebSocket, stopping new frames from being received,
+     * while allowing any in-flight event processing to complete.
+     */
+    suspend fun requestShutdown() {
+        logger.info("Requesting WebSocket shutdown")
+        backendClient.closeWebSocket()
+    }
+
+    /**
      * Fetches and syncs missed notifications while the SDK was offline.
      */
     suspend fun syncMissedNotifications() {

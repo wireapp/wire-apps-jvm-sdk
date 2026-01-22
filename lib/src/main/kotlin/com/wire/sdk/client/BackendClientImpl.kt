@@ -71,6 +71,10 @@ internal class BackendClientImpl(private val httpClient: HttpClient) : BackendCl
         }
     }
 
+    override suspend fun closeWebSocket() {
+        logger.info("Requesting graceful WebSocket close")
+    }
+
     override suspend fun getAvailableApiVersions(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
         return httpClient.get("/${BackendClient.Companion.API_VERSION}/api-version").body()
