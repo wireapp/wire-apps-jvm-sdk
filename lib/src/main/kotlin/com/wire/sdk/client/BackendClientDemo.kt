@@ -69,8 +69,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
+import io.ktor.http.headers
 import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.close
 import java.util.Base64
 import java.util.UUID
 import kotlin.time.Clock
@@ -98,6 +101,9 @@ internal class BackendClientDemo(
     private var cachedAccessToken: String? = null
     private var cachedDeviceId: String? = null
 
+    // Active WebSocket session for graceful shutdown support
+    private var activeWebSocketSession: DefaultClientWebSocketSession? = null
+
     override suspend fun connectWebSocket(
         handleFrames: suspend (DefaultClientWebSocketSession) -> Unit
     ) {
@@ -113,8 +119,16 @@ internal class BackendClientDemo(
                 ?.replace("-https", "-ssl"),
             path = path
         ) {
+            activeWebSocketSession = this
             handleFrames(this)
         }
+    }
+
+    override suspend fun closeWebSocket() {
+        logger.info("Requesting graceful WebSocket close")
+        activeWebSocketSession?.close(
+            CloseReason(CloseReason.Codes.GOING_AWAY, "Graceful shutdown")
+        )
     }
 
     override suspend fun getAvailableApiVersions(): ApiVersionResponse {

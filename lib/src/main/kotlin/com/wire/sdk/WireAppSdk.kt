@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -77,6 +78,10 @@ class WireAppSdk(
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val running = AtomicBoolean(false)
     private var executor = Executors.newSingleThreadExecutor()
+    private var shutdownHook = Thread {
+        logger.info("Shutdown hook triggered")
+        if (isRunning()) stopListening()
+    }
 
     init {
         require(cryptographyStorageKey.size == CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
@@ -92,6 +97,9 @@ class WireAppSdk(
         IsolatedKoinContext.setCryptographyStorageKey(cryptographyStorageKey.copyOf())
 
         initDynamicModules(wireEventsHandler)
+
+        // Register shutdown hook for graceful termination on SIGTERM/SIGINT
+        Runtime.getRuntime().addShutdownHook(shutdownHook)
     }
 
     private fun initializeStorageDirectory() {
@@ -148,6 +156,7 @@ class WireAppSdk(
             }
         }
 
+        // After webSocket is started, check if there are broken conversations to rejoin
         runBlocking {
             val conversationService = IsolatedKoinContext.koinApp.koin.get<ConversationService>()
             conversationService.establishOrRejoinConversations()
@@ -158,23 +167,43 @@ class WireAppSdk(
      * Stops listening to WebSocket events from the Wire backend.
      *
      * This method gracefully shuts down the WebSocket connection and stops the background
-     * event processing thread. It is safe to call this method multiple times; subsequent
-     * calls while not running will have no effect.
+     * event processing thread. It first closes the WebSocket connection to stop receiving
+     * new events, then waits for any in-flight event processing to complete before
+     * fully shutting down.
+     *
+     * It is safe to call this method multiple times; subsequent calls while not running
+     * will have no effect.
      *
      * After calling this method, [startListening] can be called again to resume
      * event processing.
      *
      * This method is thread-safe and synchronized.
+     *
+     * @param gracefulTimeoutMs Maximum time in milliseconds to wait for in-flight events
+     *                          to complete before forcing shutdown. Defaults to 20 seconds.
      */
     @Synchronized
-    fun stopListening() {
+    fun stopListening(gracefulTimeoutMs: Long = DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT_MS) {
         if (!running.get()) {
             logger.info("Wire Apps SDK is not running")
             return
         }
-        logger.info("Wire Apps SDK shutting down")
+        logger.info("Wire Apps SDK initiating graceful shutdown")
         running.set(false)
-        executor.shutdownNow()
+
+        // Close WebSocket gracefully to stop receiving new events
+        runBlocking {
+            val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
+            eventsListener.requestShutdown()
+        }
+
+        // Wait for in-flight event processing to complete
+        executor.shutdown()
+        if (!executor.awaitTermination(gracefulTimeoutMs, TimeUnit.MILLISECONDS)) {
+            logger.warn("Graceful shutdown timed out, forcing stop")
+            executor.shutdownNow()
+        }
+        logger.info("Wire Apps SDK shutdown complete")
     }
 
     /**
@@ -230,5 +259,6 @@ class WireAppSdk(
 
     private companion object {
         const val CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32
+        const val DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT_MS = 20_000L
     }
 }

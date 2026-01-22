@@ -43,6 +43,12 @@ import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 interface BackendClient {
     suspend fun connectWebSocket(handleFrames: suspend (DefaultClientWebSocketSession) -> Unit)
 
+    /**
+     * Gracefully closes the active WebSocket connection if one exists.
+     * This stops receiving new frames while allowing in-flight processing to complete.
+     */
+    suspend fun closeWebSocket()
+
     suspend fun getAvailableApiVersions(): ApiVersionResponse
 
     suspend fun getApplicationData(): AppDataResponse
