@@ -180,7 +180,7 @@ class WireAppSdk(
      * This method is thread-safe and synchronized.
      *
      * @param gracefulTimeoutMs Maximum time in milliseconds to wait for in-flight events
-     *                          to complete before forcing shutdown. Defaults to 30 seconds.
+     *                          to complete before forcing shutdown. Defaults to 20 seconds.
      */
     @Synchronized
     fun stopListening(gracefulTimeoutMs: Long = DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT_MS) {
