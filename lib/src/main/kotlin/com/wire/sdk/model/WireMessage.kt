@@ -338,7 +338,25 @@ sealed interface WireMessage {
          * ID of the selected button. Null if no button should be marked as selected.
          */
         val buttonId: String?
-    ) : WireMessage
+    ) : WireMessage {
+        companion object {
+            @JvmStatic
+            fun create(
+                conversationId: QualifiedId,
+                referencedMessageId: String,
+                buttonId: String?
+            ) = ButtonActionConfirmation(
+                id = UUID.randomUUID(),
+                conversationId = conversationId,
+                sender = QualifiedId(
+                    id = UUID.randomUUID(),
+                    domain = UUID.randomUUID().toString()
+                ),
+                referencedMessageId = referencedMessageId,
+                buttonId = buttonId
+            )
+        }
+    }
 
     @JvmRecord
     data class Ping @JvmOverloads constructor(

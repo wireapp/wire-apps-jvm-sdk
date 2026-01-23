@@ -252,14 +252,12 @@ object ProtobufSerializer {
         wireMessage: WireMessage.ButtonActionConfirmation,
         genericMessage: GenericMessage.Builder
     ): GenericMessage.Builder =
-        genericMessage
-            .setButtonActionConfirmation(
-                ButtonActionConfirmation
-                    .newBuilder()
-                    .setButtonId(wireMessage.buttonId)
-                    .setReferenceMessageId(wireMessage.referencedMessageId)
-                    .build()
-            )
+        genericMessage.setButtonActionConfirmation(
+            ButtonActionConfirmation.newBuilder().apply {
+                wireMessage.buttonId?.let { setButtonId(it) }
+                setReferenceMessageId(wireMessage.referencedMessageId)
+            }.build()
+        )
 
     private fun packPing(
         wireMessage: WireMessage.Ping,
