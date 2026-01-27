@@ -49,7 +49,7 @@ dependencies {
 
     // Kotlin stdlib and serialization are required for Java consumers
     api(kotlin("stdlib"))
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
     implementation(platform("io.insert-koin:koin-bom:4.1.1"))
     implementation("io.insert-koin:koin-core:4.1.1")
