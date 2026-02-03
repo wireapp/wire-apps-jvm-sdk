@@ -342,7 +342,7 @@ object ProtobufDeserializer {
             id = UUID.fromString(genericMessage.messageId),
             conversationId = conversationId,
             sender = sender,
-            messageId = genericMessage.deleted.messageId
+            messageId = UUID.fromString(genericMessage.deleted.messageId)
         )
 
     private fun unpackReceipt(
