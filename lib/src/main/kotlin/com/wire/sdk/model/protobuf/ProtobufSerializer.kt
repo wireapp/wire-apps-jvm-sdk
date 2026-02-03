@@ -314,7 +314,7 @@ object ProtobufSerializer {
             .setDeleted(
                 MessageDelete
                     .newBuilder()
-                    .setMessageId(wireMessage.messageId)
+                    .setMessageId(wireMessage.messageId.toString())
                     .build()
             )
 

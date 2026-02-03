@@ -448,7 +448,7 @@ sealed interface WireMessage {
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
-        val messageId: String
+        val messageId: UUID
     ) : WireMessage {
         companion object {
             /**
@@ -461,7 +461,7 @@ sealed interface WireMessage {
             @JvmStatic
             fun create(
                 conversationId: QualifiedId,
-                messageId: String
+                messageId: UUID
             ): Deleted =
                 Deleted(
                     id = UUID.randomUUID(),
