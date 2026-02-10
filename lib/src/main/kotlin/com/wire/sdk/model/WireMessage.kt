@@ -49,7 +49,8 @@ sealed interface WireMessage {
     }
 
     @JvmRecord
-    data class Text @JvmOverloads constructor(
+    @ConsistentCopyVisibility
+    data class Text @JvmOverloads internal constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
@@ -359,7 +360,8 @@ sealed interface WireMessage {
     }
 
     @JvmRecord
-    data class Ping @JvmOverloads constructor(
+    @ConsistentCopyVisibility
+    data class Ping @JvmOverloads internal constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
@@ -391,7 +393,8 @@ sealed interface WireMessage {
     }
 
     @JvmRecord
-    data class Location @JvmOverloads constructor(
+    @ConsistentCopyVisibility
+    data class Location @JvmOverloads internal constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
@@ -517,7 +520,8 @@ sealed interface WireMessage {
     }
 
     @JvmRecord
-    data class TextEdited @JvmOverloads constructor(
+    @ConsistentCopyVisibility
+    data class TextEdited @JvmOverloads internal constructor(
         override val id: UUID,
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
