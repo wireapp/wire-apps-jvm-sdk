@@ -69,6 +69,7 @@ dependencies {
     implementation("org.zalando:logbook-json:3.12.3")
     implementation("com.google.protobuf:protobuf-kotlin:4.33.4")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.6")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.2.3")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
