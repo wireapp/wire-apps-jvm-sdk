@@ -77,9 +77,6 @@ class WireEventsIntegrationTest {
                 eventResponse = NEW_CONVERSATION_EVENT
             )
 
-            // Give async processing time to complete (no handler callback for these events)
-            delay(500)
-
             val teamStorage = IsolatedKoinContext.koinApp.koin.get<TeamStorage>()
             assertTrue { teamStorage.getAll().size == 1 }
         }

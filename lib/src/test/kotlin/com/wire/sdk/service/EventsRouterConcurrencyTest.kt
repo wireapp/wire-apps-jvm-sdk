@@ -32,6 +32,8 @@ import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.just
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -113,13 +115,13 @@ class EventsRouterConcurrencyTest {
             } coAnswers {
                 val convId = firstArg<QualifiedId>()
                 processingStartTimes[convId.id.toString()] = System.currentTimeMillis()
-                kotlinx.coroutines.delay(50) // Simulate processing time (real delay)
+                delay(50) // Simulate processing time (real delay)
             }
 
             // Use real dispatcher for parallel processing
             val eventsRouter = createEventsRouter(
                 conversationService = conversationService,
-                dispatcher = kotlinx.coroutines.Dispatchers.Default
+                dispatcher = Dispatchers.Default
             )
 
             val userId1 = QualifiedId(UUID.randomUUID(), "wire.test")
@@ -167,13 +169,13 @@ class EventsRouterConcurrencyTest {
             } coAnswers {
                 val convId = firstArg<QualifiedId>()
                 processingStartTimes[convId.id.toString()] = System.currentTimeMillis()
-                kotlinx.coroutines.delay(50) // Simulate processing time (real delay)
+                delay(50) // Simulate processing time (real delay)
             }
 
             // Use real dispatcher for parallel processing
             val eventsRouter = createEventsRouter(
                 conversationService = conversationService,
-                dispatcher = kotlinx.coroutines.Dispatchers.Default
+                dispatcher = Dispatchers.Default
             )
 
             val userId1 = QualifiedId(UUID.randomUUID(), "wire.test")
@@ -386,8 +388,6 @@ class EventsRouterConcurrencyTest {
             eventsRouter.close()
         }
 
-    // Helper functions
-
     private fun createMemberJoinEvent(
         conversationId: QualifiedId,
         userId: QualifiedId
@@ -410,7 +410,7 @@ class EventsRouterConcurrencyTest {
         conversationService: ConversationService = mockk(relaxed = true),
         backendClient: BackendClient = mockk(relaxed = true),
         cryptoClient: CryptoClient = mockk(relaxed = true),
-        dispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default
+        dispatcher: CoroutineDispatcher = Dispatchers.Default
     ): EventsRouter {
         val wireEventsHandler = object : WireEventsHandlerSuspending() {}
         val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)

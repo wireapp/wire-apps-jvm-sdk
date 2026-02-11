@@ -41,7 +41,9 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.service.conversation.ConversationService
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineDispatcher
@@ -54,6 +56,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
+// TODO This class is connected to too many services. Should keep only the concurrency and
+//  routing logic, and delegate the core crypto + backend operations to 1-2 other services.
 @Suppress("LongParameterList")
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
@@ -62,11 +66,15 @@ internal class EventsRouter internal constructor(
     private val wireEventsHandler: WireEventsHandler,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default
+    dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : AutoCloseable {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    // Coroutine scope for running callbacks without blocking the main event processing
+    /**
+     * Coroutine scope for running events of different conversation concurrently and
+     * callbacks without blocking the main event processing.
+     * Uses SupervisorJob to ensure that failure in one event processing does not affect others.
+     */
     private val handlerScope = CoroutineScope(
         SupervisorJob() + dispatcher + CoroutineExceptionHandler { _, throwable ->
             logger.error("Uncaught exception in event handler callback", throwable)
@@ -74,51 +82,23 @@ internal class EventsRouter internal constructor(
     )
 
     /**
-     * Map of conversationId to its dedicated event processing channel.
+     * Cache of conversationId to its dedicated event processing channel.
      * Each channel ensures FIFO ordering for events within the same conversation.
      * Uses BUFFERED capacity to provide backpressure when a conversation
-     * is processing events slower than they arrive.
+     * is processing events slower than they arrive. This should reach the websocket buffer and
+     * simply wait before reading more events.
+     *
+     * Cache automatically evicts inactive conversations after a while or when full.
      */
-    private val conversationChannels = ConcurrentHashMap<String, Channel<suspend () -> Unit>>()
-
-    /**
-     * Gets or creates a dedicated channel for a conversation.
-     * Each channel has a consumer coroutine that processes events sequentially.
-     */
-    @Suppress("TooGenericExceptionCaught")
-    private fun getOrCreateChannel(channelKey: String): Channel<suspend () -> Unit> {
-        return conversationChannels.computeIfAbsent(channelKey) {
-            Channel<suspend () -> Unit>(Channel.BUFFERED).also { channel ->
-                handlerScope.launch {
-                    for (processor in channel) {
-                        try {
-                            processor()
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            logger.error(
-                                "Error processing event for channel {}",
-                                channelKey,
-                                e
-                            )
-                        }
-                    }
-                }
+    private val conversationChannels: Cache<String, Channel<suspend () -> Unit>> =
+        Caffeine.newBuilder()
+            .maximumSize(CHANNEL_CACHE_MAX_SIZE) // Safety net, avoid using too much memory
+            .expireAfterAccess(CHANNEL_CACHE_EXPIRY, TimeUnit.MINUTES) // Remove inactive convs
+            .removalListener<String, Channel<suspend () -> Unit>> { key, channel, cause ->
+                logger.debug("Removing channel for conversation {}, reason: {}", key, cause)
+                channel?.close()
             }
-        }
-    }
-
-    /**
-     * Extracts the channel name from an event using the conversationId for most events,
-     * or a default one if the event is not conversation-specific.
-     */
-    private fun extractChannelKey(event: EventContentDTO): String {
-        return if (event is EventContentDTO.Conversation) {
-            "${event.qualifiedConversation.id}@${event.qualifiedConversation.domain}"
-        } else {
-            NON_CONVERSATION_EVENTS
-        }
-    }
+            .build()
 
     /**
      * Routes events to their appropriate handlers.
@@ -128,7 +108,6 @@ internal class EventsRouter internal constructor(
      */
     internal suspend fun route(eventResponse: EventResponse) {
         logger.debug("Event received: {}", eventResponse)
-        logger.info(dispatcher.toString())
 
         eventResponse.payload?.forEach { event ->
             val channelKey = extractChannelKey(event)
@@ -289,46 +268,6 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private suspend fun handleWelcomeEvent(
-        welcome: Welcome,
-        qualifiedConversation: QualifiedId
-    ) {
-        processWelcomeMessage(
-            welcome = welcome,
-            qualifiedConversation = qualifiedConversation
-        )
-        val conversationResponse = backendClient.getConversation(qualifiedConversation)
-        val (conversationEntity, members) = conversationService.saveConversationWithMembers(
-            qualifiedConversation = qualifiedConversation,
-            conversationResponse = conversationResponse
-        )
-
-        if (cryptoClient.hasTooFewKeyPackageCount()) {
-            cryptoClient.getCryptoClientId()?.let { cryptoClientId ->
-                backendClient.uploadMlsKeyPackages(
-                    cryptoClientId = cryptoClientId,
-                    mlsKeyPackages =
-                        cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
-                )
-            }
-        }
-
-        val conversationModel = Conversation.fromEntity(conversationEntity)
-
-        handlerScope.launch {
-            when (wireEventsHandler) {
-                is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(
-                    conversation = conversationModel,
-                    members = members
-                )
-                is WireEventsHandlerSuspending -> wireEventsHandler.onAppAddedToConversation(
-                    conversation = conversationModel,
-                    members = members
-                )
-            }
-        }
-    }
-
     /**
      * Forwards the message to the appropriate handler (blocking or suspending) based on its type.
      */
@@ -406,6 +345,80 @@ internal class EventsRouter internal constructor(
     }
 
     /**
+     * Gets or creates a dedicated channel for a conversation.
+     * Each channel has a consumer coroutine that processes events sequentially.
+     */
+    @Suppress("TooGenericExceptionCaught")
+    private fun getOrCreateChannel(channelKey: String): Channel<suspend () -> Unit> =
+        conversationChannels.get(channelKey) { key ->
+            Channel<suspend () -> Unit>(Channel.BUFFERED).also { channel ->
+                handlerScope.launch {
+                    for (processor in channel) {
+                        try {
+                            processor()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            logger.error("Error processing event for channel {}", key, e)
+                        }
+                    }
+                }
+            }
+        }
+
+    /**
+     * Extracts the channel name from an event using the conversationId for most events,
+     * or a default one if the event is not conversation-specific.
+     */
+    private fun extractChannelKey(event: EventContentDTO): String {
+        return if (event is EventContentDTO.Conversation) {
+            "${event.qualifiedConversation.id}@${event.qualifiedConversation.domain}"
+        } else {
+            NON_CONVERSATION_EVENTS
+        }
+    }
+
+    private suspend fun handleWelcomeEvent(
+        welcome: Welcome,
+        qualifiedConversation: QualifiedId
+    ) {
+        processWelcomeMessage(
+            welcome = welcome,
+            qualifiedConversation = qualifiedConversation
+        )
+        val conversationResponse = backendClient.getConversation(qualifiedConversation)
+        val (conversationEntity, members) = conversationService.saveConversationWithMembers(
+            qualifiedConversation = qualifiedConversation,
+            conversationResponse = conversationResponse
+        )
+
+        if (cryptoClient.hasTooFewKeyPackageCount()) {
+            cryptoClient.getCryptoClientId()?.let { cryptoClientId ->
+                backendClient.uploadMlsKeyPackages(
+                    cryptoClientId = cryptoClientId,
+                    mlsKeyPackages =
+                        cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
+                )
+            }
+        }
+
+        val conversationModel = Conversation.fromEntity(conversationEntity)
+
+        handlerScope.launch {
+            when (wireEventsHandler) {
+                is WireEventsHandlerDefault -> wireEventsHandler.onAppAddedToConversation(
+                    conversation = conversationModel,
+                    members = members
+                )
+                is WireEventsHandlerSuspending -> wireEventsHandler.onAppAddedToConversation(
+                    conversation = conversationModel,
+                    members = members
+                )
+            }
+        }
+    }
+
+    /**
      * Processes the MLS welcome package.
      * Orphan welcomes are recovered by sending a join request to the Backend.
      */
@@ -441,12 +454,14 @@ internal class EventsRouter internal constructor(
     }
 
     override fun close() {
-        conversationChannels.values.forEach { it.close() }
-        conversationChannels.clear()
+        conversationChannels.asMap().values.forEach { it.close() }
+        conversationChannels.invalidateAll()
         handlerScope.cancel()
     }
 
     companion object {
         private const val NON_CONVERSATION_EVENTS = "NON_CONVERSATION_EVENTS"
+        private const val CHANNEL_CACHE_MAX_SIZE = 100L
+        private const val CHANNEL_CACHE_EXPIRY = 30L
     }
 }
