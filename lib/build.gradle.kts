@@ -13,6 +13,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.util.UUID
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
@@ -189,7 +190,27 @@ mavenPublishing {
     }
 }
 
+// Generate a properties file with the SDK version as property, used at runtime for logging
+val generateBuildConfig: TaskProvider<Task> = tasks.register("generateBuildConfig") {
+    val outputDir = layout.buildDirectory.dir("generated/resources")
+    val versionString = version.toString()
+
+    inputs.property("version", versionString)
+    outputs.dir(outputDir)
+
+    doLast {
+        val propertiesFile = outputDir.get().file("sdk.properties").asFile
+        propertiesFile.parentFile.mkdirs()
+        propertiesFile.writeText("version=$versionString\n")
+    }
+}
+
+sourceSets.main {
+    resources.srcDir(generateBuildConfig.map { it.outputs })
+}
+
 tasks.withType<ProcessResources> {
+    dependsOn(generateBuildConfig)
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
@@ -198,7 +219,7 @@ tasks.named<Test>("test") {
 }
 
 tasks {
-    named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+    named<ShadowJar>("shadowJar") {
         mergeServiceFiles()
         archiveBaseName = "wire-jvm-sdk"
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
