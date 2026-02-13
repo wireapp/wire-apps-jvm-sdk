@@ -29,5 +29,6 @@
     </root>
 
     <logger name="com.wire.sdk" level="DEBUG" />
+    <logger name="org.zalando.logbook" level="TRACE" />
 
 </configuration>
