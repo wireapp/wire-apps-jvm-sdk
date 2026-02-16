@@ -32,7 +32,7 @@ plugins {
 }
 
 group = "com.wire"
-version = "0.0.19"
+version = Versions.SDK_VERSION
 val artifactId = "wire-apps-jvm-sdk"
 
 repositories {
@@ -52,6 +52,9 @@ dependencies {
     api(kotlin("stdlib"))
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
+    implementation(
+        files(rootProject.projectDir.resolve("buildSrc/build/classes/kotlin/main"))
+    )
     implementation(platform("io.insert-koin:koin-bom:4.1.1"))
     implementation("io.insert-koin:koin-core:4.1.1")
     implementation("ch.qos.logback:logback-classic:1.5.26")
@@ -190,27 +193,7 @@ mavenPublishing {
     }
 }
 
-// Generate a properties file with the SDK version as property, used at runtime for logging
-val generateBuildConfig: TaskProvider<Task> = tasks.register("generateBuildConfig") {
-    val outputDir = layout.buildDirectory.dir("generated/resources")
-    val versionString = version.toString()
-
-    inputs.property("version", versionString)
-    outputs.dir(outputDir)
-
-    doLast {
-        val propertiesFile = outputDir.get().file("sdk.properties").asFile
-        propertiesFile.parentFile.mkdirs()
-        propertiesFile.writeText("version=$versionString\n")
-    }
-}
-
-sourceSets.main {
-    resources.srcDir(generateBuildConfig.map { it.outputs })
-}
-
 tasks.withType<ProcessResources> {
-    dependsOn(generateBuildConfig)
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 

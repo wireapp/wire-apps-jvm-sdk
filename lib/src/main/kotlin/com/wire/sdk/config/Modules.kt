@@ -128,7 +128,7 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
         }
 
         install(UserAgent) {
-            agent = "Wire JVM SDK - $sdkVersion"
+            agent = "Wire JVM SDK - ${Versions.SDK_VERSION}"
         }
 
         install(HttpCache)
@@ -143,14 +143,6 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
             }
         }
     }
-}
-
-private val sdkVersion: String by lazy {
-    val properties = java.util.Properties()
-    object {}::class.java.classLoader
-        ?.getResourceAsStream("sdk.properties")
-        ?.use { properties.load(it) }
-    properties.getProperty("version", "Unknown version")
 }
 
 /**
