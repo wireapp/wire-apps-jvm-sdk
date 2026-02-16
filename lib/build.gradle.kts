@@ -71,7 +71,7 @@ dependencies {
     implementation("org.zalando:logbook-core:3.12.3")
     implementation("org.zalando:logbook-ktor-client:3.12.3")
     implementation("org.zalando:logbook-json:3.12.3")
-    implementation("com.google.protobuf:protobuf-kotlin:4.33.4")
+    implementation("com.google.protobuf:protobuf-kotlin:4.33.5")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.6")
 
     testImplementation(kotlin("test"))
@@ -137,7 +137,7 @@ protobuf {
         }
     }
     protoc {
-        artifact = "com.google.protobuf:protoc:4.33.4"
+        artifact = "com.google.protobuf:protoc:4.33.5"
     }
 }
 
