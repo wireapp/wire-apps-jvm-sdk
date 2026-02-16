@@ -128,7 +128,7 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
         }
 
         install(UserAgent) {
-            agent = "Ktor JVM SDK client"
+            agent = "Wire JVM SDK - ${Versions.SDK_VERSION}"
         }
 
         install(HttpCache)

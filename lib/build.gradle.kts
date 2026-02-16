@@ -13,6 +13,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.util.UUID
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
@@ -31,7 +32,7 @@ plugins {
 }
 
 group = "com.wire"
-version = "0.0.19"
+version = Versions.SDK_VERSION
 val artifactId = "wire-apps-jvm-sdk"
 
 repositories {
@@ -51,6 +52,9 @@ dependencies {
     api(kotlin("stdlib"))
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
+    implementation(
+        files(rootProject.projectDir.resolve("buildSrc/build/classes/kotlin/main"))
+    )
     implementation(platform("io.insert-koin:koin-bom:4.1.1"))
     implementation("io.insert-koin:koin-core:4.1.1")
     implementation("ch.qos.logback:logback-classic:1.5.26")
@@ -198,7 +202,7 @@ tasks.named<Test>("test") {
 }
 
 tasks {
-    named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+    named<ShadowJar>("shadowJar") {
         mergeServiceFiles()
         archiveBaseName = "wire-jvm-sdk"
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
