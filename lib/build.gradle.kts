@@ -68,9 +68,9 @@ dependencies {
     implementation("com.wire:core-crypto-jvm:9.1.3")
     implementation("app.cash.sqldelight:sqlite-driver:2.2.1")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.2.1")
-    implementation("org.zalando:logbook-core:3.12.3")
-    implementation("org.zalando:logbook-ktor-client:3.12.3")
-    implementation("org.zalando:logbook-json:3.12.3")
+    implementation("org.zalando:logbook-core:4.0.2")
+    implementation("org.zalando:logbook-ktor-client:4.0.2")
+    implementation("org.zalando:logbook-json:4.0.2")
     implementation("com.google.protobuf:protobuf-kotlin:4.33.5")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.6")
 
