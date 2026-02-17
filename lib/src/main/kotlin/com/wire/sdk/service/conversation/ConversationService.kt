@@ -495,6 +495,10 @@ internal class ConversationService internal constructor(
 
         conversationStorage.deleteAllMembersInConversation(conversationId)
         conversationStorage.delete(conversationId = conversationId)
+        logger.info(
+            "Deleted conversation from storage along with cryptographic data conversationId: {}",
+            conversationId
+        )
     }
 
     private fun requireAppIsAdminInConversation(conversationId: QualifiedId) {
@@ -546,13 +550,25 @@ internal class ConversationService internal constructor(
         }
     }
 
-    fun deleteMembers(
+    suspend fun deleteMembers(
         conversationId: QualifiedId,
         users: List<QualifiedId>
-    ) = conversationStorage.deleteMembers(
-        conversationId = conversationId,
-        users = users
-    )
+    ) {
+        val appUser = QualifiedId(
+            id = IsolatedKoinContext.getApplicationId(),
+            domain = IsolatedKoinContext.getBackendDomain()
+        )
+
+        if (appUser in users) {
+            val conversation = getConversationById(conversationId)
+            deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
+        } else {
+            conversationStorage.deleteMembers(
+                conversationId = conversationId,
+                users = users
+            )
+        }
+    }
 
     suspend fun getConversationById(conversationId: QualifiedId): ConversationEntity =
         conversationStorage.getById(conversationId = conversationId) ?: run {
