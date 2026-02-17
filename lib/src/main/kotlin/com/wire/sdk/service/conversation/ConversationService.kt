@@ -560,8 +560,9 @@ internal class ConversationService internal constructor(
         )
 
         if (appUser in users) {
-            val conversation = getConversationById(conversationId)
-            deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
+            conversationStorage.getById(conversationId = conversationId)?.let {
+                deleteAllConversationDataFromLocalStorages(conversationId, it.mlsGroupId)
+            }
         } else {
             conversationStorage.deleteMembers(
                 conversationId = conversationId,
