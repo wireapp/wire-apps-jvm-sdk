@@ -103,7 +103,7 @@ class WireEventsIntegrationTest {
             TestUtils.setupSdk(wireEventsHandler)
 
             // Load Koin Modules
-            val mockCoreCryptoClient = MockCoreCryptoClient.Companion.create(
+            val mockCoreCryptoClient = MockCoreCryptoClient.create(
                 userId = UUID.randomUUID().toString(),
                 ciphersuiteCode = 1
             )
@@ -128,25 +128,23 @@ class WireEventsIntegrationTest {
 
             val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
 
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = EventResponse(
-                        id = "event_id10",
-                        payload =
-                            listOf(
-                                EventContentDTO.Conversation.MlsWelcome(
-                                    qualifiedConversation = conversationId,
-                                    qualifiedFrom = USER_ID,
-                                    time = EXPECTED_NEW_CONVERSATION_VALUE,
-                                    data = "xyz"
-                                )
-                            ),
-                        transient = true
-                    )
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id10",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MlsWelcome(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = "xyz"
+                            )
+                        ),
+                    transient = true
                 )
-            }
+            )
 
-            val conversation = conversationStorage.getById(conversationId)
+            var conversation = conversationStorage.getById(conversationId)
             assertEquals(conversation?.id, conversationId)
             assertEquals(conversation?.teamId, TEAM_ID)
             var conversationMember = conversationStorage.getMembersByConversationId(conversationId)
@@ -157,54 +155,80 @@ class WireEventsIntegrationTest {
             val newUser2 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
             val newUser3 = QualifiedId(UUID.randomUUID(), UUID.randomUUID().toString())
 
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = EventResponse(
-                        id = "event_id11",
-                        payload =
-                            listOf(
-                                EventContentDTO.Conversation.MemberJoin(
-                                    qualifiedConversation = conversationId,
-                                    qualifiedFrom = USER_ID,
-                                    time = EXPECTED_NEW_CONVERSATION_VALUE,
-                                    data = MemberJoinEventData(
-                                        users = listOf(
-                                            Member(newUser1, ConversationRole.ADMIN),
-                                            Member(newUser2, ConversationRole.MEMBER),
-                                            Member(newUser3, ConversationRole.MEMBER)
-                                        )
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id11",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MemberJoin(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = MemberJoinEventData(
+                                    users = listOf(
+                                        Member(newUser1, ConversationRole.ADMIN),
+                                        Member(newUser2, ConversationRole.MEMBER),
+                                        Member(newUser3, ConversationRole.MEMBER)
                                     )
                                 )
-                            ),
-                        transient = true
-                    )
+                            )
+                        ),
+                    transient = true
                 )
-            }
+            )
             conversationMember = conversationStorage.getMembersByConversationId(conversationId)
             assertEquals(5, conversationMember.size)
 
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = EventResponse(
-                        id = "event_id12",
-                        payload =
-                            listOf(
-                                EventContentDTO.Conversation.MemberLeave(
-                                    qualifiedConversation = conversationId,
-                                    qualifiedFrom = USER_ID,
-                                    time = EXPECTED_NEW_CONVERSATION_VALUE,
-                                    data = MemberLeaveEventData(
-                                        users = listOf(newUser1, newUser2),
-                                        reason = "deletion"
-                                    )
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id12",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MemberLeave(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = MemberLeaveEventData(
+                                    users = listOf(newUser1, newUser2),
+                                    reason = "deletion"
                                 )
-                            ),
-                        transient = true
-                    )
+                            )
+                        ),
+                    transient = true
                 )
-            }
+            )
+
             conversationMember = conversationStorage.getMembersByConversationId(conversationId)
             assertEquals(3, conversationMember.size)
+
+            // If the user leaving is the App, remove all the members and the whole conversation
+            eventsRouter.route(
+                eventResponse = EventResponse(
+                    id = "event_id13",
+                    payload =
+                        listOf(
+                            EventContentDTO.Conversation.MemberLeave(
+                                qualifiedConversation = conversationId,
+                                qualifiedFrom = USER_ID,
+                                time = EXPECTED_NEW_CONVERSATION_VALUE,
+                                data = MemberLeaveEventData(
+                                    users = listOf(
+                                        QualifiedId(
+                                            id = TestUtils.APPLICATION_ID,
+                                            domain = "staging.zinfra.io"
+                                        )
+                                    ),
+                                    reason = "deletion"
+                                )
+                            )
+                        ),
+                    transient = true
+                )
+            )
+            conversationMember = conversationStorage.getMembersByConversationId(conversationId)
+            assertEquals(0, conversationMember.size)
+            conversation = conversationStorage.getById(conversationId)
+            assertNull(conversation)
         }
 
     @Test
