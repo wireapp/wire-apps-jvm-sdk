@@ -87,7 +87,11 @@ class WireEventsIntegrationTest {
             // Setup
             val welcomeLatch = CountDownLatch(1)
             val joinLatch = CountDownLatch(1)
+            // Wait for one leave event
             val leaveLatch = CountDownLatch(1)
+            // Wait for both leave events, the second one simulates the App leaving which should
+            //  remove all members and the conversation itself
+            val leaveLatchAll = CountDownLatch(2)
 
             val customHandler = object : WireEventsHandlerSuspending() {
                 override suspend fun onAppAddedToConversation(
@@ -109,6 +113,7 @@ class WireEventsIntegrationTest {
                     members: List<QualifiedId>
                 ) {
                     leaveLatch.countDown()
+                    leaveLatchAll.countDown()
                 }
             }
 
@@ -266,6 +271,12 @@ class WireEventsIntegrationTest {
                     transient = true
                 )
             )
+
+            assertTrue(
+                leaveLatchAll.await(1000, TimeUnit.MILLISECONDS),
+                "Leave event should be processed"
+            )
+
             conversationMember = conversationStorage.getMembersByConversationId(conversationId)
             assertEquals(0, conversationMember.size)
             conversation = conversationStorage.getById(conversationId)
