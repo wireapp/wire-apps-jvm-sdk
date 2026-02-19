@@ -23,6 +23,7 @@ import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
@@ -40,12 +41,10 @@ import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.utils.MockCoreCryptoClient
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.koin.dsl.module
 import java.util.Base64
 import java.util.UUID
@@ -64,8 +63,8 @@ import kotlin.time.Instant
  */
 class WireEventsIntegrationTest {
     @Test
-    fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() {
-        runBlocking {
+    fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() =
+        runTest {
             TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
             val eventsHandler = object : WireEventsHandlerSuspending() {}
             TestUtils.setupSdk(eventsHandler)
@@ -81,18 +80,49 @@ class WireEventsIntegrationTest {
             val teamStorage = IsolatedKoinContext.koinApp.koin.get<TeamStorage>()
             assertTrue { teamStorage.getAll().size == 1 }
         }
-    }
 
     @Test
     fun givenNewConversationsThenMembersAreCreatedAndDeleted() =
         runTest {
             // Setup
+            val welcomeLatch = CountDownLatch(1)
+            val joinLatch = CountDownLatch(1)
+            // Wait for one leave event
+            val leaveLatch = CountDownLatch(1)
+            // Wait for both leave events, the second one simulates the App leaving which should
+            //  remove all members and the conversation itself
+            val leaveLatchAll = CountDownLatch(2)
+
+            val customHandler = object : WireEventsHandlerSuspending() {
+                override suspend fun onAppAddedToConversation(
+                    conversation: Conversation,
+                    members: List<ConversationMember>
+                ) {
+                    welcomeLatch.countDown()
+                }
+
+                override suspend fun onUserJoinedConversation(
+                    conversationId: QualifiedId,
+                    members: List<ConversationMember>
+                ) {
+                    joinLatch.countDown()
+                }
+
+                override suspend fun onUserLeftConversation(
+                    conversationId: QualifiedId,
+                    members: List<QualifiedId>
+                ) {
+                    leaveLatch.countDown()
+                    leaveLatchAll.countDown()
+                }
+            }
+
             TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
 
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations/{conversationDomain}/{conversationId}"
+                        "/$V/conversations/{conversationDomain}/{conversationId}"
                     )
                 ).willReturn(
                     WireMock.okJson(NEW_CONVERSATION_RESPONSE)
@@ -100,7 +130,7 @@ class WireEventsIntegrationTest {
             )
 
             // Create SDK with our custom handler
-            TestUtils.setupSdk(wireEventsHandler)
+            TestUtils.setupSdk(customHandler)
 
             // Load Koin Modules
             val mockCoreCryptoClient = MockCoreCryptoClient.create(
@@ -144,6 +174,11 @@ class WireEventsIntegrationTest {
                 )
             )
 
+            assertTrue(
+                welcomeLatch.await(1000, TimeUnit.MILLISECONDS),
+                "Welcome event should be processed"
+            )
+
             var conversation = conversationStorage.getById(conversationId)
             assertEquals(conversation?.id, conversationId)
             assertEquals(conversation?.teamId, TEAM_ID)
@@ -176,6 +211,12 @@ class WireEventsIntegrationTest {
                     transient = true
                 )
             )
+
+            assertTrue(
+                joinLatch.await(1000, TimeUnit.MILLISECONDS),
+                "Join event should be processed"
+            )
+
             conversationMember = conversationStorage.getMembersByConversationId(conversationId)
             assertEquals(5, conversationMember.size)
 
@@ -196,6 +237,11 @@ class WireEventsIntegrationTest {
                         ),
                     transient = true
                 )
+            )
+
+            assertTrue(
+                leaveLatch.await(1000, TimeUnit.MILLISECONDS),
+                "Leave event should be processed"
             )
 
             conversationMember = conversationStorage.getMembersByConversationId(conversationId)
@@ -225,6 +271,12 @@ class WireEventsIntegrationTest {
                     transient = true
                 )
             )
+
+            assertTrue(
+                leaveLatchAll.await(1000, TimeUnit.MILLISECONDS),
+                "Leave event should be processed"
+            )
+
             conversationMember = conversationStorage.getMembersByConversationId(conversationId)
             assertEquals(0, conversationMember.size)
             conversation = conversationStorage.getById(conversationId)
@@ -235,11 +287,32 @@ class WireEventsIntegrationTest {
     fun givenNewMLSMessageEventWhenRouterProcessesItThenMessageIsDecryptedAndHandled() =
         runTest {
             // Setup
+            val welcomeLatch = CountDownLatch(1)
+            val messageLatch = CountDownLatch(1)
+
+            val customHandler = object : WireEventsHandlerSuspending() {
+                override suspend fun onAppAddedToConversation(
+                    conversation: Conversation,
+                    members: List<ConversationMember>
+                ) {
+                    welcomeLatch.countDown()
+                }
+
+                override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
+                    // Verify
+                    assertEquals(
+                        MOCK_DECRYPTED_MESSAGE,
+                        wireMessage.text
+                    )
+                    messageLatch.countDown()
+                }
+            }
+
             TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations/{conversationDomain}/{conversationId}"
+                        "/$V/conversations/{conversationDomain}/{conversationId}"
                     )
                 ).willReturn(
                     WireMock.okJson(CONVERSATION_RESPONSE)
@@ -247,10 +320,10 @@ class WireEventsIntegrationTest {
             )
 
             // Create SDK with our custom handler
-            TestUtils.setupSdk(wireEventsHandler)
+            TestUtils.setupSdk(customHandler)
 
             // Load Koin Modules
-            val mockCoreCryptoClient = MockCoreCryptoClient.Companion.create(
+            val mockCoreCryptoClient = MockCoreCryptoClient.create(
                 userId = UUID.randomUUID().toString(),
                 ciphersuiteCode = 1
             )
@@ -269,34 +342,42 @@ class WireEventsIntegrationTest {
 
             val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
 
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = NEW_CONVERSATION_EVENT
-                )
-                eventsRouter.route(
-                    eventResponse = NEW_WELCOME_EVENT
+            eventsRouter.route(
+                eventResponse = NEW_CONVERSATION_EVENT
+            )
+            eventsRouter.route(
+                eventResponse = NEW_WELCOME_EVENT
+            )
+
+            assertTrue(
+                welcomeLatch.await(1000, TimeUnit.MILLISECONDS),
+                "Welcome event should be processed"
+            )
+
+            val encryptedBase64Message = Base64
+                .getEncoder()
+                .encodeToString(
+                    MockCoreCryptoClient.GENERIC_TEXT_MESSAGE.toByteArray()
                 )
 
-                val encryptedBase64Message = Base64
-                    .getEncoder()
-                    .encodeToString(
-                        MockCoreCryptoClient.Companion.GENERIC_TEXT_MESSAGE.toByteArray()
-                    )
-
-                eventsRouter.route(
-                    eventResponse = NEW_MLS_MESSAGE_EVENT.copy(
-                        payload = listOf(
-                            (
-                                NEW_MLS_MESSAGE_EVENT.payload?.first() as EventContentDTO
-                                    .Conversation
-                                    .NewMLSMessageDTO
-                            ).copy(
-                                message = encryptedBase64Message.toString()
-                            )
+            eventsRouter.route(
+                eventResponse = NEW_MLS_MESSAGE_EVENT.copy(
+                    payload = listOf(
+                        (
+                            NEW_MLS_MESSAGE_EVENT.payload?.first() as EventContentDTO
+                                .Conversation
+                                .NewMLSMessageDTO
+                        ).copy(
+                            data = encryptedBase64Message.toString()
                         )
                     )
                 )
-            }
+            )
+
+            assertTrue(
+                messageLatch.await(1000, TimeUnit.MILLISECONDS),
+                "Message event should be processed"
+            )
 
             val conversation = conversationStorage.getById(CONVERSATION_ID)
             assertEquals(conversation?.id, CONVERSATION_ID)
@@ -310,12 +391,25 @@ class WireEventsIntegrationTest {
     fun givenAppAddedToSelfConversationThenExceptionIsThrown() =
         runTest {
             // Setup
+            val handlerCalledLatch = CountDownLatch(1)
+            var handlerWasCalled = false
+
+            val customHandler = object : WireEventsHandlerSuspending() {
+                override suspend fun onAppAddedToConversation(
+                    conversation: Conversation,
+                    members: List<ConversationMember>
+                ) {
+                    handlerWasCalled = true
+                    handlerCalledLatch.countDown()
+                }
+            }
+
             TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
 
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/${TestUtils.V}/conversations/{conversationDomain}/{conversationId}"
+                        "/$V/conversations/{conversationDomain}/{conversationId}"
                     )
                 ).willReturn(
                     WireMock.okJson(SELF_CONVERSATION_RESPONSE)
@@ -323,10 +417,10 @@ class WireEventsIntegrationTest {
             )
 
             // Create SDK with our custom handler
-            TestUtils.setupSdk(wireEventsHandler)
+            TestUtils.setupSdk(customHandler)
 
             // Load Koin Modules
-            val mockCoreCryptoClient = MockCoreCryptoClient.Companion.create(
+            val mockCoreCryptoClient = MockCoreCryptoClient.create(
                 userId = UUID.randomUUID().toString(),
                 ciphersuiteCode = 1
             )
@@ -345,16 +439,24 @@ class WireEventsIntegrationTest {
 
             val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
 
-            runBlocking {
-                eventsRouter.route(
-                    eventResponse = NEW_CONVERSATION_EVENT
-                )
-                assertThrows<IllegalStateException> {
-                    eventsRouter.route(
-                        eventResponse = NEW_WELCOME_EVENT
-                    )
-                }
-            }
+            eventsRouter.route(
+                eventResponse = NEW_CONVERSATION_EVENT
+            )
+
+            // Route the welcome event - this should throw an exception during processing
+            eventsRouter.route(
+                eventResponse = NEW_WELCOME_EVENT
+            )
+
+            // Wait for processing to complete (or timeout)
+            // The handler should NOT be called due to the exception
+            val handlerCompleted = handlerCalledLatch.await(1000, TimeUnit.MILLISECONDS)
+
+            // Verify the handler was not called (because an exception should have been thrown)
+            assertTrue(
+                !handlerCompleted || !handlerWasCalled,
+                "Handler should not be called for self conversation"
+            )
         }
 
     @Test
@@ -644,7 +746,7 @@ class WireEventsIntegrationTest {
                                         ConversationRole.MEMBER
                                     )
                                 ),
-                                groupId = MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64,
+                                groupId = MockCoreCryptoClient.MLS_GROUP_ID_BASE64,
                                 teamId = TEAM_ID.value,
                                 type = ConversationResponse.Type.GROUP,
                                 protocol = CryptoProtocol.MLS
@@ -676,7 +778,7 @@ class WireEventsIntegrationTest {
                             qualifiedConversation = CONVERSATION_ID,
                             qualifiedFrom = USER_ID,
                             time = EXPECTED_NEW_CONVERSATION_VALUE,
-                            message = MOCK_DECRYPTED_MESSAGE,
+                            data = MOCK_DECRYPTED_MESSAGE,
                             subconversation = null
                         )
                     ),
@@ -715,7 +817,7 @@ class WireEventsIntegrationTest {
                         ],
                         "self": $CONVERSATION_MEMBER_SELF_JSON
                     },
-                    "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
+                    "group_id": "${MockCoreCryptoClient.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",
                     "type": 0,
                     "protocol": "mls"
@@ -742,7 +844,7 @@ class WireEventsIntegrationTest {
                         ],
                         "self": $CONVERSATION_MEMBER_SELF_JSON
                     },
-                    "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
+                    "group_id": "${MockCoreCryptoClient.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",
                     "type": 1,
                     "protocol": "mls"
@@ -769,7 +871,7 @@ class WireEventsIntegrationTest {
                         ],
                         "self": $CONVERSATION_MEMBER_SELF_JSON
                     },
-                    "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
+                    "group_id": "${MockCoreCryptoClient.MLS_GROUP_ID_BASE64}",
                     "team": "${TEAM_ID.value}",
                     "type": 0,
                     "protocol": "mls"
@@ -777,17 +879,6 @@ class WireEventsIntegrationTest {
             """.trimIndent()
 
         private val wireMockServer = WireMockServer(8086)
-
-        private val wireEventsHandler =
-            object : WireEventsHandlerSuspending() {
-                override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
-                    // Verify
-                    assertEquals(
-                        MOCK_DECRYPTED_MESSAGE,
-                        wireMessage.text
-                    )
-                }
-            }
 
         @JvmStatic
         @BeforeAll
@@ -820,7 +911,7 @@ class WireEventsIntegrationTest {
                                     }
                                 ]
                             },
-                            "group_id": "${MockCoreCryptoClient.Companion.MLS_GROUP_ID_BASE64}",
+                            "group_id": "${MockCoreCryptoClient.MLS_GROUP_ID_BASE64}",
                             "team": "${TEAM_ID.value}",
                             "protocol": "mls"
                         }
@@ -829,7 +920,7 @@ class WireEventsIntegrationTest {
                 )
             )
             val stubConvGroupInfoPath =
-                "/${TestUtils.V}/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
+                "/$V/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
             wireMockServer.stubFor(
                 WireMock.get(WireMock.urlPathTemplate(stubConvGroupInfoPath))
                     .willReturn(

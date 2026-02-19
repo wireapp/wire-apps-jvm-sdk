@@ -82,7 +82,7 @@ class WireTeamEventsListenerTest {
                         qualifiedConversation = conversationId,
                         qualifiedFrom = userId,
                         time = Instant.DISTANT_PAST,
-                        message = "random message 1",
+                        data = "random message 1",
                         subconversation = null
                     )
                 ),
@@ -95,7 +95,7 @@ class WireTeamEventsListenerTest {
                         qualifiedConversation = conversationId,
                         qualifiedFrom = userId,
                         time = Instant.DISTANT_PAST,
-                        message = "random message 1",
+                        data = "random message 1",
                         subconversation = null
                     )
                 ),

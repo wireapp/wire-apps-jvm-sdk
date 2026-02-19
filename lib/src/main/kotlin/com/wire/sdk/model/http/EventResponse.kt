@@ -21,6 +21,7 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRoleChange
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.model.http.conversation.MemberLeaveEventData
+import com.wire.sdk.model.http.conversation.TypingEventData
 import com.wire.sdk.utils.UUIDSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -46,74 +47,82 @@ sealed class EventContentDTO {
 
     @Serializable
     sealed class Conversation : EventContentDTO() {
+        abstract val qualifiedConversation: QualifiedId
+        abstract val qualifiedFrom: QualifiedId
+        abstract val time: Instant
+        abstract val data: Any?
+
         @Serializable
         @SerialName("conversation.create")
         data class NewConversationDTO(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
-            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("data") val data: ConversationResponse,
-            @SerialName("time") val time: Instant
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: ConversationResponse
         ) : Conversation()
 
         @Serializable
         @SerialName("conversation.delete")
         data class DeleteConversation(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
-            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("time") val time: Instant
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: String?
         ) : Conversation()
 
         @Serializable
         @SerialName("conversation.mls-message-add")
         data class NewMLSMessageDTO(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
-            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("time") val time: Instant,
-            @SerialName("data") val message: String,
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: String,
             @SerialName("subconv") val subconversation: String?
         ) : Conversation()
 
         @Serializable
         @SerialName("conversation.member-join")
         data class MemberJoin(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
-            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("time") val time: Instant,
-            @SerialName("data") val data: MemberJoinEventData
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: MemberJoinEventData
         ) : Conversation()
 
         @Serializable
         @SerialName("conversation.member-update")
         data class MemberUpdateDTO(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
-            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("time") val time: String,
-            @SerialName("from") val from: String,
-            @SerialName("data") val roleChange: ConversationRoleChange
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: ConversationRoleChange
         ) : Conversation()
 
         @Serializable
         @SerialName("conversation.member-leave")
         data class MemberLeave(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
-            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("time") val time: Instant,
-            @SerialName("data") val data: MemberLeaveEventData
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: MemberLeaveEventData
         ) : Conversation()
 
         @Serializable
         @SerialName("conversation.mls-welcome")
         data class MlsWelcome(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId,
-            @SerialName("qualified_from") val qualifiedFrom: QualifiedId,
-            @SerialName("time") val time: Instant,
-            @SerialName("data") val data: String
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: String
         ) : Conversation()
 
         @Serializable
         @SerialName("conversation.typing")
         data class Typing(
-            @SerialName("qualified_conversation") val qualifiedConversation: QualifiedId
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: TypingEventData
         ) : Conversation()
     }
 
