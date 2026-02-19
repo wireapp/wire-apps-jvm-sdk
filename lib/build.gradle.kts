@@ -41,7 +41,6 @@ repositories {
 }
 
 val ktorVersion = "3.2.3"
-val wireMockVersion = "3.13.2"
 
 dependencies {
     constraints {
@@ -58,6 +57,9 @@ dependencies {
     implementation(platform("io.insert-koin:koin-bom:4.1.1"))
     implementation("io.insert-koin:koin-core:4.1.1")
     implementation("ch.qos.logback:logback-classic:1.5.32")
+    // We use logback but libraries like logstash-encoder, logbook and Wiremock use Jackson.
+    //  If one library is updated and transitively updates Jackson to 3.x.y, make sure the other
+    //  libraries can also be updated to use Jackson 3.x.y
     implementation("net.logstash.logback:logstash-logback-encoder:8.1")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
@@ -80,7 +82,7 @@ dependencies {
     testImplementation("io.insert-koin:koin-test-junit5")
     testImplementation("io.mockk:mockk:1.14.9")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
-    testImplementation("org.wiremock:wiremock:$wireMockVersion")
+    testImplementation("org.wiremock:wiremock:3.13.2")
 }
 
 kotlin {
@@ -182,6 +184,20 @@ mavenPublishing {
                 id = "spoonman01"
                 name = "Luca Rospocher"
                 url = "https://github.com/spoonman01"
+                organization = "Wire Germany GmbH"
+                organizationUrl = "https://wire.com/"
+            }
+            developer {
+                id = "MarianKijewski"
+                name = "Marian Kijewski"
+                url = "https://github.com/MarianKijewski"
+                organization = "Wire Germany GmbH"
+                organizationUrl = "https://wire.com/"
+            }
+            developer {
+                id = "bbaarriiss"
+                name = "Baris Alis"
+                url = "https://github.com/bbaarriiss"
                 organization = "Wire Germany GmbH"
                 organizationUrl = "https://wire.com/"
             }
