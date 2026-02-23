@@ -188,7 +188,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
         }
 
         final var assetResource = getManager().downloadAsset(remoteData);
-        final var fileName = wireMessage.name() == null
+        final var fileName = (wireMessage.name() == null || wireMessage.name().isBlank())
                 ? "unknown-" + UUID.randomUUID()
                 : wireMessage.name().trim();
 
