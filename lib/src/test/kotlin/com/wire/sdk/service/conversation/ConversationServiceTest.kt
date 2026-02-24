@@ -1125,7 +1125,7 @@ class ConversationServiceTest {
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(client1).map { client ->
                         CryptoClientId.create(
-                            userId = CONVERSATION_MEMBER_1.id.toString(),
+                            appId = CONVERSATION_MEMBER_1.id.toString(),
                             deviceId = client.id,
                             userDomain = BACKEND_DOMAIN
                         )
@@ -1201,7 +1201,7 @@ class ConversationServiceTest {
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(client1, client2, client3).map { client ->
                         CryptoClientId.create(
-                            userId = CONVERSATION_MEMBER_1.id.toString(),
+                            appId = CONVERSATION_MEMBER_1.id.toString(),
                             deviceId = client.id,
                             userDomain = BACKEND_DOMAIN
                         )

@@ -165,12 +165,10 @@ internal suspend fun getOrInitCryptoClient(
     IsolatedKoinContext.setBackendDomain(backendDomain)
     logger.info("Retrieved Wire backend domain: $backendDomain")
 
-    val userId = System.getenv("WIRE_SDK_USER_ID")
-
-    requireNotNull(userId) { "WIRE_SDK_USER_ID environment variable must be set" }
+    val appId = IsolatedKoinContext.getApplicationId()
 
     val cryptoClient = MlsCryptoClient.create(
-        userId = userId,
+        appId = appId,
         ciphersuiteCode = mlsCipherSuiteCode
     )
 
@@ -178,7 +176,7 @@ internal suspend fun getOrInitCryptoClient(
     if (storedDeviceId != null) {
         logger.info("Loading MLS Client for: ${storedDeviceId.obfuscateClientId()}")
         val cryptoClientId = CryptoClientId.create(
-            userId = userId,
+            appId = appId,
             deviceId = storedDeviceId,
             userDomain = backendDomain
         )
@@ -189,9 +187,6 @@ internal suspend fun getOrInitCryptoClient(
         )
         appStorage.setShouldRejoinConversations(should = false)
     } else {
-        val userPassword = System.getenv("WIRE_SDK_PASSWORD")
-        requireNotNull(userPassword)
-
         // App doesn't have a client, create one
         logger.info("Initializing Proteus Client")
         cryptoClient.initializeProteusClient()
@@ -201,7 +196,6 @@ internal suspend fun getOrInitCryptoClient(
         val clientResponse = try {
             backendClient.registerClient(
                 registerClientRequest = RegisterClientRequest(
-                    password = userPassword,
                     lastKey = lastKey.toApi(),
                     preKeys = preKeys.map { it.toApi() },
                     capabilities = RegisterClientRequest.DEFAULT_CAPABILITIES
@@ -216,7 +210,7 @@ internal suspend fun getOrInitCryptoClient(
 
         val deviceId = clientResponse.id
         val cryptoClientId = CryptoClientId.create(
-            userId = userId,
+            appId = appId,
             deviceId = deviceId,
             userDomain = backendDomain
         )
@@ -224,7 +218,7 @@ internal suspend fun getOrInitCryptoClient(
 
         logger.info(
             "Initializing MLS Client for {} on device: {}",
-            userId.obfuscateId(),
+            appId.obfuscateId(),
             deviceId.obfuscateClientId()
         )
         cryptoClient.initializeMlsClient(

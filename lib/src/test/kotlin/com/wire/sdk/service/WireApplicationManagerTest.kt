@@ -312,7 +312,7 @@ class WireApplicationManagerTest {
 
     private suspend fun generateUser2Packages(): List<KeyPackage> =
         MlsCryptoClient.create(
-            userId = USER_2.id.toString(),
+            appId = USER_2.id.toString(),
             ciphersuiteCode = 1
         ).use { cryptoClientUser2 ->
             cryptoClientUser2.initializeMlsClient(

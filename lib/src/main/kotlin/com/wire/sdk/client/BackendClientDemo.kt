@@ -69,8 +69,6 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
-import io.ktor.http.headers
-import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
@@ -138,8 +136,10 @@ internal class BackendClientDemo(
 
     override suspend fun getApplicationData(): AppDataResponse {
         logger.info("Fetching application data")
+        val applicationId = IsolatedKoinContext.getApplicationId()
+        val applicationDomain = IsolatedKoinContext.getBackendDomain()
         return AppDataResponse(
-            appClientId = "$DEMO_USER_ID:$cachedDeviceId@${IsolatedKoinContext.getBackendDomain()}",
+            appClientId = "$applicationId:$cachedDeviceId@$applicationDomain",
             appType = "FULL",
             appCommand = "demo"
         )
@@ -163,13 +163,6 @@ internal class BackendClientDemo(
 
     private var tokenTimestamp: Long? = null
 
-    /**
-     * Login DEMO user in the backend, get access_token for further requests.
-     * After the login, the token is immediately refreshed by calling /access,
-     * because the new one is tied to client and has more permissions.
-     * Not needed in the actual implementation, as the SDK is authenticated with the API_TOKEN
-     */
-    @Suppress("ReturnCount")
     private suspend fun loginUser(): String {
         val currentTime = System.currentTimeMillis()
 
@@ -183,30 +176,40 @@ internal class BackendClientDemo(
             logger.info("Access token expired, getting a new one")
         }
 
-        val loginResponse = httpClient.post("/$API_VERSION/login") {
-            setBody(LoginRequest(DEMO_USER_EMAIL, DEMO_USER_PASSWORD))
-            contentType(ContentType.Application.Json)
-        }
+        val apiToken = IsolatedKoinContext.getApiToken()
 
         cachedDeviceId = appStorage.getDeviceId()
-        if (cachedDeviceId != null) {
-            val zuidCookie = loginResponse.setCookie()["zuid"]
 
-            val accessResponse =
-                httpClient.post("/$API_VERSION/access?client_id=$cachedDeviceId") {
-                    headers {
-                        append(HttpHeaders.Cookie, "zuid=${zuidCookie!!.value}")
-                    }
-                    accept(ContentType.Application.Json)
-                }.body<LoginResponse>()
+        return apiToken?.let {
+            getAccessToken(
+                apiToken = apiToken,
+                currentTime = currentTime
+            )
+        } ?: throw WireException.MissingParameter(
+            message = "apiToken is empty or null."
+        )
+    }
 
+    private suspend fun getAccessToken(
+        apiToken: String,
+        currentTime: Long
+    ): String {
+        val url = "/$API_VERSION/access".let {
+            if (cachedDeviceId != null) "$it?client_id=$cachedDeviceId" else it
+        }
+        val accessResponse = httpClient.post(url) {
+            headers {
+                append(HttpHeaders.Cookie, "zuid=$apiToken")
+            }
+            accept(ContentType.Application.Json)
+        }.body<LoginResponse>()
+
+        cachedDeviceId?.let {
             cachedAccessToken = accessResponse.accessToken
             tokenTimestamp = currentTime
-
-            return accessResponse.accessToken
-        } else {
-            return loginResponse.body<LoginResponse>().accessToken
         }
+
+        return accessResponse.accessToken
     }
 
     override suspend fun updateClientWithMlsPublicKey(
@@ -701,18 +704,6 @@ internal class BackendClientDemo(
         const val SIZE_QUERY_KEY = "size"
         const val CLIENT_QUERY_KEY = "client"
         const val SINCE_QUERY_KEY = "since"
-
-        val DEMO_USER_ID: UUID =
-            UUID.fromString(
-                System.getenv("WIRE_SDK_USER_ID")
-                    ?: "ee159b66-fd70-4739-9bae-23c96a02cb09"
-            )
-
-        val DEMO_USER_EMAIL: String =
-            System.getenv("WIRE_SDK_EMAIL") ?: "integrations-admin@wire.com"
-
-        val DEMO_USER_PASSWORD: String =
-            System.getenv("WIRE_SDK_PASSWORD") ?: "Aqa123456!"
 
         private const val FETCH_CONVERSATIONS_START_INDEX = 0
         private const val FETCH_CONVERSATIONS_END_INDEX = 1000

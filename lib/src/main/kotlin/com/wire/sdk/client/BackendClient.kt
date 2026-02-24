@@ -140,7 +140,7 @@ interface BackendClient {
     ): Map<QualifiedId, List<UserClientResponse>>
 
     companion object {
-        const val API_VERSION = "v13"
+        const val API_VERSION = "v15"
 
         /**
          * The backend doesn't allow queries smaller than a minimum value.

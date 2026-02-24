@@ -37,7 +37,7 @@ class MlsCryptoClientTest {
         runBlocking {
             val userId = UUID.randomUUID().toString()
             val cryptoClient = MlsCryptoClient.create(
-                userId = userId,
+                appId = userId,
                 ciphersuiteCode = 1
             )
             cryptoClient.initializeMlsClient(
@@ -58,7 +58,7 @@ class MlsCryptoClientTest {
             val ciphersuiteCode = 1
 
             val cryptoClient = MlsCryptoClient.create(
-                userId = userId,
+                appId = userId,
                 ciphersuiteCode = ciphersuiteCode
             )
             cryptoClient.close()
@@ -68,7 +68,7 @@ class MlsCryptoClientTest {
             )
             assertThrows<CoreCryptoException.Mls> {
                 MlsCryptoClient.create(
-                    userId = userId,
+                    appId = userId,
                     ciphersuiteCode = ciphersuiteCode
                 )
             }
@@ -85,7 +85,7 @@ class MlsCryptoClientTest {
             // Create a new client and join the conversation
             val userId = UUID.randomUUID().toString()
             val mlsClient = MlsCryptoClient.create(
-                userId = userId,
+                appId = userId,
                 ciphersuiteCode = 1
             )
             mlsClient.initializeMlsClient(
@@ -128,7 +128,7 @@ class MlsCryptoClientTest {
             // Create two clients, Bob and Alice
             val bobUserId = UUID.randomUUID().toString()
             val bobClient = MlsCryptoClient.create(
-                userId = bobUserId,
+                appId = bobUserId,
                 ciphersuiteCode = 1
             )
             bobClient.initializeMlsClient(
@@ -140,7 +140,7 @@ class MlsCryptoClientTest {
 
             val aliceUserId = UUID.randomUUID().toString()
             val aliceClient = MlsCryptoClient.create(
-                userId = aliceUserId,
+                appId = aliceUserId,
                 ciphersuiteCode = 1
             )
             aliceClient.initializeMlsClient(
