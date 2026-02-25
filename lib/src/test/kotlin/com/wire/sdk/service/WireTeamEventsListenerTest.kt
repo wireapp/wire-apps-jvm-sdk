@@ -22,7 +22,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.client.BackendClient
-import com.wire.sdk.client.BackendClientDemo
+import com.wire.sdk.client.BackendClientHttp
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.config.MAX_RETRY_NUMBER_ON_SERVER_ERROR
 import com.wire.sdk.model.QualifiedId
@@ -208,7 +208,7 @@ class WireTeamEventsListenerTest {
             )
             val httpClient = IsolatedKoinContext.koinApp.koin.get<HttpClient>()
             val appStorage = mockk<AppStorage>()
-            val backendClient = BackendClientDemo(
+            val backendClient = BackendClientHttp(
                 httpClient = httpClient,
                 appStorage = appStorage
             )

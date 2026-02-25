@@ -30,9 +30,17 @@ interface AppStorage {
 
     fun getByKey(key: String): AppData
 
+    fun delete(key: String)
+
     fun getDeviceId(): String?
 
     fun saveDeviceId(deviceId: String)
+
+    fun getBackendCookie(): String?
+
+    fun saveBackendCookie(deviceId: String)
+
+    fun deleteBackendCookie()
 
     fun getShouldRejoinConversations(): Boolean?
 

@@ -39,6 +39,7 @@ import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.AESDecrypt
 import com.wire.sdk.utils.AESEncrypt
 import com.wire.sdk.utils.MAX_DATA_SIZE
+import io.ktor.util.reflect.instanceOf
 import java.io.ByteArrayInputStream
 import java.util.UUID
 import javax.imageio.ImageIO

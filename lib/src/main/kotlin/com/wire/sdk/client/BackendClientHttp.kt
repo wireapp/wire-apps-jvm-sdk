@@ -52,7 +52,7 @@ import com.wire.sdk.utils.Mls
 import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.cookies.get
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
@@ -64,30 +64,30 @@ import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
+import io.ktor.http.headers
+import io.ktor.http.setCookie
 import io.ktor.util.encodeBase64
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
-import java.util.Base64
-import java.util.UUID
-import kotlin.time.Clock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
+import java.util.Base64
+import java.util.UUID
+import kotlin.time.Clock
 
 /**
- * Backend client implementation for test/demo purposes
- * Useful for testing the SDK without the Backend having new Application API implemented.
- *
- * Real http calls are made, they target 2 hosts:
- * - localhost:8086 - reaching the local Demo events producer
- * - some Wire Backend evn - emulate Apps API calls by using the Client API with a DEMO user
+ * Backend client connecting via HTTP (Rest and WebSocket) to the Wire backend.
+ * This can be either the production backend on cloud, a test environment or a on-premise server.
  */
-internal class BackendClientDemo(
+internal class BackendClientHttp(
     private val httpClient: HttpClient,
     private val appStorage: AppStorage
 ) : BackendClient {
@@ -97,7 +97,6 @@ internal class BackendClientDemo(
     // will be the same for all teams, so we can make the API call only once.
     private var cachedFeatures: FeaturesResponse? = null
     private var cachedAccessToken: String? = null
-    private var cachedDeviceId: String? = null
 
     // Active WebSocket session for graceful shutdown support
     private var activeWebSocketSession: DefaultClientWebSocketSession? = null
@@ -110,7 +109,7 @@ internal class BackendClientDemo(
 
         val path = "/await" +
             "?$ACCESS_TOKEN_QUERY_KEY=$token" +
-            (cachedDeviceId?.let { "&$CLIENT_QUERY_KEY=$it" } ?: "")
+            (appStorage.getDeviceId()?.let { "&$CLIENT_QUERY_KEY=$it" } ?: "")
 
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
@@ -139,7 +138,7 @@ internal class BackendClientDemo(
         val applicationId = IsolatedKoinContext.getApplicationId()
         val applicationDomain = IsolatedKoinContext.getBackendDomain()
         return AppDataResponse(
-            appClientId = "$applicationId:$cachedDeviceId@$applicationDomain",
+            appClientId = "$applicationId:${appStorage.getDeviceId()}@$applicationDomain",
             appType = "FULL",
             appCommand = "demo"
         )
@@ -176,9 +175,7 @@ internal class BackendClientDemo(
             logger.info("Access token expired, getting a new one")
         }
 
-        val apiToken = IsolatedKoinContext.getApiToken()
-
-        cachedDeviceId = appStorage.getDeviceId()
+        val apiToken = appStorage.getBackendCookie()
 
         return apiToken?.let {
             getAccessToken(
@@ -194,23 +191,54 @@ internal class BackendClientDemo(
         apiToken: String,
         currentTime: Long
     ): String {
+        val deviceId = appStorage.getDeviceId()
         val url = "/$API_VERSION/access".let {
-            if (cachedDeviceId != null) "$it?client_id=$cachedDeviceId" else it
+            if (deviceId != null) "$it?client_id=$deviceId" else it
         }
-        val accessResponse = httpClient.post(url) {
-            headers {
-                append(HttpHeaders.Cookie, "zuid=$apiToken")
+        val accessResponse = try {
+            httpClient.post(url) {
+                headers {
+                    append(HttpHeaders.Cookie, "zuid=$apiToken")
+                }
+                accept(ContentType.Application.Json)
             }
-            accept(ContentType.Application.Json)
-        }.body<LoginResponse>()
+        } catch (ex: WireException.ClientError) {
+            logger.error("Unable to retrieve access token, Error: ${ex.message}")
+            if (isCookieExpired(ex)) {
+                appStorage.deleteBackendCookie()
+            }
+            // Can't recover from this, need to restart the app with a valid api token
+            throw Error("Current cookie/api-token is expired. Get a apiToken and restart the App")
+        }
 
-        cachedDeviceId?.let {
-            cachedAccessToken = accessResponse.accessToken
+        // Chance of cookie renewal -> Store new cookie
+        val responseCookies = accessResponse.setCookie()
+        if (!responseCookies.isEmpty()) {
+            val newCookie = responseCookies.firstOrNull { it.name == "zuid" }?.value
+            if (!newCookie.isNullOrBlank()) {
+                appStorage.saveBackendCookie(newCookie)
+                logger.info("Received new api token from backend, updated stored cookie")
+            }
+        }
+
+        val accessResponseData = accessResponse.body<LoginResponse>()
+
+        // Store accessToken only if deviceId is available, because only in that case we have
+        //  a token with full permissions.
+        deviceId?.let {
+            cachedAccessToken = accessResponseData.accessToken
             tokenTimestamp = currentTime
         }
 
-        return accessResponse.accessToken
+        return accessResponseData.accessToken
     }
+
+    private fun isCookieExpired(ex: WireException.ClientError): Boolean =
+        ex.throwable is ClientRequestException &&
+            (
+                ex.throwable.response.status == HttpStatusCode.Unauthorized ||
+                ex.throwable.response.status == HttpStatusCode.Forbidden
+            )
 
     override suspend fun updateClientWithMlsPublicKey(
         cryptoClientId: CryptoClientId,
@@ -218,7 +246,7 @@ internal class BackendClientDemo(
     ) {
         val token = loginUser()
         try {
-            httpClient.put("/$API_VERSION/clients/$cachedDeviceId") {
+            httpClient.put("/$API_VERSION/clients/${appStorage.getDeviceId()}") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
@@ -252,7 +280,7 @@ internal class BackendClientDemo(
         val mlsKeyPackageRequest =
             MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
         try {
-            httpClient.post("/$API_VERSION/mls/key-packages/self/$cachedDeviceId") {
+            httpClient.post("/$API_VERSION/mls/key-packages/self/${appStorage.getDeviceId()}") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
@@ -472,7 +500,6 @@ internal class BackendClientDemo(
 
         var hasMorePages: Boolean
         do {
-            hasMorePages = false
             val listIdsResponse = httpClient.post("/$API_VERSION/conversations/list-ids") {
                 headers {
                     append(HttpHeaders.Authorization, "Bearer $token")
@@ -590,7 +617,7 @@ internal class BackendClientDemo(
             headers {
                 append(HttpHeaders.Authorization, "Bearer $token")
             }
-            cachedDeviceId?.let { parameter(CLIENT_QUERY_KEY, it) }
+            appStorage.getDeviceId()?.let { parameter(CLIENT_QUERY_KEY, it) }
         }.body<EventResponse>()
 
         return lastNotification
@@ -607,7 +634,7 @@ internal class BackendClientDemo(
                     append(HttpHeaders.Authorization, "Bearer $token")
                 }
                 parameter(SIZE_QUERY_KEY, querySize)
-                cachedDeviceId?.let { parameter(CLIENT_QUERY_KEY, it) }
+                appStorage.getDeviceId()?.let { parameter(CLIENT_QUERY_KEY, it) }
                 querySince?.let { parameter(SINCE_QUERY_KEY, it) }
             }.body<NotificationsResponse>()
             return notifications
@@ -710,12 +737,6 @@ internal class BackendClientDemo(
         private const val FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
     }
 }
-
-@Serializable
-data class LoginRequest(
-    val email: String,
-    val password: String
-)
 
 @Serializable
 data class LoginResponse(

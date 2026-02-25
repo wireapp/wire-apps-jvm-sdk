@@ -22,6 +22,7 @@ import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.model.AppData
 
 private const val DEVICE_ID = "device_id"
+private const val BACKEND_COOKIE = "backend_cookie"
 private const val SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
 private const val LAST_NOTIFICATION_ID = "last_notification_id"
 
@@ -38,6 +39,10 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
         )
     }
 
+    override fun delete(key: String) {
+        appQueries.delete(key)
+    }
+
     override fun getAll(): List<AppData> =
         appQueries.selectAll().executeAsList().map { appMapper(it) }
 
@@ -47,6 +52,13 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     override fun getDeviceId(): String? = runCatching { getByKey(DEVICE_ID).value }.getOrNull()
 
     override fun saveDeviceId(deviceId: String) = save(DEVICE_ID, deviceId)
+
+    override fun getBackendCookie(): String? =
+        runCatching { getByKey(BACKEND_COOKIE).value }.getOrNull()
+
+    override fun saveBackendCookie(deviceId: String) = save(BACKEND_COOKIE, deviceId)
+
+    override fun deleteBackendCookie() = delete(BACKEND_COOKIE)
 
     override fun getShouldRejoinConversations(): Boolean? =
         runCatching {

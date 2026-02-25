@@ -84,12 +84,3 @@ Note: The backend domain is automatically retrieved from the Wire backend's `api
 
 If you have started using the SDK targeting one Wire environment,
 and later you want to switch to another, you may need to move/delete the `storage/apps.db` directory
-
-### Testing the SDK
-
-You can define the implementation of BackendClient to use, by changing it in the Modules.kt file.
-
-* BackendClientDemo targets the Wire backend for development purposes, it uses the Client API for
-  testing instead of the Application API and also some environment variables specified above.
-* BackendClientImpl is the real implementation of the SDK, targeting the Wire backend as an
-  Application

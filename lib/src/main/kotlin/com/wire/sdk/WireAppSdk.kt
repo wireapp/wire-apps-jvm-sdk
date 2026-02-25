@@ -17,6 +17,7 @@
 package com.wire.sdk
 
 import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.service.WireApplicationManager
 import com.wire.sdk.service.WireTeamEventsListener
 import com.wire.sdk.service.conversation.ConversationService
@@ -93,11 +94,11 @@ class WireAppSdk(
         IsolatedKoinContext.start()
         IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
-        IsolatedKoinContext.setApiToken(apiToken)
         IsolatedKoinContext.setCryptographyStorageKey(cryptographyStorageKey.copyOf())
 
         initDynamicModules(wireEventsHandler)
 
+        storeCookieIfMissing(apiToken)
         // Register shutdown hook for graceful termination on SIGTERM/SIGINT
         Runtime.getRuntime().addShutdownHook(shutdownHook)
     }
@@ -114,6 +115,22 @@ class WireAppSdk(
         } else {
             logger.info("Storage directory already exists: ${storageDirectory.absolutePath}")
         }
+    }
+
+    /**
+     * The API token is effectively a http cookie and its used as such to renew short-lived
+     * access tokens, but we call it apiToken to avoid confusion to the developers using the SDK.
+     */
+    private fun storeCookieIfMissing(apiToken: String) {
+        val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
+        val existingCookie = appStorage.getBackendCookie()
+        if (existingCookie == null) {
+            logger.info("Storing API token in AppStorage")
+            appStorage.saveBackendCookie(apiToken)
+        } else {
+            logger.info("API token already stored in AppStorage (same token or more recent one)")
+        }
+
     }
 
     /**

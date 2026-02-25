@@ -61,12 +61,6 @@ internal object IsolatedKoinContext {
 
     fun getApiHost(): String? = this.koinApp.koin.getProperty(API_HOST)
 
-    fun setApiToken(value: String) {
-        this.koinApp.koin.setProperty(API_TOKEN, value)
-    }
-
-    fun getApiToken(): String? = this.koinApp.koin.getProperty(API_TOKEN)
-
     fun setCryptographyStorageKey(value: ByteArray) {
         this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_KEY, value)
     }
@@ -88,7 +82,6 @@ internal object IsolatedKoinContext {
      */
     private const val APPLICATION_ID = "APPLICATION_ID"
     private const val API_HOST = "API_HOST"
-    private const val API_TOKEN = "API_TOKEN"
     private const val CRYPTOGRAPHY_STORAGE_KEY = "CRYPTOGRAPHY_STORAGE_KEY"
     private const val BACKEND_DOMAIN = "BACKEND_DOMAIN"
 }
