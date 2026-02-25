@@ -258,6 +258,10 @@ internal class EventsRouter internal constructor(
                 }
             }
 
+            is EventContentDTO.Conversation.MessageTimerUpdateDTO -> {
+                processMessageTimerUpdateDTO(event)
+            }
+
             is EventContentDTO.Conversation.Typing -> {
                 // Ignore silently
             }
@@ -266,6 +270,12 @@ internal class EventsRouter internal constructor(
                 logger.warn("Unknown event type: {}", event)
             }
         }
+    }
+
+    private fun processMessageTimerUpdateDTO(event: EventContentDTO.Conversation.MessageTimerUpdateDTO) {
+        logger.info("HEEEY --> Message timer update event for conversation: " +
+                "${event.qualifiedConversation}, new timer: ${event.data.messageTimer}, event: $event")
+
     }
 
     /**

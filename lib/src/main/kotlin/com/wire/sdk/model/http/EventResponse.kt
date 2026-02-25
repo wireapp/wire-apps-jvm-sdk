@@ -124,9 +124,23 @@ sealed class EventContentDTO {
             @SerialName("time") override val time: Instant,
             @SerialName("data") override val data: TypingEventData
         ) : Conversation()
+
+        @Serializable
+        @SerialName("conversation.message-timer-update")
+        data class MessageTimerUpdateDTO(
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: MessageTimerUpdateEventData
+        ) : Conversation()
     }
 
     @Serializable
     @SerialName("unknown")
     data class Unknown(val type: String) : EventContentDTO()
+
+    @Serializable
+    data class MessageTimerUpdateEventData(
+        @SerialName("message_timer") val messageTimer: Long?
+    )
 }
