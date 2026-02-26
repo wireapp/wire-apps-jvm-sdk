@@ -45,6 +45,7 @@ import javax.imageio.ImageIO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 
 /**
  * Allows fetching common data and interacting with each Team instance invited to the Application.
@@ -58,6 +59,8 @@ class WireApplicationManager internal constructor(
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
     fun getStoredConversations(): List<Conversation> =
@@ -145,12 +148,25 @@ class WireApplicationManager internal constructor(
             conversationId = message.conversationId
         )
 
+        val messageToSend =
+            if (message is WireMessage.Ephemeral && conversation.messageTimer != null) {
+                message.overrideExpirationDuration(conversation.messageTimer)
+                    .also {
+                        logger.info(
+                            "Setting (overriding) expiration duration of the message " +
+                                "${conversation.id} to $conversation.messageTimer ms"
+                        )
+                    }
+            } else {
+                message
+            }
+
         conversation.mlsGroupId.let { mlsGroupId ->
             val encryptedMessage = cryptoClient.encryptMls(
                 mlsGroupId = mlsGroupId,
                 message = ProtobufSerializer
                     .toGenericMessageByteArray(
-                        wireMessage = message
+                        wireMessage = messageToSend
                     )
             )
 
@@ -160,14 +176,22 @@ class WireApplicationManager internal constructor(
                 if (exception.response.isMlsStaleMessage()) {
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
-                        conversationId = message.conversationId
+                        conversationId = messageToSend.conversationId
                     )
                     backendClient.sendMessage(mlsMessage = encryptedMessage)
                 }
             }
         }
-        return message.id
+        return messageToSend.id
     }
+
+    private fun WireMessage.Ephemeral.overrideExpirationDuration(expiresAfter: Long): WireMessage =
+        when (this) {
+            is WireMessage.Text -> copy(expiresAfterMillis = expiresAfter)
+            is WireMessage.Asset -> copy(expiresAfterMillis = expiresAfter)
+            is WireMessage.Location -> copy(expiresAfterMillis = expiresAfter)
+            is WireMessage.Ping -> copy(expiresAfterMillis = expiresAfter)
+        }
 
     /**
      * Downloads an asset as a raw byte array.
