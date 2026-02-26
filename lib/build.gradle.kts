@@ -76,6 +76,7 @@ dependencies {
     implementation("com.google.protobuf:protobuf-kotlin:4.33.5")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.6")
     implementation("com.github.ben-manes.caffeine:caffeine:3.2.3")
+    implementation("io.ktor:ktor-client-auth:3.2.3")
 
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
