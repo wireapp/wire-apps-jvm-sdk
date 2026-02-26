@@ -21,7 +21,8 @@ data class Conversation(
     val id: QualifiedId,
     val name: String?,
     val teamId: TeamId?,
-    val type: Type
+    val type: Type,
+    val messageTimer: Long? = null //TODO: Baris: Default value can be a problem for Java
 ) {
     enum class Type {
         GROUP,
@@ -40,7 +41,8 @@ data class Conversation(
                     ConversationEntity.Type.SELF -> {
                         error("App cannot be added to Self conversation.")
                     }
-                }
+                },
+                messageTimer = conversationEntity.messageTimer
             )
     }
 }
