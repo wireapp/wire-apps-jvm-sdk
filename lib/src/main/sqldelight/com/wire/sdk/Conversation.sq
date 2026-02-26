@@ -24,6 +24,11 @@ INSERT INTO conversation(id, domain, name, team_id, mls_group_id, type, message_
 VALUES (?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id, domain) DO UPDATE SET name=excluded.name, team_id=excluded.team_id, mls_group_id=excluded.mls_group_id, type=excluded.type, message_timer=excluded.message_timer;
 
+updateMessageTimer:
+UPDATE conversation
+SET message_timer = ?
+WHERE id = ? AND domain = ?;
+
 delete:
 DELETE FROM conversation
 WHERE id = ? AND domain = ?;

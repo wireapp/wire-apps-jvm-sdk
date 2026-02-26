@@ -272,10 +272,13 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private fun processMessageTimerUpdateDTO(event: EventContentDTO.Conversation.MessageTimerUpdateDTO) {
-        logger.info("HEEEY --> Message timer update event for conversation: " +
-                "${event.qualifiedConversation}, new timer: ${event.data.messageTimer}, event: $event")
-
+    private suspend fun processMessageTimerUpdateDTO(
+        event: EventContentDTO.Conversation.MessageTimerUpdateDTO
+    ) {
+        conversationService.updateMessageTimer(
+            conversationId = event.qualifiedConversation,
+            messageTimer = event.data.messageTimer
+        )
     }
 
     /**

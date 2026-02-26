@@ -73,6 +73,17 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
         }
     }
 
+    override fun updateMessageTimer(
+        conversationId: QualifiedId,
+        messageTimer: Long?
+    ) {
+        conversationQueries.updateMessageTimer(
+            message_timer = messageTimer,
+            id = conversationId.id.toString(),
+            domain = conversationId.domain
+        )
+    }
+
     override fun getAll(): List<ConversationEntity> =
         conversationQueries.selectAll().executeAsList().map { conversationMapper(it) }
 

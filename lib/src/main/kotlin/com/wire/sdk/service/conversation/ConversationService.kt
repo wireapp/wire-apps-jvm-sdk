@@ -343,11 +343,14 @@ internal class ConversationService internal constructor(
         }
     }
 
-//    private fun updateMessageTimer(
-//        conversationId: QualifiedId,
-//        messageTimer: Long
-//    ) {
-//    }
+    suspend fun updateMessageTimer(
+        conversationId: QualifiedId,
+        messageTimer: Long?
+    ) {
+        getConversationById(conversationId)?.let { conversation ->
+            conversationStorage.updateMessageTimer(conversation.id, messageTimer)
+        }
+    }
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun claimKeyPackages(
