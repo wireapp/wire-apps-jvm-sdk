@@ -91,7 +91,6 @@ internal class BackendClientHttp(
     // Simple cache of the Backend features, as the MLS values we care about
     // will be the same for all teams, so we can make the API call only once.
     private var cachedFeatures: FeaturesResponse? = null
-    private var cachedAccessToken: String? = null
 
     // Active WebSocket session for graceful shutdown support
     private var activeWebSocketSession: DefaultClientWebSocketSession? = null
