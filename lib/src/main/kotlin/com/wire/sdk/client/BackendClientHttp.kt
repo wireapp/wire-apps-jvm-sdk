@@ -18,7 +18,6 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.config.getAccessToken
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
@@ -84,7 +83,8 @@ import kotlin.time.Clock
  */
 internal class BackendClientHttp(
     private val httpClient: HttpClient,
-    private val appStorage: AppStorage
+    private val appStorage: AppStorage,
+    private val authTokenManager: AuthTokenManager
 ) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -100,7 +100,8 @@ internal class BackendClientHttp(
     ) {
         logger.info("Connecting to the webSocket, waiting for events")
 
-        val bearerToken = getAccessToken(httpClient, appStorage)
+        authTokenManager.refreshAccessToken(httpClient, appStorage)
+        val bearerToken = authTokenManager.getAccessToken()
         val path = "/await" +
             "?$ACCESS_TOKEN_QUERY_KEY=$bearerToken" +
             (appStorage.getDeviceId()?.let { "&$CLIENT_QUERY_KEY=$it" } ?: "")

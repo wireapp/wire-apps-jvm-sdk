@@ -19,10 +19,9 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.client.BackendClientHttp
-import com.wire.sdk.client.LoginResponse
 import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsTransportImpl
@@ -49,28 +48,18 @@ import com.wire.sdk.utils.obfuscateClientId
 import com.wire.sdk.utils.obfuscateId
 import com.wire.sdk.utils.xprotobuf
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.request.accept
-import io.ktor.client.request.headers
-import io.ktor.client.request.post
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.encodedPath
-import io.ktor.http.setCookie
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
@@ -94,12 +83,13 @@ val sdkModule =
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
-        single<BackendClient> { BackendClientHttp(get(), get()) }
+        single<BackendClient> { BackendClientHttp(get(), get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get(), get()) } onClose { it?.close() }
+        single<AuthTokenManager> { AuthTokenManager() }
         single<HttpClient> {
-            createHttpClient(IsolatedKoinContext.getApiHost(), get())
+            createHttpClient(IsolatedKoinContext.getApiHost(), get(), get())
         } onClose { it?.close() }
         single<CryptoClient> {
             runBlocking {
@@ -117,10 +107,12 @@ val sdkModule =
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
 
-var bearerToken: BearerTokens? = null
-
 @OptIn(ExperimentalLogbookKtorApi::class)
-internal fun createHttpClient(apiHost: String?, appStorage: AppStorage): HttpClient {
+internal fun createHttpClient(
+    apiHost: String?,
+    appStorage: AppStorage,
+    authTokenManager: AuthTokenManager
+): HttpClient {
     return HttpClient(CIO) {
         expectSuccess = true
         HttpResponseValidator {
@@ -163,7 +155,7 @@ internal fun createHttpClient(apiHost: String?, appStorage: AppStorage): HttpCli
         install(Auth) {
             bearer {
                 loadTokens {
-                    bearerToken
+                    authTokenManager.getAccessToken()
                 }
 
                 sendWithoutRequest { request ->
@@ -175,62 +167,13 @@ internal fun createHttpClient(apiHost: String?, appStorage: AppStorage): HttpCli
                 }
 
                 refreshTokens {
-                    getAccessToken(client, appStorage)
-                    bearerToken
+                    authTokenManager.refreshAccessToken(client, appStorage)
+                    authTokenManager.getAccessToken()
                 }
             }
         }
     }
 }
-
-suspend fun getAccessToken(
-    httpClient: HttpClient,
-    appStorage: AppStorage
-): String {
-    val apiToken = appStorage.getBackendCookie()
-    val deviceId = appStorage.getDeviceId()
-    val url = "/$API_VERSION/access".let {
-        if (deviceId != null) "$it?client_id=$deviceId" else it
-    }
-    val accessResponse = try {
-        httpClient.post(url) {
-            headers {
-                append(HttpHeaders.Cookie, "zuid=$apiToken")
-            }
-            accept(ContentType.Application.Json)
-        }
-    } catch (ex: WireException.ClientError) {
-        logger.error("Unable to retrieve access token, Error: ${ex.message}")
-        if (isCookieExpired(ex)) {
-            appStorage.deleteBackendCookie()
-        }
-        // Can't recover from this, need to restart the app with a valid api token
-        throw Error("Current cookie/api-token is expired. Get a apiToken and restart the App")
-    }
-
-    // Chance of cookie renewal -> Store new cookie
-    val responseCookies = accessResponse.setCookie()
-    if (!responseCookies.isEmpty()) {
-        val newCookie = responseCookies.firstOrNull { it.name == "zuid" }?.value
-        if (!newCookie.isNullOrBlank()) {
-            appStorage.saveBackendCookie(newCookie)
-            logger.info("Received new api token from backend, updated stored cookie")
-        }
-    }
-
-    val accessToken = accessResponse.body<LoginResponse>().accessToken
-    bearerToken = BearerTokens(accessToken, null)
-    return accessToken
-}
-
-
-private fun isCookieExpired(ex: WireException.ClientError): Boolean =
-    ex.throwable is ClientRequestException &&
-        (
-            ex.throwable.response.status == HttpStatusCode.Unauthorized ||
-                    ex.throwable.response.status == HttpStatusCode.Forbidden
-        )
-
 
 /**
  * Initialize the [MlsCryptoClient] if it's not already initialized.
