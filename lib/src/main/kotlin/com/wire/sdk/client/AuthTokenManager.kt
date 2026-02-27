@@ -21,14 +21,12 @@ import com.wire.sdk.exception.WireException
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.request.accept
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.setCookie
 import org.slf4j.LoggerFactory
 
@@ -58,7 +56,7 @@ class AuthTokenManager {
             }
         } catch (ex: WireException.ClientError) {
             logger.error("Unable to retrieve access token, Error: ${ex.message}")
-            if (isCookieExpired(ex)) {
+            if (ex.response.isCredentialsInvalid()) {
                 appStorage.deleteBackendCookie()
             }
             // Can't recover from this, need to restart the app with a valid api token
@@ -77,12 +75,4 @@ class AuthTokenManager {
 
         bearerToken = BearerTokens(accessResponse.body<LoginResponse>().accessToken, null)
     }
-
-
-    private fun isCookieExpired(ex: WireException.ClientError): Boolean =
-        ex.throwable is ClientRequestException &&
-            (
-            ex.throwable.response.status == HttpStatusCode.Unauthorized ||
-                    ex.throwable.response.status == HttpStatusCode.Forbidden
-            )
 }

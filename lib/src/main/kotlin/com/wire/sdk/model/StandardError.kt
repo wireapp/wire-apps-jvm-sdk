@@ -30,4 +30,6 @@ data class StandardError(
     fun isTooManyClients(): Boolean = (label == NetworkErrorLabel.TOO_MANY_CLIENTS)
 
     fun isOperationDenied(): Boolean = (label == NetworkErrorLabel.OPERATION_DENIED)
+
+    fun isCredentialsInvalid(): Boolean = (label == NetworkErrorLabel.INVALID_CREDENTIALS)
 }
