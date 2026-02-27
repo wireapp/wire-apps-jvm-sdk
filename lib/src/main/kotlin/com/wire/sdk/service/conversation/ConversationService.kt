@@ -347,7 +347,7 @@ internal class ConversationService internal constructor(
         conversationId: QualifiedId,
         messageTimer: Long?
     ) {
-        getConversationById(conversationId)?.let { conversation ->
+        getConversationById(conversationId).let { conversation ->
             conversationStorage.updateMessageTimer(conversation.id, messageTimer)
         }
     }
