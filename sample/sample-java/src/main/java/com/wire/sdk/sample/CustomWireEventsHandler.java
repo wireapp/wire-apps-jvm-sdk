@@ -127,9 +127,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
     @Override
     public void onMessageDeleted(WireMessage.Deleted wireMessage) {
-        logger.info("Received Message deletion. conversationId: {}", wireMessage.conversationId());
-        final var message = "ℹ️Message deleted with id: " + wireMessage.messageId();
-        sendSimpleTextMessage(wireMessage.conversationId(), message);
+        super.onMessageDeleted(wireMessage);
     }
 
     @Override
@@ -239,7 +237,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
                 messageText,
                 List.of(),
                 List.of(),
-                10_000L); // Expires after 10 seconds
+                20_000L); // Expires after 20 seconds
 
         getManager().sendMessage(message);
         logger.info("Ephemeral message sent. conversationId: {}", conversationId);

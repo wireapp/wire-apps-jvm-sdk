@@ -343,6 +343,15 @@ internal class ConversationService internal constructor(
         }
     }
 
+    suspend fun updateMessageTimer(
+        conversationId: QualifiedId,
+        messageTimer: Long?
+    ) {
+        getConversationById(conversationId).let { conversation ->
+            conversationStorage.updateMessageTimer(conversation.id, messageTimer)
+        }
+    }
+
     @Suppress("TooGenericExceptionCaught")
     private suspend fun claimKeyPackages(
         userIds: List<QualifiedId>,
@@ -400,7 +409,8 @@ internal class ConversationService internal constructor(
                 name = conversationName,
                 mlsGroupId = conversationResponse.getDecodedMlsGroupId(),
                 teamId = conversationResponse.teamId?.let { TeamId(it) },
-                type = ConversationEntity.Type.fromApi(value = conversationResponse.type)
+                type = ConversationEntity.Type.fromApi(value = conversationResponse.type),
+                messageTimer = conversationResponse.messageTimer
             )
 
         val members = (

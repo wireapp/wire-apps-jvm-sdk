@@ -24,7 +24,8 @@ internal data class ConversationEntity(
     val name: String?,
     val teamId: TeamId?,
     val mlsGroupId: ConversationId,
-    val type: Type
+    val type: Type,
+    val messageTimer: Long? = null
 ) {
     enum class Type {
         GROUP,

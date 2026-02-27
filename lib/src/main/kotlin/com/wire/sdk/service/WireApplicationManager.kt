@@ -45,6 +45,7 @@ import javax.imageio.ImageIO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.slf4j.LoggerFactory
 
 /**
  * Allows fetching common data and interacting with each Team instance invited to the Application.
@@ -58,6 +59,8 @@ class WireApplicationManager internal constructor(
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
 
     fun getStoredConversations(): List<Conversation> =
@@ -145,12 +148,17 @@ class WireApplicationManager internal constructor(
             conversationId = message.conversationId
         )
 
+        val preparedMessage = prepareMessageForSending(
+            conversation = conversation,
+            originalMessage = message
+        )
+
         conversation.mlsGroupId.let { mlsGroupId ->
             val encryptedMessage = cryptoClient.encryptMls(
                 mlsGroupId = mlsGroupId,
                 message = ProtobufSerializer
                     .toGenericMessageByteArray(
-                        wireMessage = message
+                        wireMessage = preparedMessage
                     )
             )
 
@@ -160,14 +168,52 @@ class WireApplicationManager internal constructor(
                 if (exception.response.isMlsStaleMessage()) {
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
-                        conversationId = message.conversationId
+                        conversationId = preparedMessage.conversationId
                     )
                     backendClient.sendMessage(mlsMessage = encryptedMessage)
                 }
             }
         }
-        return message.id
+        return preparedMessage.id
     }
+
+    private fun prepareMessageForSending(
+        conversation: ConversationEntity,
+        originalMessage: WireMessage
+    ): WireMessage {
+        val preparedMessage =
+            if (conversation.messageTimer != null) {
+                if (originalMessage is WireMessage.Ephemeral) {
+                    originalMessage.overrideExpirationDuration(conversation.messageTimer)
+                        .also {
+                            logger.info(
+                                "Setting (overriding) expiration duration of the message " +
+                                    "${conversation.id} to ${conversation.messageTimer} ms"
+                            )
+                        }
+                } else {
+                    logger.warn(
+                        "Message ${originalMessage.id} is not ephemeral but the conversation " +
+                            "${conversation.id} has a message timer set. " +
+                            "The message can not be sent."
+                    )
+
+                    throw WireException.InvalidParameter.messageIsNotEphemeral()
+                }
+            } else {
+                originalMessage
+            }
+
+        return preparedMessage
+    }
+
+    private fun WireMessage.Ephemeral.overrideExpirationDuration(expiresAfter: Long): WireMessage =
+        when (this) {
+            is WireMessage.Text -> copy(expiresAfterMillis = expiresAfter)
+            is WireMessage.Asset -> copy(expiresAfterMillis = expiresAfter)
+            is WireMessage.Location -> copy(expiresAfterMillis = expiresAfter)
+            is WireMessage.Ping -> copy(expiresAfterMillis = expiresAfter)
+        }
 
     /**
      * Downloads an asset as a raw byte array.
