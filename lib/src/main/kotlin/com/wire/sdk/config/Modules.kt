@@ -15,11 +15,11 @@
 
 package com.wire.sdk.config
 
-import Versions
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
 import com.wire.sdk.crypto.CryptoClient
@@ -52,11 +52,13 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.client.request.header
+import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
@@ -80,12 +82,13 @@ val sdkModule =
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
-        single<BackendClient> { BackendClientHttp(get(), get()) }
+        single<BackendClient> { BackendClientHttp(get(), get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get(), get()) } onClose { it?.close() }
+        single<AuthTokenManager> { AuthTokenManager() }
         single<HttpClient> {
-            createHttpClient(IsolatedKoinContext.getApiHost())
+            createHttpClient(IsolatedKoinContext.getApiHost(), get(), get())
         } onClose { it?.close() }
         single<CryptoClient> {
             runBlocking {
@@ -104,7 +107,11 @@ val sdkModule =
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
 
 @OptIn(ExperimentalLogbookKtorApi::class)
-internal fun createHttpClient(apiHost: String): HttpClient {
+internal fun createHttpClient(
+    apiHost: String?,
+    appStorage: AppStorage,
+    authTokenManager: AuthTokenManager
+): HttpClient {
     return HttpClient(CIO) {
         expectSuccess = true
         HttpResponseValidator {
@@ -135,12 +142,32 @@ internal fun createHttpClient(apiHost: String): HttpClient {
             exponentialDelay()
         }
 
-        defaultRequest {
-            url(apiHost)
-            header("Wire-Client", "SDK Kotlin")
-            header("Wire-Client-Version", Versions.SDK_VERSION)
+        apiHost?.let {
+            defaultRequest {
+                url(apiHost)
+            }
         }
 
+        install(Auth) {
+            bearer {
+                loadTokens {
+                    authTokenManager.getAccessToken()
+                }
+
+                sendWithoutRequest { request ->
+                    val publicPath = listOf("/access", "/api-version", "/await")
+
+                    publicPath.none {
+                        request.url.encodedPath.endsWith(it)
+                    }
+                }
+
+                refreshTokens {
+                    authTokenManager.refreshAccessToken(client, appStorage)
+                    authTokenManager.getAccessToken()
+                }
+            }
+        }
     }
 }
 

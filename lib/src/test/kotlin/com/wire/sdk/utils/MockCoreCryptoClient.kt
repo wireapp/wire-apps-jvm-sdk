@@ -30,7 +30,6 @@ import com.wire.crypto.Welcome
 import com.wire.crypto.invoke
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
-import com.wire.sdk.exception.WireException.InvalidParameter
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
