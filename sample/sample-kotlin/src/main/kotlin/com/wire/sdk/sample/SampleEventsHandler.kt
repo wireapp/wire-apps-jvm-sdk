@@ -179,14 +179,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     override suspend fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
-        logger.info("Received Message Deletion event: $wireMessage")
-
-        val message = WireMessage.Text.create(
-            conversationId = wireMessage.conversationId,
-            text = "Deleted Messaged with ID : ${wireMessage.messageId}"
-        )
-
-        manager.sendMessageSuspending(message = message)
+        super.onMessageDeleted(wireMessage)
     }
 
     private fun getSampleAudioMetadata(): AssetMetadata.Audio {
