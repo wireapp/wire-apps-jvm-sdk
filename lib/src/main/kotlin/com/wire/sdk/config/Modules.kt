@@ -167,7 +167,11 @@ internal fun createHttpClient(apiHost: String?, appStorage: AppStorage): HttpCli
                 }
 
                 sendWithoutRequest { request ->
-                    request.url.encodedPath !in listOf("/access", "/api-version", "/await")
+                    val publicPath = listOf("/access", "/api-version", "/await")
+
+                    publicPath.none {
+                        request.url.encodedPath.endsWith(it)
+                    }
                 }
 
                 refreshTokens {
