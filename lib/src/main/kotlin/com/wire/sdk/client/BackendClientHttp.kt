@@ -141,8 +141,10 @@ internal class BackendClientHttp(
     override suspend fun getApplicationFeatures(): FeaturesResponse {
         logger.info("Fetching application enabled features")
         return cachedFeatures ?: run {
-            httpClient.get("/$API_VERSION/feature-configs") {
-            }.body<FeaturesResponse>().also { cachedFeatures = it }
+            httpClient
+                .get("/$API_VERSION/feature-configs")
+                .body<FeaturesResponse>()
+                .also { cachedFeatures = it }
         }
     }
 
@@ -228,8 +230,7 @@ internal class BackendClientHttp(
         logger.info("Fetching conversation: $conversationId")
         return httpClient.get(
             "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}"
-        ) {
-        }.body<ConversationResponse>()
+        ).body<ConversationResponse>()
     }
 
     /**
@@ -242,8 +243,7 @@ internal class BackendClientHttp(
         logger.info("Fetching user: $userId")
         return httpClient.get(
             "/$API_VERSION/users/${userId.domain}/${userId.id}"
-        ) {
-        }.body<UserResponse>()
+        ).body<UserResponse>()
     }
 
     /**
@@ -410,8 +410,7 @@ internal class BackendClientHttp(
         val path = "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
             "/members/${userId.domain}/${userId.id}"
 
-        httpClient.delete(path) {
-        }
+        httpClient.delete(path)
 
         logger.info(
             "App user is removed from the conversation in the backend. " +
@@ -433,8 +432,7 @@ internal class BackendClientHttp(
 
         val path = "/$API_VERSION/teams/${teamId.value}/conversations/${conversationId.id}"
 
-        httpClient.delete(path) {
-        }
+        httpClient.delete(path)
 
         logger.info(
             "Conversation is deleted in the backend. teamId:{}, conversationId:{}",
@@ -473,8 +471,9 @@ internal class BackendClientHttp(
     }
 
     override suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
-        val clients = httpClient.get("/users/${userId.domain}/${userId.id}/clients") {
-        }.body<List<UserClientResponse>>()
+        val clients = httpClient
+            .get("/users/${userId.domain}/${userId.id}/clients")
+            .body<List<UserClientResponse>>()
 
         return clients
     }
