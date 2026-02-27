@@ -154,7 +154,7 @@ class WireApplicationManager internal constructor(
                     .also {
                         logger.info(
                             "Setting (overriding) expiration duration of the message " +
-                                "${conversation.id} to $conversation.messageTimer ms"
+                                "${conversation.id} to ${conversation.messageTimer} ms"
                         )
                     }
             } else {
