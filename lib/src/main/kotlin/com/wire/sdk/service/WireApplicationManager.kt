@@ -148,25 +148,17 @@ class WireApplicationManager internal constructor(
             conversationId = message.conversationId
         )
 
-        val messageToSend =
-            if (message is WireMessage.Ephemeral && conversation.messageTimer != null) {
-                message.overrideExpirationDuration(conversation.messageTimer)
-                    .also {
-                        logger.info(
-                            "Setting (overriding) expiration duration of the message " +
-                                "${conversation.id} to ${conversation.messageTimer} ms"
-                        )
-                    }
-            } else {
-                message
-            }
+        val preparedMessage = prepareMessageForSending(
+            conversation = conversation,
+            originalMessage = message
+        )
 
         conversation.mlsGroupId.let { mlsGroupId ->
             val encryptedMessage = cryptoClient.encryptMls(
                 mlsGroupId = mlsGroupId,
                 message = ProtobufSerializer
                     .toGenericMessageByteArray(
-                        wireMessage = messageToSend
+                        wireMessage = preparedMessage
                     )
             )
 
@@ -176,13 +168,43 @@ class WireApplicationManager internal constructor(
                 if (exception.response.isMlsStaleMessage()) {
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
-                        conversationId = messageToSend.conversationId
+                        conversationId = preparedMessage.conversationId
                     )
                     backendClient.sendMessage(mlsMessage = encryptedMessage)
                 }
             }
         }
-        return messageToSend.id
+        return preparedMessage.id
+    }
+
+    private fun prepareMessageForSending(
+        conversation: ConversationEntity,
+        originalMessage: WireMessage
+    ): WireMessage {
+        val preparedMessage =
+            if (conversation.messageTimer != null) {
+                if (originalMessage is WireMessage.Ephemeral) {
+                    originalMessage.overrideExpirationDuration(conversation.messageTimer)
+                        .also {
+                            logger.info(
+                                "Setting (overriding) expiration duration of the message " +
+                                    "${conversation.id} to ${conversation.messageTimer} ms"
+                            )
+                        }
+                } else {
+                    logger.warn(
+                        "Message ${originalMessage.id} is not ephemeral but the conversation " +
+                            "${conversation.id} has a message timer set. " +
+                            "The message can not be sent."
+                    )
+
+                    throw WireException.InvalidParameter.messageIsNotEphemeral()
+                }
+            } else {
+                originalMessage
+            }
+
+        return preparedMessage
     }
 
     private fun WireMessage.Ephemeral.overrideExpirationDuration(expiresAfter: Long): WireMessage =

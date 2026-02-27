@@ -61,6 +61,12 @@ sealed class WireException @JvmOverloads constructor(
     ) : WireException(message ?: throwable?.localizedMessage, throwable) {
         companion object {
             const val DEFAULT_MESSAGE = "One or more parameters are invalid."
+
+            fun messageIsNotEphemeral() =
+                InvalidParameter(
+                    "Message type is not ephemeral. " +
+                        "Cannot be sent to ephemeral conversation."
+                )
         }
     }
 
