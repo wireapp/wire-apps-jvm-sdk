@@ -22,7 +22,6 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
-import com.wire.sdk.model.http.AppDataResponse
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
@@ -50,8 +49,6 @@ interface BackendClient {
     suspend fun closeWebSocket()
 
     suspend fun getAvailableApiVersions(): ApiVersionResponse
-
-    suspend fun getApplicationData(): AppDataResponse
 
     suspend fun getApplicationFeatures(): FeaturesResponse
 

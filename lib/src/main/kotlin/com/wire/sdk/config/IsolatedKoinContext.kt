@@ -59,14 +59,19 @@ internal object IsolatedKoinContext {
         this.koinApp.koin.setProperty(API_HOST, value)
     }
 
-    fun getApiHost(): String? = this.koinApp.koin.getProperty(API_HOST)
+    fun getApiHost(): String =
+        checkNotNull(this.koinApp.koin.getProperty(API_HOST)) {
+            "Api Host is not set in Koin properties"
+        }
 
     fun setCryptographyStorageKey(value: ByteArray) {
         this.koinApp.koin.setProperty(CRYPTOGRAPHY_STORAGE_KEY, value)
     }
 
-    fun getCryptographyStorageKey(): ByteArray? =
-        this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_KEY)
+    fun getCryptographyStorageKey(): ByteArray =
+        checkNotNull(this.koinApp.koin.getProperty(CRYPTOGRAPHY_STORAGE_KEY)) {
+            "Cryptography Storage Key is not set in Koin properties"
+        }
 
     fun setBackendDomain(value: String) {
         this.koinApp.koin.setProperty(BACKEND_DOMAIN, value)

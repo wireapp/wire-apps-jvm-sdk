@@ -22,8 +22,8 @@ import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
-import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.MlsTransportImpl
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.exception.mapToWireException
@@ -52,7 +52,6 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
-import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.cache.HttpCache
@@ -136,10 +135,7 @@ internal fun createHttpClient(
             pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
         }
 
-        install(UserAgent) {
-            agent = "Wire JVM SDK - ${Versions.SDK_VERSION}"
-        }
-
+        // Add headers for client and version
         install(HttpCache)
         install(HttpRequestRetry) {
             retryOnServerErrors(maxRetries = MAX_RETRY_NUMBER_ON_SERVER_ERROR)
