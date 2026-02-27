@@ -170,9 +170,7 @@ internal class MockCoreCryptoClient private constructor(
 
             val coreCryptoClient = CoreCrypto.invoke(
                 keystore = keystorePath,
-                databaseKey = IsolatedKoinContext.getCryptographyStorageKey()
-                    ?.let { DatabaseKey(it) }
-                    ?: throw InvalidParameter("Cryptography password missing")
+                databaseKey = DatabaseKey(IsolatedKoinContext.getCryptographyStorageKey())
             )
 
             // The real cryptoClient creation also sets this property. Keep the same

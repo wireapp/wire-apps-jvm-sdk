@@ -15,14 +15,15 @@
 
 package com.wire.sdk.config
 
+import Versions
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
-import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.MlsTransportImpl
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.exception.mapToWireException
@@ -51,11 +52,11 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
-import io.ktor.client.plugins.UserAgent
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
@@ -103,7 +104,7 @@ val sdkModule =
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
 
 @OptIn(ExperimentalLogbookKtorApi::class)
-internal fun createHttpClient(apiHost: String?): HttpClient {
+internal fun createHttpClient(apiHost: String): HttpClient {
     return HttpClient(CIO) {
         expectSuccess = true
         HttpResponseValidator {
@@ -127,21 +128,19 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
             pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
         }
 
-        install(UserAgent) {
-            agent = "Wire JVM SDK - ${Versions.SDK_VERSION}"
-        }
-
+        // Add headers for client and version
         install(HttpCache)
         install(HttpRequestRetry) {
             retryOnServerErrors(maxRetries = MAX_RETRY_NUMBER_ON_SERVER_ERROR)
             exponentialDelay()
         }
 
-        apiHost?.let {
-            defaultRequest {
-                url(apiHost)
-            }
+        defaultRequest {
+            url(apiHost)
+            header("Wire-Client", "SDK Kotlin")
+            header("Wire-Client-Version", Versions.SDK_VERSION)
         }
+
     }
 }
 

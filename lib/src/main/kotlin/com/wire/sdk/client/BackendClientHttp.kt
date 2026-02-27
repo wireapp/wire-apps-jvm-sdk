@@ -25,7 +25,6 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
-import com.wire.sdk.model.http.AppDataResponse
 import com.wire.sdk.model.http.ClientUpdateRequest
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.FeaturesResponse
@@ -112,8 +111,8 @@ internal class BackendClientHttp(
             (appStorage.getDeviceId()?.let { "&$CLIENT_QUERY_KEY=$it" } ?: "")
 
         httpClient.wss(
-            host = IsolatedKoinContext.getApiHost()?.replace("https://", "")
-                ?.replace("-https", "-ssl"),
+            host = IsolatedKoinContext.getApiHost().replace("https://", "")
+                .replace("-https", "-ssl"),
             path = path
         ) {
             activeWebSocketSession = this
@@ -131,17 +130,6 @@ internal class BackendClientHttp(
     override suspend fun getAvailableApiVersions(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
         return httpClient.get("/$API_VERSION/api-version").body()
-    }
-
-    override suspend fun getApplicationData(): AppDataResponse {
-        logger.info("Fetching application data")
-        val applicationId = IsolatedKoinContext.getApplicationId()
-        val applicationDomain = IsolatedKoinContext.getBackendDomain()
-        return AppDataResponse(
-            appClientId = "$applicationId:${appStorage.getDeviceId()}@$applicationDomain",
-            appType = "FULL",
-            appCommand = "demo"
-        )
     }
 
     override suspend fun getApplicationFeatures(): FeaturesResponse {
@@ -187,6 +175,7 @@ internal class BackendClientHttp(
         )
     }
 
+    // TODO Split Access Token in 2 versions: low-permission and full-permission ???
     private suspend fun getAccessToken(
         apiToken: String,
         currentTime: Long
