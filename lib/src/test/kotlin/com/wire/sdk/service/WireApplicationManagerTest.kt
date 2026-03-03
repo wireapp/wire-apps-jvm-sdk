@@ -24,8 +24,8 @@ import com.wire.sdk.TestUtils
 import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
@@ -312,7 +312,7 @@ class WireApplicationManagerTest {
 
     private suspend fun generateUser2Packages(): List<KeyPackage> =
         MlsCryptoClient.create(
-            appId = USER_2.id.toString(),
+            appId = USER_2.id,
             ciphersuiteCode = 1
         ).use { cryptoClientUser2 ->
             cryptoClientUser2.initializeMlsClient(

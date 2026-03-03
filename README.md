@@ -27,18 +27,16 @@ No license is granted to the Wire trademark and its associated logos, all of whi
 SDK for Wire third-party applications written in Kotlin, supporting JVM languages.
 Import the SDK in your project to build your application and interact with the Wire backend and serve your users.
 
-This will create a full-fledged client. It can send or receive
-messages, place or receive calls, for example.
+This will create a full-fledged client, connected with E2EE to other users and apps. It will listen to events, send and receive messages, and more.
 
-After completing the onboarding process, the Wire platform will provide an APP_TOKEN,
-required to authenticate your application via the SDK.
-
-Deploying the application and initializing the SDK will enable it to receive invites to Team and then reading/writing
-messages to it.
+The SDK will handle all the complex logic of cryptography and storage, so you can focus on building your application.
 
 ## How to use it
 
-For information about usage and onboarding refer to [Sdk tutorial](docs/APPLICATION.md).
+After completing the onboarding process, the Wire platform will provide an *apiToken*,
+required to authenticate your application via the SDK.
+
+For information about usage and onboarding refer to [Sdk Documentation](https://dev.wire.com).
 
 ## Requirements
 
@@ -65,15 +63,6 @@ dependencies {
 </dependency>
 ```
 
-## Environment Variables
-```dotenv
-WIRE_SDK_USER_ID=abcd-1234-efgh-5678
-WIRE_SDK_EMAIL=your_email@domain.com
-WIRE_SDK_PASSWORD=randomPassword
-```
-
-Note: The backend domain is automatically retrieved from the Wire backend's `api-version` endpoint during SDK initialization.
-
 ## Build the project
 
 ```shell
@@ -82,5 +71,5 @@ Note: The backend domain is automatically retrieved from the Wire backend's `api
 
 ## Troubleshooting
 
-If you have started using the SDK targeting one Wire environment,
-and later you want to switch to another, you may need to move/delete the `storage/apps.db` directory
+If you have started using the SDK targeting one Wire environment or you have switched `applicationId`,
+and later you want to switch to another, you may need to move/delete the `storage` directory to have a clean start.

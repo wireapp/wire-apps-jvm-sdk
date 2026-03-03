@@ -128,9 +128,8 @@ class WireAppSdk(
             logger.info("Storing API token in AppStorage")
             appStorage.saveBackendCookie(apiToken)
         } else {
-            logger.info("API token already stored in AppStorage (same token or more recent one)")
+            logger.info("API token already stored in AppStorage (initial apiToken or a refresh)")
         }
-
     }
 
     /**

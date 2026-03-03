@@ -64,14 +64,6 @@ sealed class WireException @JvmOverloads constructor(
         }
     }
 
-    /**
-     * Database Error
-     */
-    class DatabaseError(
-        message: String? = null,
-        throwable: Throwable? = null
-    ) : WireException(message ?: throwable?.localizedMessage, throwable)
-
     class EntityNotFound(
         message: String? = DEFAULT_MESSAGE,
         throwable: Throwable? = null

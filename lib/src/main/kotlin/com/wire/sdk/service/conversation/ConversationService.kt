@@ -363,7 +363,7 @@ internal class ConversationService internal constructor(
                     successUsers.add(user)
                     claimedKeyPackages.addAll(result.keyPackages)
                 }
-            } catch (exception: Exception) {
+            } catch (exception: WireException) {
                 // Ignoring when claiming key packages fails for a user
                 // as for now there is no retry
                 failedUsers.add(user)

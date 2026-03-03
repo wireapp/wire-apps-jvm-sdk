@@ -17,6 +17,7 @@ package com.wire.sdk.persistence
 
 import com.wire.sdk.model.AppData
 
+@Suppress("TooManyFunctions")
 interface AppStorage {
     /**
      * Save (UPSERT) a key-value pair representing a property.

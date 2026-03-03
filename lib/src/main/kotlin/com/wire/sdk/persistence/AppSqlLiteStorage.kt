@@ -26,6 +26,7 @@ private const val BACKEND_COOKIE = "backend_cookie"
 private const val SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
 private const val LAST_NOTIFICATION_ID = "last_notification_id"
 
+@Suppress("TooManyFunctions")
 class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     private val appQueries: AppQueries = db.appQueries
 

@@ -25,29 +25,42 @@ import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.request.accept
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.setCookie
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 
-class AuthTokenManager {
+class AuthTokenManager(private val appStorage: AppStorage) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private var bearerToken: BearerTokens? = null
 
-    fun getAccessToken(): BearerTokens? {
-        return bearerToken
+    @Suppress("TooGenericExceptionThrown")
+    suspend fun refreshAccessToken(httpClient: HttpClient): BearerTokens {
+        logger.debug("Refreshing access token using stored cookie")
+        val accessResponse = getAccessResponse(httpClient)
+
+        // Chance of cookie renewal -> Store new cookie
+        val responseCookies = accessResponse.setCookie()
+        if (responseCookies.isNotEmpty()) {
+            val newCookie = responseCookies.firstOrNull { it.name == "zuid" }?.value
+            if (!newCookie.isNullOrBlank()) {
+                appStorage.saveBackendCookie(newCookie)
+                logger.info("Received new api token from backend, updated stored cookie")
+            }
+        }
+
+        return BearerTokens(accessResponse.body<LoginResponse>().accessToken, null)
     }
 
-    suspend fun refreshAccessToken(
-        httpClient: HttpClient,
-        appStorage: AppStorage
-    ) {
-        val apiToken = appStorage.getBackendCookie()
-        val deviceId = appStorage.getDeviceId()
-        val url = "/$API_VERSION/access".let {
-            if (deviceId != null) "$it?client_id=$deviceId" else it
-        }
-        val accessResponse = try {
+    private suspend fun getAccessResponse(httpClient: HttpClient): HttpResponse =
+        try {
+            val apiToken = appStorage.getBackendCookie()
+            val deviceId = appStorage.getDeviceId()
+            val url = "/$API_VERSION/access".let {
+                if (deviceId != null) "$it?client_id=$deviceId" else it
+            }
             httpClient.post(url) {
                 headers {
                     append(HttpHeaders.Cookie, "zuid=$apiToken")
@@ -59,20 +72,13 @@ class AuthTokenManager {
             if (ex.response.isCredentialsInvalid()) {
                 appStorage.deleteBackendCookie()
             }
-            // Can't recover from this, need to restart the app with a valid api token
-            throw Error("Current cookie/api-token is expired. Get a apiToken and restart the App")
+            // TODO Can't recover from this, need to restart the app with a valid api token
+            error("Current cookie/api-token is expired. Get a apiToken and restart the App")
         }
 
-        // Chance of cookie renewal -> Store new cookie
-        val responseCookies = accessResponse.setCookie()
-        if (!responseCookies.isEmpty()) {
-            val newCookie = responseCookies.firstOrNull { it.name == "zuid" }?.value
-            if (!newCookie.isNullOrBlank()) {
-                appStorage.saveBackendCookie(newCookie)
-                logger.info("Received new api token from backend, updated stored cookie")
-            }
-        }
-
-        bearerToken = BearerTokens(accessResponse.body<LoginResponse>().accessToken, null)
-    }
+    @Serializable
+    data class LoginResponse(
+        @SerialName("access_token") val accessToken: String,
+        @SerialName("expires_in") val expiresIn: Int
+    )
 }

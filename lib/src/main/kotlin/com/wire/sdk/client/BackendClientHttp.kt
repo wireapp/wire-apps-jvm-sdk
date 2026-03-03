@@ -51,6 +51,8 @@ import com.wire.sdk.utils.Mls
 import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.auth.authProviders
+import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
@@ -69,8 +71,6 @@ import io.ktor.http.contentType
 import io.ktor.util.encodeBase64
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
 import java.util.Base64
 import java.util.UUID
@@ -82,8 +82,7 @@ import kotlin.time.Clock
  */
 internal class BackendClientHttp(
     private val httpClient: HttpClient,
-    private val appStorage: AppStorage,
-    private val authTokenManager: AuthTokenManager
+    private val appStorage: AppStorage
 ) : BackendClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -99,11 +98,8 @@ internal class BackendClientHttp(
     ) {
         logger.info("Connecting to the webSocket, waiting for events")
 
-        authTokenManager.refreshAccessToken(httpClient, appStorage)
-        val bearerToken = authTokenManager.getAccessToken()
         val path = "/await" +
-            "?$ACCESS_TOKEN_QUERY_KEY=$bearerToken" +
-            (appStorage.getDeviceId()?.let { "&$CLIENT_QUERY_KEY=$it" } ?: "")
+            (appStorage.getDeviceId()?.let { "?$CLIENT_QUERY_KEY=$it" } ?: "")
 
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost().replace("https://", "")
@@ -159,10 +155,19 @@ internal class BackendClientHttp(
     override suspend fun registerClient(
         registerClientRequest: RegisterClientRequest
     ): RegisterClientResponse {
-        return httpClient.post("/$API_VERSION/clients") {
+        val clientCreatedResponse = httpClient.post("/$API_VERSION/clients") {
             setBody(registerClientRequest)
             contentType(ContentType.Application.Json)
         }.body<RegisterClientResponse>()
+
+        // Register client is performed with an access_token having limited scope.
+        //  clear the token to force a refresh with the full-scope token for next requests.
+        httpClient.authProviders
+            .filterIsInstance<BearerAuthProvider>()
+            .first()
+            .clearToken()
+
+        return clientCreatedResponse
     }
 
     override suspend fun uploadMlsKeyPackages(
@@ -530,7 +535,6 @@ internal class BackendClientHttp(
         const val HEADER_ASSET_TOKEN = "Asset-Token"
         const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
 
-        const val ACCESS_TOKEN_QUERY_KEY = "access_token"
         const val SIZE_QUERY_KEY = "size"
         const val CLIENT_QUERY_KEY = "client"
         const val SINCE_QUERY_KEY = "since"
@@ -540,9 +544,3 @@ internal class BackendClientHttp(
         private const val FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
     }
 }
-
-@Serializable
-data class LoginResponse(
-    @SerialName("access_token") val accessToken: String,
-    @SerialName("expires_in") val expiresIn: Int
-)

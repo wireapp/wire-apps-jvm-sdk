@@ -58,6 +58,7 @@ import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.request.header
 import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
@@ -82,13 +83,13 @@ val sdkModule =
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
-        single<BackendClient> { BackendClientHttp(get(), get(), get()) }
+        single<BackendClient> { BackendClientHttp(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get(), get()) } onClose { it?.close() }
-        single<AuthTokenManager> { AuthTokenManager() }
+        single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {
-            createHttpClient(IsolatedKoinContext.getApiHost(), get(), get())
+            createHttpClient(IsolatedKoinContext.getApiHost(), get())
         } onClose { it?.close() }
         single<CryptoClient> {
             runBlocking {
@@ -108,8 +109,7 @@ internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
 
 @OptIn(ExperimentalLogbookKtorApi::class)
 internal fun createHttpClient(
-    apiHost: String?,
-    appStorage: AppStorage,
+    apiHost: String,
     authTokenManager: AuthTokenManager
 ): HttpClient {
     return HttpClient(CIO) {
@@ -142,20 +142,16 @@ internal fun createHttpClient(
             exponentialDelay()
         }
 
-        apiHost?.let {
-            defaultRequest {
-                url(apiHost)
-            }
+        defaultRequest {
+            url(apiHost)
+            header("Wire-Client", "SDK Kotlin")
+            header("Wire-Client-Version", Versions.SDK_VERSION)
         }
 
         install(Auth) {
             bearer {
-                loadTokens {
-                    authTokenManager.getAccessToken()
-                }
-
                 sendWithoutRequest { request ->
-                    val publicPath = listOf("/access", "/api-version", "/await")
+                    val publicPath = listOf("/access", "/api-version")
 
                     publicPath.none {
                         request.url.encodedPath.endsWith(it)
@@ -163,8 +159,7 @@ internal fun createHttpClient(
                 }
 
                 refreshTokens {
-                    authTokenManager.refreshAccessToken(client, appStorage)
-                    authTokenManager.getAccessToken()
+                    authTokenManager.refreshAccessToken(client)
                 }
             }
         }
