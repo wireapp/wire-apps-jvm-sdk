@@ -51,7 +51,7 @@ class AuthTokenManager(private val appStorage: AppStorage) {
             }
         }
 
-        return BearerTokens(accessResponse.body<LoginResponse>().accessToken, null)
+        return BearerTokens(accessResponse.body<AccessResponse>().accessToken, null)
     }
 
     private suspend fun getAccessResponse(httpClient: HttpClient): HttpResponse =
@@ -77,7 +77,7 @@ class AuthTokenManager(private val appStorage: AppStorage) {
         }
 
     @Serializable
-    data class LoginResponse(
+    private data class AccessResponse(
         @SerialName("access_token") val accessToken: String,
         @SerialName("expires_in") val expiresIn: Int
     )
