@@ -100,19 +100,6 @@ object TestUtils {
                 )
         )
         wireMockServer.stubFor(
-            WireMock.post(WireMock.urlPathEqualTo("/$V/access"))
-                .withQueryParam("client_id", WireMock.matching(".*")).willReturn(
-                    WireMock.okJson(
-                        """
-                        {
-                            "access_token": "demoAccessToken",
-                            "expires_in" : 3600
-                        }
-                        """.trimIndent()
-                    )
-                )
-        )
-        wireMockServer.stubFor(
             WireMock.get(WireMock.urlMatching("/$V/feature-configs")).willReturn(
                 WireMock.okJson(
                     """

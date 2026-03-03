@@ -19,7 +19,11 @@ package com.wire.sdk.persistence
 import com.wire.sdk.App
 import com.wire.sdk.AppQueries
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.AppData
+import com.wire.sdk.utils.AESDecrypt
+import com.wire.sdk.utils.AESEncrypt
+import java.util.Base64
 
 private const val DEVICE_ID = "device_id"
 private const val BACKEND_COOKIE = "backend_cookie"
@@ -55,9 +59,17 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     override fun saveDeviceId(deviceId: String) = save(DEVICE_ID, deviceId)
 
     override fun getBackendCookie(): String? =
-        runCatching { getByKey(BACKEND_COOKIE).value }.getOrNull()
+        runCatching {
+            val encryptedBytes = Base64.getDecoder().decode(getByKey(BACKEND_COOKIE).value)
+            val key = IsolatedKoinContext.getCryptographyStorageKey()
+            AESDecrypt.decryptData(encryptedBytes, key).toString(Charsets.UTF_8)
+        }.getOrNull()
 
-    override fun saveBackendCookie(deviceId: String) = save(BACKEND_COOKIE, deviceId)
+    override fun saveBackendCookie(cookie: String) {
+        val key = IsolatedKoinContext.getCryptographyStorageKey()
+        val encryptedBytes = AESEncrypt.encryptData(cookie.toByteArray(Charsets.UTF_8), key)
+        save(BACKEND_COOKIE, Base64.getEncoder().encodeToString(encryptedBytes))
+    }
 
     override fun deleteBackendCookie() = delete(BACKEND_COOKIE)
 

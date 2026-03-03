@@ -56,14 +56,14 @@ class AuthTokenManager(private val appStorage: AppStorage) {
 
     private suspend fun getAccessResponse(httpClient: HttpClient): HttpResponse =
         try {
-            val apiToken = appStorage.getBackendCookie()
+            val cookie = appStorage.getBackendCookie()
             val deviceId = appStorage.getDeviceId()
             val url = "/$API_VERSION/access".let {
                 if (deviceId != null) "$it?client_id=$deviceId" else it
             }
             httpClient.post(url) {
                 headers {
-                    append(HttpHeaders.Cookie, "zuid=$apiToken")
+                    append(HttpHeaders.Cookie, "zuid=$cookie")
                 }
                 accept(ContentType.Application.Json)
             }
