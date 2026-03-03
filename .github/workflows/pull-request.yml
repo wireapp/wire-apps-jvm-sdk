@@ -9,19 +9,28 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
+
       - uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'
+
       - name: Lint
         run: |
           ./gradlew ktlintCheck
+
       - name: Detekt
         run: |
           ./gradlew detekt
+
+      - name: Verify DB Migrations
+        run: |
+          ./gradlew :lib:verifyMainAppsSdkDatabaseMigration
+
       - name: Build
         run: |
           ./gradlew build --info
+
       - name: Store reports
         if: failure()
         uses: actions/upload-artifact@v6
