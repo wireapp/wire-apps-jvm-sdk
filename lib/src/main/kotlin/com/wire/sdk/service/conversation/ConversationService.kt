@@ -343,7 +343,6 @@ internal class ConversationService internal constructor(
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun claimKeyPackages(
         userIds: List<QualifiedId>,
         cipherSuiteCode: Int

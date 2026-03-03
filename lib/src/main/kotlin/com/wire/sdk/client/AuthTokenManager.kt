@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory
 class AuthTokenManager(private val appStorage: AppStorage) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Suppress("TooGenericExceptionThrown")
     suspend fun refreshAccessToken(httpClient: HttpClient): BearerTokens {
         logger.debug("Refreshing access token using stored cookie")
         val accessResponse = getAccessResponse(httpClient)

@@ -20,6 +20,5 @@ internal object NetworkErrorLabel {
     const val MLS_STALE_MESSAGE = "mls-stale-message"
     const val TOO_MANY_CLIENTS = "too-many-clients"
     const val OPERATION_DENIED = "operation-denied"
-
     const val INVALID_CREDENTIALS = "invalid-credentials"
 }
