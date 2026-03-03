@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS conversation_member (
   conversation_domain TEXT NOT NULL,
   role TEXT NOT NULL,
   creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  type TEXT,
   PRIMARY KEY (user_id, user_domain, conversation_id, conversation_domain),
   FOREIGN KEY(conversation_id, conversation_domain) REFERENCES conversation(id, domain)
   -- A 4 column primary key is not a good practice but this functions as a 2 entity key
