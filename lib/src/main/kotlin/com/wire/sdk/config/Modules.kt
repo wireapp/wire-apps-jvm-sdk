@@ -72,8 +72,12 @@ private val logger = LoggerFactory.getLogger(object {}::class.java.`package`.nam
 val sdkModule =
     module {
         single<SqlDriver> {
+            val dbUrl: String = getProperty("database-jdbc-url")
+            logger.info("Database URL: $dbUrl")
+            logger.info("Schema version: ${AppsSdkDatabase.Schema.version}")
+
             val driver: SqlDriver = JdbcSqliteDriver(
-                url = getProperty("database-jdbc-url"),
+                url = dbUrl,
                 schema = AppsSdkDatabase.Schema
             )
             driver
