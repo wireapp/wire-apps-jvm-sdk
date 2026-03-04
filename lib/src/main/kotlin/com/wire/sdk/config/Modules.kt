@@ -74,9 +74,10 @@ val sdkModule =
     module {
         single<SqlDriver> {
             val dbUrl: String = getProperty("database-jdbc-url")
+            logger.info("### Database URL: $dbUrl")
             val driver: SqlDriver = JdbcSqliteDriver(url = dbUrl)
 
-            val versionBefore = driver.executeQuery<Long>(
+            val currentVersion = driver.executeQuery<Long>(
                 identifier = null,
                 sql = "PRAGMA user_version",
                 mapper = { cursor ->
@@ -86,14 +87,24 @@ val sdkModule =
                 parameters = 0
             ).value
 
-            println("### DB version BEFORE migrate: $versionBefore")
-            println("### Schema version: ${AppsSdkDatabase.Schema.version}")
+            logger.info("### DB version BEFORE migrate: $currentVersion")
+            logger.info("### Schema version: ${AppsSdkDatabase.Schema.version}")
 
-            AppsSdkDatabase.Schema.migrate(
-                driver = driver,
-                oldVersion = versionBefore,
-                newVersion = AppsSdkDatabase.Schema.version
-            )
+            if (currentVersion < AppsSdkDatabase.Schema.version) {
+                logger.info(
+                    "### Migration needed, running migrations " +
+                        "from $currentVersion to ${AppsSdkDatabase.Schema.version}"
+                )
+                AppsSdkDatabase.Schema.migrate(
+                    driver = driver,
+                    oldVersion = currentVersion,
+                    newVersion = AppsSdkDatabase.Schema.version
+                )
+                driver.execute(null, "PRAGMA user_version = ${AppsSdkDatabase.Schema.version}", 0)
+                logger.info("### Migration completed successfully")
+            } else {
+                logger.info("### DB is up to date, no migration needed")
+            }
 
             val versionAfter = driver.executeQuery<Long>(
                 identifier = null,
@@ -105,7 +116,7 @@ val sdkModule =
                 parameters = 0
             ).value
 
-            println("### DB version AFTER migrate: $versionAfter")
+            logger.info("### DB version AFTER migrate: $versionAfter")
 
             driver
         } onClose { it?.close() }
