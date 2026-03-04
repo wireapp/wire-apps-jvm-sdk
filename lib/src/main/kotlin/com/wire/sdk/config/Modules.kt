@@ -15,6 +15,7 @@
 
 package com.wire.sdk.config
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
@@ -73,13 +74,39 @@ val sdkModule =
     module {
         single<SqlDriver> {
             val dbUrl: String = getProperty("database-jdbc-url")
-            logger.info("Database URL: $dbUrl")
-            logger.info("Schema version: ${AppsSdkDatabase.Schema.version}")
+            val driver: SqlDriver = JdbcSqliteDriver(url = dbUrl)
 
-            val driver: SqlDriver = JdbcSqliteDriver(
-                url = dbUrl,
-                schema = AppsSdkDatabase.Schema
+            val versionBefore = driver.executeQuery<Long>(
+                identifier = null,
+                sql = "PRAGMA user_version",
+                mapper = { cursor ->
+                    cursor.next()
+                    QueryResult.Value(cursor.getLong(0) ?: 0L)
+                },
+                parameters = 0
+            ).value
+
+            println("### DB version BEFORE migrate: $versionBefore")
+            println("### Schema version: ${AppsSdkDatabase.Schema.version}")
+
+            AppsSdkDatabase.Schema.migrate(
+                driver = driver,
+                oldVersion = versionBefore,
+                newVersion = AppsSdkDatabase.Schema.version
             )
+
+            val versionAfter = driver.executeQuery<Long>(
+                identifier = null,
+                sql = "PRAGMA user_version",
+                mapper = { cursor ->
+                    cursor.next()
+                    QueryResult.Value(cursor.getLong(0) ?: 0L)
+                },
+                parameters = 0
+            ).value
+
+            println("### DB version AFTER migrate: $versionAfter")
+
             driver
         } onClose { it?.close() }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
