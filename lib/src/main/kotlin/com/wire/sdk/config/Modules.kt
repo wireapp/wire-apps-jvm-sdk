@@ -72,8 +72,10 @@ private val logger = LoggerFactory.getLogger(object {}::class.java.`package`.nam
 val sdkModule =
     module {
         single<SqlDriver> {
-            val driver: SqlDriver = JdbcSqliteDriver(getProperty("database-jdbc-url"))
-            AppsSdkDatabase.Schema.create(driver)
+            val driver: SqlDriver = JdbcSqliteDriver(
+                url = getProperty("database-jdbc-url"),
+                schema = AppsSdkDatabase.Schema
+            )
             driver
         } onClose { it?.close() }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
