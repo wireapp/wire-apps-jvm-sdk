@@ -28,9 +28,9 @@ public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_USER_ID"));
-    final static String WIRE_API_TOKEN = "myApiToken";
-    final static String WIRE_API_HOST = "https://staging-nginz-https.zinfra.io";
+    final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID"));
+    final static String WIRE_API_TOKEN = System.getenv("WIRE_SDK_API_TOKEN");
+    final static String WIRE_API_HOST = System.getenv("WIRE_SDK_API_HOST");
 
     public static void main(String[] args) {
         new Main().initApp();
@@ -50,11 +50,11 @@ public class Main {
         Arrays.fill(secureKey, (byte) 1);
 
         return new WireAppSdk(
-                MY_APPLICATION_ID,
-                WIRE_API_TOKEN,
-                WIRE_API_HOST,
-                secureKey,
-                new CustomWireEventsHandler()
+            MY_APPLICATION_ID,
+            WIRE_API_TOKEN,
+            WIRE_API_HOST,
+            secureKey,
+            new CustomWireEventsHandler()
         );
     }
 
@@ -70,5 +70,4 @@ public class Main {
             // Optionally implement custom reconnection logic, alerting, or fallback behavior here
         }
     }
-
 }

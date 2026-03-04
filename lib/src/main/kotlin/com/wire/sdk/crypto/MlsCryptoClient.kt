@@ -28,6 +28,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.Base64
+import java.util.UUID
 
 /**
  * Wrapper client on top of the client provided by the Core-Crypto library,
@@ -278,10 +279,10 @@ internal class MlsCryptoClient private constructor(
         private const val KEYSTORE_NAME = "keystore"
 
         suspend fun create(
-            userId: String,
+            appId: UUID,
             ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
         ): MlsCryptoClient {
-            val clientDirectoryPath = "storage/cryptography/$userId"
+            val clientDirectoryPath = "storage/cryptography/$appId"
             val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
             val ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
 
@@ -289,9 +290,7 @@ internal class MlsCryptoClient private constructor(
 
             val coreCryptoClient = CoreCrypto.invoke(
                 keystore = keystorePath,
-                databaseKey = IsolatedKoinContext.getCryptographyStorageKey()
-                    ?.let { DatabaseKey(it) }
-                    ?: throw WireException.InvalidParameter("Cryptography password missing")
+                databaseKey = DatabaseKey(IsolatedKoinContext.getCryptographyStorageKey())
             )
 
             return MlsCryptoClient(

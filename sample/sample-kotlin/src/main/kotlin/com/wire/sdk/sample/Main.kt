@@ -41,9 +41,9 @@ fun main() {
     val secureKey = ByteArray(32) { 1 }
 
     val wireAppSdk = WireAppSdk(
-        applicationId = UUID.fromString(System.getenv("WIRE_SDK_USER_ID")),
-        apiToken = "myApiToken",
-        apiHost = "https://staging-nginz-https.zinfra.io",
+        applicationId = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID")),
+        apiToken = System.getenv("WIRE_SDK_API_TOKEN"),
+        apiHost = System.getenv("WIRE_SDK_API_HOST"),
         cryptographyStorageKey = secureKey,
         wireEventsHandler = SampleEventsHandler(),
     )
@@ -60,12 +60,13 @@ fun main() {
     applicationManager.getStoredConversations().forEach {
         logger.info("Conversation: $it")
     }
+    val backendConfig = applicationManager.getBackendConfiguration()
     val selfUser = QualifiedId(
-        id = UUID.fromString("2afce87f-3195-4c51-9e7c-3b01faf13ac5"),
-        domain = "staging.zinfra.io"
+        id = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID")),
+        domain = backendConfig.domain
     )
     logger.info(applicationManager.getUser(selfUser).toString())
-    logger.info("Wire backend domain: ${applicationManager.getBackendConfiguration().domain}")
+    logger.info("Wire backend domain: ${backendConfig.domain}")
 
     // Use wireAppSdk.stopListening() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

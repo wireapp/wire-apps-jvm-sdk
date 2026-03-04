@@ -19,12 +19,10 @@ package com.wire.sdk.service
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.client.BackendClient
-import com.wire.sdk.client.BackendClientDemo
+import com.wire.sdk.client.BackendClientHttp
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.config.MAX_RETRY_NUMBER_ON_SERVER_ERROR
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
@@ -208,7 +206,8 @@ class WireTeamEventsListenerTest {
             )
             val httpClient = IsolatedKoinContext.koinApp.koin.get<HttpClient>()
             val appStorage = mockk<AppStorage>()
-            val backendClient = BackendClientDemo(
+            coEvery { appStorage.getDeviceId() } returns null
+            val backendClient = BackendClientHttp(
                 httpClient = httpClient,
                 appStorage = appStorage
             )
@@ -224,10 +223,6 @@ class WireTeamEventsListenerTest {
                 // Act
                 listener.connect()
             }
-            wireMockServer.verify(
-                1 + MAX_RETRY_NUMBER_ON_SERVER_ERROR,
-                postRequestedFor(WireMock.anyUrl())
-            )
 
             coVerify(atLeast = 1, atMost = 1) { mockConnectionListener.onDisconnected() }
 

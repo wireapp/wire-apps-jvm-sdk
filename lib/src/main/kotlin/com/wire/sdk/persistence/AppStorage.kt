@@ -17,6 +17,7 @@ package com.wire.sdk.persistence
 
 import com.wire.sdk.model.AppData
 
+@Suppress("TooManyFunctions")
 interface AppStorage {
     /**
      * Save (UPSERT) a key-value pair representing a property.
@@ -30,9 +31,17 @@ interface AppStorage {
 
     fun getByKey(key: String): AppData
 
+    fun delete(key: String)
+
     fun getDeviceId(): String?
 
     fun saveDeviceId(deviceId: String)
+
+    fun getBackendCookie(): String?
+
+    fun saveBackendCookie(cookie: String)
+
+    fun deleteBackendCookie()
 
     fun getShouldRejoinConversations(): Boolean?
 

@@ -17,3 +17,7 @@ insert:
 INSERT INTO app(key, value)
 VALUES (?, ?)
 ON CONFLICT(key) DO UPDATE SET value=excluded.value;
+
+delete:
+DELETE FROM app
+WHERE key = ?;

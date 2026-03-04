@@ -25,8 +25,8 @@ import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.CryptoClientId
@@ -380,7 +380,7 @@ class WireApplicationManagerTest {
             // Assert
             assertEquals(originalMessage.id, resultId)
             // The captured message should be the original one (no override)
-            assertEquals(originalMessage.id, (captured.captured as WireMessage).id)
+            assertEquals(originalMessage.id, (captured.captured).id)
             assertEquals(
                 originalMessage.expiresAfterMillis,
                 (captured.captured as WireMessage.Text).expiresAfterMillis
@@ -511,7 +511,7 @@ class WireApplicationManagerTest {
 
     private suspend fun generateUser2Packages(): List<KeyPackage> =
         MlsCryptoClient.create(
-            userId = USER_2.id.toString(),
+            appId = USER_2.id,
             ciphersuiteCode = 1
         ).use { cryptoClientUser2 ->
             cryptoClientUser2.initializeMlsClient(

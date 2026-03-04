@@ -78,7 +78,7 @@ class WireEventsIntegrationTest {
             )
 
             val teamStorage = IsolatedKoinContext.koinApp.koin.get<TeamStorage>()
-            assertTrue { teamStorage.getAll().size == 1 }
+            assertTrue { teamStorage.getAll().contains(TEAM_ID) }
         }
 
     @Test

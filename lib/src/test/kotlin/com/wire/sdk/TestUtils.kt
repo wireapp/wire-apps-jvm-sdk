@@ -88,7 +88,7 @@ object TestUtils {
         )
         wireMockServer.stubFor(
             WireMock.post(WireMock.urlPathEqualTo("/$V/access"))
-                .withQueryParam("client_id", WireMock.matching(".*")).willReturn(
+                .willReturn(
                     WireMock.okJson(
                         """
                         {

@@ -19,8 +19,10 @@ package com.wire.sdk.exception
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.ok
+import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.wire.sdk.TestUtils
 import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.config.MAX_RETRY_NUMBER_ON_SERVER_ERROR
 import com.wire.sdk.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
@@ -28,6 +30,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.contentType
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -118,6 +121,44 @@ class HttpClientExceptionTest {
             }
         }
     }
+
+    @Test
+    fun whenServerReturns503ThenExponentialBackoffRetries() =
+        runTest {
+            val stubPath = "/${TestUtils.V}/test-backoff"
+
+            wireMockServer.stubFor(
+                WireMock.post(WireMock.urlPathEqualTo(stubPath))
+                    .willReturn(
+                        WireMock.aResponse()
+                            .withStatus(503)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(
+                                """
+                                {
+                                  "code": 503,
+                                  "label": "server-error",
+                                  "message": "Service Unavailable"
+                                }
+                                """.trimIndent()
+                            )
+                    )
+            )
+            val httpClient =
+                IsolatedKoinContext.koinApp.koin.get<HttpClient>()
+
+            assertThrows<WireException.ServerError> {
+                httpClient.post(stubPath) {
+                    setBody("test".toByteArray())
+                    contentType(Mls)
+                }
+            }
+
+            wireMockServer.verify(
+                1 + MAX_RETRY_NUMBER_ON_SERVER_ERROR,
+                postRequestedFor(WireMock.urlPathEqualTo(stubPath))
+            )
+        }
 
     companion object {
         private val wireMockServer = WireMockServer(8086)

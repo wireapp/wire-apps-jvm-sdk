@@ -19,12 +19,18 @@ package com.wire.sdk.persistence
 import com.wire.sdk.App
 import com.wire.sdk.AppQueries
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.AppData
+import com.wire.sdk.utils.AESDecrypt
+import com.wire.sdk.utils.AESEncrypt
+import java.util.Base64
 
 private const val DEVICE_ID = "device_id"
+private const val BACKEND_COOKIE = "backend_cookie"
 private const val SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
 private const val LAST_NOTIFICATION_ID = "last_notification_id"
 
+@Suppress("TooManyFunctions")
 class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     private val appQueries: AppQueries = db.appQueries
 
@@ -38,6 +44,10 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
         )
     }
 
+    override fun delete(key: String) {
+        appQueries.delete(key)
+    }
+
     override fun getAll(): List<AppData> =
         appQueries.selectAll().executeAsList().map { appMapper(it) }
 
@@ -47,6 +57,21 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     override fun getDeviceId(): String? = runCatching { getByKey(DEVICE_ID).value }.getOrNull()
 
     override fun saveDeviceId(deviceId: String) = save(DEVICE_ID, deviceId)
+
+    override fun getBackendCookie(): String? =
+        runCatching {
+            val encryptedBytes = Base64.getDecoder().decode(getByKey(BACKEND_COOKIE).value)
+            val key = IsolatedKoinContext.getCryptographyStorageKey()
+            AESDecrypt.decryptData(encryptedBytes, key).toString(Charsets.UTF_8)
+        }.getOrNull()
+
+    override fun saveBackendCookie(cookie: String) {
+        val key = IsolatedKoinContext.getCryptographyStorageKey()
+        val encryptedBytes = AESEncrypt.encryptData(cookie.toByteArray(Charsets.UTF_8), key)
+        save(BACKEND_COOKIE, Base64.getEncoder().encodeToString(encryptedBytes))
+    }
+
+    override fun deleteBackendCookie() = delete(BACKEND_COOKIE)
 
     override fun getShouldRejoinConversations(): Boolean? =
         runCatching {

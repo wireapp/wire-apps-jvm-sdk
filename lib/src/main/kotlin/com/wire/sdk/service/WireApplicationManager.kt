@@ -30,7 +30,6 @@ import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
-import com.wire.sdk.model.http.AppDataResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.model.protobuf.ProtobufSerializer
@@ -89,23 +88,6 @@ class WireApplicationManager internal constructor(
     @Throws(WireException::class)
     suspend fun getBackendConfigurationSuspending(): ApiVersionResponse =
         backendClient.getAvailableApiVersions()
-
-    /**
-     * Get the basic Wire Application data from the connected Wire backend.
-     * Blocking method for Java interoperability
-     */
-    @Throws(WireException::class)
-    fun getApplicationData(): AppDataResponse =
-        runBlocking {
-            getApplicationDataSuspending()
-        }
-
-    /**
-     * Get the basic Wire Application data from the connected Wire backend.
-     * Suspending method for Kotlin consumers
-     */
-    @Throws(WireException::class)
-    suspend fun getApplicationDataSuspending(): AppDataResponse = backendClient.getApplicationData()
 
     /**
      * Sends a message to a conversation by getting the mlsGroupId and encrypting the message.

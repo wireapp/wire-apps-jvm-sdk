@@ -352,7 +352,6 @@ internal class ConversationService internal constructor(
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun claimKeyPackages(
         userIds: List<QualifiedId>,
         cipherSuiteCode: Int
@@ -372,7 +371,7 @@ internal class ConversationService internal constructor(
                     successUsers.add(user)
                     claimedKeyPackages.addAll(result.keyPackages)
                 }
-            } catch (exception: Exception) {
+            } catch (exception: WireException) {
                 // Ignoring when claiming key packages fails for a user
                 // as for now there is no retry
                 failedUsers.add(user)
@@ -747,7 +746,7 @@ internal class ConversationService internal constructor(
             logger.debug("Mapping {} clients for User: {}", clients.size, user.id)
             clients.map { client ->
                 CryptoClientId.create(
-                    userId = user.id.toString(),
+                    appId = user.id,
                     deviceId = client.id,
                     userDomain = user.domain
                 )

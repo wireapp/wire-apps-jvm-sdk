@@ -35,9 +35,9 @@ class MlsCryptoClientTest {
     @Test
     fun whenCryptoStoragePasswordIsSet_thenClientWorks() {
         runBlocking {
-            val userId = UUID.randomUUID().toString()
+            val userId = UUID.randomUUID()
             val cryptoClient = MlsCryptoClient.create(
-                userId = userId,
+                appId = userId,
                 ciphersuiteCode = 1
             )
             cryptoClient.initializeMlsClient(
@@ -54,11 +54,11 @@ class MlsCryptoClientTest {
     @Test
     fun testMlsClientFailOnDifferentPassword() {
         runBlocking {
-            val userId = UUID.randomUUID().toString()
+            val userId = UUID.randomUUID()
             val ciphersuiteCode = 1
 
             val cryptoClient = MlsCryptoClient.create(
-                userId = userId,
+                appId = userId,
                 ciphersuiteCode = ciphersuiteCode
             )
             cryptoClient.close()
@@ -68,7 +68,7 @@ class MlsCryptoClientTest {
             )
             assertThrows<CoreCryptoException.Mls> {
                 MlsCryptoClient.create(
-                    userId = userId,
+                    appId = userId,
                     ciphersuiteCode = ciphersuiteCode
                 )
             }
@@ -83,9 +83,9 @@ class MlsCryptoClientTest {
             val groupInfo = inputStream.readAllBytes().toGroupInfo()
 
             // Create a new client and join the conversation
-            val userId = UUID.randomUUID().toString()
+            val userId = UUID.randomUUID()
             val mlsClient = MlsCryptoClient.create(
-                userId = userId,
+                appId = userId,
                 ciphersuiteCode = 1
             )
             mlsClient.initializeMlsClient(
@@ -126,9 +126,9 @@ class MlsCryptoClientTest {
     fun testMlsClientsEncryptAndDecrypt() {
         runBlocking {
             // Create two clients, Bob and Alice
-            val bobUserId = UUID.randomUUID().toString()
+            val bobUserId = UUID.randomUUID()
             val bobClient = MlsCryptoClient.create(
-                userId = bobUserId,
+                appId = bobUserId,
                 ciphersuiteCode = 1
             )
             bobClient.initializeMlsClient(
@@ -138,9 +138,9 @@ class MlsCryptoClientTest {
                 mlsTransport = testMlsTransport
             )
 
-            val aliceUserId = UUID.randomUUID().toString()
+            val aliceUserId = UUID.randomUUID()
             val aliceClient = MlsCryptoClient.create(
-                userId = aliceUserId,
+                appId = aliceUserId,
                 ciphersuiteCode = 1
             )
             aliceClient.initializeMlsClient(

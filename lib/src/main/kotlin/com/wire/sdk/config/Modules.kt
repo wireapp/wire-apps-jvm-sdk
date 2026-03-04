@@ -19,10 +19,11 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
-import com.wire.sdk.client.BackendClientDemo
-import com.wire.sdk.crypto.MlsCryptoClient
+import com.wire.sdk.client.BackendClientHttp
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.MlsTransportImpl
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.exception.mapToWireException
@@ -51,11 +52,14 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
-import io.ktor.client.plugins.UserAgent
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.request.header
+import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
@@ -79,12 +83,13 @@ val sdkModule =
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
-        single<BackendClient> { BackendClientDemo(get(), get()) }
+        single<BackendClient> { BackendClientHttp(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get(), get()) } onClose { it?.close() }
+        single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {
-            createHttpClient(IsolatedKoinContext.getApiHost())
+            createHttpClient(IsolatedKoinContext.getApiHost(), get())
         } onClose { it?.close() }
         single<CryptoClient> {
             runBlocking {
@@ -103,7 +108,10 @@ val sdkModule =
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
 
 @OptIn(ExperimentalLogbookKtorApi::class)
-internal fun createHttpClient(apiHost: String?): HttpClient {
+internal fun createHttpClient(
+    apiHost: String,
+    authTokenManager: AuthTokenManager
+): HttpClient {
     return HttpClient(CIO) {
         expectSuccess = true
         HttpResponseValidator {
@@ -127,19 +135,32 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
             pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
         }
 
-        install(UserAgent) {
-            agent = "Wire JVM SDK - ${Versions.SDK_VERSION}"
-        }
-
+        // Add headers for client and version
         install(HttpCache)
         install(HttpRequestRetry) {
             retryOnServerErrors(maxRetries = MAX_RETRY_NUMBER_ON_SERVER_ERROR)
             exponentialDelay()
         }
 
-        apiHost?.let {
-            defaultRequest {
-                url(apiHost)
+        defaultRequest {
+            url(apiHost)
+            header("Wire-Client", "SDK Kotlin")
+            header("Wire-Client-Version", Versions.SDK_VERSION)
+        }
+
+        install(Auth) {
+            bearer {
+                sendWithoutRequest { request ->
+                    val publicPath = listOf("/access", "/api-version")
+
+                    publicPath.none {
+                        request.url.encodedPath.endsWith(it)
+                    }
+                }
+
+                refreshTokens {
+                    authTokenManager.refreshAccessToken(client)
+                }
             }
         }
     }
@@ -165,12 +186,10 @@ internal suspend fun getOrInitCryptoClient(
     IsolatedKoinContext.setBackendDomain(backendDomain)
     logger.info("Retrieved Wire backend domain: $backendDomain")
 
-    val userId = System.getenv("WIRE_SDK_USER_ID")
-
-    requireNotNull(userId) { "WIRE_SDK_USER_ID environment variable must be set" }
+    val appId = IsolatedKoinContext.getApplicationId()
 
     val cryptoClient = MlsCryptoClient.create(
-        userId = userId,
+        appId = appId,
         ciphersuiteCode = mlsCipherSuiteCode
     )
 
@@ -178,7 +197,7 @@ internal suspend fun getOrInitCryptoClient(
     if (storedDeviceId != null) {
         logger.info("Loading MLS Client for: ${storedDeviceId.obfuscateClientId()}")
         val cryptoClientId = CryptoClientId.create(
-            userId = userId,
+            appId = appId,
             deviceId = storedDeviceId,
             userDomain = backendDomain
         )
@@ -189,9 +208,6 @@ internal suspend fun getOrInitCryptoClient(
         )
         appStorage.setShouldRejoinConversations(should = false)
     } else {
-        val userPassword = System.getenv("WIRE_SDK_PASSWORD")
-        requireNotNull(userPassword)
-
         // App doesn't have a client, create one
         logger.info("Initializing Proteus Client")
         cryptoClient.initializeProteusClient()
@@ -201,7 +217,6 @@ internal suspend fun getOrInitCryptoClient(
         val clientResponse = try {
             backendClient.registerClient(
                 registerClientRequest = RegisterClientRequest(
-                    password = userPassword,
                     lastKey = lastKey.toApi(),
                     preKeys = preKeys.map { it.toApi() },
                     capabilities = RegisterClientRequest.DEFAULT_CAPABILITIES
@@ -216,7 +231,7 @@ internal suspend fun getOrInitCryptoClient(
 
         val deviceId = clientResponse.id
         val cryptoClientId = CryptoClientId.create(
-            userId = userId,
+            appId = appId,
             deviceId = deviceId,
             userDomain = backendDomain
         )
@@ -224,7 +239,7 @@ internal suspend fun getOrInitCryptoClient(
 
         logger.info(
             "Initializing MLS Client for {} on device: {}",
-            userId.obfuscateId(),
+            appId.obfuscateId(),
             deviceId.obfuscateClientId()
         )
         cryptoClient.initializeMlsClient(
