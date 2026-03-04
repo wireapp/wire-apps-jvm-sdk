@@ -34,6 +34,15 @@ internal interface ConversationStorage {
         members: List<ConversationMember>
     )
 
+    /**
+     * Update the message timer value of the conversation record.
+     * This is important for ephemeral (self-deleting) messages
+     */
+    fun updateMessageTimer(
+        conversationId: QualifiedId,
+        messageTimer: Long?
+    )
+
     fun getAll(): List<ConversationEntity>
 
     fun getAllMembers(): List<ConversationMember>

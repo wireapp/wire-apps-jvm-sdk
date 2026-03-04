@@ -141,7 +141,9 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         wireMessage.remoteData?.let { remoteData ->
             val asset = manager.downloadAssetSuspending(remoteData)
-            val fileName = wireMessage.name ?: "unknown-${UUID.randomUUID()}"
+            val fileName = wireMessage.name
+                .takeUnless { it.isNullOrBlank() }
+                ?: "unknown-${UUID.randomUUID()}"
             val outputDir = File("build/downloaded_assets").apply { mkdirs() }
             val outputFile = File(outputDir, fileName)
             outputFile.writeBytes(asset.value)
@@ -177,14 +179,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     override suspend fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
-        logger.info("Received Message Deletion event: $wireMessage")
-
-        val message = WireMessage.Text.create(
-            conversationId = wireMessage.conversationId,
-            text = "Deleted Messaged with ID : ${wireMessage.messageId}"
-        )
-
-        manager.sendMessageSuspending(message = message)
+        super.onMessageDeleted(wireMessage)
     }
 
     private fun getSampleAudioMetadata(): AssetMetadata.Audio {
