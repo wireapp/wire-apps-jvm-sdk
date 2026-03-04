@@ -74,7 +74,7 @@ val sdkModule =
     module {
         single<SqlDriver> {
             val dbUrl: String = getProperty("database-jdbc-url")
-            logger.info("### Database URL: $dbUrl")
+            println("### Database URL: $dbUrl")
             val driver: SqlDriver = JdbcSqliteDriver(url = dbUrl)
 
             val currentVersion = driver.executeQuery<Long>(
@@ -87,23 +87,20 @@ val sdkModule =
                 parameters = 0
             ).value
 
-            logger.info("### DB version BEFORE migrate: $currentVersion")
-            logger.info("### Schema version: ${AppsSdkDatabase.Schema.version}")
+            println("### DB version BEFORE migrate: $currentVersion")
+            println("### Schema version: ${AppsSdkDatabase.Schema.version}")
 
             if (currentVersion < AppsSdkDatabase.Schema.version) {
-                logger.info(
-                    "### Migration needed, running migrations " +
-                        "from $currentVersion to ${AppsSdkDatabase.Schema.version}"
-                )
+                println("### Migration needed, running migrations from $currentVersion to ${AppsSdkDatabase.Schema.version}")
                 AppsSdkDatabase.Schema.migrate(
                     driver = driver,
                     oldVersion = currentVersion,
                     newVersion = AppsSdkDatabase.Schema.version
                 )
                 driver.execute(null, "PRAGMA user_version = ${AppsSdkDatabase.Schema.version}", 0)
-                logger.info("### Migration completed successfully")
+                println("### Migration completed successfully")
             } else {
-                logger.info("### DB is up to date, no migration needed")
+                println("### DB is up to date, no migration needed")
             }
 
             val versionAfter = driver.executeQuery<Long>(
@@ -116,7 +113,7 @@ val sdkModule =
                 parameters = 0
             ).value
 
-            logger.info("### DB version AFTER migrate: $versionAfter")
+            println("### DB version AFTER migrate: $versionAfter")
 
             driver
         } onClose { it?.close() }
