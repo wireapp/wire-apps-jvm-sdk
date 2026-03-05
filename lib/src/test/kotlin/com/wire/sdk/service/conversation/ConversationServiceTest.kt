@@ -34,11 +34,15 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsFeatureConfigResponse
 import com.wire.sdk.model.http.MlsFeatureResponse
+import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
+import com.wire.sdk.model.http.conversation.ConversationMemberOther
 import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.KeyPackage
+import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
+import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
@@ -133,10 +137,14 @@ class ConversationServiceTest {
             val cryptoClient = mockk<CryptoClient> {
                 coEvery { conversationExists(CONVERSATION_MLS_GROUP_ID) } returns true
             }
+            val conversationStorage = mockk<ConversationStorage> {
+                every { save(any()) } returns Unit
+                every { saveMembers(any(), any()) } returns Unit
+            }
 
             val service = ConversationService(
                 backendClient = backendClient,
-                conversationStorage = mockk(),
+                conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
             )
@@ -179,10 +187,14 @@ class ConversationServiceTest {
                     joinMlsConversationRequest(any())
                 } returns CONVERSATION_MLS_GROUP_ID
             }
+            val conversationStorage = mockk<ConversationStorage> {
+                every { save(any()) } returns Unit
+                every { saveMembers(any(), any()) } returns Unit
+            }
 
             val service = ConversationService(
                 backendClient = backendClient,
-                conversationStorage = mockk(),
+                conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
             )
@@ -1213,6 +1225,168 @@ class ConversationServiceTest {
             }
         }
 
+    @Test
+    fun whenCreatingOneToOneConversationThenConversationIsSavedToDb() =
+        runTest {
+            val claimResult = ClaimedKeyPackageList(
+                keyPackages = listOf(createDummyKeyPackage(CONVERSATION_MEMBER_1))
+            )
+            val conversationStorage = mockk<ConversationStorage> {
+                every { save(any()) } returns Unit
+                every { saveMembers(any(), any()) } returns Unit
+            }
+            val backendClient = mockk<BackendClient> {
+                coEvery { getOneToOneConversation(CONVERSATION_MEMBER_1) } returns
+                    ONE_TO_ONE_RESPONSE
+                coEvery { getApplicationFeatures() } returns FEATURES_RESPONSE
+                coEvery { claimKeyPackages(any(), any()) } returns claimResult
+            }
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery { createConversation(any(), any()) } returns Unit
+                coEvery { addMemberToMlsConversation(any(), any()) } returns Unit
+            }
+
+            val service = ConversationService(
+                backendClient = backendClient,
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = cryptoClient
+            )
+
+            service.createOneToOne(CONVERSATION_MEMBER_1)
+
+            verify(exactly = 1) {
+                conversationStorage.save(any())
+                conversationStorage.saveMembers(ONE_TO_ONE_CONVERSATION_ID, any())
+            }
+        }
+
+    @Test
+    fun whenEstablishingConversationsAndGroupConversationIsRejoinedThenSavedToDb() =
+        runTest {
+            val appStorage = mockk<AppStorage> {
+                every { getShouldRejoinConversations() } returns true
+                every { setShouldRejoinConversations(any()) } returns Unit
+            }
+            val backendClient = mockk<BackendClient> {
+                coEvery { getConversationIds() } returns listOf(CONVERSATION_ID)
+                coEvery {
+                    getConversationsById(listOf(CONVERSATION_ID))
+                } returns listOf(CONVERSATION_RESPONSE)
+                coEvery {
+                    getConversationGroupInfo(conversationId = CONVERSATION_ID)
+                } returns CONVERSATION_MLS_GROUP_ID.copyBytes()
+            }
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery { conversationExists(CONVERSATION_MLS_GROUP_ID) } returns false
+                coEvery { joinMlsConversationRequest(any()) } returns CONVERSATION_MLS_GROUP_ID
+            }
+            val conversationStorage = mockk<ConversationStorage> {
+                every { save(any()) } returns Unit
+                every { saveMembers(any(), any()) } returns Unit
+            }
+
+            val service = ConversationService(
+                backendClient = backendClient,
+                conversationStorage = conversationStorage,
+                appStorage = appStorage,
+                cryptoClient = cryptoClient
+            )
+
+            service.establishOrRejoinConversations()
+
+            verify(exactly = 0) {
+                conversationStorage.save(any())
+                conversationStorage.saveMembers(CONVERSATION_ID, any())
+            }
+
+            coVerify(exactly = 1) {
+                cryptoClient.joinMlsConversationRequest(any())
+            }
+        }
+
+    @Test
+    fun whenEstablishingConversationsAndSelfConversationIsNotSavedToDb() =
+        runTest {
+            val selfConversationResponse = CONVERSATION_RESPONSE.copy(
+                type = ConversationResponse.Type.SELF
+            )
+            val appStorage = mockk<AppStorage> {
+                every { getShouldRejoinConversations() } returns true
+                every { setShouldRejoinConversations(any()) } returns Unit
+            }
+            val backendClient = mockk<BackendClient> {
+                coEvery { getConversationIds() } returns listOf(CONVERSATION_ID)
+                coEvery {
+                    getConversationsById(listOf(CONVERSATION_ID))
+                } returns listOf(selfConversationResponse)
+            }
+            // Conversation already exists locally — establishOrJoinMlsConversation returns early.
+            // The save guard for SELF type still applies regardless.
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery { conversationExists(CONVERSATION_MLS_GROUP_ID) } returns true
+            }
+            val conversationStorage = mockk<ConversationStorage>()
+
+            val service = ConversationService(
+                backendClient = backendClient,
+                conversationStorage = conversationStorage,
+                appStorage = appStorage,
+                cryptoClient = cryptoClient
+            )
+
+            service.establishOrRejoinConversations()
+
+            verify(exactly = 0) {
+                conversationStorage.save(any())
+                conversationStorage.saveMembers(any(), any())
+            }
+        }
+
+    @Test
+    fun whenSavingOneToOneConversationThenNameIsOtherMemberIdWithoutBackendCall() {
+        val otherMember = CONVERSATION_MEMBER_1
+        val oneToOneConversation = ConversationResponse(
+            id = CONVERSATION_ID,
+            teamId = TEAM_ID.value,
+            groupId = CONVERSATION_MLS_GROUP_ID_BASE64,
+            name = null,
+            epoch = 1L,
+            members = ConversationMembers(
+                others = listOf(
+                    ConversationMemberOther(
+                        id = otherMember,
+                        conversationRole = ConversationRole.MEMBER
+                    )
+                ),
+                self = TestUtils.dummyConversationMemberSelf(ConversationRole.MEMBER)
+            ),
+            type = ConversationResponse.Type.ONE_TO_ONE,
+            protocol = CryptoProtocol.MLS
+        )
+        val conversationStorage = mockk<ConversationStorage> {
+            every { save(any()) } returns Unit
+            every { saveMembers(any(), any()) } returns Unit
+        }
+        val backendClient = mockk<BackendClient>()
+
+        val service = ConversationService(
+            backendClient = backendClient,
+            conversationStorage = conversationStorage,
+            appStorage = mockk(),
+            cryptoClient = mockk()
+        )
+
+        val (conversationEntity, _) = service.saveConversationWithMembers(
+            qualifiedConversation = CONVERSATION_ID,
+            conversationResponse = oneToOneConversation
+        )
+
+        assertEquals("${otherMember.id}@${otherMember.domain}", conversationEntity.name)
+        // Verify no backend call was made to look up user data
+        coVerify(exactly = 0) { backendClient.getUserData(any()) }
+    }
+
     private companion object {
         const val BACKEND_DOMAIN = "wire.com"
         val CONVERSATION_ID =
@@ -1236,6 +1410,37 @@ class ConversationServiceTest {
             ),
             type = ConversationResponse.Type.GROUP,
             protocol = CryptoProtocol.MLS
+        )
+
+        // Cipher suite code 1 → MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519 → uses ed25519 key
+        private const val DUMMY_ED25519_PUBLIC_KEY =
+            "3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw="
+        val ONE_TO_ONE_CONVERSATION_ID = QualifiedId(UUID.randomUUID(), BACKEND_DOMAIN)
+        val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID =
+            ConversationId(UUID.randomUUID().toString().toByteArray())
+        val ONE_TO_ONE_RESPONSE = OneToOneConversationResponse(
+            publicKeys = MlsPublicKeysResponse(
+                removal = MlsPublicKeys(ed25519 = DUMMY_ED25519_PUBLIC_KEY)
+            ),
+            conversation = ConversationResponse(
+                id = ONE_TO_ONE_CONVERSATION_ID,
+                teamId = TEAM_ID.value,
+                groupId = Base64.getEncoder()
+                    .encodeToString(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID.copyBytes()),
+                name = null,
+                epoch = 0L,
+                members = ConversationMembers(
+                    others = listOf(
+                        ConversationMemberOther(
+                            id = QualifiedId(UUID.randomUUID(), BACKEND_DOMAIN),
+                            conversationRole = ConversationRole.MEMBER
+                        )
+                    ),
+                    self = TestUtils.dummyConversationMemberSelf(ConversationRole.MEMBER)
+                ),
+                type = ConversationResponse.Type.ONE_TO_ONE,
+                protocol = CryptoProtocol.MLS
+            )
         )
         val FEATURES_RESPONSE = FeaturesResponse(
             mlsFeatureResponse = MlsFeatureResponse(

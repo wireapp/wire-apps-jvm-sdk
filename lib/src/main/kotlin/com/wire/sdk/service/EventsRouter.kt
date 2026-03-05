@@ -385,7 +385,7 @@ internal class EventsRouter internal constructor(
      */
     private fun extractChannelKey(event: EventContentDTO): String {
         return if (event is EventContentDTO.Conversation) {
-            "${event.qualifiedConversation.id}@${event.qualifiedConversation.domain}"
+            event.qualifiedConversation.serialize()
         } else {
             NON_CONVERSATION_EVENTS
         }
