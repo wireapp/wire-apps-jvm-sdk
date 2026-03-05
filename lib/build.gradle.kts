@@ -103,6 +103,7 @@ sqldelight {
         register("AppsSdkDatabase") {
             packageName.set("com.wire.sdk")
             dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.2.1")
+            schemaOutputDirectory.set(file("src/main/sqldelight/migrations"))
         }
     }
 }

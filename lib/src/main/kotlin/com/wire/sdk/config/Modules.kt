@@ -15,6 +15,7 @@
 
 package com.wire.sdk.config
 
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
@@ -76,9 +77,8 @@ private val logger = LoggerFactory.getLogger(object {}::class.java.`package`.nam
 val sdkModule =
     module {
         single<SqlDriver> {
-            val driver: SqlDriver = JdbcSqliteDriver(getProperty("database-jdbc-url"))
-            AppsSdkDatabase.Schema.create(driver)
-            driver
+            val dbUrl: String = getProperty("database-jdbc-url")
+            initializeDatabase(dbUrl)
         } onClose { it?.close() }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
@@ -164,6 +164,68 @@ internal fun createHttpClient(
             }
         }
     }
+}
+
+/**
+ * Creates a SQLite driver and runs any pending schema migrations.
+ *
+ * Reads the current `PRAGMA user_version` from the existing database and compares it
+ * against the latest schema version. If the database is behind, runs all missing
+ * migrations in order via [AppsSdkDatabase.Schema.migrate] and updates `user_version`
+ * afterwards.
+ *
+ * This approach handles three cases safely:
+ * - Fresh install: runs all .sqm files to create the latest schema from scratch.
+ * - Existing user: skips already-existing tables (CREATE TABLE IF NOT EXISTS) and applies
+ *   only missing migrations.
+ * - Already up to date: detects matching versions and does nothing.
+ */
+private fun initializeDatabase(dbUrl: String): SqlDriver {
+    logger.info("Database URL: {}", dbUrl)
+    val driver: SqlDriver = JdbcSqliteDriver(url = dbUrl)
+
+    val currentVersion = driver.executeQuery<Long>(
+        identifier = null,
+        sql = "PRAGMA user_version",
+        mapper = { cursor ->
+            cursor.next()
+            QueryResult.Value(cursor.getLong(0) ?: 0L)
+        },
+        parameters = 0
+    ).value
+
+    logger.info("Database version BEFORE migrate: {}", currentVersion)
+    logger.info("Database Schema version: {}", AppsSdkDatabase.Schema.version)
+
+    if (currentVersion < AppsSdkDatabase.Schema.version) {
+        logger.info(
+            "Database Migration needed, running migrations " +
+                "from $currentVersion to ${AppsSdkDatabase.Schema.version}"
+        )
+        AppsSdkDatabase.Schema.migrate(
+            driver = driver,
+            oldVersion = currentVersion,
+            newVersion = AppsSdkDatabase.Schema.version
+        )
+        driver.execute(null, "PRAGMA user_version = ${AppsSdkDatabase.Schema.version}", 0)
+        logger.info("Database Migration completed successfully")
+    } else {
+        logger.info("Database is up to date, no migration needed")
+    }
+
+    val versionAfter = driver.executeQuery<Long>(
+        identifier = null,
+        sql = "PRAGMA user_version",
+        mapper = { cursor ->
+            cursor.next()
+            QueryResult.Value(cursor.getLong(0) ?: 0L)
+        },
+        parameters = 0
+    ).value
+
+    logger.info("Database version AFTER migrate: {}", versionAfter)
+
+    return driver
 }
 
 /**
