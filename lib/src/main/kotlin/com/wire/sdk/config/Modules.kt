@@ -74,48 +74,7 @@ val sdkModule =
     module {
         single<SqlDriver> {
             val dbUrl: String = getProperty("database-jdbc-url")
-            println("### Database URL: $dbUrl")
-            val driver: SqlDriver = JdbcSqliteDriver(url = dbUrl)
-
-            val currentVersion = driver.executeQuery<Long>(
-                identifier = null,
-                sql = "PRAGMA user_version",
-                mapper = { cursor ->
-                    cursor.next()
-                    QueryResult.Value(cursor.getLong(0) ?: 0L)
-                },
-                parameters = 0
-            ).value
-
-            println("### DB version BEFORE migrate: $currentVersion")
-            println("### Schema version: ${AppsSdkDatabase.Schema.version}")
-
-            if (currentVersion < AppsSdkDatabase.Schema.version) {
-                println("### Migration needed, running migrations from $currentVersion to ${AppsSdkDatabase.Schema.version}")
-                AppsSdkDatabase.Schema.migrate(
-                    driver = driver,
-                    oldVersion = currentVersion,
-                    newVersion = AppsSdkDatabase.Schema.version
-                )
-                driver.execute(null, "PRAGMA user_version = ${AppsSdkDatabase.Schema.version}", 0)
-                println("### Migration completed successfully")
-            } else {
-                println("### DB is up to date, no migration needed")
-            }
-
-            val versionAfter = driver.executeQuery<Long>(
-                identifier = null,
-                sql = "PRAGMA user_version",
-                mapper = { cursor ->
-                    cursor.next()
-                    QueryResult.Value(cursor.getLong(0) ?: 0L)
-                },
-                parameters = 0
-            ).value
-
-            println("### DB version AFTER migrate: $versionAfter")
-
-            driver
+            initializeDatabase(dbUrl)
         } onClose { it?.close() }
         single<TeamStorage> { TeamSqlLiteStorage(AppsSdkDatabase(get())) }
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
@@ -184,6 +143,68 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
             }
         }
     }
+}
+
+/**
+ * Creates a SQLite driver and runs any pending schema migrations.
+ *
+ * Reads the current `PRAGMA user_version` from the existing database and compares it
+ * against the latest schema version. If the database is behind, runs all missing
+ * migrations in order via [AppsSdkDatabase.Schema.migrate] and updates `user_version`
+ * afterwards.
+ *
+ * This approach handles three cases safely:
+ * - Fresh install: runs all .sqm files to create the latest schema from scratch.
+ * - Existing user: skips already-existing tables (CREATE TABLE IF NOT EXISTS) and applies
+ * only missing migrations.
+ * - Already up to date: detects matching versions and does nothing.
+ */
+private fun initializeDatabase(dbUrl: String): SqlDriver {
+    logger.info("Database URL: {}", dbUrl)
+    val driver: SqlDriver = JdbcSqliteDriver(url = dbUrl)
+
+    val currentVersion = driver.executeQuery<Long>(
+        identifier = null,
+        sql = "PRAGMA user_version",
+        mapper = { cursor ->
+            cursor.next()
+            QueryResult.Value(cursor.getLong(0) ?: 0L)
+        },
+        parameters = 0
+    ).value
+
+    logger.info("Database version BEFORE migrate: {}", currentVersion)
+    logger.info("Database Schema version: {}", AppsSdkDatabase.Schema.version)
+
+    if (currentVersion < AppsSdkDatabase.Schema.version) {
+        logger.info(
+            "Database Migration needed, running migrations " +
+                "from $currentVersion to ${AppsSdkDatabase.Schema.version}"
+        )
+        AppsSdkDatabase.Schema.migrate(
+            driver = driver,
+            oldVersion = currentVersion,
+            newVersion = AppsSdkDatabase.Schema.version
+        )
+        driver.execute(null, "PRAGMA user_version = ${AppsSdkDatabase.Schema.version}", 0)
+        logger.info("Database Migration completed successfully")
+    } else {
+        logger.info("Database is up to date, no migration needed")
+    }
+
+    val versionAfter = driver.executeQuery<Long>(
+        identifier = null,
+        sql = "PRAGMA user_version",
+        mapper = { cursor ->
+            cursor.next()
+            QueryResult.Value(cursor.getLong(0) ?: 0L)
+        },
+        parameters = 0
+    ).value
+
+    logger.info("Database version AFTER migrate: {}", versionAfter)
+
+    return driver
 }
 
 /**
