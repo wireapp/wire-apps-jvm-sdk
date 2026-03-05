@@ -156,7 +156,7 @@ internal fun createHttpClient(apiHost: String?): HttpClient {
  * This approach handles three cases safely:
  * - Fresh install: runs all .sqm files to create the latest schema from scratch.
  * - Existing user: skips already-existing tables (CREATE TABLE IF NOT EXISTS) and applies
- * only missing migrations.
+ *   only missing migrations.
  * - Already up to date: detects matching versions and does nothing.
  */
 private fun initializeDatabase(dbUrl: String): SqlDriver {
