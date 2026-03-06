@@ -385,7 +385,7 @@ internal class ConversationService internal constructor(
         val conversationName =
             if (conversationResponse.type == ConversationResponse.Type.ONE_TO_ONE) {
                 // One to One conversations don't have a name, use the other member id as name
-                conversationResponse.members.others.first().id.serialize()
+                conversationResponse.members.others.first().id.toFullString()
             } else {
                 conversationResponse.name
             }

@@ -1262,7 +1262,7 @@ class ConversationServiceTest {
         }
 
     @Test
-    fun whenEstablishingConversationsAndGroupConversationIsRejoinedThenSavedToDb() =
+    fun whenEstablishingConversationsAndGroupConversationIsRejoinedThenDontSaveToDb() =
         runTest {
             val appStorage = mockk<AppStorage> {
                 every { getShouldRejoinConversations() } returns true

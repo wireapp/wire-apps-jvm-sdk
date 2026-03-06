@@ -32,5 +32,5 @@ data class QualifiedId(
 ) {
     override fun toString(): String = "${id.obfuscateId()}@$domain" // Avoid accidental logging
 
-    fun serialize(): String = "$id@$domain"
+    fun toFullString(): String = "$id@$domain"
 }
