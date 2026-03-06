@@ -95,21 +95,14 @@ internal class ConversationService internal constructor(
             )
         )
 
-        val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
-
         establishMlsConversation(
+            conversationResponse = conversationCreatedResponse,
             userIds = userIds,
-            mlsGroupId = mlsGroupId,
             publicKeysResponse = conversationCreatedResponse.publicKeys
         )
 
         val conversationId = conversationCreatedResponse.id
         logger.info("Group Conversation created with ID: $conversationId")
-
-        saveConversationWithMembers(
-            qualifiedConversation = conversationId,
-            conversationResponse = conversationCreatedResponse
-        )
 
         return conversationId
     }
@@ -136,21 +129,14 @@ internal class ConversationService internal constructor(
                 )
             )
 
-            val mlsGroupId = conversationCreatedResponse.getDecodedMlsGroupId()
-
             establishMlsConversation(
+                conversationResponse = conversationCreatedResponse,
                 userIds = userIds,
-                mlsGroupId = mlsGroupId,
                 publicKeysResponse = conversationCreatedResponse.publicKeys
             )
 
             val conversationId = conversationCreatedResponse.id
             logger.info("Channel Conversation created with ID: $conversationId")
-
-            saveConversationWithMembers(
-                qualifiedConversation = conversationId,
-                conversationResponse = conversationCreatedResponse
-            )
 
             return conversationId
         } catch (exception: WireException.ClientError) {
@@ -174,11 +160,10 @@ internal class ConversationService internal constructor(
     suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
         val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
         val conversation = oneToOneConversationResponse.conversation
-        val mlsGroupId = conversation.getDecodedMlsGroupId()
 
         establishMlsConversation(
+            conversationResponse = oneToOneConversationResponse.conversation,
             userIds = listOf(userId),
-            mlsGroupId = mlsGroupId,
             publicKeysResponse = oneToOneConversationResponse.publicKeys
         )
 
@@ -188,10 +173,11 @@ internal class ConversationService internal constructor(
     }
 
     private suspend fun establishMlsConversation(
+        conversationResponse: ConversationResponse,
         userIds: List<QualifiedId>,
-        mlsGroupId: ConversationId,
         publicKeysResponse: MlsPublicKeysResponse?
     ) {
+        val mlsGroupId = conversationResponse.getDecodedMlsGroupId()
         val cipherSuiteCode = getCipherSuiteCode()
         val cipherSuite = MlsCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
@@ -237,6 +223,13 @@ internal class ConversationService internal constructor(
         } ?: throw WireException.MissingParameter(
             message = "No Public Keys found, skipping creating a conversation."
         )
+
+        if (conversationResponse.type != ConversationResponse.Type.SELF) {
+            saveConversationWithMembers(
+                qualifiedConversation = conversationResponse.id,
+                conversationResponse = conversationResponse
+            )
+        }
     }
 
     fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
@@ -255,8 +248,6 @@ internal class ConversationService internal constructor(
             .filter { conversation -> conversation.protocol == CryptoProtocol.MLS }
             .forEach { conversation ->
                 establishOrJoinMlsConversation(
-                    conversationId = conversation.id,
-                    mlsGroupId = conversation.getDecodedMlsGroupId(),
                     conversation = conversation,
                     backendClient = backendClient,
                     cryptoClient = cryptoClient
@@ -300,22 +291,21 @@ internal class ConversationService internal constructor(
     }
 
     private suspend fun establishOrJoinMlsConversation(
-        conversationId: QualifiedId,
-        mlsGroupId: ConversationId,
         conversation: ConversationResponse,
         backendClient: BackendClient,
         cryptoClient: CryptoClient
     ) {
-        if (cryptoClient.conversationExists(mlsGroupId)) {
-            logger.info("Conversation {} already exists, skipping it", conversationId)
+        if (cryptoClient.conversationExists(conversation.getDecodedMlsGroupId())) {
+            logger.info("Conversation {} already exists, skipping it", conversation.id)
             return
         }
 
         when {
             conversation.epoch != null && conversation.epoch != 0L -> {
                 val conversationGroupInfo: ByteArray =
-                    backendClient.getConversationGroupInfo(conversationId = conversationId)
+                    backendClient.getConversationGroupInfo(conversationId = conversation.id)
 
+                // Not establishing now, asking the backend to join, that will send a welcome event
                 cryptoClient.joinMlsConversationRequest(
                     groupInfo = conversationGroupInfo.toGroupInfo()
                 )
@@ -323,20 +313,20 @@ internal class ConversationService internal constructor(
 
             conversation.type == ConversationResponse.Type.SELF -> {
                 establishMlsConversation(
+                    conversationResponse = conversation,
                     userIds = emptyList(),
-                    mlsGroupId = mlsGroupId,
                     publicKeysResponse = null
                 )
             }
 
             conversation.type == ConversationResponse.Type.ONE_TO_ONE -> {
                 val users = conversationStorage
-                    .getMembersByConversationId(conversationId = conversationId)
+                    .getMembersByConversationId(conversationId = conversation.id)
                     .map { members -> members.userId }
 
                 establishMlsConversation(
+                    conversationResponse = conversation,
                     userIds = users,
-                    mlsGroupId = mlsGroupId,
                     publicKeysResponse = null
                 )
             }
@@ -388,16 +378,14 @@ internal class ConversationService internal constructor(
         )
     }
 
-    suspend fun saveConversationWithMembers(
+    fun saveConversationWithMembers(
         qualifiedConversation: QualifiedId,
         conversationResponse: ConversationResponse
     ): Pair<ConversationEntity, List<ConversationMember>> {
         val conversationName =
             if (conversationResponse.type == ConversationResponse.Type.ONE_TO_ONE) {
-                backendClient
-                    .getUserData(
-                        userId = conversationResponse.members.others.first().id
-                    ).name
+                // One to One conversations don't have a name, use the other member id as name
+                conversationResponse.members.others.first().id.toFullString()
             } else {
                 conversationResponse.name
             }
