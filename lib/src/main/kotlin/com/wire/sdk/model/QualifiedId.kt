@@ -30,5 +30,7 @@ data class QualifiedId(
     @SerialName("domain")
     val domain: String
 ) {
-    override fun toString(): String = "${id.obfuscateId()}@$domain"
+    override fun toString(): String = "${id.obfuscateId()}@$domain" // Avoid accidental logging
+
+    fun toFullString(): String = "$id@$domain"
 }
