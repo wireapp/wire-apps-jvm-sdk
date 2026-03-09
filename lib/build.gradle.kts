@@ -40,7 +40,7 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.2.3"
+val ktorVersion = "3.4.1"
 
 dependencies {
     constraints {
