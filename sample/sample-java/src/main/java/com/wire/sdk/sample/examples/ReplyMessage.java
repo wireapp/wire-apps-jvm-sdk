@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.usecase;
+package com.wire.sdk.sample.examples;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.QualifiedId;
@@ -23,23 +23,26 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SendPing extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(SendPing.class);
+import java.util.List;
+
+public class ReplyMessage extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(ReplyMessage.class);
 
     @Override
     public void onTextMessageReceived(@NotNull WireMessage.Text wireMessage) {
-        if (wireMessage.text().toLowerCase().contains("ping me")) {
-            sendPing(wireMessage.conversationId());
-        }
+        sendReplyTo(wireMessage.conversationId(), wireMessage);
     }
 
-    private void sendPing(QualifiedId conversationId) {
-        final WireMessage ping = WireMessage.Ping.create(
+    private void sendReplyTo(QualifiedId conversationId, WireMessage inReplyTo) {
+        final WireMessage reply = WireMessage.Text.createReply(
                 conversationId,
-                null
-        );
+                "That's a great point 🙂Thanks. I will keep this in mind.",
+                List.of(),
+                List.of(),
+                inReplyTo,
+                null);
 
-        getManager().sendMessage(ping);
-        logger.info("Ping sent. conversationId: {}", conversationId);
+        getManager().sendMessage(reply);
+        logger.info("Reply sent. conversationId: {}", conversationId);
     }
 }

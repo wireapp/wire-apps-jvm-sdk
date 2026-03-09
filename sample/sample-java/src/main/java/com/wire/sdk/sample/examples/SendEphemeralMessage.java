@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.usecase;
+package com.wire.sdk.sample.examples;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.QualifiedId;
@@ -25,24 +25,25 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class ReplyMessage extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(ReplyMessage.class);
+public class SendEphemeralMessage extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(SendEphemeralMessage.class);
 
     @Override
     public void onTextMessageReceived(@NotNull WireMessage.Text wireMessage) {
-        sendReplyTo(wireMessage.conversationId(), wireMessage);
+        if (wireMessage.text().toLowerCase().contains("send me the password")) {
+            sendEphemeralTextMessage(wireMessage.conversationId());
+        }
     }
 
-    private void sendReplyTo(QualifiedId conversationId, WireMessage inReplyTo) {
-        final WireMessage reply = WireMessage.Text.createReply(
+    private void sendEphemeralTextMessage(QualifiedId conversationId) {
+        final WireMessage message = WireMessage.Text.create(
                 conversationId,
-                "That's a great point 🙂Thanks. I will keep this in mind.",
+                "My password is: 1234_5678. This message will be deleted in 10 seconds!!",
                 List.of(),
                 List.of(),
-                inReplyTo,
-                null);
+                10_000L); // Expires after 10 seconds
 
-        getManager().sendMessage(reply);
-        logger.info("Reply sent. conversationId: {}", conversationId);
+        getManager().sendMessage(message);
+        logger.info("Ephemeral message sent. conversationId: {}", conversationId);
     }
 }

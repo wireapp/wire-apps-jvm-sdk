@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.usecase;
+package com.wire.sdk.sample.examples;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.QualifiedId;
@@ -23,27 +23,23 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-public class SendEphemeralMessage extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(SendEphemeralMessage.class);
+public class SendPing extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(SendPing.class);
 
     @Override
     public void onTextMessageReceived(@NotNull WireMessage.Text wireMessage) {
-        if (wireMessage.text().toLowerCase().contains("send me the password")) {
-            sendEphemeralTextMessage(wireMessage.conversationId());
+        if (wireMessage.text().toLowerCase().contains("ping me")) {
+            sendPing(wireMessage.conversationId());
         }
     }
 
-    private void sendEphemeralTextMessage(QualifiedId conversationId) {
-        final WireMessage message = WireMessage.Text.create(
+    private void sendPing(QualifiedId conversationId) {
+        final WireMessage ping = WireMessage.Ping.create(
                 conversationId,
-                "My password is: 1234_5678. This message will be deleted in 10 seconds!!",
-                List.of(),
-                List.of(),
-                10_000L); // Expires after 10 seconds
+                null
+        );
 
-        getManager().sendMessage(message);
-        logger.info("Ephemeral message sent. conversationId: {}", conversationId);
+        getManager().sendMessage(ping);
+        logger.info("Ping sent. conversationId: {}", conversationId);
     }
 }
