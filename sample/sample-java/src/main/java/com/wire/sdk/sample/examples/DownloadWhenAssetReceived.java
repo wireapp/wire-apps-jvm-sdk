@@ -81,5 +81,3 @@ public class DownloadWhenAssetReceived extends WireEventsHandlerDefault {
         getManager().sendMessage(infoMessage);
     }
 }
-
-

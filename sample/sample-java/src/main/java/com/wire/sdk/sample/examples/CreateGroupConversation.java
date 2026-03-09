@@ -18,15 +18,13 @@ package com.wire.sdk.sample.examples;
 
 import com.wire.sdk.WireAppSdk;
 import com.wire.sdk.model.QualifiedId;
-import com.wire.sdk.model.WireMessage;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 /**
- * This example demonstrates how to create a group conversation with all users that you together in the same conversations.
+ * This example demonstrates how to create a group conversation with all users that are together with you in the same conversations.
  * It first collects all user IDs from the conversations stored in the application,
  * and then creates a new group conversation with those users as members.
  */
@@ -53,7 +51,7 @@ public class CreateGroupConversation {
     }
 
     /**
-     * This method creates a new group conversation with all users that you together in the same conversations.
+     * This method creates a new group conversation with all users that are together with you in the same conversations.
      */
     private void createGroupWithAll() {
         app.getApplicationManager().createGroupConversation(
