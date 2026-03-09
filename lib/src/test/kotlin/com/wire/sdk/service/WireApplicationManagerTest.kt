@@ -380,7 +380,7 @@ class WireApplicationManagerTest {
             // Assert
             assertEquals(originalMessage.id, resultId)
             // The captured message should be the original one (no override)
-            assertEquals(originalMessage.id, (captured.captured as WireMessage).id)
+            assertEquals(originalMessage.id, (captured.captured).id)
             assertEquals(
                 originalMessage.expiresAfterMillis,
                 (captured.captured as WireMessage.Text).expiresAfterMillis
