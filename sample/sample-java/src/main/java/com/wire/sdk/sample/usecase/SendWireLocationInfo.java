@@ -45,7 +45,6 @@ public class SendWireLocationInfo extends WireEventsHandlerDefault {
         if (wireMessage.text().toLowerCase().contains("where is wire?")) {
             sendLocationInfo(wireMessage.conversationId());
         }
-        super.onTextMessageReceived(wireMessage);
     }
 
     private void sendLocationInfo(QualifiedId conversationId) {
