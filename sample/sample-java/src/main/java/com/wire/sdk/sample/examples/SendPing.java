@@ -23,6 +23,11 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This example demonstrates how to send a Ping message in response to receiving a text message containing "ping me".
+ * When a text message is received, the handler checks if the message contains the phrase "ping me".
+ * If it does, it creates and sends a Ping message to the same conversation.
+ */
 public class SendPing extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(SendPing.class);
 

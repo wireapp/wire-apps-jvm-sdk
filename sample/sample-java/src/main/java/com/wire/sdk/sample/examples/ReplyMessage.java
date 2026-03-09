@@ -25,6 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * This example demonstrates how to reply to a received text message.
+ * Whenever a text message is received, the app will reply with a predefined message.
+ */
 public class ReplyMessage extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(ReplyMessage.class);
 

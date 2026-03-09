@@ -25,6 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * This example demonstrates how to send an ephemeral message that will be automatically deleted after a specified duration.
+ * When the app receives a text message containing "send me the password",
+ * it responds with an ephemeral message that includes a password and expires after 10 seconds.
+ */
 public class SendEphemeralMessage extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(SendEphemeralMessage.class);
 

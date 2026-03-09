@@ -28,21 +28,9 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * Use Case: The app sends a greeting message to the conversation when the app is added.
- *
- * <p>This sample demonstrates how to send an automatic welcome message
- * when the app is added to a conversation.
- *
- * <p><b>Triggered by:</b> {@link #onAppAddedToConversation(Conversation, List)}
- *
- * <p><b>Actions performed:</b>
- * <ul>
- *   <li>Sends a welcome text message to the conversation</li>
- * </ul>
- *
- * @see WireEventsHandlerDefault
+ * This example demonstrates how to greet a conversation when the app is added to it.
+ * The app listens for the event of being added to a conversation and sends a greeting message in response.
  */
-
 public class GreetConversationOnAppAdded extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(GreetConversationOnAppAdded.class);
 

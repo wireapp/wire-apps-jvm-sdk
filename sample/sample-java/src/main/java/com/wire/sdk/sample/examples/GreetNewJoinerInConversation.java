@@ -27,6 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * This example demonstrates how to greet new joiners in a conversation by sending a welcome message when they join.
+ * It listens for the event of users joining a conversation and sends a personalized greeting message to each new member.
+ */
 public class GreetNewJoinerInConversation extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(GreetNewJoinerInConversation.class);
 

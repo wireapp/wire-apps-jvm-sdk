@@ -27,6 +27,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * This example demonstrates how to automatically download an asset when it's received in a conversation.
+ * When an asset message is received, the app will download the asset and save it to the local file system.
+ * After downloading, it will send a confirmation message back to the conversation.
+ */
 public class DownloadWhenAssetReceived extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(DownloadWhenAssetReceived.class);
 

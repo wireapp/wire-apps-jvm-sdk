@@ -25,6 +25,11 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * This example demonstrates how to react to a received text message by sending a read receipt and adding emoji reactions.
+ * When a text message is received, the bot will automatically send a read receipt to acknowledge that the message was seen,
+ * and then it will react to the message with a set of emojis.
+ */
 public class ReadAndReactOnTextMsgReceived extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(ReadAndReactOnTextMsgReceived.class);
 

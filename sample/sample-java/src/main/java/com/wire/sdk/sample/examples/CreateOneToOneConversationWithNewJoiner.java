@@ -26,6 +26,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * This example demonstrates how to create a one-to-one conversation with a user who
+ * just joined a conversation and send them a welcome message in that one-to-one conversation.
+ */
 public class CreateOneToOneConversationWithNewJoiner extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(CreateOneToOneConversationWithNewJoiner.class);
 

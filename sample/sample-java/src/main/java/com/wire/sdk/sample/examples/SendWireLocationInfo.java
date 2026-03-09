@@ -21,22 +21,10 @@ import com.wire.sdk.model.QualifiedId;
 import com.wire.sdk.model.WireMessage;
 import kotlin.time.Clock;
 
+
 /**
- * Use Case: Reply with a location message when triggered by a keyword.
- *
- * <p>This sample demonstrates how to send a {@link WireMessage.Location} message
- * in response to an incoming text message containing a specific keyword.
- *
- * <p><b>Triggered by:</b> {@link #onTextMessageReceived(WireMessage.Text)}
- * when the message contains {@code "where is wire?"}
- *
- * <p><b>Actions performed:</b>
- * <ul>
- *   <li>Sends the location of Wire GmbH headquarters (Berlin, Germany)</li>
- * </ul>
- *
- * @see WireEventsHandlerDefault
- * @see WireMessage.Location
+ * This example listens for incoming text messages. If the message contains the text "Where is Wire?",
+ * it responds with a location message containing the coordinates of Wire's headquarters in Berlin, Germany.
  */
 public class SendWireLocationInfo extends WireEventsHandlerDefault {
 
