@@ -48,6 +48,16 @@ sealed interface WireMessage {
         val timestamp: Instant
     }
 
+    /**
+     * Throws [IllegalArgumentException] if this message is ephemeral with an expiration time set.
+     */
+    private fun requireNotExpiringEphemeral() {
+        val ephemeral = this as? Ephemeral ?: return
+        require(ephemeral.expiresAfterMillis == null) {
+            "Message is ephemeral: ${this::class.simpleName}"
+        }
+    }
+
     @JvmRecord
     @ConsistentCopyVisibility
     data class Text @JvmOverloads internal constructor(
@@ -123,6 +133,8 @@ sealed interface WireMessage {
                 require(originalMessage is Replyable) {
                     "Unsupported replied WireMessage: ${originalMessage::class.simpleName}"
                 }
+
+                originalMessage.requireNotExpiringEphemeral()
 
                 return Text(
                     id = UUID.randomUUID(),
