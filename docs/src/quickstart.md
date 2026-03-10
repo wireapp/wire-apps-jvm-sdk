@@ -93,7 +93,6 @@ In your `onTextMessageReceived` implementation from `MyWireEventsHandler` you ca
 ```kotlin
 override fun onTextMessageReceived(wireMessage: WireMessage.Text) {
     val message = WireMessage.Text.createReply(
-        conversationId = wireMessage.conversationId,
         text = "${wireMessage.text} -- Sent from the SDK",
         mentions = wireMessage.mentions,
         originalMessage = wireMessage

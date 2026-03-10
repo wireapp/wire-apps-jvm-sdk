@@ -123,7 +123,6 @@ sealed interface WireMessage {
             @JvmStatic
             @Suppress("LongParameterList")
             fun createReply(
-                conversationId: QualifiedId,
                 text: String,
                 mentions: List<Mention> = emptyList(),
                 linkPreviews: List<LinkPreview> = emptyList(),
@@ -138,7 +137,7 @@ sealed interface WireMessage {
 
                 return Text(
                     id = UUID.randomUUID(),
-                    conversationId = conversationId,
+                    conversationId = originalMessage.conversationId,
                     sender = QualifiedId(
                         id = UUID.randomUUID(),
                         domain = UUID.randomUUID().toString()

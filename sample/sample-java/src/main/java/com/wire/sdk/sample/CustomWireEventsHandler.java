@@ -244,7 +244,6 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
     private void sendSimpleReply(QualifiedId conversationId, String messageText, WireMessage inReplyTo) {
         final WireMessage reply = WireMessage.Text.createReply(
-                conversationId,
                 messageText,
                 List.of(),
                 List.of(),

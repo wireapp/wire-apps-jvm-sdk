@@ -39,7 +39,6 @@ public class ReplyMessageExample extends WireEventsHandlerDefault {
 
     private void sendReplyTo(QualifiedId conversationId, WireMessage inReplyTo) {
         final WireMessage reply = WireMessage.Text.createReply(
-                conversationId,
                 "That's a great point 🙂Thanks. I will keep this in mind.",
                 List.of(),
                 List.of(),
