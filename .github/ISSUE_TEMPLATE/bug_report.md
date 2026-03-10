@@ -29,10 +29,6 @@ What did you expect to happen?
 
 What happened instead?
 
-### Screenshots
-
-Add screenshots if they help explain the issue.
-
 ### Environment
 
 * **OS:** for example Linux, Windows, macOS
@@ -41,3 +37,7 @@ Add screenshots if they help explain the issue.
 ### Additional context
 
 Share any other details that might help us understand the problem.
+
+### Screenshots
+
+Add screenshots if they help explain the issue.
