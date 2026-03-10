@@ -24,9 +24,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * This example demonstrates how to create a group conversation with all users that are together with you in the same conversations.
- * It first collects all user IDs from the conversations stored in the application,
- * and then creates a new group conversation with those users as members.
+ * This example collects all user IDs from the conversations that the app is involved.
+ * And then creates a new group conversation with those users as members.
  */
 public class CreateGroupConversation {
     final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID"));
