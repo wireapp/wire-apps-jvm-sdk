@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.callbacks;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.WireMessage;
@@ -32,8 +32,8 @@ import java.util.UUID;
  * When an asset message is received, the app will download the asset and save it to the local file system.
  * After downloading, it will send a confirmation message back to the conversation.
  */
-public class DownloadWhenAssetReceived extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(DownloadWhenAssetReceived.class);
+public class DownloadOnAssetReceivedExample extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(DownloadOnAssetReceivedExample.class);
 
     @Override
     public void onAssetMessageReceived(WireMessage.Asset wireMessage) {

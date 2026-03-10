@@ -14,10 +14,10 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.standalone;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 
-public class NoOpWireEventsHandler extends WireEventsHandlerDefault {
+class NoOpWireEventsHandler extends WireEventsHandlerDefault {
     // This class intentionally left blank. It will not react to any events.
 }

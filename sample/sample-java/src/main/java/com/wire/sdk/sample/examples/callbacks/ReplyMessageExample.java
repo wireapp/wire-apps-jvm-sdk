@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.callbacks;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.QualifiedId;
@@ -26,29 +26,27 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * This example demonstrates how to send an ephemeral message that will be automatically deleted after a specified duration.
- * When the app receives a text message containing "send me the password",
- * it responds with an ephemeral message that includes a password and expires after 10 seconds.
+ * This example demonstrates how to reply to a received text message.
+ * Whenever a text message is received, the app will reply with a predefined message.
  */
-public class SendEphemeralMessage extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(SendEphemeralMessage.class);
+public class ReplyMessageExample extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(ReplyMessageExample.class);
 
     @Override
     public void onTextMessageReceived(@NotNull WireMessage.Text wireMessage) {
-        if (wireMessage.text().toLowerCase().contains("send me the password")) {
-            sendEphemeralTextMessage(wireMessage.conversationId());
-        }
+        sendReplyTo(wireMessage.conversationId(), wireMessage);
     }
 
-    private void sendEphemeralTextMessage(QualifiedId conversationId) {
-        final WireMessage message = WireMessage.Text.create(
+    private void sendReplyTo(QualifiedId conversationId, WireMessage inReplyTo) {
+        final WireMessage reply = WireMessage.Text.createReply(
                 conversationId,
-                "My password is: 1234_5678. This message will be deleted in 10 seconds!!",
+                "That's a great point 🙂Thanks. I will keep this in mind.",
                 List.of(),
                 List.of(),
-                10_000L); // Expires after 10 seconds
+                inReplyTo,
+                null);
 
-        getManager().sendMessage(message);
-        logger.info("Ephemeral message sent. conversationId: {}", conversationId);
+        getManager().sendMessage(reply);
+        logger.info("Reply sent. conversationId: {}", conversationId);
     }
 }

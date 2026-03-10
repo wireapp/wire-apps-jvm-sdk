@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.callbacks;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.Conversation;
@@ -31,8 +31,8 @@ import java.util.List;
  * This example demonstrates how to greet a conversation when the app is added to it.
  * The app listens for the event of being added to a conversation and sends a greeting message in response.
  */
-public class GreetConversationOnAppAdded extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(GreetConversationOnAppAdded.class);
+public class GreetConversationOnAppAddedExample extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(GreetConversationOnAppAddedExample.class);
 
     @Override
     public void onAppAddedToConversation(@NotNull Conversation conversation, @NotNull List<ConversationMember> members) {

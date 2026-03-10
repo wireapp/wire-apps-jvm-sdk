@@ -14,10 +14,9 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.callbacks;
 
 import com.wire.sdk.WireEventsHandlerDefault;
-import com.wire.sdk.exception.WireException;
 import com.wire.sdk.model.ConversationMember;
 import com.wire.sdk.model.QualifiedId;
 import com.wire.sdk.model.WireMessage;
@@ -28,34 +27,32 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * This example demonstrates how to greet new joiners in a conversation by sending a welcome message when they join.
- * It listens for the event of users joining a conversation and sends a personalized greeting message to each new member.
+ * This example demonstrates how to create a one-to-one conversation with a user who
+ * just joined a conversation and send them a welcome message in that one-to-one conversation.
  */
-public class GreetNewJoinerInConversation extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(GreetNewJoinerInConversation.class);
+public class CreateOneToOneConversationWithNewJoinerExample extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(CreateOneToOneConversationWithNewJoinerExample.class);
 
     @Override
     public void onUserJoinedConversation(@NotNull QualifiedId conversationId, @NotNull List<ConversationMember> members) {
         logger.info("User(s) joined conversation. conversationId: {}, membersCount: {}", conversationId, members.size());
+
         members.forEach(member -> {
-            try {
-                final var name = getManager().getUser(member.userId()).getName();
-                welcomeTheNewJoiner(conversationId, name);
-            } catch (WireException e) {
-                throw new RuntimeException(e);
-            }
+            final QualifiedId oneToOneConversationId = createOneToOneConversation(member.userId());
+            sendMessageToOneToOneConversation(oneToOneConversationId);
         });
     }
 
-    private void welcomeTheNewJoiner(QualifiedId conversationId, String name) {
-        final WireMessage message = WireMessage.Text.create(
-                conversationId,
-                "👋Hey " + name + "! Great to see you here!",
-                List.of(),
-                List.of(),
-                null);
+    private QualifiedId createOneToOneConversation(QualifiedId userId) {
+        return getManager().createOneToOneConversation(userId);
+    }
 
-        getManager().sendMessage(message);
-        logger.info("Welcome message sent to new joiner. conversationId: {}", conversationId);
+    private void sendMessageToOneToOneConversation(QualifiedId oneToOneConversationId) {
+        getManager().sendMessage(WireMessage.Text.create(
+                oneToOneConversationId,
+                "👋 Hey! I created this 1-1 conversation to welcome you! Feel free to ask me anything here.",
+                List.of(),
+                List.of(),
+                null));
     }
 }

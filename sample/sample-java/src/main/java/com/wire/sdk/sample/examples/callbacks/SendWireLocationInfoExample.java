@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.callbacks;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.QualifiedId;
@@ -26,7 +26,7 @@ import kotlin.time.Clock;
  * This example listens for incoming text messages. If the message contains the text "Where is Wire?",
  * it responds with a location message containing the coordinates of Wire's headquarters in Berlin, Germany.
  */
-public class SendWireLocationInfo extends WireEventsHandlerDefault {
+public class SendWireLocationInfoExample extends WireEventsHandlerDefault {
 
     @Override
     public void onTextMessageReceived(WireMessage.Text wireMessage) {

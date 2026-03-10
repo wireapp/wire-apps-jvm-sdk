@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.callbacks;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.WireMessage;
@@ -30,8 +30,8 @@ import java.util.Set;
  * When a text message is received, the bot will automatically send a read receipt to acknowledge that the message was seen,
  * and then it will react to the message with a set of emojis.
  */
-public class ReadAndReactOnTextMsgReceived extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(ReadAndReactOnTextMsgReceived.class);
+public class ReadAndReactOnTextMsgReceivedExample extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(ReadAndReactOnTextMsgReceivedExample.class);
 
     @Override
     public void onTextMessageReceived(@NotNull WireMessage.Text wireMessage) {

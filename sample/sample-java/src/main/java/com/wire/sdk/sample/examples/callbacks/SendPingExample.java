@@ -14,7 +14,7 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.callbacks;
 
 import com.wire.sdk.WireEventsHandlerDefault;
 import com.wire.sdk.model.QualifiedId;
@@ -23,30 +23,28 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
- * This example demonstrates how to reply to a received text message.
- * Whenever a text message is received, the app will reply with a predefined message.
+ * This example demonstrates how to send a Ping message in response to receiving a text message containing "ping me".
+ * When a text message is received, the handler checks if the message contains the phrase "ping me".
+ * If it does, it creates and sends a Ping message to the same conversation.
  */
-public class ReplyMessage extends WireEventsHandlerDefault {
-    private static final Logger logger = LoggerFactory.getLogger(ReplyMessage.class);
+public class SendPingExample extends WireEventsHandlerDefault {
+    private static final Logger logger = LoggerFactory.getLogger(SendPingExample.class);
 
     @Override
     public void onTextMessageReceived(@NotNull WireMessage.Text wireMessage) {
-        sendReplyTo(wireMessage.conversationId(), wireMessage);
+        if (wireMessage.text().toLowerCase().contains("ping me")) {
+            sendPing(wireMessage.conversationId());
+        }
     }
 
-    private void sendReplyTo(QualifiedId conversationId, WireMessage inReplyTo) {
-        final WireMessage reply = WireMessage.Text.createReply(
+    private void sendPing(QualifiedId conversationId) {
+        final WireMessage ping = WireMessage.Ping.create(
                 conversationId,
-                "That's a great point 🙂Thanks. I will keep this in mind.",
-                List.of(),
-                List.of(),
-                inReplyTo,
-                null);
+                null
+        );
 
-        getManager().sendMessage(reply);
-        logger.info("Reply sent. conversationId: {}", conversationId);
+        getManager().sendMessage(ping);
+        logger.info("Ping sent. conversationId: {}", conversationId);
     }
 }

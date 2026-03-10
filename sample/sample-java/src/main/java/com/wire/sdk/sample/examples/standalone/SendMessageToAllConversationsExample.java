@@ -14,20 +14,20 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.sample.examples;
+package com.wire.sdk.sample.examples.standalone;
 
 import com.wire.sdk.WireAppSdk;
-import com.wire.sdk.model.QualifiedId;
+import com.wire.sdk.model.WireMessage;
 
 import java.util.Arrays;
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * This example collects all user IDs from the conversations that the app is involved.
- * And then creates a new group conversation with those users as members.
+ * This example demonstrates how to send a broadcast announcement message to all stored conversations
+ * every 5 seconds, for a total of 10 times.
  */
-public class CreateGroupConversation {
+public class SendMessageToAllConversationsExample {
     final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID"));
     final static String WIRE_API_TOKEN = System.getenv("WIRE_SDK_API_TOKEN");
     final static String WIRE_API_HOST = System.getenv("WIRE_SDK_API_HOST");
@@ -35,7 +35,7 @@ public class CreateGroupConversation {
     private static WireAppSdk app;
 
     public static void main(String[] args) {
-        new CreateGroupConversation().initApp();
+        new SendMessageToAllConversationsExample().initApp();
     }
 
     private void initApp() {
@@ -46,33 +46,38 @@ public class CreateGroupConversation {
                 new NoOpWireEventsHandler()); // We use a no-op event handler since we don't need to react to any events in this example
         app.startListening();
 
-        createGroupWithAll();
+        broadcastToAllConversations();
     }
 
     /**
-     * This method creates a new group conversation with all users that are together with you in the same conversations.
+     * This method sends a broadcast announcement message
+     * to all stored conversations every 5 seconds, for a total of 10 times.
      */
-    private void createGroupWithAll() {
-        app.getApplicationManager().createGroupConversation(
-                "groupWithAll_" + System.currentTimeMillis(),
-                getAllUsersInMyConversations().stream().toList());
-    }
+    private void broadcastToAllConversations() {
+        final var announcementText = "📣 **[Broadcast announcement]**" +
+                "\n🚧 Maintenance is scheduled for 09.10.2035 from 01:00 to 03:00 UTC. " +
+                "During this time, the service may be unavailable.";
 
-    /**
-     * This method collects all user IDs from the conversations stored in the application.
-     */
-    private Set<QualifiedId> getAllUsersInMyConversations() {
-        final Set<QualifiedId> userIds = new java.util.HashSet<>();
+        for (int i = 0; i < 10; i++) {
+            for (var conversation : app.getApplicationManager().getStoredConversations()) {
+                var message = WireMessage.Text.create(
+                        conversation.id(),
+                        announcementText,
+                        List.of(),
+                        List.of(),
+                        null);
 
-        // Iterate all stored conversations and collect all member user IDs
-        for (var conversation : app.getApplicationManager().getStoredConversations()) {
-            var members = app.getApplicationManager().getStoredConversationMembers(conversation.id());
-            for (var member : members) {
-                userIds.add(member.userId());
+                app.getApplicationManager().sendMessage(message);
+            }
+
+            try {
+                Thread.sleep(5000); // Wait for 5 seconds before sending the next announcement
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             }
         }
 
-        return userIds;
     }
 
 }
