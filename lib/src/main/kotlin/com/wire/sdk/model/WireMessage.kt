@@ -111,7 +111,6 @@ sealed interface WireMessage {
             /**
              * Creates a reply message with minimal parameters.
              *
-             * @param conversationId The qualified ID of the conversation
              * @param text The text content of the message
              * @param mentions List of [Mention] included in the text
              * @param linkPreviews List of [LinkPreview] to be displayed
