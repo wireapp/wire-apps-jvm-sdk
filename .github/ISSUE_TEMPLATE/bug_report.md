@@ -33,6 +33,7 @@ What happened instead?
 
 * **OS:** for example Linux, Windows, macOS
 * **SDK version:** for example 0.1.0
+* **JRE version:** for example Java 21 (LTS)
 
 ### Additional context
 
