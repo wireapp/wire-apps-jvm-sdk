@@ -496,10 +496,15 @@ class WireApplicationManagerTest {
                 conversationService = conversationService
             )
 
+            val originalMessage = WireMessage.Text.create(
+                conversationId = conversationId,
+                text = "not ephemeral",
+                expiresAfterMillis = null
+            )
+
             // Create a non-ephemeral message (Reaction is not Ephemeral)
             val reaction = WireMessage.Reaction.create(
-                conversationId = conversationId,
-                messageId = "msg-id",
+                originalMessage = originalMessage,
                 emojiSet = setOf("🙂")
             )
 

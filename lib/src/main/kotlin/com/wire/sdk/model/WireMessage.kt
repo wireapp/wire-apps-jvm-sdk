@@ -619,26 +619,28 @@ sealed interface WireMessage {
             /**
              * Creates a Reaction message with minimal required parameters.
              *
-             * @param conversationId The qualified ID of the conversation
-             * @param messageId The ID of the message that will receive the Reaction
+             * @param originalMessage The original message to which the reaction will be added.
              * @param emojiSet A Set<String> of emojis to be sent
              * @return A new TextEdited message with the original received ID.
              */
             @JvmStatic
             fun create(
-                conversationId: QualifiedId,
-                messageId: String,
+                originalMessage: WireMessage,
                 emojiSet: Set<String> = emptySet()
-            ) = Reaction(
-                id = UUID.randomUUID(),
-                conversationId = conversationId,
-                sender = QualifiedId(
+            ): Reaction {
+                originalMessage.requireNotExpiringEphemeral()
+
+                return Reaction(
                     id = UUID.randomUUID(),
-                    domain = UUID.randomUUID().toString()
-                ),
-                messageId = messageId,
-                emojiSet = emojiSet
-            )
+                    conversationId = originalMessage.conversationId,
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
+                    messageId = originalMessage.id.toString(),
+                    emojiSet = emojiSet
+                )
+            }
         }
     }
 

@@ -118,8 +118,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         // Add a reaction emoji to the received message
         val reaction = WireMessage.Reaction.create(
-            conversationId = wireMessage.conversationId,
-            messageId = wireMessage.id.toString(),
+            originalMessage = wireMessage,
             emojiSet = setOf("🧩")
         )
 
