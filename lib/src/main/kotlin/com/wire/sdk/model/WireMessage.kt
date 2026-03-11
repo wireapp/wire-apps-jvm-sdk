@@ -51,10 +51,9 @@ sealed interface WireMessage {
     /**
      * Throws [IllegalArgumentException] if this message is ephemeral with an expiration time set.
      */
-    private fun requireNotExpiringEphemeral() {
-        val ephemeral = this as? Ephemeral ?: return
-        require(ephemeral.expiresAfterMillis == null) {
-            "Message is ephemeral: ${this::class.simpleName}"
+    private fun requireNotExpiring(lazyMessage: () -> Any) {
+        if (this is Ephemeral) {
+            require(this.expiresAfterMillis == null, lazyMessage)
         }
     }
 
@@ -132,7 +131,9 @@ sealed interface WireMessage {
                     "Unsupported replied WireMessage: ${originalMessage::class.simpleName}"
                 }
 
-                originalMessage.requireNotExpiringEphemeral()
+                originalMessage.requireNotExpiring {
+                    "Cannot reply to an expiring message: ${originalMessage::class.simpleName}"
+                }
 
                 return Text(
                     id = UUID.randomUUID(),
@@ -626,7 +627,9 @@ sealed interface WireMessage {
                 originalMessage: WireMessage,
                 emojiSet: Set<String> = emptySet()
             ): Reaction {
-                originalMessage.requireNotExpiringEphemeral()
+                originalMessage.requireNotExpiring {
+                    "Cannot react to an expiring message: ${originalMessage::class.simpleName}"
+                }
 
                 return Reaction(
                     id = UUID.randomUUID(),
