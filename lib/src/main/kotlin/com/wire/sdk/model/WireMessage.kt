@@ -51,6 +51,7 @@ sealed interface WireMessage {
     /**
      * Throws [IllegalArgumentException] if this message is ephemeral with an expiration time set.
      */
+    @Throws(IllegalArgumentException::class)
     private fun requireNotExpiring(lazyMessage: () -> Any) {
         if (this is Ephemeral) {
             require(this.expiresAfterMillis == null, lazyMessage)
@@ -120,6 +121,7 @@ sealed interface WireMessage {
              */
             @JvmStatic
             @Suppress("LongParameterList")
+            @Throws(IllegalArgumentException::class)
             fun createReply(
                 text: String,
                 mentions: List<Mention> = emptyList(),
@@ -623,6 +625,7 @@ sealed interface WireMessage {
              * @return A new TextEdited message with the original received ID.
              */
             @JvmStatic
+            @Throws(IllegalArgumentException::class)
             fun create(
                 originalMessage: WireMessage,
                 emojiSet: Set<String> = emptySet()
