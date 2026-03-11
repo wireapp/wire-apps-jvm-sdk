@@ -103,7 +103,6 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
 
         val message = WireMessage.Text.createReply(
-            conversationId = wireMessage.conversationId,
             text = "${wireMessage.text} -- Sent from the SDK",
             mentions = wireMessage.mentions,
             originalMessage = wireMessage
@@ -118,8 +117,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         // Add a reaction emoji to the received message
         val reaction = WireMessage.Reaction.create(
-            conversationId = wireMessage.conversationId,
-            messageId = wireMessage.id.toString(),
+            originalMessage = wireMessage,
             emojiSet = setOf("🧩")
         )
 
@@ -132,7 +130,6 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         logger.info("Received Asset Message : $wireMessage")
 
         val message = WireMessage.Text.createReply(
-            conversationId = wireMessage.conversationId,
             text = "Received Asset : ${wireMessage.name}",
             originalMessage = wireMessage
         )
@@ -170,7 +167,6 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         logger.info("Received Location Message : $wireMessage")
 
         val message = WireMessage.Text.createReply(
-            conversationId = wireMessage.conversationId,
             text = "Received Location\n\nLatitude: ${wireMessage.latitude}\n\nLongitude: ${wireMessage.longitude}\n\nName: ${wireMessage.name}\n\nZoom: ${wireMessage.zoom}",
             originalMessage = wireMessage
         )

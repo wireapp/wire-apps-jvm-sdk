@@ -23,7 +23,6 @@ class MessageContentEncoderTest {
             ).copy(timestamp = textWithEmoji.first.second)
 
             val replyMessage = WireMessage.Text.createReply(
-                conversationId = CONVERSATION_ID,
                 text = DEFAULT_REPLY_TEXT,
                 originalMessage = originalMessage
             )
@@ -48,7 +47,6 @@ class MessageContentEncoderTest {
             ).copy(timestamp = url.first.second)
 
             val replyMessage = WireMessage.Text.createReply(
-                conversationId = CONVERSATION_ID,
                 text = DEFAULT_REPLY_TEXT,
                 originalMessage = originalMessage
             )
@@ -73,7 +71,6 @@ class MessageContentEncoderTest {
             ).copy(timestamp = arabic.first.second)
 
             val replyMessage = WireMessage.Text.createReply(
-                conversationId = CONVERSATION_ID,
                 text = DEFAULT_REPLY_TEXT,
                 originalMessage = originalMessage
             )
@@ -98,7 +95,6 @@ class MessageContentEncoderTest {
             ).copy(timestamp = markDown.first.second)
 
             val replyMessage = WireMessage.Text.createReply(
-                conversationId = CONVERSATION_ID,
                 text = DEFAULT_REPLY_TEXT,
                 originalMessage = originalMessage
             )
@@ -123,7 +119,6 @@ class MessageContentEncoderTest {
             ).copy(timestamp = textWithEmoji.first.second)
 
             val replyMessage = WireMessage.Text.createReply(
-                conversationId = CONVERSATION_ID,
                 text = DEFAULT_REPLY_TEXT,
                 originalMessage = originalMessage
             )
@@ -149,7 +144,6 @@ class MessageContentEncoderTest {
             ).copy(timestamp = url.first.second)
 
             val replyMessage = WireMessage.Text.createReply(
-                conversationId = CONVERSATION_ID,
                 text = DEFAULT_REPLY_TEXT,
                 originalMessage = originalMessage
             )
@@ -174,7 +168,6 @@ class MessageContentEncoderTest {
             ).copy(timestamp = arabic.first.second)
 
             val replyMessage = WireMessage.Text.createReply(
-                conversationId = CONVERSATION_ID,
                 text = DEFAULT_REPLY_TEXT,
                 originalMessage = originalMessage
             )
@@ -199,7 +192,6 @@ class MessageContentEncoderTest {
             ).copy(timestamp = markDown.first.second)
 
             val replyMessage = WireMessage.Text.createReply(
-                conversationId = CONVERSATION_ID,
                 text = DEFAULT_REPLY_TEXT,
                 originalMessage = originalMessage
             )

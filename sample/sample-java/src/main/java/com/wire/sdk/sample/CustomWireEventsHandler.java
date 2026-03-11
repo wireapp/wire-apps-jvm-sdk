@@ -72,8 +72,7 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
         // Send reaction
         final var reaction = WireMessage.Reaction.create(
-                wireMessage.conversationId(),
-                wireMessage.id().toString(),
+                wireMessage,
                 Set.of("🧩", "☕️", "🎉")
         );
         getManager().sendMessage(reaction);
@@ -245,7 +244,6 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
     private void sendSimpleReply(QualifiedId conversationId, String messageText, WireMessage inReplyTo) {
         final WireMessage reply = WireMessage.Text.createReply(
-                conversationId,
                 messageText,
                 List.of(),
                 List.of(),

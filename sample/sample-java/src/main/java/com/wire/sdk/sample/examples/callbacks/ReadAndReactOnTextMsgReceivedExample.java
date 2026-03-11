@@ -54,8 +54,7 @@ public class ReadAndReactOnTextMsgReceivedExample extends WireEventsHandlerDefau
 
     private void reactToMessage(WireMessage.Text wireMessage) {
         final WireMessage reaction = WireMessage.Reaction.create(
-                wireMessage.conversationId(),
-                wireMessage.id().toString(),
+                wireMessage,
                 Set.of("🎉", "🙂", "🧩")
         );
 

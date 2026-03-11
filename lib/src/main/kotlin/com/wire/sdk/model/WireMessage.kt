@@ -48,6 +48,16 @@ sealed interface WireMessage {
         val timestamp: Instant
     }
 
+    /**
+     * Throws [IllegalArgumentException] if this message is ephemeral with an expiration time set.
+     */
+    @Throws(IllegalArgumentException::class)
+    private fun requireNotExpiring(lazyMessage: () -> Any) {
+        if (this is Ephemeral) {
+            require(this.expiresAfterMillis == null, lazyMessage)
+        }
+    }
+
     @JvmRecord
     @ConsistentCopyVisibility
     data class Text @JvmOverloads internal constructor(
@@ -101,7 +111,6 @@ sealed interface WireMessage {
             /**
              * Creates a reply message with minimal parameters.
              *
-             * @param conversationId The qualified ID of the conversation
              * @param text The text content of the message
              * @param mentions List of [Mention] included in the text
              * @param linkPreviews List of [LinkPreview] to be displayed
@@ -112,8 +121,8 @@ sealed interface WireMessage {
              */
             @JvmStatic
             @Suppress("LongParameterList")
+            @Throws(IllegalArgumentException::class)
             fun createReply(
-                conversationId: QualifiedId,
                 text: String,
                 mentions: List<Mention> = emptyList(),
                 linkPreviews: List<LinkPreview> = emptyList(),
@@ -124,9 +133,13 @@ sealed interface WireMessage {
                     "Unsupported replied WireMessage: ${originalMessage::class.simpleName}"
                 }
 
+                originalMessage.requireNotExpiring {
+                    "Cannot reply to an expiring message: ${originalMessage::class.simpleName}"
+                }
+
                 return Text(
                     id = UUID.randomUUID(),
-                    conversationId = conversationId,
+                    conversationId = originalMessage.conversationId,
                     sender = QualifiedId(
                         id = UUID.randomUUID(),
                         domain = UUID.randomUUID().toString()
@@ -607,26 +620,31 @@ sealed interface WireMessage {
             /**
              * Creates a Reaction message with minimal required parameters.
              *
-             * @param conversationId The qualified ID of the conversation
-             * @param messageId The ID of the message that will receive the Reaction
+             * @param originalMessage The original message to which the reaction will be added.
              * @param emojiSet A Set<String> of emojis to be sent
              * @return A new TextEdited message with the original received ID.
              */
             @JvmStatic
+            @Throws(IllegalArgumentException::class)
             fun create(
-                conversationId: QualifiedId,
-                messageId: String,
+                originalMessage: WireMessage,
                 emojiSet: Set<String> = emptySet()
-            ) = Reaction(
-                id = UUID.randomUUID(),
-                conversationId = conversationId,
-                sender = QualifiedId(
+            ): Reaction {
+                originalMessage.requireNotExpiring {
+                    "Cannot react to an expiring message: ${originalMessage::class.simpleName}"
+                }
+
+                return Reaction(
                     id = UUID.randomUUID(),
-                    domain = UUID.randomUUID().toString()
-                ),
-                messageId = messageId,
-                emojiSet = emojiSet
-            )
+                    conversationId = originalMessage.conversationId,
+                    sender = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = UUID.randomUUID().toString()
+                    ),
+                    messageId = originalMessage.id.toString(),
+                    emojiSet = emojiSet
+                )
+            }
         }
     }
 
