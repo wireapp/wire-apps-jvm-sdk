@@ -493,7 +493,7 @@ internal class ConversationService internal constructor(
     }
 
     private fun requireAppIsAdminInConversation(conversationId: QualifiedId) {
-        val appUserId = IsolatedKoinContext.getApplicationId()
+        val appUserId = IsolatedKoinContext.getApplicationUser().id
 
         val isAppAdminInConversation = getStoredConversationMembers(conversationId).any {
             it.userId.id == appUserId && it.role == ConversationRole.ADMIN
@@ -511,7 +511,7 @@ internal class ConversationService internal constructor(
     }
 
     private fun requireAppIsInConversation(conversationId: QualifiedId) {
-        val appUserId = IsolatedKoinContext.getApplicationId()
+        val appUserId = IsolatedKoinContext.getApplicationUser().id
         val isAppInConversation = getStoredConversationMembers(conversationId).any {
             it.userId.id == appUserId
         }

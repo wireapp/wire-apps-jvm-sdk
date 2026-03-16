@@ -1471,7 +1471,6 @@ class ConversationServiceTest {
         @BeforeAll
         fun setUp() {
             mockkObject(IsolatedKoinContext)
-            every { IsolatedKoinContext.getApplicationId() } returns APP_USER_ID
             every { IsolatedKoinContext.getApplicationUser() } returns
                 QualifiedId(APP_USER_ID, BACKEND_DOMAIN)
         }

@@ -248,7 +248,7 @@ internal suspend fun getOrInitCryptoClient(
     IsolatedKoinContext.setBackendDomain(backendDomain)
     logger.info("Retrieved Wire backend domain: $backendDomain")
 
-    val appId = IsolatedKoinContext.getApplicationId()
+    val appId = IsolatedKoinContext.getApplicationUser().id
 
     val cryptoClient = MlsCryptoClient.create(
         appId = appId,
