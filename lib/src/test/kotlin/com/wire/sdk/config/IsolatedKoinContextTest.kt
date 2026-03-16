@@ -125,6 +125,17 @@ class IsolatedKoinContextTest {
     }
 
     @Test
+    fun `getApplicationUser returns cached instance on repeated calls`() {
+        IsolatedKoinContext.setApplicationId(UUID.randomUUID())
+        IsolatedKoinContext.setBackendDomain("wire.example.com")
+
+        val first = IsolatedKoinContext.getApplicationUser()
+        val second = IsolatedKoinContext.getApplicationUser()
+
+        assertSame(first, second)
+    }
+
+    @Test
     fun `setApplicationId clears cached applicationUser`() {
         val id1 = UUID.randomUUID()
         val id2 = UUID.randomUUID()
@@ -139,17 +150,6 @@ class IsolatedKoinContextTest {
         val secondUser = IsolatedKoinContext.getApplicationUser()
         assertEquals(id2, secondUser.id)
         assertNotEquals(firstUser, secondUser)
-    }
-
-    @Test
-    fun `getApplicationUser returns cached instance on repeated calls`() {
-        IsolatedKoinContext.setApplicationId(UUID.randomUUID())
-        IsolatedKoinContext.setBackendDomain("wire.example.com")
-
-        val first = IsolatedKoinContext.getApplicationUser()
-        val second = IsolatedKoinContext.getApplicationUser()
-
-        assertSame(first, second)
     }
 
     @Test
@@ -246,8 +246,28 @@ class IsolatedKoinContextTest {
         executor.shutdown()
 
         assertEquals(threadCount, results.size)
-        // All threads must have received the same cached instance
         val first = results.first()
         results.forEach { assertSame(first, it) }
+    }
+
+    @Test
+    fun `getApplicationUser reflects latest applicationId after cache is cleared`() {
+        val initialId = UUID.randomUUID()
+        val updatedId = UUID.randomUUID()
+        val domain = "wire.example.com"
+
+        IsolatedKoinContext.setApplicationId(initialId)
+        IsolatedKoinContext.setBackendDomain(domain)
+        IsolatedKoinContext.getApplicationUser() // populate cache
+
+        IsolatedKoinContext.setApplicationId(updatedId) // clears cache, updates Koin
+
+        val user = IsolatedKoinContext.getApplicationUser()
+        assertEquals(
+            updatedId,
+            user.id,
+            "User must reflect the updated applicationId, not the cached stale one"
+        )
+        assertEquals(domain, user.domain)
     }
 }

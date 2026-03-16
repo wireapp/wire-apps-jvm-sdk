@@ -25,6 +25,8 @@ import java.util.UUID
 @Suppress("TooManyFunctions")
 internal object IsolatedKoinContext {
     private var _koinApp: KoinApplication? = null
+
+    @Volatile
     private var _applicationUser: QualifiedId? = null
 
     val koinApp: KoinApplication
@@ -57,22 +59,18 @@ internal object IsolatedKoinContext {
         clearCachedApplicationUser()
     }
 
-    fun getApplicationUser(): QualifiedId {
-        val id = checkNotNull(this.koinApp.koin.getProperty<UUID>(APPLICATION_ID)) {
-            "App ID is not set in Koin properties"
+    fun getApplicationUser(): QualifiedId =
+        _applicationUser ?: synchronized(this) {
+            _applicationUser ?: run {
+                val id = checkNotNull(koinApp.koin.getProperty<UUID>(APPLICATION_ID)) {
+                    "App ID is not set in Koin properties"
+                }
+                val domain = checkNotNull(koinApp.koin.getProperty<String>(BACKEND_DOMAIN)) {
+                    "Wire Backend domain is not set in Koin properties"
+                }
+                QualifiedId(id = id, domain = domain).also { _applicationUser = it }
+            }
         }
-
-        val domain = checkNotNull(koinApp.koin.getProperty<String>(BACKEND_DOMAIN)) {
-            "Wire Backend domain is not set in Koin properties"
-        }
-
-        return _applicationUser ?: synchronized(this) {
-            _applicationUser ?: QualifiedId(
-                id = id,
-                domain = domain
-            ).also { _applicationUser = it }
-        }
-    }
 
     fun setApiHost(value: String) {
         this.koinApp.koin.setProperty(API_HOST, value)
@@ -98,9 +96,7 @@ internal object IsolatedKoinContext {
     }
 
     private fun clearCachedApplicationUser() {
-        synchronized(this) {
-            _applicationUser = null
-        }
+        _applicationUser = null
     }
 
     /**
