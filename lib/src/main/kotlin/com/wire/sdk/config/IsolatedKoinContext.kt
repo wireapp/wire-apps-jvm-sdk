@@ -15,6 +15,7 @@
 
 package com.wire.sdk.config
 
+import com.wire.sdk.model.QualifiedId
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.dsl.koinApplication
@@ -24,6 +25,10 @@ import java.util.UUID
 @Suppress("TooManyFunctions")
 internal object IsolatedKoinContext {
     private var _koinApp: KoinApplication? = null
+
+    @Volatile
+    private var _applicationUser: QualifiedId? = null
+
     val koinApp: KoinApplication
         get() = _koinApp ?: error("Koin not started")
 
@@ -39,20 +44,32 @@ internal object IsolatedKoinContext {
             modules(sdkModule)
             fileProperties("/koin-sdk.properties")
         }
+
+        clearCachedApplicationUser()
     }
 
     fun stop() {
         _koinApp?.close()
         _koinApp = null
+        clearCachedApplicationUser()
     }
 
     fun setApplicationId(value: UUID) {
         this.koinApp.koin.setProperty(APPLICATION_ID, value)
+        clearCachedApplicationUser()
     }
 
-    fun getApplicationId(): UUID =
-        checkNotNull(this.koinApp.koin.getProperty(APPLICATION_ID)) {
-            "App ID is not set in Koin properties"
+    fun getApplicationUser(): QualifiedId =
+        _applicationUser ?: synchronized(this) {
+            _applicationUser ?: run {
+                val id = checkNotNull(koinApp.koin.getProperty<UUID>(APPLICATION_ID)) {
+                    "App ID is not set in Koin properties"
+                }
+                val domain = checkNotNull(koinApp.koin.getProperty<String>(BACKEND_DOMAIN)) {
+                    "Wire Backend domain is not set in Koin properties"
+                }
+                QualifiedId(id = id, domain = domain).also { _applicationUser = it }
+            }
         }
 
     fun setApiHost(value: String) {
@@ -75,12 +92,12 @@ internal object IsolatedKoinContext {
 
     fun setBackendDomain(value: String) {
         this.koinApp.koin.setProperty(BACKEND_DOMAIN, value)
+        clearCachedApplicationUser()
     }
 
-    fun getBackendDomain(): String =
-        checkNotNull(koinApp.koin.getProperty(BACKEND_DOMAIN)) {
-            "Wire Backend domain is not set in Koin properties"
-        }
+    private fun clearCachedApplicationUser() {
+        _applicationUser = null
+    }
 
     /**
      * Property Constants
