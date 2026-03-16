@@ -24,7 +24,7 @@ plugins {
     id("com.gradleup.shadow") version "9.3.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.1.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
-    id("app.cash.sqldelight") version "2.2.1"
+    id("app.cash.sqldelight") version "2.3.1"
     id("com.google.protobuf") version "0.9.6"
 
     // Maven Central
