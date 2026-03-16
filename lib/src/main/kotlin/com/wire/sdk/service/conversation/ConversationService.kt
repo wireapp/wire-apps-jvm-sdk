@@ -198,12 +198,7 @@ internal class ConversationService internal constructor(
                 )
             }
 
-            val users = userIds + listOf(
-                QualifiedId(
-                    id = IsolatedKoinContext.getApplicationId(),
-                    domain = IsolatedKoinContext.getBackendDomain()
-                )
-            )
+            val users = userIds + listOf(IsolatedKoinContext.getApplicationUser())
 
             val claimedKeyPackagesResult = claimKeyPackages(
                 userIds = users,
@@ -437,7 +432,6 @@ internal class ConversationService internal constructor(
         logger.info("Attempting to leave conversation. conversationId: {}", conversationId)
 
         val conversation = getConversationById(conversationId)
-        val appUserID: UUID = IsolatedKoinContext.getApplicationId()
 
         requireConversationIsGroupOrChannel(
             conversationId = conversationId,
@@ -445,7 +439,7 @@ internal class ConversationService internal constructor(
         )
 
         requireAppIsInConversation(conversationId)
-        val appUser = QualifiedId(appUserID, IsolatedKoinContext.getBackendDomain())
+        val appUser = IsolatedKoinContext.getApplicationUser()
         backendClient.leaveConversation(appUser, conversationId)
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
@@ -551,10 +545,7 @@ internal class ConversationService internal constructor(
         conversationId: QualifiedId,
         users: List<QualifiedId>
     ) {
-        val appUser = QualifiedId(
-            id = IsolatedKoinContext.getApplicationId(),
-            domain = IsolatedKoinContext.getBackendDomain()
-        )
+        val appUser = IsolatedKoinContext.getApplicationUser()
 
         if (appUser in users) {
             conversationStorage.getById(conversationId = conversationId)?.let {

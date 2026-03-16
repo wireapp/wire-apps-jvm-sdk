@@ -102,11 +102,6 @@ internal object IsolatedKoinContext {
         clearCachedApplicationUser()
     }
 
-    fun getBackendDomain(): String =
-        checkNotNull(koinApp.koin.getProperty(BACKEND_DOMAIN)) {
-            "Wire Backend domain is not set in Koin properties"
-        }
-
     private fun clearCachedApplicationUser() {
         synchronized(this) {
             _applicationUser = null
