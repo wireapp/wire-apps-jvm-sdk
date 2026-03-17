@@ -20,6 +20,7 @@ import com.wire.crypto.ConversationId
 import com.wire.crypto.MlsException
 import com.wire.sdk.TestUtils
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -69,9 +70,11 @@ class ConversationServiceTest {
                 coEvery { getShouldRejoinConversations() } returns false
             }
             val backendClient = mockk<BackendClient>()
+            val conversationsApiClient = mockk<ConversationsApiClient>()
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = conversationsApiClient,
                 conversationStorage = mockk(),
                 appStorage = appStorage,
                 cryptoClient = mockk()
@@ -101,6 +104,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = appStorage,
                 cryptoClient = mockk()
@@ -144,6 +148,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
@@ -194,6 +199,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
@@ -255,6 +261,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -312,6 +319,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -348,6 +356,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -398,6 +407,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -422,7 +432,8 @@ class ConversationServiceTest {
             val conversationStorage = mockk<ConversationStorage> {
                 every { getById(CONVERSATION_ID) } returns null
             }
-            val backendClient = mockk<BackendClient> {
+
+            val conversationsApiClient = mockk<ConversationsApiClient> {
                 coEvery {
                     getConversation(CONVERSATION_ID)
                 } throws WireException.ClientError(
@@ -433,6 +444,9 @@ class ConversationServiceTest {
                     ),
                     throwable = null
                 )
+            }
+
+            val backendClient = mockk<BackendClient> {
                 coEvery { deleteConversation(TEAM_ID, CONVERSATION_ID) } returns Unit
             }
             val cryptoClient = mockk<CryptoClient> {
@@ -442,6 +456,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -489,6 +504,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -539,6 +555,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -599,6 +616,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -625,6 +643,7 @@ class ConversationServiceTest {
         runTest {
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -652,6 +671,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -694,6 +714,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -733,6 +754,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -784,6 +806,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -864,6 +887,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -919,6 +943,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -978,6 +1003,7 @@ class ConversationServiceTest {
             }
 
             val service = ConversationService(
+                conversationsApiClient = mockk(),
                 backendClient = backendClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1002,6 +1028,7 @@ class ConversationServiceTest {
     fun whenRemovingMembersFromConversationWithEmptyListThenThrowInvalidParameter() =
         runTest {
             val service = ConversationService(
+                conversationsApiClient = mockk(),
                 backendClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = mockk(),
@@ -1029,6 +1056,7 @@ class ConversationServiceTest {
             }
 
             val service = ConversationService(
+                conversationsApiClient = mockk(),
                 backendClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1072,6 +1100,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -1120,6 +1149,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1198,6 +1228,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1248,6 +1279,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1288,6 +1320,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
@@ -1330,6 +1363,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
@@ -1372,6 +1406,7 @@ class ConversationServiceTest {
 
         val service = ConversationService(
             backendClient = backendClient,
+            conversationsApiClient = mockk(),
             conversationStorage = conversationStorage,
             appStorage = mockk(),
             cryptoClient = mockk()

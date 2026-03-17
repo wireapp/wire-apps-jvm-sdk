@@ -22,6 +22,7 @@ import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
@@ -57,6 +58,7 @@ import java.util.UUID
 @Suppress("TooManyFunctions")
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
+    private val conversationsApiClient: ConversationsApiClient,
     private val conversationStorage: ConversationStorage,
     private val appStorage: AppStorage,
     private val cryptoClient: CryptoClient
@@ -561,7 +563,7 @@ internal class ConversationService internal constructor(
 
     suspend fun getConversationById(conversationId: QualifiedId): ConversationEntity =
         conversationStorage.getById(conversationId = conversationId) ?: run {
-            val conversationResponse = backendClient.getConversation(conversationId)
+            val conversationResponse = conversationsApiClient.getConversation(conversationId)
             saveConversationWithMembers(
                 qualifiedConversation = conversationId,
                 conversationResponse = conversationResponse

@@ -220,13 +220,6 @@ internal class BackendClientHttp(
         }
     }
 
-    override suspend fun getConversation(conversationId: QualifiedId): ConversationResponse {
-        logger.info("Fetching conversation: $conversationId")
-        return httpClient.get(
-            "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}"
-        ).body<ConversationResponse>()
-    }
-
     /**
      * Get User details
      *

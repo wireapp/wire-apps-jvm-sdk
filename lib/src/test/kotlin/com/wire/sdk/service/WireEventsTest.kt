@@ -251,7 +251,7 @@ class WireEventsTest {
             val modules = module {
                 single<WireEventsHandler> { wireEventsHandler }
                 single<EventsRouter> {
-                    EventsRouter(get(), get(), get(), get(), get(), get())
+                    EventsRouter(get(), get(), get(), get(), get(), get(), get())
                 }
             }
             IsolatedKoinContext.start()

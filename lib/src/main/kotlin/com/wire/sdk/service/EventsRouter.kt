@@ -44,6 +44,7 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.wire.sdk.client.ConversationsApiClient
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineDispatcher
@@ -63,6 +64,7 @@ internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationService: ConversationService,
     private val backendClient: BackendClient,
+    private val conversationsApiClient: ConversationsApiClient,
     private val wireEventsHandler: WireEventsHandler,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
@@ -399,7 +401,7 @@ internal class EventsRouter internal constructor(
             welcome = welcome,
             qualifiedConversation = qualifiedConversation
         )
-        val conversationResponse = backendClient.getConversation(qualifiedConversation)
+        val conversationResponse = conversationsApiClient.getConversation(qualifiedConversation)
         val (conversationEntity, members) = conversationService.saveConversationWithMembers(
             qualifiedConversation = qualifiedConversation,
             conversationResponse = conversationResponse

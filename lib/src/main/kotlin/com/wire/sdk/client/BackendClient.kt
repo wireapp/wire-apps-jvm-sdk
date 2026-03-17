@@ -77,8 +77,6 @@ interface BackendClient {
 
     suspend fun sendMessage(mlsMessage: ByteArray)
 
-    suspend fun getConversation(conversationId: QualifiedId): ConversationResponse
-
     suspend fun getUserData(userId: QualifiedId): UserResponse
 
     suspend fun getSelfUser(): SelfUserResponse

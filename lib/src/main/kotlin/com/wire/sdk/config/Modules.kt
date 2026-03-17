@@ -23,6 +23,7 @@ import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
+import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.MlsTransportImpl
@@ -84,9 +85,11 @@ val sdkModule =
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
         single<BackendClient> { BackendClientHttp(get(), get()) }
+        single<ConversationsApiClient> { ConversationsApiClient(get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
-        single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get()) } onClose { it?.close() }
+        single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get(), get()) }
+        single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) } onClose
+            { it?.close() }
         single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost(), get())
@@ -99,7 +102,7 @@ val sdkModule =
         single { WireTeamEventsListener(get(), get(), get()) }
 
         // Services
-        single { ConversationService(get(), get(), get(), get()) }
+        single { ConversationService(get(), get(), get(), get(), get()) }
 
         // Manager
         single { WireApplicationManager(get(), get(), get(), get(), get()) }

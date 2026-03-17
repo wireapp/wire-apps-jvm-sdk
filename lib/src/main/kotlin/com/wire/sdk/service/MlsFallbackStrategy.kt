@@ -19,12 +19,14 @@ package com.wire.sdk.service
 import com.wire.crypto.ConversationId
 import com.wire.crypto.toGroupInfo
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.model.QualifiedId
 import org.slf4j.LoggerFactory
 
 class MlsFallbackStrategy internal constructor(
     private val backendClient: BackendClient,
+    private val conversationsApiClient: ConversationsApiClient,
     private val cryptoClient: CryptoClient
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -44,7 +46,9 @@ class MlsFallbackStrategy internal constructor(
         conversationId: QualifiedId
     ) {
         val conversationExists = cryptoClient.conversationExists(mlsGroupId = mlsGroupId)
-        val fetchedConversation = backendClient.getConversation(conversationId = conversationId)
+        val fetchedConversation = conversationsApiClient.getConversation(
+            conversationId = conversationId
+        )
         val conversationEpoch = fetchedConversation.epoch
         val currentEpoch = cryptoClient.conversationEpoch(mlsGroupId = mlsGroupId)
         val isEpochBehind = conversationEpoch != null && currentEpoch.toLong() < conversationEpoch
