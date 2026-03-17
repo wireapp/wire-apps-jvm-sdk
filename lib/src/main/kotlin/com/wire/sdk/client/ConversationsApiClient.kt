@@ -19,9 +19,15 @@ package com.wire.sdk.client
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.conversation.ConversationResponse
+import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.accept
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import org.slf4j.LoggerFactory
 
 internal class ConversationsApiClient(private val httpClient: HttpClient) {
@@ -32,5 +38,15 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
         return httpClient.get(
             "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}"
         ).body<ConversationResponse>()
+    }
+
+    suspend fun createGroupConversation(
+        createConversationRequest: CreateConversationRequest
+    ): ConversationResponse {
+        return httpClient.post("/$API_VERSION/conversations") {
+            setBody(createConversationRequest)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<ConversationResponse>()
     }
 }

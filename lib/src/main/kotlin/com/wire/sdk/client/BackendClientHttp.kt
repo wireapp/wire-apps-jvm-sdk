@@ -39,7 +39,6 @@ import com.wire.sdk.model.http.conversation.ConversationIdsResponse
 import com.wire.sdk.model.http.conversation.ConversationListPaginationConfig
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationsResponse
-import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
@@ -289,16 +288,6 @@ internal class BackendClientHttp(
             )
             contentType(ContentType.MultiPart.Mixed)
         }.body<AssetUploadResponse>()
-    }
-
-    override suspend fun createGroupConversation(
-        createConversationRequest: CreateConversationRequest
-    ): ConversationResponse {
-        return httpClient.post("/$API_VERSION/conversations") {
-            setBody(createConversationRequest)
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }.body<ConversationResponse>()
     }
 
     override suspend fun getOneToOneConversation(

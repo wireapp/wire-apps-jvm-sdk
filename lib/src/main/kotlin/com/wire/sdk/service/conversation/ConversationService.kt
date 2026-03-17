@@ -90,7 +90,7 @@ internal class ConversationService internal constructor(
         userIds: List<QualifiedId>
     ): QualifiedId {
         val teamId = getSelfTeamId()
-        val conversationCreatedResponse = backendClient.createGroupConversation(
+        val conversationCreatedResponse = conversationsApiClient.createGroupConversation(
             createConversationRequest = CreateConversationRequest.createGroup(
                 name = name,
                 teamId = teamId
@@ -124,7 +124,7 @@ internal class ConversationService internal constructor(
     ): QualifiedId {
         try {
             val teamId = getSelfTeamId()
-            val conversationCreatedResponse = backendClient.createGroupConversation(
+            val conversationCreatedResponse = conversationsApiClient.createGroupConversation(
                 createConversationRequest = CreateConversationRequest.createChannel(
                     name = name,
                     teamId = teamId

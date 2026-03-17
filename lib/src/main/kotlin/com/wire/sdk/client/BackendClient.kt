@@ -30,7 +30,6 @@ import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.ConversationResponse
-import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
@@ -94,10 +93,6 @@ interface BackendClient {
         encryptedFileLength: Long,
         assetUploadData: AssetUploadData
     ): AssetUploadResponse
-
-    suspend fun createGroupConversation(
-        createConversationRequest: CreateConversationRequest
-    ): ConversationResponse
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 
