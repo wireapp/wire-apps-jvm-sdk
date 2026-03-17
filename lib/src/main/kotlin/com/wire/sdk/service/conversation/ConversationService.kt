@@ -187,7 +187,7 @@ internal class ConversationService internal constructor(
         val cipherSuiteCode = getCipherSuiteCode()
         val cipherSuite = MlsCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
-        val publicKeys = (publicKeysResponse ?: backendClient.getPublicKeys()).run {
+        val publicKeys = (publicKeysResponse ?: mlsApiClient.getPublicKeys()).run {
             getRemovalKey(cipherSuite = cipherSuite)
         }
 

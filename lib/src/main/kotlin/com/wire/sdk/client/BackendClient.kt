@@ -28,7 +28,6 @@ import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
-import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -59,8 +58,6 @@ interface BackendClient {
         cryptoClientId: CryptoClientId,
         mlsKeyPackages: List<ByteArray>
     )
-
-    suspend fun getPublicKeys(): MlsPublicKeysResponse
 
     suspend fun uploadCommitBundle(commitBundle: ByteArray)
 

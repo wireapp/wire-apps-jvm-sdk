@@ -19,9 +19,11 @@ package com.wire.sdk.client
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
+import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.accept
+import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.http.ContentType
@@ -29,6 +31,13 @@ import io.ktor.http.contentType
 
 internal class MlsApiClient(private val httpClient: HttpClient) {
 //    private val logger = LoggerFactory.getLogger(this::class.java)
+
+    suspend fun getPublicKeys(): MlsPublicKeysResponse {
+        return httpClient.get("$API_VERSION/mls/public-keys") {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<MlsPublicKeysResponse>()
+    }
 
     suspend fun claimKeyPackages(
         user: QualifiedId,
