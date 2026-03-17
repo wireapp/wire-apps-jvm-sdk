@@ -21,6 +21,7 @@ import com.wire.crypto.MlsException
 import com.wire.sdk.TestUtils
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -1414,6 +1415,7 @@ class ConversationServiceTest {
             every { saveMembers(any(), any()) } returns Unit
         }
         val backendClient = mockk<BackendClient>()
+        val usersApiClient = mockk<UsersApiClient>()
 
         val service = ConversationService(
             backendClient = backendClient,
@@ -1430,7 +1432,7 @@ class ConversationServiceTest {
 
         assertEquals("${otherMember.id}@${otherMember.domain}", conversationEntity.name)
         // Verify no backend call was made to look up user data
-        coVerify(exactly = 0) { backendClient.getUserData(any()) }
+        coVerify(exactly = 0) { usersApiClient.getUserData(any()) }
     }
 
     private companion object {

@@ -24,6 +24,7 @@ import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
 import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.MlsTransportImpl
@@ -86,6 +87,7 @@ val sdkModule =
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
         single<BackendClient> { BackendClientHttp(get(), get()) }
         single<ConversationsApiClient> { ConversationsApiClient(get()) }
+        single<UsersApiClient> { UsersApiClient(get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) } onClose
@@ -105,7 +107,7 @@ val sdkModule =
         single { ConversationService(get(), get(), get(), get(), get()) }
 
         // Manager
-        single { WireApplicationManager(get(), get(), get(), get(), get()) }
+        single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10

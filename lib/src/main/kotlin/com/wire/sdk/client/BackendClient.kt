@@ -33,7 +33,6 @@ import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserClientResponse
-import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 
 interface BackendClient {
@@ -73,8 +72,6 @@ interface BackendClient {
     suspend fun uploadCommitBundle(commitBundle: ByteArray)
 
     suspend fun sendMessage(mlsMessage: ByteArray)
-
-    suspend fun getUserData(userId: QualifiedId): UserResponse
 
     suspend fun getSelfUser(): SelfUserResponse
 

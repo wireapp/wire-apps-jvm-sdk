@@ -16,6 +16,7 @@
 package com.wire.sdk.service
 
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AssetResource
@@ -54,6 +55,7 @@ import org.slf4j.LoggerFactory
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val backendClient: BackendClient,
+    private val usersApiClient: UsersApiClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
@@ -381,7 +383,7 @@ class WireApplicationManager internal constructor(
      */
     @Throws(WireException::class)
     suspend fun getUserSuspending(userId: QualifiedId): UserResponse =
-        backendClient.getUserData(userId)
+        usersApiClient.getUserData(userId)
 
     /**
      * Creates a Group Conversation where currently the only admin is the App

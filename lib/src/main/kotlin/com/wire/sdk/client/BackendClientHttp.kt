@@ -38,7 +38,6 @@ import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.model.http.user.UserClientResponse
-import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.Mls
 import com.wire.sdk.utils.obfuscateId
@@ -210,19 +209,6 @@ internal class BackendClientHttp(
             setBody(mlsMessage)
             contentType(Mls)
         }
-    }
-
-    /**
-     * Get User details
-     *
-     * @param [QualifiedId] The ID of the user to be requested
-     * @return [UserResponse]
-     */
-    override suspend fun getUserData(userId: QualifiedId): UserResponse {
-        logger.info("Fetching user: $userId")
-        return httpClient.get(
-            "/$API_VERSION/users/${userId.domain}/${userId.id}"
-        ).body<UserResponse>()
     }
 
     /**
