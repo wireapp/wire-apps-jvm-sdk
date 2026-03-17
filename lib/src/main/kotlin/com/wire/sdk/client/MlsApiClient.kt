@@ -85,4 +85,11 @@ internal class MlsApiClient(
             contentType(Mls)
         }
     }
+
+    suspend fun sendMessage(mlsMessage: ByteArray) {
+        httpClient.post("/$API_VERSION/mls/messages") {
+            setBody(mlsMessage)
+            contentType(Mls)
+        }
+    }
 }

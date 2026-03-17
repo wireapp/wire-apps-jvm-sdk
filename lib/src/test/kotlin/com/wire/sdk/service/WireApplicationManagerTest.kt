@@ -24,6 +24,7 @@ import com.wire.sdk.TestUtils
 import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
@@ -344,7 +345,9 @@ class WireApplicationManagerTest {
                 conversationEntity
 
             val backendClient = mockk<BackendClient>(relaxed = true)
-            coEvery { backendClient.sendMessage(any()) } returns Unit
+
+            val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
+            coEvery { mlsApiClient.sendMessage(any()) } returns Unit
 
             val usersApiClient = mockk<UsersApiClient>(relaxed = true)
 
@@ -358,6 +361,7 @@ class WireApplicationManagerTest {
                 teamStorage = teamStorage,
                 backendClient = backendClient,
                 usersApiClient = usersApiClient,
+                mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService
@@ -391,7 +395,7 @@ class WireApplicationManagerTest {
             )
 
             coVerify(exactly = 1) { cryptoClient.encryptMls(any(), any()) }
-            coVerify(exactly = 1) { backendClient.sendMessage(any()) }
+            coVerify(exactly = 1) { mlsApiClient.sendMessage(any()) }
         }
 
     @Test
@@ -416,7 +420,9 @@ class WireApplicationManagerTest {
                 conversationEntity
 
             val backendClient = mockk<BackendClient>(relaxed = true)
-            coEvery { backendClient.sendMessage(any()) } returns Unit
+
+            val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
+            coEvery { mlsApiClient.sendMessage(any()) } returns Unit
 
             val usersApiClient = mockk<UsersApiClient>(relaxed = true)
 
@@ -430,6 +436,7 @@ class WireApplicationManagerTest {
                 teamStorage = teamStorage,
                 backendClient = backendClient,
                 usersApiClient = usersApiClient,
+                mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService
@@ -466,7 +473,7 @@ class WireApplicationManagerTest {
             assertEquals(messageTimerValue, expires)
 
             coVerify(exactly = 1) { cryptoClient.encryptMls(any(), any()) }
-            coVerify(exactly = 1) { backendClient.sendMessage(any()) }
+            coVerify(exactly = 1) { mlsApiClient.sendMessage(any()) }
         }
 
     @Test
@@ -492,6 +499,7 @@ class WireApplicationManagerTest {
 
             val backendClient = mockk<BackendClient>(relaxed = true)
             val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
             val teamStorage = mockk<TeamStorage>(relaxed = true)
@@ -500,6 +508,7 @@ class WireApplicationManagerTest {
                 teamStorage = teamStorage,
                 backendClient = backendClient,
                 usersApiClient = usersApiClient,
+                mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService

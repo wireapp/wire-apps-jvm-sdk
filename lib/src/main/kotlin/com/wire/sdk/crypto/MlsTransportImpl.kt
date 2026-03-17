@@ -21,14 +21,10 @@ import com.wire.crypto.HistorySecret
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.MlsTransportData
 import com.wire.crypto.MlsTransportResponse
-import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.exception.WireException
 
-internal class MlsTransportImpl(
-    private val backendClient: BackendClient,
-    private val mlsApiClient: MlsApiClient
-) : MlsTransport {
+internal class MlsTransportImpl(private val mlsApiClient: MlsApiClient) : MlsTransport {
     override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
         try {
             mlsApiClient.uploadCommitBundle(
@@ -44,7 +40,7 @@ internal class MlsTransportImpl(
 
     override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse {
         try {
-            backendClient.sendMessage(mlsMessage)
+            mlsApiClient.sendMessage(mlsMessage)
             return MlsTransportResponse.Success
         } catch (ex: WireException) {
             return MlsTransportResponse.Abort(ex.message ?: "Unknown Backend error occurred")

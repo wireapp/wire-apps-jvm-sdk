@@ -16,6 +16,7 @@
 package com.wire.sdk.service
 
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -52,10 +53,12 @@ import org.slf4j.LoggerFactory
  * Some functions are provided as blocking methods for Java interoperability or
  * as suspending methods for Kotlin consumers.
  */
+@Suppress("LongParameterList")
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val backendClient: BackendClient,
     private val usersApiClient: UsersApiClient,
+    private val mlsApiClient: MlsApiClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
@@ -147,14 +150,14 @@ class WireApplicationManager internal constructor(
             )
 
             try {
-                backendClient.sendMessage(mlsMessage = encryptedMessage)
+                mlsApiClient.sendMessage(mlsMessage = encryptedMessage)
             } catch (exception: WireException.ClientError) {
                 if (exception.response.isMlsStaleMessage()) {
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
                         conversationId = preparedMessage.conversationId
                     )
-                    backendClient.sendMessage(mlsMessage = encryptedMessage)
+                    mlsApiClient.sendMessage(mlsMessage = encryptedMessage)
                 }
             }
         }

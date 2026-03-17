@@ -35,7 +35,6 @@ import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.persistence.AppStorage
-import com.wire.sdk.utils.Mls
 import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -153,13 +152,6 @@ internal class BackendClientHttp(
             .clearToken()
 
         return clientCreatedResponse
-    }
-
-    override suspend fun sendMessage(mlsMessage: ByteArray) {
-        httpClient.post("/$API_VERSION/mls/messages") {
-            setBody(mlsMessage)
-            contentType(Mls)
-        }
     }
 
     /**
