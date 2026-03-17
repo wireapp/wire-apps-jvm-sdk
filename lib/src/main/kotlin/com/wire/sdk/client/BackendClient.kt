@@ -92,11 +92,6 @@ interface BackendClient {
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 
-    suspend fun deleteConversation(
-        teamId: TeamId,
-        conversationId: QualifiedId
-    )
-
     suspend fun getLastNotification(): EventResponse
 
     suspend fun getPaginatedNotifications(

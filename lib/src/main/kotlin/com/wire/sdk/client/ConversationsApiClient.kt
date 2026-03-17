@@ -18,6 +18,7 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationIdsRequest
 import com.wire.sdk.model.http.conversation.ConversationIdsResponse
 import com.wire.sdk.model.http.conversation.ConversationListPaginationConfig
@@ -168,6 +169,27 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
             "App user is removed from the conversation in the backend. " +
                 "userId:{}, conversationId:{}",
             userId,
+            conversationId
+        )
+    }
+
+    suspend fun deleteConversation(
+        teamId: TeamId,
+        conversationId: QualifiedId
+    ) {
+        logger.info(
+            "Conversation will be deleted in the backend. teamId:{}, conversationId:{}",
+            teamId,
+            conversationId
+        )
+
+        val path = "/$API_VERSION/teams/${teamId.value}/conversations/${conversationId.id}"
+
+        httpClient.delete(path)
+
+        logger.info(
+            "Conversation is deleted in the backend. teamId:{}, conversationId:{}",
+            teamId,
             conversationId
         )
     }

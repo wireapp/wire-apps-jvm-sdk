@@ -468,7 +468,7 @@ internal class ConversationService internal constructor(
             "Conversation teamId must not be null."
         }
 
-        backendClient.deleteConversation(conversation.teamId, conversationId)
+        conversationsApiClient.deleteConversation(conversation.teamId, conversationId)
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
         logger.info(
