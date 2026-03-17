@@ -17,20 +17,30 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
+import com.wire.sdk.exception.WireException
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.http.MlsKeyPackageRequest
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
+import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import org.slf4j.LoggerFactory
+import java.util.Base64
 
-internal class MlsApiClient(private val httpClient: HttpClient) {
-//    private val logger = LoggerFactory.getLogger(this::class.java)
+internal class MlsApiClient(
+    private val httpClient: HttpClient,
+    private val appStorage: AppStorage
+) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     suspend fun getPublicKeys(): MlsPublicKeysResponse {
         return httpClient.get("$API_VERSION/mls/public-keys") {
@@ -49,5 +59,22 @@ internal class MlsApiClient(private val httpClient: HttpClient) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<ClaimedKeyPackageList>()
+    }
+
+    suspend fun uploadMlsKeyPackages(
+        cryptoClientId: CryptoClientId,
+        mlsKeyPackages: List<ByteArray>
+    ) {
+        val mlsKeyPackageRequest =
+            MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
+        try {
+            httpClient.post("/$API_VERSION/mls/key-packages/self/${appStorage.getDeviceId()}") {
+                setBody(mlsKeyPackageRequest)
+                contentType(ContentType.Application.Json)
+            }
+        } catch (ex: WireException.ClientError) {
+            logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
+        }
+        logger.info("Updated client with mls key packages for client: $cryptoClientId")
     }
 }

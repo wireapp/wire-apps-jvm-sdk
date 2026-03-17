@@ -28,7 +28,6 @@ import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.ClientUpdateRequest
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.FeaturesResponse
-import com.wire.sdk.model.http.MlsKeyPackageRequest
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
@@ -60,7 +59,6 @@ import io.ktor.util.encodeBase64
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import org.slf4j.LoggerFactory
-import java.util.Base64
 import kotlin.time.Clock
 
 /**
@@ -155,23 +153,6 @@ internal class BackendClientHttp(
             .clearToken()
 
         return clientCreatedResponse
-    }
-
-    override suspend fun uploadMlsKeyPackages(
-        cryptoClientId: CryptoClientId,
-        mlsKeyPackages: List<ByteArray>
-    ) {
-        val mlsKeyPackageRequest =
-            MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
-        try {
-            httpClient.post("/$API_VERSION/mls/key-packages/self/${appStorage.getDeviceId()}") {
-                setBody(mlsKeyPackageRequest)
-                contentType(ContentType.Application.Json)
-            }
-        } catch (ex: WireException.ClientError) {
-            logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
-        }
-        logger.info("Updated client with mls key packages for client: $cryptoClientId")
     }
 
     override suspend fun uploadCommitBundle(commitBundle: ByteArray) {

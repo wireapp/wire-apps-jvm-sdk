@@ -89,10 +89,10 @@ val sdkModule =
         single<BackendClient> { BackendClientHttp(get(), get()) }
         single<ConversationsApiClient> { ConversationsApiClient(get()) }
         single<UsersApiClient> { UsersApiClient(get()) }
-        single<MlsApiClient> { MlsApiClient(get()) }
+        single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) } onClose
+        single { EventsRouter(get(), get(), get(), get(), get(), get(), get(), get()) } onClose
             { it?.close() }
         single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {
@@ -100,7 +100,7 @@ val sdkModule =
         } onClose { it?.close() }
         single<CryptoClient> {
             runBlocking {
-                getOrInitCryptoClient(get(), get(), get())
+                getOrInitCryptoClient(get(), get(), get(), get())
             }
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get(), get()) }
@@ -244,6 +244,7 @@ private fun initializeDatabase(dbUrl: String): SqlDriver {
 @Suppress("LongMethod")
 internal suspend fun getOrInitCryptoClient(
     backendClient: BackendClient,
+    mlsApiClient: MlsApiClient,
     appStorage: AppStorage,
     mlsTransport: MlsTransport
 ): CryptoClient {
@@ -321,7 +322,7 @@ internal suspend fun getOrInitCryptoClient(
             mlsPublicKeys = cryptoClient.mlsGetPublicKey()
         )
 
-        backendClient.uploadMlsKeyPackages(
+        mlsApiClient.uploadMlsKeyPackages(
             cryptoClientId = cryptoClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
         )

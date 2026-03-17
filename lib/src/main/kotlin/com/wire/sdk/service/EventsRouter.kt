@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.MlsApiClient
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineDispatcher
@@ -65,6 +66,7 @@ internal class EventsRouter internal constructor(
     private val conversationService: ConversationService,
     private val backendClient: BackendClient,
     private val conversationsApiClient: ConversationsApiClient,
+    private val mlsApiClient: MlsApiClient,
     private val wireEventsHandler: WireEventsHandler,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
@@ -409,7 +411,7 @@ internal class EventsRouter internal constructor(
 
         if (cryptoClient.hasTooFewKeyPackageCount()) {
             cryptoClient.getCryptoClientId()?.let { cryptoClientId ->
-                backendClient.uploadMlsKeyPackages(
+                mlsApiClient.uploadMlsKeyPackages(
                     cryptoClientId = cryptoClientId,
                     mlsKeyPackages =
                         cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }

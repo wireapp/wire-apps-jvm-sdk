@@ -54,11 +54,6 @@ interface BackendClient {
 
     suspend fun registerClient(registerClientRequest: RegisterClientRequest): RegisterClientResponse
 
-    suspend fun uploadMlsKeyPackages(
-        cryptoClientId: CryptoClientId,
-        mlsKeyPackages: List<ByteArray>
-    )
-
     suspend fun uploadCommitBundle(commitBundle: ByteArray)
 
     suspend fun sendMessage(mlsMessage: ByteArray)
