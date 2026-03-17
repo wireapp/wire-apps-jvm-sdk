@@ -25,6 +25,7 @@ import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
@@ -89,6 +90,7 @@ val sdkModule =
         single<BackendClient> { BackendClientHttp(get(), get()) }
         single<ConversationsApiClient> { ConversationsApiClient(get()) }
         single<UsersApiClient> { UsersApiClient(get()) }
+        single<TeamsApiClient> { TeamsApiClient(get()) }
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
@@ -106,7 +108,7 @@ val sdkModule =
         single { WireTeamEventsListener(get(), get(), get()) }
 
         // Services
-        single { ConversationService(get(), get(), get(), get(), get(), get(), get()) }
+        single { ConversationService(get(), get(), get(), get(), get(), get(), get(), get()) }
 
         // Manager
         single { WireApplicationManager(get(), get(), get(), get(), get(), get(), get()) }

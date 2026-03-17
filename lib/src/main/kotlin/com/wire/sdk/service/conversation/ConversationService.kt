@@ -24,6 +24,7 @@ import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
@@ -62,6 +63,7 @@ internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
     private val usersApiClient: UsersApiClient,
     private val conversationsApiClient: ConversationsApiClient,
+    private val teamsApiClient: TeamsApiClient,
     private val mlsApiClient: MlsApiClient,
     private val conversationStorage: ConversationStorage,
     private val appStorage: AppStorage,
@@ -472,7 +474,7 @@ internal class ConversationService internal constructor(
             "Conversation teamId must not be null."
         }
 
-        conversationsApiClient.deleteConversation(conversation.teamId, conversationId)
+        teamsApiClient.deleteConversation(conversation.teamId, conversationId)
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
         logger.info(

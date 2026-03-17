@@ -22,6 +22,7 @@ import com.wire.sdk.TestUtils
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
@@ -78,6 +79,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = appStorage,
@@ -111,6 +113,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = appStorage,
@@ -157,6 +160,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
@@ -214,6 +218,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
@@ -277,6 +282,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -337,6 +343,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -376,6 +383,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -416,7 +424,7 @@ class ConversationServiceTest {
                 every { delete(CONVERSATION_ID) } returns Unit
             }
 
-            val conversationsApiClient = mockk<ConversationsApiClient> {
+            val teamsApiClient = mockk<TeamsApiClient> {
                 coEvery { deleteConversation(TEAM_ID, CONVERSATION_ID) } returns Unit
             }
 
@@ -428,7 +436,8 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
-                conversationsApiClient = conversationsApiClient,
+                conversationsApiClient = mockk(),
+                teamsApiClient = teamsApiClient,
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -438,7 +447,7 @@ class ConversationServiceTest {
             service.deleteConversation(CONVERSATION_ID)
 
             coVerify(exactly = 1) {
-                conversationsApiClient.deleteConversation(TEAM_ID, CONVERSATION_ID)
+                teamsApiClient.deleteConversation(TEAM_ID, CONVERSATION_ID)
                 cryptoClient.wipeConversation(CONVERSATION_MLS_GROUP_ID)
             }
 
@@ -466,7 +475,9 @@ class ConversationServiceTest {
                     ),
                     throwable = null
                 )
+            }
 
+            val teamsApiClient = mockk<TeamsApiClient> {
                 coEvery { deleteConversation(TEAM_ID, CONVERSATION_ID) } returns Unit
             }
 
@@ -479,6 +490,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = teamsApiClient,
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -494,7 +506,7 @@ class ConversationServiceTest {
             }
 
             coVerify(exactly = 0) {
-                conversationsApiClient.deleteConversation(any(), any())
+                teamsApiClient.deleteConversation(any(), any())
                 cryptoClient.wipeConversation(any())
             }
             verify(exactly = 0) {
@@ -518,7 +530,7 @@ class ConversationServiceTest {
                 every { getById(CONVERSATION_ID) } returns conversationEntity
             }
 
-            val conversationsApiClient = mockk<ConversationsApiClient> {
+            val teamsApiClient = mockk<TeamsApiClient> {
                 coEvery { deleteConversation(TEAM_ID, CONVERSATION_ID) } returns Unit
             }
 
@@ -530,7 +542,8 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
-                conversationsApiClient = conversationsApiClient,
+                conversationsApiClient = mockk(),
+                teamsApiClient = teamsApiClient,
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -541,7 +554,7 @@ class ConversationServiceTest {
                 service.deleteConversation(CONVERSATION_ID)
             }
             coVerify(exactly = 0) {
-                conversationsApiClient.deleteConversation(any(), any())
+                teamsApiClient.deleteConversation(any(), any())
                 cryptoClient.wipeConversation(any())
             }
             verify(exactly = 0) {
@@ -572,7 +585,7 @@ class ConversationServiceTest {
                     )
                 )
             }
-            val conversationsApiClient = mockk<ConversationsApiClient> {
+            val teamsApiClient = mockk<TeamsApiClient> {
                 coEvery { deleteConversation(TEAM_ID, CONVERSATION_ID) } returns Unit
             }
             val cryptoClient = mockk<CryptoClient> {
@@ -583,7 +596,8 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
-                conversationsApiClient = conversationsApiClient,
+                conversationsApiClient = mockk(),
+                teamsApiClient = teamsApiClient,
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -594,7 +608,7 @@ class ConversationServiceTest {
                 service.deleteConversation(CONVERSATION_ID)
             }
             coVerify(exactly = 0) {
-                conversationsApiClient.deleteConversation(any(), any())
+                teamsApiClient.deleteConversation(any(), any())
                 cryptoClient.wipeConversation(any())
             }
             verify(exactly = 0) {
@@ -650,6 +664,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mlsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -679,6 +694,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = mockk(),
@@ -709,6 +725,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -754,6 +771,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -796,6 +814,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -853,6 +872,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mlsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -939,6 +959,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mlsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -997,6 +1018,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1060,6 +1082,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1087,6 +1110,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = mockk(),
@@ -1117,6 +1141,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1162,6 +1187,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1213,6 +1239,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1294,6 +1321,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1353,6 +1381,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
                 mlsApiClient = mlsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1400,6 +1429,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
@@ -1447,6 +1477,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                teamsApiClient = mockk(),
                 mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
@@ -1493,6 +1524,7 @@ class ConversationServiceTest {
             backendClient = backendClient,
             usersApiClient = usersApiClient,
             conversationsApiClient = mockk(),
+            teamsApiClient = mockk(),
             mlsApiClient = mockk(),
             conversationStorage = conversationStorage,
             appStorage = mockk(),
