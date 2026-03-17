@@ -96,8 +96,6 @@ interface BackendClient {
         querySince: String?
     ): NotificationsResponse
 
-    suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse>
-
     suspend fun getClientsByUserIds(
         userIds: List<QualifiedId>
     ): Map<QualifiedId, List<UserClientResponse>>

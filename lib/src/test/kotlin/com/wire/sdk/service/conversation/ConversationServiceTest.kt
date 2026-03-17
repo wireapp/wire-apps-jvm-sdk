@@ -75,6 +75,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = mockk(),
                 appStorage = appStorage,
@@ -106,6 +107,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = mockk(),
                 appStorage = appStorage,
@@ -150,6 +152,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
@@ -205,6 +208,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
@@ -266,6 +270,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -324,6 +329,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -361,6 +367,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -412,6 +419,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -460,6 +468,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -510,6 +519,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -561,6 +571,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -622,6 +633,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -649,6 +661,7 @@ class ConversationServiceTest {
         runTest {
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = mockk(),
@@ -677,6 +690,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -720,6 +734,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -760,6 +775,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -812,6 +828,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -893,6 +910,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -937,7 +955,7 @@ class ConversationServiceTest {
                 every { deleteMembers(CONVERSATION_ID, membersToRemove) } returns Unit
             }
 
-            val backendClient = mockk<BackendClient> {
+            val usersApiClient = mockk<UsersApiClient> {
                 coEvery { getClientsByUserId(CONVERSATION_MEMBER_1) } returns listOf(client)
             }
 
@@ -948,7 +966,8 @@ class ConversationServiceTest {
             }
 
             val service = ConversationService(
-                backendClient = backendClient,
+                backendClient = mockk(),
+                usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -958,7 +977,7 @@ class ConversationServiceTest {
             service.removeMembersFromConversation(CONVERSATION_ID, membersToRemove)
 
             coVerify(exactly = 1) {
-                backendClient.getClientsByUserId(CONVERSATION_MEMBER_1)
+                usersApiClient.getClientsByUserId(CONVERSATION_MEMBER_1)
                 cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             verify(exactly = 1) {
@@ -1002,6 +1021,8 @@ class ConversationServiceTest {
                 coEvery { getClientsByUserIds(membersToRemove) } returns usersClientsMap
             }
 
+            val usersApiClient = mockk<UsersApiClient> {}
+
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
                     removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
@@ -1009,8 +1030,9 @@ class ConversationServiceTest {
             }
 
             val service = ConversationService(
-                conversationsApiClient = mockk(),
                 backendClient = backendClient,
+                usersApiClient = usersApiClient,
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1023,7 +1045,7 @@ class ConversationServiceTest {
                 cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             coVerify(exactly = 0) {
-                backendClient.getClientsByUserId(any())
+                usersApiClient.getClientsByUserId(any())
             }
             verify(exactly = 1) {
                 conversationStorage.deleteMembers(CONVERSATION_ID, membersToRemove)
@@ -1034,8 +1056,9 @@ class ConversationServiceTest {
     fun whenRemovingMembersFromConversationWithEmptyListThenThrowInvalidParameter() =
         runTest {
             val service = ConversationService(
-                conversationsApiClient = mockk(),
                 backendClient = mockk(),
+                usersApiClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -1062,8 +1085,9 @@ class ConversationServiceTest {
             }
 
             val service = ConversationService(
-                conversationsApiClient = mockk(),
                 backendClient = mockk(),
+                usersApiClient = mockk(),
+                conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -1106,6 +1130,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1143,7 +1168,7 @@ class ConversationServiceTest {
                 )
             }
 
-            val backendClient = mockk<BackendClient> {
+            val usersApiClient = mockk<UsersApiClient> {
                 coEvery { getClientsByUserId(CONVERSATION_MEMBER_1) } returns listOf(client1)
             }
 
@@ -1154,7 +1179,8 @@ class ConversationServiceTest {
             }
 
             val service = ConversationService(
-                backendClient = backendClient,
+                backendClient = mockk(),
+                usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1216,7 +1242,7 @@ class ConversationServiceTest {
                 every { deleteMembers(CONVERSATION_ID, membersToRemove) } returns Unit
             }
 
-            val backendClient = mockk<BackendClient> {
+            val usersApiClient = mockk<UsersApiClient> {
                 coEvery {
                     getClientsByUserId(CONVERSATION_MEMBER_1)
                 } returns listOf(client1, client2, client3)
@@ -1233,7 +1259,8 @@ class ConversationServiceTest {
             }
 
             val service = ConversationService(
-                backendClient = backendClient,
+                backendClient = mockk(),
+                usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1245,7 +1272,7 @@ class ConversationServiceTest {
             assertEquals(3, capturedClients.captured.size)
 
             coVerify(exactly = 1) {
-                backendClient.getClientsByUserId(CONVERSATION_MEMBER_1)
+                usersApiClient.getClientsByUserId(CONVERSATION_MEMBER_1)
                 cryptoClient.removeMembersFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(client1, client2, client3).map { client ->
@@ -1285,6 +1312,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = backendClient,
+                usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
@@ -1330,6 +1358,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
@@ -1375,6 +1404,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
+                usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
@@ -1419,6 +1449,7 @@ class ConversationServiceTest {
 
         val service = ConversationService(
             backendClient = backendClient,
+            usersApiClient = usersApiClient,
             conversationsApiClient = mockk(),
             conversationStorage = conversationStorage,
             appStorage = mockk(),

@@ -18,6 +18,7 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -38,5 +39,13 @@ internal class UsersApiClient(private val httpClient: HttpClient) {
         return httpClient.get(
             "/$API_VERSION/users/${userId.domain}/${userId.id}"
         ).body<UserResponse>()
+    }
+
+    suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
+        val clients = httpClient
+            .get("/users/${userId.domain}/${userId.id}/clients")
+            .body<List<UserClientResponse>>()
+
+        return clients
     }
 }

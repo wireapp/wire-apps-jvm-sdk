@@ -104,7 +104,7 @@ val sdkModule =
         single { WireTeamEventsListener(get(), get(), get()) }
 
         // Services
-        single { ConversationService(get(), get(), get(), get(), get()) }
+        single { ConversationService(get(), get(), get(), get(), get(), get()) }
 
         // Manager
         single { WireApplicationManager(get(), get(), get(), get(), get(), get()) }

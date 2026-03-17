@@ -297,14 +297,6 @@ internal class BackendClientHttp(
         }
     }
 
-    override suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
-        val clients = httpClient
-            .get("/users/${userId.domain}/${userId.id}/clients")
-            .body<List<UserClientResponse>>()
-
-        return clients
-    }
-
     override suspend fun getClientsByUserIds(
         userIds: List<QualifiedId>
     ): Map<QualifiedId, List<UserClientResponse>> {

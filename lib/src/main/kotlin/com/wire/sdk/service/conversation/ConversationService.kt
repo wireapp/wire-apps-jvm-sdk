@@ -23,6 +23,7 @@ import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
@@ -58,6 +59,7 @@ import java.util.UUID
 @Suppress("TooManyFunctions")
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
+    private val usersApiClient: UsersApiClient,
     private val conversationsApiClient: ConversationsApiClient,
     private val conversationStorage: ConversationStorage,
     private val appStorage: AppStorage,
@@ -714,7 +716,7 @@ internal class ConversationService internal constructor(
             val user = userIds.first()
             logger.info("Retrieving clients for User: {}", user)
 
-            val clients = backendClient.getClientsByUserId(userId = user)
+            val clients = usersApiClient.getClientsByUserId(userId = user)
 
             mapOf(user to clients)
         } else {
