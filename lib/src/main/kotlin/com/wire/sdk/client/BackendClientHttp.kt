@@ -37,7 +37,6 @@ import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
-import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.Mls
 import com.wire.sdk.utils.obfuscateId
@@ -64,7 +63,6 @@ import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import org.slf4j.LoggerFactory
 import java.util.Base64
-import java.util.UUID
 import kotlin.time.Clock
 
 /**
@@ -295,24 +293,6 @@ internal class BackendClientHttp(
                 time = Clock.System.now()
             )
         }
-    }
-
-    override suspend fun getClientsByUserIds(
-        userIds: List<QualifiedId>
-    ): Map<QualifiedId, List<UserClientResponse>> {
-        val response = httpClient.post("/users/list-clients") {
-            setBody(userIds)
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }.body<Map<String, Map<String, List<UserClientResponse>>>>()
-
-        val usersClients = response.flatMap { (domain, users) ->
-            users.map { (userId, clients) ->
-                QualifiedId(UUID.fromString(userId), domain) to clients
-            }
-        }.toMap()
-
-        return usersClients
     }
 
     internal class AssetBody internal constructor(

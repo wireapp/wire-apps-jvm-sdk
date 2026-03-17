@@ -32,7 +32,6 @@ import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
-import com.wire.sdk.model.http.user.UserClientResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 
 interface BackendClient {
@@ -95,10 +94,6 @@ interface BackendClient {
         querySize: Int = NOTIFICATION_MINIMUM_QUERY_SIZE,
         querySince: String?
     ): NotificationsResponse
-
-    suspend fun getClientsByUserIds(
-        userIds: List<QualifiedId>
-    ): Map<QualifiedId, List<UserClientResponse>>
 
     companion object {
         const val API_VERSION = "v15"

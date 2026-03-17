@@ -22,8 +22,16 @@ import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.accept
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import org.slf4j.LoggerFactory
+import java.util.UUID
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 internal class UsersApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -47,5 +55,23 @@ internal class UsersApiClient(private val httpClient: HttpClient) {
             .body<List<UserClientResponse>>()
 
         return clients
+    }
+
+    suspend fun getClientsByUserIds(
+        userIds: List<QualifiedId>
+    ): Map<QualifiedId, List<UserClientResponse>> {
+        val response = httpClient.post("/users/list-clients") {
+            setBody(userIds)
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<Map<String, Map<String, List<UserClientResponse>>>>()
+
+        val usersClients = response.flatMap { (domain, users) ->
+            users.map { (userId, clients) ->
+                QualifiedId(UUID.fromString(userId), domain) to clients
+            }
+        }.toMap()
+
+        return usersClients
     }
 }

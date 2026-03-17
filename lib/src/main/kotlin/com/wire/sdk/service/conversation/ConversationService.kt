@@ -722,7 +722,7 @@ internal class ConversationService internal constructor(
         } else {
             logger.info("Retrieving clients for {} users.", userIds.size)
 
-            backendClient.getClientsByUserIds(userIds = userIds)
+            usersApiClient.getClientsByUserIds(userIds = userIds)
         }
 
         return usersClients.flatMap { (user, clients) ->
