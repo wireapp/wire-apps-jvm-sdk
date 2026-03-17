@@ -34,9 +34,6 @@ import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
-import com.wire.sdk.model.http.conversation.ConversationIdsRequest
-import com.wire.sdk.model.http.conversation.ConversationResponse
-import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
@@ -296,41 +293,6 @@ internal class BackendClientHttp(
         }.body<OneToOneConversationResponse>()
     }
 
-    override suspend fun getConversationsById(
-        conversationIds: List<QualifiedId>
-    ): List<ConversationResponse> {
-        val conversations: MutableList<ConversationResponse> = mutableListOf()
-
-        if (!conversationIds.isEmpty()) {
-            var startIndex = FETCH_CONVERSATIONS_START_INDEX
-            var endIndex = FETCH_CONVERSATIONS_END_INDEX
-
-            do {
-                if (endIndex > conversationIds.size) {
-                    endIndex = conversationIds.size
-                }
-
-                val conversationIdsRequest = ConversationIdsRequest(
-                    qualifiedIds = conversationIds.subList(startIndex, endIndex)
-                )
-
-                val conversationsListResponse =
-                    httpClient.post("/$API_VERSION/conversations/list") {
-                        setBody(conversationIdsRequest)
-                        contentType(ContentType.Application.Json)
-                        accept(ContentType.Application.Json)
-                    }.body<ConversationsResponse>()
-
-                conversations.addAll(conversationsListResponse.found)
-
-                startIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
-                endIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
-            } while (endIndex < conversationIds.size + FETCH_CONVERSATIONS_INCREASE_INDEX)
-        }
-
-        return conversations
-    }
-
     override suspend fun leaveConversation(
         userId: QualifiedId,
         conversationId: QualifiedId
@@ -479,9 +441,5 @@ internal class BackendClientHttp(
         const val SIZE_QUERY_KEY = "size"
         const val CLIENT_QUERY_KEY = "client"
         const val SINCE_QUERY_KEY = "since"
-
-        private const val FETCH_CONVERSATIONS_START_INDEX = 0
-        private const val FETCH_CONVERSATIONS_END_INDEX = 1000
-        private const val FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
     }
 }

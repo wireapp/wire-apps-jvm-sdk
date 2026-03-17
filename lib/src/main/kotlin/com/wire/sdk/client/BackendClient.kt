@@ -29,7 +29,6 @@ import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
-import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
@@ -94,8 +93,6 @@ interface BackendClient {
     ): AssetUploadResponse
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
-
-    suspend fun getConversationsById(conversationIds: List<QualifiedId>): List<ConversationResponse>
 
     suspend fun leaveConversation(
         userId: QualifiedId,

@@ -282,7 +282,7 @@ internal class ConversationService internal constructor(
         val conversationIdsToRejoin = conversationsApiClient.getConversationIds()
 
         val conversations: List<ConversationResponse> =
-            backendClient.getConversationsById(conversationIds = conversationIdsToRejoin)
+            conversationsApiClient.getConversationsById(conversationIds = conversationIdsToRejoin)
 
         return conversations
     }

@@ -18,9 +18,11 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.http.conversation.ConversationIdsRequest
 import com.wire.sdk.model.http.conversation.ConversationIdsResponse
 import com.wire.sdk.model.http.conversation.ConversationListPaginationConfig
 import com.wire.sdk.model.http.conversation.ConversationResponse
+import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import io.ktor.client.HttpClient
@@ -39,6 +41,9 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
 
     private companion object {
         const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
+        const val FETCH_CONVERSATIONS_START_INDEX = 0
+        const val FETCH_CONVERSATIONS_END_INDEX = 1000
+        const val FETCH_CONVERSATIONS_INCREASE_INDEX = 1000
     }
 
     suspend fun getConversation(conversationId: QualifiedId): ConversationResponse {
@@ -94,5 +99,40 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
         } while (hasMorePages)
 
         return conversationIds
+    }
+
+    suspend fun getConversationsById(
+        conversationIds: List<QualifiedId>
+    ): List<ConversationResponse> {
+        val conversations: MutableList<ConversationResponse> = mutableListOf()
+
+        if (!conversationIds.isEmpty()) {
+            var startIndex = FETCH_CONVERSATIONS_START_INDEX
+            var endIndex = FETCH_CONVERSATIONS_END_INDEX
+
+            do {
+                if (endIndex > conversationIds.size) {
+                    endIndex = conversationIds.size
+                }
+
+                val conversationIdsRequest = ConversationIdsRequest(
+                    qualifiedIds = conversationIds.subList(startIndex, endIndex)
+                )
+
+                val conversationsListResponse =
+                    httpClient.post("/$API_VERSION/conversations/list") {
+                        setBody(conversationIdsRequest)
+                        contentType(ContentType.Application.Json)
+                        accept(ContentType.Application.Json)
+                    }.body<ConversationsResponse>()
+
+                conversations.addAll(conversationsListResponse.found)
+
+                startIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
+                endIndex += FETCH_CONVERSATIONS_INCREASE_INDEX
+            } while (endIndex < conversationIds.size + FETCH_CONVERSATIONS_INCREASE_INDEX)
+        }
+
+        return conversations
     }
 }
