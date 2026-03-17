@@ -95,8 +95,6 @@ interface BackendClient {
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 
-    suspend fun getConversationIds(): List<QualifiedId>
-
     suspend fun getConversationsById(conversationIds: List<QualifiedId>): List<ConversationResponse>
 
     suspend fun leaveConversation(

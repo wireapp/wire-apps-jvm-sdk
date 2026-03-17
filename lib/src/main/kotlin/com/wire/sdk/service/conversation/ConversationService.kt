@@ -279,7 +279,7 @@ internal class ConversationService internal constructor(
     }
 
     private suspend fun fetchConversationsToRejoin(): List<ConversationResponse> {
-        val conversationIdsToRejoin = backendClient.getConversationIds()
+        val conversationIdsToRejoin = conversationsApiClient.getConversationIds()
 
         val conversations: List<ConversationResponse> =
             backendClient.getConversationsById(conversationIds = conversationIdsToRejoin)

@@ -35,8 +35,6 @@ import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.ConversationIdsRequest
-import com.wire.sdk.model.http.conversation.ConversationIdsResponse
-import com.wire.sdk.model.http.conversation.ConversationListPaginationConfig
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
@@ -296,30 +294,6 @@ internal class BackendClientHttp(
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<OneToOneConversationResponse>()
-    }
-
-    override suspend fun getConversationIds(): List<QualifiedId> {
-        val conversationIds: MutableList<QualifiedId> = mutableListOf()
-
-        var pagingConfig = ConversationListPaginationConfig(
-            pagingState = null,
-            size = CONVERSATION_LIST_IDS_PAGING_SIZE
-        )
-
-        var hasMorePages: Boolean
-        do {
-            val listIdsResponse = httpClient.post("/$API_VERSION/conversations/list-ids") {
-                setBody(pagingConfig)
-                contentType(ContentType.Application.Json)
-                accept(ContentType.Application.Json)
-            }.body<ConversationIdsResponse>()
-
-            hasMorePages = listIdsResponse.hasMore
-            pagingConfig = pagingConfig.copy(pagingState = listIdsResponse.pagingState)
-            conversationIds.addAll(listIdsResponse.qualifiedConversations)
-        } while (hasMorePages)
-
-        return conversationIds
     }
 
     override suspend fun getConversationsById(

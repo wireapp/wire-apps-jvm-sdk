@@ -18,6 +18,8 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.http.conversation.ConversationIdsResponse
+import com.wire.sdk.model.http.conversation.ConversationListPaginationConfig
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
@@ -34,6 +36,10 @@ import org.slf4j.LoggerFactory
 
 internal class ConversationsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private companion object {
+        const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
+    }
 
     suspend fun getConversation(conversationId: QualifiedId): ConversationResponse {
         logger.info("Fetching conversation: $conversationId")
@@ -64,5 +70,29 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
             setBody(updateConversationMemberRoleRequest)
             contentType(ContentType.Application.Json)
         }
+    }
+
+    suspend fun getConversationIds(): List<QualifiedId> {
+        val conversationIds: MutableList<QualifiedId> = mutableListOf()
+
+        var pagingConfig = ConversationListPaginationConfig(
+            pagingState = null,
+            size = CONVERSATION_LIST_IDS_PAGING_SIZE
+        )
+
+        var hasMorePages: Boolean
+        do {
+            val listIdsResponse = httpClient.post("/$API_VERSION/conversations/list-ids") {
+                setBody(pagingConfig)
+                contentType(ContentType.Application.Json)
+                accept(ContentType.Application.Json)
+            }.body<ConversationIdsResponse>()
+
+            hasMorePages = listIdsResponse.hasMore
+            pagingConfig = pagingConfig.copy(pagingState = listIdsResponse.pagingState)
+            conversationIds.addAll(listIdsResponse.qualifiedConversations)
+        } while (hasMorePages)
+
+        return conversationIds
     }
 }
