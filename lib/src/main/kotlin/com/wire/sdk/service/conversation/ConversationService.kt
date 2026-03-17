@@ -262,7 +262,7 @@ internal class ConversationService internal constructor(
         val updateConversationMemberRoleRequest = UpdateConversationMemberRoleRequest(
             conversationRole = newRole
         )
-        backendClient.updateConversationMemberRole(
+        conversationsApiClient.updateConversationMemberRole(
             conversationId = conversationId,
             userId = userId,
             updateConversationMemberRoleRequest = updateConversationMemberRoleRequest
