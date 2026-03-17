@@ -87,7 +87,7 @@ val sdkModule =
         single<BackendClient> { BackendClientHttp(get(), get()) }
         single<ConversationsApiClient> { ConversationsApiClient(get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
-        single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get(), get()) }
+        single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) } onClose
             { it?.close() }
         single<AuthTokenManager> { AuthTokenManager(get()) }

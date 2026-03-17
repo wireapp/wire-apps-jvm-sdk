@@ -237,16 +237,6 @@ internal class BackendClientHttp(
         }.body<SelfUserResponse>()
     }
 
-    override suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
-        logger.info("Fetching conversation groupInfo: $conversationId")
-        return httpClient.get(
-            "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
-                "/groupinfo"
-        ) {
-            accept(Mls)
-        }.body<ByteArray>()
-    }
-
     override suspend fun downloadAsset(
         assetId: String,
         assetDomain: String,
@@ -436,7 +426,6 @@ internal class BackendClientHttp(
         const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"
-        const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
 
         const val SIZE_QUERY_KEY = "size"
         const val CLIENT_QUERY_KEY = "client"

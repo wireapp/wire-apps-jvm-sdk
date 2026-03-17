@@ -246,7 +246,6 @@ internal class ConversationService internal constructor(
             .forEach { conversation ->
                 establishOrJoinMlsConversation(
                     conversation = conversation,
-                    backendClient = backendClient,
                     cryptoClient = cryptoClient
                 )
             }
@@ -289,7 +288,6 @@ internal class ConversationService internal constructor(
 
     private suspend fun establishOrJoinMlsConversation(
         conversation: ConversationResponse,
-        backendClient: BackendClient,
         cryptoClient: CryptoClient
     ) {
         if (cryptoClient.conversationExists(conversation.getDecodedMlsGroupId())) {
@@ -300,7 +298,9 @@ internal class ConversationService internal constructor(
         when {
             conversation.epoch != null && conversation.epoch != 0L -> {
                 val conversationGroupInfo: ByteArray =
-                    backendClient.getConversationGroupInfo(conversationId = conversation.id)
+                    conversationsApiClient.getConversationGroupInfo(
+                        conversationId = conversation.id
+                    )
 
                 // Not establishing now, asking the backend to join, that will send a welcome event
                 cryptoClient.joinMlsConversationRequest(

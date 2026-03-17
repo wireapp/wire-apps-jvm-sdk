@@ -447,7 +447,7 @@ internal class EventsRouter internal constructor(
             if (ex.mlsError is MlsException.OrphanWelcome) {
                 logger.info("Cannot process welcome, ask to join the conversation")
                 val groupInfo =
-                    backendClient.getConversationGroupInfo(qualifiedConversation)
+                    conversationsApiClient.getConversationGroupInfo(qualifiedConversation)
                 cryptoClient.joinMlsConversationRequest(groupInfo.toGroupInfo())
             } else {
                 logger.error("Cannot process welcome -- ${ex.mlsError}", ex)

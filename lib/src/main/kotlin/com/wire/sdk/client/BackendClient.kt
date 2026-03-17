@@ -78,8 +78,6 @@ interface BackendClient {
 
     suspend fun getSelfUser(): SelfUserResponse
 
-    suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray
-
     suspend fun downloadAsset(
         assetId: String,
         assetDomain: String,

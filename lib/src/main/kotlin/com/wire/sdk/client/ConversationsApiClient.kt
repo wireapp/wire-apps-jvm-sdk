@@ -25,6 +25,7 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
+import com.wire.sdk.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.accept
@@ -134,5 +135,15 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
         }
 
         return conversations
+    }
+
+    suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
+        logger.info("Fetching conversation groupInfo: $conversationId")
+        return httpClient.get(
+            "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
+                "/groupinfo"
+        ) {
+            accept(Mls)
+        }.body<ByteArray>()
     }
 }
