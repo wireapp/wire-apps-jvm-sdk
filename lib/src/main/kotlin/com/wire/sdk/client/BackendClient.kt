@@ -28,7 +28,6 @@ import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
-import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
@@ -60,11 +59,6 @@ interface BackendClient {
         cryptoClientId: CryptoClientId,
         mlsKeyPackages: List<ByteArray>
     )
-
-    suspend fun claimKeyPackages(
-        user: QualifiedId,
-        cipherSuite: String
-    ): ClaimedKeyPackageList
 
     suspend fun getPublicKeys(): MlsPublicKeysResponse
 

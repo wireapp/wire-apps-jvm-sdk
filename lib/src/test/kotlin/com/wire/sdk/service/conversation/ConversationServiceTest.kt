@@ -21,6 +21,7 @@ import com.wire.crypto.MlsException
 import com.wire.sdk.TestUtils
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
@@ -77,6 +78,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = appStorage,
                 cryptoClient = mockk()
@@ -109,6 +111,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = appStorage,
                 cryptoClient = mockk()
@@ -154,6 +157,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
@@ -210,6 +214,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
@@ -272,6 +277,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -331,6 +337,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -369,6 +376,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -421,6 +429,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -470,6 +479,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -521,6 +531,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -573,6 +584,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -622,6 +634,9 @@ class ConversationServiceTest {
 
             val backendClient = mockk<BackendClient> {
                 coEvery { getApplicationFeatures() } returns FEATURES_RESPONSE
+            }
+
+            val mlsApiClient = mockk<MlsApiClient> {
                 coEvery { claimKeyPackages(any(), any()) } returns claimResult
             }
 
@@ -635,6 +650,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mlsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -663,6 +679,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -692,6 +709,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -736,6 +754,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -777,6 +796,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -817,6 +837,9 @@ class ConversationServiceTest {
 
             val backendClient = mockk<BackendClient> {
                 coEvery { getApplicationFeatures() } returns FEATURES_RESPONSE
+            }
+
+            val mlsApiClient = mockk<MlsApiClient> {
                 coEvery { claimKeyPackages(any(), any()) } returns claimResult
             }
 
@@ -830,6 +853,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mlsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -889,6 +913,9 @@ class ConversationServiceTest {
 
             val backendClient = mockk<BackendClient> {
                 coEvery { getApplicationFeatures() } returns FEATURES_RESPONSE
+            }
+
+            val mlsApiClient = mockk<MlsApiClient> {
                 coEvery { claimKeyPackages(successMember, any()) } returns claimResult
                 coEvery {
                     claimKeyPackages(failedMember, any())
@@ -912,6 +939,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mlsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -969,6 +997,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1031,6 +1060,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1057,6 +1087,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = mockk(),
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -1086,6 +1117,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -1130,6 +1162,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -1180,6 +1213,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1260,6 +1294,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
                 conversationsApiClient = mockk(),
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1293,16 +1328,22 @@ class ConversationServiceTest {
             val claimResult = ClaimedKeyPackageList(
                 keyPackages = listOf(createDummyKeyPackage(CONVERSATION_MEMBER_1))
             )
+
             val conversationStorage = mockk<ConversationStorage> {
                 every { save(any()) } returns Unit
                 every { saveMembers(any(), any()) } returns Unit
             }
+
             val backendClient = mockk<BackendClient> {
                 coEvery { getOneToOneConversation(CONVERSATION_MEMBER_1) } returns
                     ONE_TO_ONE_RESPONSE
                 coEvery { getApplicationFeatures() } returns FEATURES_RESPONSE
+            }
+
+            val mlsApiClient = mockk<MlsApiClient> {
                 coEvery { claimKeyPackages(any(), any()) } returns claimResult
             }
+
             val cryptoClient = mockk<CryptoClient> {
                 coEvery { createConversation(any(), any()) } returns Unit
                 coEvery { addMemberToMlsConversation(any(), any()) } returns Unit
@@ -1312,6 +1353,7 @@ class ConversationServiceTest {
                 backendClient = backendClient,
                 usersApiClient = mockk(),
                 conversationsApiClient = mockk(),
+                mlsApiClient = mlsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -1358,6 +1400,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
@@ -1404,6 +1447,7 @@ class ConversationServiceTest {
                 backendClient = mockk(),
                 usersApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
+                mlsApiClient = mockk(),
                 conversationStorage = conversationStorage,
                 appStorage = appStorage,
                 cryptoClient = cryptoClient
@@ -1449,6 +1493,7 @@ class ConversationServiceTest {
             backendClient = backendClient,
             usersApiClient = usersApiClient,
             conversationsApiClient = mockk(),
+            mlsApiClient = mockk(),
             conversationStorage = conversationStorage,
             appStorage = mockk(),
             cryptoClient = mockk()

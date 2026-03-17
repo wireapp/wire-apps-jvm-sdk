@@ -23,6 +23,7 @@ import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
@@ -56,11 +57,12 @@ import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
     private val usersApiClient: UsersApiClient,
     private val conversationsApiClient: ConversationsApiClient,
+    private val mlsApiClient: MlsApiClient,
     private val conversationStorage: ConversationStorage,
     private val appStorage: AppStorage,
     private val cryptoClient: CryptoClient
@@ -351,7 +353,7 @@ internal class ConversationService internal constructor(
 
         userIds.forEach { user ->
             try {
-                val result = backendClient.claimKeyPackages(
+                val result = mlsApiClient.claimKeyPackages(
                     user = user,
                     cipherSuite = cipherSuiteCode.toHexString()
                 )

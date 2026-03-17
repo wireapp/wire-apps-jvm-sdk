@@ -33,7 +33,6 @@ import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
-import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
@@ -174,18 +173,6 @@ internal class BackendClientHttp(
             logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
         }
         logger.info("Updated client with mls key packages for client: $cryptoClientId")
-    }
-
-    override suspend fun claimKeyPackages(
-        user: QualifiedId,
-        cipherSuite: String
-    ): ClaimedKeyPackageList {
-        val url = "$API_VERSION/mls/key-packages/claim/${user.domain}/${user.id}"
-        return httpClient.post(url) {
-            parameter("ciphersuite", cipherSuite)
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }.body<ClaimedKeyPackageList>()
     }
 
     override suspend fun getPublicKeys(): MlsPublicKeysResponse {
