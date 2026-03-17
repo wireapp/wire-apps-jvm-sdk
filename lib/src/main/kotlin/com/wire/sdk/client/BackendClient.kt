@@ -54,8 +54,6 @@ interface BackendClient {
 
     suspend fun registerClient(registerClientRequest: RegisterClientRequest): RegisterClientResponse
 
-    suspend fun uploadCommitBundle(commitBundle: ByteArray)
-
     suspend fun sendMessage(mlsMessage: ByteArray)
 
     suspend fun getSelfUser(): SelfUserResponse

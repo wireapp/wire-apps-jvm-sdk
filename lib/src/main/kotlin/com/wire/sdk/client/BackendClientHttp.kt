@@ -155,13 +155,6 @@ internal class BackendClientHttp(
         return clientCreatedResponse
     }
 
-    override suspend fun uploadCommitBundle(commitBundle: ByteArray) {
-        httpClient.post("/$API_VERSION/mls/commit-bundles") {
-            setBody(commitBundle)
-            contentType(Mls)
-        }
-    }
-
     override suspend fun sendMessage(mlsMessage: ByteArray) {
         httpClient.post("/$API_VERSION/mls/messages") {
             setBody(mlsMessage)

@@ -24,6 +24,7 @@ import com.wire.sdk.model.http.MlsKeyPackageRequest
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.persistence.AppStorage
+import com.wire.sdk.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.accept
@@ -76,5 +77,12 @@ internal class MlsApiClient(
             logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
         }
         logger.info("Updated client with mls key packages for client: $cryptoClientId")
+    }
+
+    suspend fun uploadCommitBundle(commitBundle: ByteArray) {
+        httpClient.post("/$API_VERSION/mls/commit-bundles") {
+            setBody(commitBundle)
+            contentType(Mls)
+        }
     }
 }

@@ -90,7 +90,7 @@ val sdkModule =
         single<ConversationsApiClient> { ConversationsApiClient(get()) }
         single<UsersApiClient> { UsersApiClient(get()) }
         single<MlsApiClient> { MlsApiClient(get(), get()) }
-        single<MlsTransport> { MlsTransportImpl(get()) }
+        single<MlsTransport> { MlsTransportImpl(get(), get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { EventsRouter(get(), get(), get(), get(), get(), get(), get(), get()) } onClose
             { it?.close() }
