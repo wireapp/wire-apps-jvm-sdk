@@ -252,11 +252,10 @@ class ConversationServiceTest {
                 every { delete(CONVERSATION_ID) } returns Unit
             }
 
-            val backendClient = mockk<BackendClient> {
+            val conversationsApiClient = mockk<ConversationsApiClient> {
                 coEvery {
                     leaveConversation(QualifiedId(APP_USER_ID, BACKEND_DOMAIN), CONVERSATION_ID)
-                } returns
-                    Unit
+                } returns Unit
             }
 
             val cryptoClient = mockk<CryptoClient> {
@@ -265,8 +264,8 @@ class ConversationServiceTest {
             }
 
             val service = ConversationService(
-                backendClient = backendClient,
-                conversationsApiClient = mockk(),
+                backendClient = mockk(),
+                conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = cryptoClient
@@ -275,7 +274,7 @@ class ConversationServiceTest {
             service.leaveConversation(CONVERSATION_ID)
 
             coVerify(exactly = 1) {
-                backendClient.leaveConversation(
+                conversationsApiClient.leaveConversation(
                     userId = QualifiedId(
                         id = APP_USER_ID,
                         domain = BACKEND_DOMAIN
@@ -313,7 +312,7 @@ class ConversationServiceTest {
                 )
             }
 
-            val backendClient = mockk<BackendClient> {
+            val conversationsApiClient = mockk<ConversationsApiClient> {
                 coEvery { leaveConversation(any(), any()) } returns Unit
             }
 
@@ -324,7 +323,7 @@ class ConversationServiceTest {
 
             val service = ConversationService(
                 backendClient = mockk(),
-                conversationsApiClient = mockk(),
+                conversationsApiClient = conversationsApiClient,
                 conversationStorage = conversationStorage,
                 appStorage = mockk(),
                 cryptoClient = mockk()
@@ -335,7 +334,7 @@ class ConversationServiceTest {
             }
 
             coVerify(exactly = 0) {
-                backendClient.leaveConversation(any(), any())
+                conversationsApiClient.leaveConversation(any(), any())
                 cryptoClient.wipeConversation(any())
             }
             verify(exactly = 0) {

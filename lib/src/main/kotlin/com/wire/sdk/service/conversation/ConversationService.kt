@@ -442,7 +442,7 @@ internal class ConversationService internal constructor(
 
         requireAppIsInConversation(conversationId)
         val appUser = IsolatedKoinContext.getApplicationUser()
-        backendClient.leaveConversation(appUser, conversationId)
+        conversationsApiClient.leaveConversation(appUser, conversationId)
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
         logger.info(

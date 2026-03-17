@@ -283,30 +283,6 @@ internal class BackendClientHttp(
         }.body<OneToOneConversationResponse>()
     }
 
-    override suspend fun leaveConversation(
-        userId: QualifiedId,
-        conversationId: QualifiedId
-    ) {
-        logger.info(
-            "App user will be removed from the conversation in the backend. " +
-                "userId:{}, conversationId:{}",
-            userId,
-            conversationId
-        )
-
-        val path = "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
-            "/members/${userId.domain}/${userId.id}"
-
-        httpClient.delete(path)
-
-        logger.info(
-            "App user is removed from the conversation in the backend. " +
-                "userId:{}, conversationId:{}",
-            userId,
-            conversationId
-        )
-    }
-
     override suspend fun deleteConversation(
         teamId: TeamId,
         conversationId: QualifiedId
