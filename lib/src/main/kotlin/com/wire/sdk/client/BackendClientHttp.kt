@@ -18,14 +18,10 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.exception.WireException
-import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.ApiVersionResponse
-import com.wire.sdk.model.http.ClientUpdateRequest
 import com.wire.sdk.model.http.FeaturesResponse
-import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.persistence.AppStorage
@@ -35,8 +31,6 @@ import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
-import io.ktor.client.request.put
-import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.websocket.CloseReason
@@ -102,21 +96,6 @@ internal class BackendClientHttp(
 
     override suspend fun confirmTeam(teamId: TeamId) {
         logger.info("Confirming team invite")
-    }
-
-    override suspend fun updateClientWithMlsPublicKey(
-        cryptoClientId: CryptoClientId,
-        mlsPublicKeys: MlsPublicKeys
-    ) {
-        try {
-            httpClient.put("/$API_VERSION/clients/${appStorage.getDeviceId()}") {
-                setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
-                contentType(ContentType.Application.Json)
-            }
-        } catch (ex: WireException.ClientError) {
-            logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
-        }
-        logger.info("Updated client with mls info for client: $cryptoClientId")
     }
 
     /**

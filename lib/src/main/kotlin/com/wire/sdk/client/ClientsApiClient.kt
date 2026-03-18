@@ -17,18 +17,30 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
+import com.wire.sdk.exception.WireException
+import com.wire.sdk.model.CryptoClientId
+import com.wire.sdk.model.http.ClientUpdateRequest
+import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
+import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.authProviders
 import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import org.slf4j.LoggerFactory
 
-internal class ClientsApiClient(private val httpClient: HttpClient) {
+internal class ClientsApiClient(
+    private val httpClient: HttpClient,
+    private val appStorage: AppStorage
+) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     suspend fun registerClient(
         registerClientRequest: RegisterClientRequest
     ): RegisterClientResponse {
@@ -45,5 +57,20 @@ internal class ClientsApiClient(private val httpClient: HttpClient) {
             .clearToken()
 
         return clientCreatedResponse
+    }
+
+    suspend fun updateClientWithMlsPublicKey(
+        cryptoClientId: CryptoClientId,
+        mlsPublicKeys: MlsPublicKeys
+    ) {
+        try {
+            httpClient.put("/$API_VERSION/clients/${appStorage.getDeviceId()}") {
+                setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
+                contentType(ContentType.Application.Json)
+            }
+        } catch (ex: WireException.ClientError) {
+            logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
+        }
+        logger.info("Updated client with mls info for client: $cryptoClientId")
     }
 }

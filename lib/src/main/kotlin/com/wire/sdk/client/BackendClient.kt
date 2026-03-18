@@ -16,12 +16,10 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
-import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -40,11 +38,6 @@ interface BackendClient {
     suspend fun getApplicationFeatures(): FeaturesResponse
 
     suspend fun confirmTeam(teamId: TeamId)
-
-    suspend fun updateClientWithMlsPublicKey(
-        cryptoClientId: CryptoClientId,
-        mlsPublicKeys: MlsPublicKeys
-    )
 
     suspend fun getSelfUser(): SelfUserResponse
 

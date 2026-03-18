@@ -94,7 +94,7 @@ val sdkModule =
         single<UsersApiClient> { UsersApiClient(get()) }
         single<AssetsApiClient> { AssetsApiClient(get()) }
         single<TeamsApiClient> { TeamsApiClient(get()) }
-        single<ClientsApiClient> { ClientsApiClient(get()) }
+        single<ClientsApiClient> { ClientsApiClient(get(), get()) }
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
@@ -324,7 +324,7 @@ internal suspend fun getOrInitCryptoClient(
             mlsTransport = mlsTransport
         )
 
-        backendClient.updateClientWithMlsPublicKey(
+        clientsApiClient.updateClientWithMlsPublicKey(
             cryptoClientId = cryptoClientId,
             mlsPublicKeys = cryptoClient.mlsGetPublicKey()
         )
