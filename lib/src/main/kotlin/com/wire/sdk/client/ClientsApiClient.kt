@@ -40,11 +40,12 @@ internal class ClientsApiClient(
     private val appStorage: AppStorage
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val basePath = "clients"
 
     suspend fun registerClient(
         registerClientRequest: RegisterClientRequest
     ): RegisterClientResponse {
-        val clientCreatedResponse = httpClient.post("/$API_VERSION/clients") {
+        val clientCreatedResponse = httpClient.post("/$API_VERSION/$basePath") {
             setBody(registerClientRequest)
             contentType(ContentType.Application.Json)
         }.body<RegisterClientResponse>()
@@ -64,7 +65,7 @@ internal class ClientsApiClient(
         mlsPublicKeys: MlsPublicKeys
     ) {
         try {
-            httpClient.put("/$API_VERSION/clients/${appStorage.getDeviceId()}") {
+            httpClient.put("/$API_VERSION/$basePath/${appStorage.getDeviceId()}") {
                 setBody(ClientUpdateRequest(mlsPublicKeys = mlsPublicKeys))
                 contentType(ContentType.Application.Json)
             }
