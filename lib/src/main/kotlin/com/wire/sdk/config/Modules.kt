@@ -105,7 +105,7 @@ val sdkModule =
                 getOrInitCryptoClient(get(), get(), get(), get())
             }
         } onClose { it?.close() }
-        single { WireTeamEventsListener(get(), get(), get()) }
+        single { WireTeamEventsListener(get(), get(), get(), get()) }
 
         // Services
         single { ConversationService(get(), get(), get(), get(), get(), get(), get(), get()) }

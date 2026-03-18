@@ -22,7 +22,6 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
-import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.NotificationsResponse
@@ -69,8 +68,6 @@ interface BackendClient {
     ): AssetUploadResponse
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
-
-    suspend fun getLastNotification(): EventResponse
 
     suspend fun getPaginatedNotifications(
         querySize: Int = NOTIFICATION_MINIMUM_QUERY_SIZE,

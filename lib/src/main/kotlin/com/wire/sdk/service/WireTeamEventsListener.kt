@@ -17,6 +17,7 @@ package com.wire.sdk.service
 
 import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.NotificationsApiClient
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.KtxSerializer
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory
  */
 internal class WireTeamEventsListener internal constructor(
     private val backendClient: BackendClient,
+    private val notificationsApiClient: NotificationsApiClient,
     private val eventsRouter: EventsRouter,
     private val appStorage: AppStorage
 ) {
@@ -148,7 +150,7 @@ internal class WireTeamEventsListener internal constructor(
 
     private suspend fun getLastNotificationId(): String =
         appStorage.getLastNotificationId() ?: run {
-            val lastNotificationEvent = backendClient.getLastNotification()
+            val lastNotificationEvent = notificationsApiClient.getLastNotification()
             appStorage.setLastNotificationId(lastNotificationEvent.id)
             lastNotificationEvent.id
         }

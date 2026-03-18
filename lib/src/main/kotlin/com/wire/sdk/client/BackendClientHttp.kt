@@ -26,7 +26,6 @@ import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.ClientUpdateRequest
-import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.NotificationsResponse
@@ -209,14 +208,6 @@ internal class BackendClientHttp(
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<OneToOneConversationResponse>()
-    }
-
-    override suspend fun getLastNotification(): EventResponse {
-        val lastNotification = httpClient.get("notifications/last") {
-            appStorage.getDeviceId()?.let { parameter(CLIENT_QUERY_KEY, it) }
-        }.body<EventResponse>()
-
-        return lastNotification
     }
 
     override suspend fun getPaginatedNotifications(
