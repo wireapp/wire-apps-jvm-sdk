@@ -35,6 +35,7 @@ import kotlin.collections.component2
 
 internal class UsersApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val basePath = "users"
 
     /**
      * Get User details
@@ -45,13 +46,13 @@ internal class UsersApiClient(private val httpClient: HttpClient) {
     suspend fun getUserData(userId: QualifiedId): UserResponse {
         logger.info("Fetching user: $userId")
         return httpClient.get(
-            "/$API_VERSION/users/${userId.domain}/${userId.id}"
+            "/$API_VERSION/$basePath/${userId.domain}/${userId.id}"
         ).body<UserResponse>()
     }
 
     suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
         val clients = httpClient
-            .get("/users/${userId.domain}/${userId.id}/clients")
+            .get("/$basePath/${userId.domain}/${userId.id}/clients")
             .body<List<UserClientResponse>>()
 
         return clients
@@ -60,7 +61,7 @@ internal class UsersApiClient(private val httpClient: HttpClient) {
     suspend fun getClientsByUserIds(
         userIds: List<QualifiedId>
     ): Map<QualifiedId, List<UserClientResponse>> {
-        val response = httpClient.post("/users/list-clients") {
+        val response = httpClient.post("/$basePath/list-clients") {
             setBody(userIds)
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
