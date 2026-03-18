@@ -24,7 +24,6 @@ import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
-import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
@@ -69,17 +68,7 @@ interface BackendClient {
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 
-    suspend fun getPaginatedNotifications(
-        querySize: Int = NOTIFICATION_MINIMUM_QUERY_SIZE,
-        querySince: String?
-    ): NotificationsResponse
-
     companion object {
         const val API_VERSION = "v15"
-
-        /**
-         * The backend doesn't allow queries smaller than a minimum value.
-         */
-        const val NOTIFICATION_MINIMUM_QUERY_SIZE = 100
     }
 }

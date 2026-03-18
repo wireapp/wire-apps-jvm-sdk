@@ -126,7 +126,7 @@ internal class WireTeamEventsListener internal constructor(
 
         var hasMore = true
         while (hasMore) {
-            val notifications = backendClient.getPaginatedNotifications(
+            val notifications = notificationsApiClient.getPaginatedNotifications(
                 querySince = lastNotificationId
             )
 

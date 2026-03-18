@@ -28,7 +28,6 @@ import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.ClientUpdateRequest
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
-import com.wire.sdk.model.http.NotificationsResponse
 import com.wire.sdk.model.http.client.RegisterClientRequest
 import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
@@ -44,7 +43,6 @@ import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
-import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.put
@@ -57,7 +55,6 @@ import io.ktor.util.encodeBase64
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import org.slf4j.LoggerFactory
-import kotlin.time.Clock
 
 /**
  * Backend client connecting via HTTP (Rest and WebSocket) to the Wire backend.
@@ -210,27 +207,6 @@ internal class BackendClientHttp(
         }.body<OneToOneConversationResponse>()
     }
 
-    override suspend fun getPaginatedNotifications(
-        querySize: Int,
-        querySince: String?
-    ): NotificationsResponse {
-        try {
-            val notifications = httpClient.get("notifications") {
-                parameter(SIZE_QUERY_KEY, querySize)
-                appStorage.getDeviceId()?.let { parameter(CLIENT_QUERY_KEY, it) }
-                querySince?.let { parameter(SINCE_QUERY_KEY, it) }
-            }.body<NotificationsResponse>()
-            return notifications
-        } catch (exception: WireException.ClientError) {
-            logger.warn("Notifications not found.", exception)
-            return NotificationsResponse(
-                hasMore = false,
-                events = emptyList(),
-                time = Clock.System.now()
-            )
-        }
-    }
-
     internal class AssetBody internal constructor(
         private val assetContent: ByteArray,
         assetSize: Long,
@@ -275,8 +251,6 @@ internal class BackendClientHttp(
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"
 
-        const val SIZE_QUERY_KEY = "size"
         const val CLIENT_QUERY_KEY = "client"
-        const val SINCE_QUERY_KEY = "since"
     }
 }

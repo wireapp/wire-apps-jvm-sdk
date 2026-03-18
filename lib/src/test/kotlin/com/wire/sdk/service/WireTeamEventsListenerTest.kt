@@ -109,7 +109,7 @@ class WireTeamEventsListenerTest {
             coEvery { mockConnectionListener.onDisconnected() } just Runs
             coEvery { eventsRouter.route(any()) } returns Unit
             coEvery {
-                backendClient.getPaginatedNotifications(any(), any())
+                notificationsApiClient.getPaginatedNotifications(any(), any())
             } returns NotificationsResponse(
                 hasMore = false,
                 events = listOf(
