@@ -24,6 +24,7 @@ import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.One2OneConversationsApiClient
 import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
@@ -63,6 +64,7 @@ internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
     private val usersApiClient: UsersApiClient,
     private val conversationsApiClient: ConversationsApiClient,
+    private val one2OneConversationsApiClient: One2OneConversationsApiClient,
     private val teamsApiClient: TeamsApiClient,
     private val mlsApiClient: MlsApiClient,
     private val conversationStorage: ConversationStorage,
@@ -166,7 +168,9 @@ internal class ConversationService internal constructor(
      * @return QualifiedId The Id of the created conversation
      */
     suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
-        val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
+        val oneToOneConversationResponse = one2OneConversationsApiClient.getOneToOneConversation(
+            userId = userId
+        )
         val conversation = oneToOneConversationResponse.conversation
 
         establishMlsConversation(

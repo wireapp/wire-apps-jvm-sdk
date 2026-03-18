@@ -19,11 +19,9 @@ package com.wire.sdk.client
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
-import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
@@ -33,7 +31,6 @@ import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
 import io.ktor.http.ContentType
-import io.ktor.http.contentType
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import org.slf4j.LoggerFactory
@@ -108,14 +105,5 @@ internal class BackendClientHttp(
         return httpClient.get("/$API_VERSION/self") {
             accept(ContentType.Application.Json)
         }.body<SelfUserResponse>()
-    }
-
-    override suspend fun getOneToOneConversation(
-        userId: QualifiedId
-    ): OneToOneConversationResponse {
-        return httpClient.get("/$API_VERSION/one2one-conversations/${userId.domain}/${userId.id}") {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-        }.body<OneToOneConversationResponse>()
     }
 }

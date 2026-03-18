@@ -16,11 +16,9 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
-import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 
@@ -37,11 +35,10 @@ interface BackendClient {
 
     suspend fun getApplicationFeatures(): FeaturesResponse
 
+    // TODO: This method is currently useless. We can clean??
     suspend fun confirmTeam(teamId: TeamId)
 
     suspend fun getSelfUser(): SelfUserResponse
-
-    suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 
     companion object {
         const val API_VERSION = "v15"
