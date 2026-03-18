@@ -22,8 +22,6 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
-import com.wire.sdk.model.http.client.RegisterClientRequest
-import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -47,8 +45,6 @@ interface BackendClient {
         cryptoClientId: CryptoClientId,
         mlsPublicKeys: MlsPublicKeys
     )
-
-    suspend fun registerClient(registerClientRequest: RegisterClientRequest): RegisterClientResponse
 
     suspend fun getSelfUser(): SelfUserResponse
 

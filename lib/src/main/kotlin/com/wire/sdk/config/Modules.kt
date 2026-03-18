@@ -24,6 +24,7 @@ import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
+import com.wire.sdk.client.ClientsApiClient
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.TeamsApiClient
@@ -93,6 +94,7 @@ val sdkModule =
         single<UsersApiClient> { UsersApiClient(get()) }
         single<AssetsApiClient> { AssetsApiClient(get()) }
         single<TeamsApiClient> { TeamsApiClient(get()) }
+        single<ClientsApiClient> { ClientsApiClient(get()) }
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
@@ -104,7 +106,7 @@ val sdkModule =
         } onClose { it?.close() }
         single<CryptoClient> {
             runBlocking {
-                getOrInitCryptoClient(get(), get(), get(), get())
+                getOrInitCryptoClient(get(), get(), get(), get(), get())
             }
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get(), get(), get()) }
@@ -248,6 +250,7 @@ private fun initializeDatabase(dbUrl: String): SqlDriver {
 @Suppress("LongMethod")
 internal suspend fun getOrInitCryptoClient(
     backendClient: BackendClient,
+    clientsApiClient: ClientsApiClient,
     mlsApiClient: MlsApiClient,
     appStorage: AppStorage,
     mlsTransport: MlsTransport
@@ -289,7 +292,7 @@ internal suspend fun getOrInitCryptoClient(
         val lastKey = cryptoClient.generateProteusLastPreKey()
 
         val clientResponse = try {
-            backendClient.registerClient(
+            clientsApiClient.registerClient(
                 registerClientRequest = RegisterClientRequest(
                     lastKey = lastKey.toApi(),
                     preKeys = preKeys.map { it.toApi() },

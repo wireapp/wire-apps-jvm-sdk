@@ -26,20 +26,15 @@ import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.ClientUpdateRequest
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
-import com.wire.sdk.model.http.client.RegisterClientRequest
-import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.auth.authProviders
-import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
-import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -122,24 +117,6 @@ internal class BackendClientHttp(
             logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
         }
         logger.info("Updated client with mls info for client: $cryptoClientId")
-    }
-
-    override suspend fun registerClient(
-        registerClientRequest: RegisterClientRequest
-    ): RegisterClientResponse {
-        val clientCreatedResponse = httpClient.post("/$API_VERSION/clients") {
-            setBody(registerClientRequest)
-            contentType(ContentType.Application.Json)
-        }.body<RegisterClientResponse>()
-
-        // Register client is performed with an access_token having limited scope.
-        //  clear the token to force a refresh with the full-scope token for next requests.
-        httpClient.authProviders
-            .filterIsInstance<BearerAuthProvider>()
-            .first()
-            .clearToken()
-
-        return clientCreatedResponse
     }
 
     /**
