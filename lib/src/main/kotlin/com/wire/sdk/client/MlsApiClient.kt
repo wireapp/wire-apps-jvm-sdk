@@ -42,9 +42,10 @@ internal class MlsApiClient(
     private val appStorage: AppStorage
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val basePath = "mls"
 
     suspend fun getPublicKeys(): MlsPublicKeysResponse {
-        return httpClient.get("$API_VERSION/mls/public-keys") {
+        return httpClient.get("$API_VERSION/$basePath/public-keys") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<MlsPublicKeysResponse>()
@@ -54,7 +55,7 @@ internal class MlsApiClient(
         user: QualifiedId,
         cipherSuite: String
     ): ClaimedKeyPackageList {
-        val url = "$API_VERSION/mls/key-packages/claim/${user.domain}/${user.id}"
+        val url = "$API_VERSION/$basePath/key-packages/claim/${user.domain}/${user.id}"
         return httpClient.post(url) {
             parameter("ciphersuite", cipherSuite)
             contentType(ContentType.Application.Json)
@@ -69,7 +70,7 @@ internal class MlsApiClient(
         val mlsKeyPackageRequest =
             MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
         try {
-            httpClient.post("/$API_VERSION/mls/key-packages/self/${appStorage.getDeviceId()}") {
+            httpClient.post("/$API_VERSION/$basePath/key-packages/self/${appStorage.getDeviceId()}") {
                 setBody(mlsKeyPackageRequest)
                 contentType(ContentType.Application.Json)
             }
@@ -80,14 +81,14 @@ internal class MlsApiClient(
     }
 
     suspend fun uploadCommitBundle(commitBundle: ByteArray) {
-        httpClient.post("/$API_VERSION/mls/commit-bundles") {
+        httpClient.post("/$API_VERSION/$basePath/commit-bundles") {
             setBody(commitBundle)
             contentType(Mls)
         }
     }
 
     suspend fun sendMessage(mlsMessage: ByteArray) {
-        httpClient.post("/$API_VERSION/mls/messages") {
+        httpClient.post("/$API_VERSION/$basePath/messages") {
             setBody(mlsMessage)
             contentType(Mls)
         }
