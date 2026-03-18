@@ -19,7 +19,6 @@ package com.wire.sdk.client
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
@@ -90,10 +89,6 @@ internal class BackendClientHttp(
                 .body<FeaturesResponse>()
                 .also { cachedFeatures = it }
         }
-    }
-
-    override suspend fun confirmTeam(teamId: TeamId) {
-        logger.info("Confirming team invite")
     }
 
     /**

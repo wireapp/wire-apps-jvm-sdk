@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
@@ -34,9 +33,6 @@ interface BackendClient {
     suspend fun getAvailableApiVersions(): ApiVersionResponse
 
     suspend fun getApplicationFeatures(): FeaturesResponse
-
-    // TODO: This method is currently useless. We can clean??
-    suspend fun confirmTeam(teamId: TeamId)
 
     suspend fun getSelfUser(): SelfUserResponse
 

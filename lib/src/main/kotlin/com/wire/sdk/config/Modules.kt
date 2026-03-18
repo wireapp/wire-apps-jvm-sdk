@@ -100,7 +100,7 @@ val sdkModule =
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get(), get(), get()) } onClose
+        single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) } onClose
             { it?.close() }
         single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {

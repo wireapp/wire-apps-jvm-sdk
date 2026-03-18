@@ -24,7 +24,6 @@ import com.wire.crypto.toWelcome
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationMember
@@ -64,7 +63,6 @@ import org.slf4j.LoggerFactory
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationService: ConversationService,
-    private val backendClient: BackendClient,
     private val conversationsApiClient: ConversationsApiClient,
     private val mlsApiClient: MlsApiClient,
     private val wireEventsHandler: WireEventsHandler,
@@ -461,7 +459,6 @@ internal class EventsRouter internal constructor(
     private suspend fun newTeamInvite(teamId: TeamId) {
         try {
             logger.debug("Confirming team: {}", teamId.value.toString())
-            backendClient.confirmTeam(teamId)
             teamStorage.save(teamId) // Can be done async ?
         } catch (e: ResponseException) {
             logger.error("Error fetching events from the backend", e)
