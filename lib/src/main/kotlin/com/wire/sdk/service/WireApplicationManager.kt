@@ -15,6 +15,7 @@
 
 package com.wire.sdk.service
 
+import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.UsersApiClient
@@ -59,6 +60,7 @@ class WireApplicationManager internal constructor(
     private val backendClient: BackendClient,
     private val usersApiClient: UsersApiClient,
     private val mlsApiClient: MlsApiClient,
+    private val assetsApiClient: AssetsApiClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
@@ -236,7 +238,7 @@ class WireApplicationManager internal constructor(
     suspend fun downloadAssetSuspending(
         assetRemoteData: WireMessage.Asset.RemoteData
     ): AssetResource {
-        val encryptedAsset = backendClient.downloadAsset(
+        val encryptedAsset = assetsApiClient.downloadAsset(
             assetId = assetRemoteData.assetId,
             assetDomain = assetRemoteData.assetDomain,
             assetToken = assetRemoteData.assetToken

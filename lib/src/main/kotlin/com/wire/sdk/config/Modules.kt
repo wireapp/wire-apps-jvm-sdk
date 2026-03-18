@@ -20,6 +20,7 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
@@ -90,6 +91,7 @@ val sdkModule =
         single<BackendClient> { BackendClientHttp(get(), get()) }
         single<ConversationsApiClient> { ConversationsApiClient(get()) }
         single<UsersApiClient> { UsersApiClient(get()) }
+        single<AssetsApiClient> { AssetsApiClient(get()) }
         single<TeamsApiClient> { TeamsApiClient(get()) }
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
@@ -111,7 +113,7 @@ val sdkModule =
         single { ConversationService(get(), get(), get(), get(), get(), get(), get(), get()) }
 
         // Manager
-        single { WireApplicationManager(get(), get(), get(), get(), get(), get(), get()) }
+        single { WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get()) }
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10

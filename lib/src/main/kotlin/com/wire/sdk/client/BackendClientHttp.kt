@@ -33,7 +33,6 @@ import com.wire.sdk.model.http.client.RegisterClientResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.persistence.AppStorage
-import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.authProviders
@@ -42,12 +41,9 @@ import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
-import io.ktor.client.request.headers
 import io.ktor.client.request.post
-import io.ktor.client.request.prepareGet
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
@@ -161,24 +157,6 @@ internal class BackendClientHttp(
         }.body<SelfUserResponse>()
     }
 
-    override suspend fun downloadAsset(
-        assetId: String,
-        assetDomain: String,
-        assetToken: String?
-    ): ByteArray {
-        logger.info("Downloading asset ${assetId.obfuscateId()}")
-
-        return httpClient.prepareGet("$PATH_PUBLIC_ASSETS_V4/$assetDomain/$assetId") {
-            headers {
-                if (!assetToken.isNullOrBlank()) {
-                    append(HEADER_ASSET_TOKEN, assetToken)
-                }
-            }
-        }.execute { httpResponse ->
-            httpResponse.readRawBytes()
-        }
-    }
-
     override suspend fun uploadAsset(
         encryptedFile: ByteArray,
         encryptedFileLength: Long,
@@ -248,8 +226,6 @@ internal class BackendClientHttp(
 
     private companion object {
         const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
-        const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
-        const val HEADER_ASSET_TOKEN = "Asset-Token"
 
         const val CLIENT_QUERY_KEY = "client"
     }

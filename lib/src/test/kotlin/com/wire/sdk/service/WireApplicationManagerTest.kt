@@ -23,6 +23,7 @@ import com.wire.crypto.KeyPackage
 import com.wire.sdk.TestUtils
 import com.wire.sdk.TestUtils.V
 import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.UsersApiClient
@@ -350,6 +351,7 @@ class WireApplicationManagerTest {
             coEvery { mlsApiClient.sendMessage(any()) } returns Unit
 
             val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
 
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
             coEvery { cryptoClient.encryptMls(any(), any()) } returns byteArrayOf(1, 2, 3)
@@ -362,6 +364,7 @@ class WireApplicationManagerTest {
                 backendClient = backendClient,
                 usersApiClient = usersApiClient,
                 mlsApiClient = mlsApiClient,
+                assetsApiClient = assetsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService
@@ -425,6 +428,7 @@ class WireApplicationManagerTest {
             coEvery { mlsApiClient.sendMessage(any()) } returns Unit
 
             val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
 
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
             coEvery { cryptoClient.encryptMls(any(), any()) } returns byteArrayOf(2)
@@ -436,6 +440,7 @@ class WireApplicationManagerTest {
                 teamStorage = teamStorage,
                 backendClient = backendClient,
                 usersApiClient = usersApiClient,
+                assetsApiClient = assetsApiClient,
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
@@ -499,6 +504,7 @@ class WireApplicationManagerTest {
 
             val backendClient = mockk<BackendClient>(relaxed = true)
             val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
             val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
@@ -508,6 +514,7 @@ class WireApplicationManagerTest {
                 teamStorage = teamStorage,
                 backendClient = backendClient,
                 usersApiClient = usersApiClient,
+                assetsApiClient = assetsApiClient,
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,

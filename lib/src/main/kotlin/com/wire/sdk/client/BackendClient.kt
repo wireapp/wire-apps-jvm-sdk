@@ -54,12 +54,6 @@ interface BackendClient {
 
     suspend fun getSelfUser(): SelfUserResponse
 
-    suspend fun downloadAsset(
-        assetId: String,
-        assetDomain: String,
-        assetToken: String?
-    ): ByteArray
-
     suspend fun uploadAsset(
         encryptedFile: ByteArray,
         encryptedFileLength: Long,
