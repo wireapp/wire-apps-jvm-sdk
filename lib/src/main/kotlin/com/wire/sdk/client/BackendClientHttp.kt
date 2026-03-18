@@ -17,6 +17,7 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
+import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
@@ -116,9 +117,5 @@ internal class BackendClientHttp(
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<OneToOneConversationResponse>()
-    }
-
-    private companion object {
-        const val CLIENT_QUERY_KEY = "client"
     }
 }

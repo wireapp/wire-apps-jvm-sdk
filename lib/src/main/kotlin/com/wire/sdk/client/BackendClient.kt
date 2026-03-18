@@ -45,5 +45,6 @@ interface BackendClient {
 
     companion object {
         const val API_VERSION = "v15"
+        const val CLIENT_QUERY_KEY = "client"
     }
 }

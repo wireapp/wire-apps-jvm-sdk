@@ -16,6 +16,7 @@
 
 package com.wire.sdk.client
 
+import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.NotificationsResponse
@@ -34,9 +35,6 @@ internal class NotificationsApiClient(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     private companion object {
-        // TODO: This is used in different classes as well. Consider moving it to a common place.
-        const val CLIENT_QUERY_KEY = "client"
-
         const val SIZE_QUERY_KEY = "size"
         const val SINCE_QUERY_KEY = "since"
 
