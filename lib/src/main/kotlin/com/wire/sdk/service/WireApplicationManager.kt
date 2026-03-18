@@ -327,7 +327,7 @@ class WireApplicationManager internal constructor(
         )
 
         // Upload the asset
-        val assetUploadResponse = backendClient.uploadAsset(
+        val assetUploadResponse = assetsApiClient.uploadAsset(
             encryptedFile = encryptedAsset,
             encryptedFileLength = encryptedAsset.size.toLong(),
             assetUploadData = assetUploadData

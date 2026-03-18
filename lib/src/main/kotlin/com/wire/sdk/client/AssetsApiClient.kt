@@ -16,17 +16,27 @@
 
 package com.wire.sdk.client
 
+import com.wire.sdk.model.asset.AssetUploadData
+import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.readRawBytes
+import io.ktor.http.ContentType
+import io.ktor.http.content.OutgoingContent
+import io.ktor.http.contentType
 import io.ktor.http.headers
+import io.ktor.util.encodeBase64
 import org.slf4j.LoggerFactory
 
 internal class AssetsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     private companion object {
+        const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
         const val PATH_PUBLIC_ASSETS_V4 = "assets/v4"
         const val HEADER_ASSET_TOKEN = "Asset-Token"
     }
@@ -47,5 +57,63 @@ internal class AssetsApiClient(private val httpClient: HttpClient) {
         }.execute { httpResponse ->
             httpResponse.readRawBytes()
         }
+    }
+
+    suspend fun uploadAsset(
+        encryptedFile: ByteArray,
+        encryptedFileLength: Long,
+        assetUploadData: AssetUploadData
+    ): AssetUploadResponse {
+        logger.info("Uploading new asset")
+
+        return httpClient.post(PATH_PUBLIC_ASSETS_V3) {
+            setBody(
+                AssetBody(
+                    assetContent = encryptedFile,
+                    assetSize = encryptedFileLength,
+                    metadata = assetUploadData
+                )
+            )
+            contentType(ContentType.MultiPart.Mixed)
+        }.body<AssetUploadResponse>()
+    }
+
+    internal class AssetBody internal constructor(
+        private val assetContent: ByteArray,
+        assetSize: Long,
+        metadata: AssetUploadData
+    ) : OutgoingContent.ByteArrayContent() {
+        private val openingData: String by lazy {
+            val body = StringBuilder()
+
+            // Part 1
+            val strMetadata = "{\"public\": ${metadata.public}, " +
+                "\"retention\": \"${metadata.retention.value}\"}"
+
+            body.append("--frontier\r\n")
+            body.append("Content-Type: application/json;charset=utf-8\r\n")
+            body.append("Content-Length: ")
+                .append(strMetadata.length)
+                .append("\r\n\r\n")
+            body.append(strMetadata)
+                .append("\r\n")
+
+            // Part 2
+            body.append("--frontier\r\n")
+            body.append("Content-Type: application/octet-stream")
+                .append("\r\n")
+            body.append("Content-Length: ")
+                .append(assetSize)
+                .append("\r\n")
+            body.append("Content-MD5: ")
+                .append(metadata.md5.encodeBase64())
+                .append("\r\n\r\n")
+
+            body.toString()
+        }
+        private val closingData = "\r\n--frontier--\r\n"
+
+        override fun bytes(): ByteArray =
+            openingData.toByteArray() + assetContent + closingData.toByteArray()
     }
 }

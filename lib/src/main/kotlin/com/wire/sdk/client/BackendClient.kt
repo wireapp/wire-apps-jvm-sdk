@@ -19,8 +19,6 @@ package com.wire.sdk.client
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
-import com.wire.sdk.model.asset.AssetUploadData
-import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
 import com.wire.sdk.model.http.MlsPublicKeys
@@ -53,12 +51,6 @@ interface BackendClient {
     suspend fun registerClient(registerClientRequest: RegisterClientRequest): RegisterClientResponse
 
     suspend fun getSelfUser(): SelfUserResponse
-
-    suspend fun uploadAsset(
-        encryptedFile: ByteArray,
-        encryptedFileLength: Long,
-        assetUploadData: AssetUploadData
-    ): AssetUploadResponse
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse
 

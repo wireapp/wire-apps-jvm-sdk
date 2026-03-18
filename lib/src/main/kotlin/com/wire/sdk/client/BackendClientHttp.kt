@@ -22,8 +22,6 @@ import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
-import com.wire.sdk.model.asset.AssetUploadData
-import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.ClientUpdateRequest
 import com.wire.sdk.model.http.FeaturesResponse
@@ -45,9 +43,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
-import io.ktor.util.encodeBase64
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import org.slf4j.LoggerFactory
@@ -157,25 +153,6 @@ internal class BackendClientHttp(
         }.body<SelfUserResponse>()
     }
 
-    override suspend fun uploadAsset(
-        encryptedFile: ByteArray,
-        encryptedFileLength: Long,
-        assetUploadData: AssetUploadData
-    ): AssetUploadResponse {
-        logger.info("Uploading new asset")
-
-        return httpClient.post(PATH_PUBLIC_ASSETS_V3) {
-            setBody(
-                AssetBody(
-                    assetContent = encryptedFile,
-                    assetSize = encryptedFileLength,
-                    metadata = assetUploadData
-                )
-            )
-            contentType(ContentType.MultiPart.Mixed)
-        }.body<AssetUploadResponse>()
-    }
-
     override suspend fun getOneToOneConversation(
         userId: QualifiedId
     ): OneToOneConversationResponse {
@@ -185,48 +162,7 @@ internal class BackendClientHttp(
         }.body<OneToOneConversationResponse>()
     }
 
-    internal class AssetBody internal constructor(
-        private val assetContent: ByteArray,
-        assetSize: Long,
-        metadata: AssetUploadData
-    ) : OutgoingContent.ByteArrayContent() {
-        private val openingData: String by lazy {
-            val body = StringBuilder()
-
-            // Part 1
-            val strMetadata = "{\"public\": ${metadata.public}, " +
-                "\"retention\": \"${metadata.retention.value}\"}"
-
-            body.append("--frontier\r\n")
-            body.append("Content-Type: application/json;charset=utf-8\r\n")
-            body.append("Content-Length: ")
-                .append(strMetadata.length)
-                .append("\r\n\r\n")
-            body.append(strMetadata)
-                .append("\r\n")
-
-            // Part 2
-            body.append("--frontier\r\n")
-            body.append("Content-Type: application/octet-stream")
-                .append("\r\n")
-            body.append("Content-Length: ")
-                .append(assetSize)
-                .append("\r\n")
-            body.append("Content-MD5: ")
-                .append(metadata.md5.encodeBase64())
-                .append("\r\n\r\n")
-
-            body.toString()
-        }
-        private val closingData = "\r\n--frontier--\r\n"
-
-        override fun bytes(): ByteArray =
-            openingData.toByteArray() + assetContent + closingData.toByteArray()
-    }
-
     private companion object {
-        const val PATH_PUBLIC_ASSETS_V3 = "assets/v3"
-
         const val CLIENT_QUERY_KEY = "client"
     }
 }
