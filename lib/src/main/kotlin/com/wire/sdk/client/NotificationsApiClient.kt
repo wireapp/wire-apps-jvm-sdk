@@ -33,6 +33,7 @@ internal class NotificationsApiClient(
     private val appStorage: AppStorage
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val basePath = "notifications"
 
     private companion object {
         const val SIZE_QUERY_KEY = "size"
@@ -45,7 +46,7 @@ internal class NotificationsApiClient(
     }
 
     suspend fun getLastNotification(): EventResponse {
-        val lastNotification = httpClient.get("notifications/last") {
+        val lastNotification = httpClient.get("$basePath/last") {
             appStorage.getDeviceId()?.let { parameter(CLIENT_QUERY_KEY, it) }
         }.body<EventResponse>()
 
@@ -57,7 +58,7 @@ internal class NotificationsApiClient(
         querySince: String?
     ): NotificationsResponse {
         try {
-            val notifications = httpClient.get("notifications") {
+            val notifications = httpClient.get(basePath) {
                 parameter(SIZE_QUERY_KEY, querySize)
                 appStorage.getDeviceId()?.let { parameter(CLIENT_QUERY_KEY, it) }
                 querySince?.let { parameter(SINCE_QUERY_KEY, it) }

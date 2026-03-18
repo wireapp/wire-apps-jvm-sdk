@@ -70,7 +70,9 @@ internal class MlsApiClient(
         val mlsKeyPackageRequest =
             MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
         try {
-            httpClient.post("/$API_VERSION/$basePath/key-packages/self/${appStorage.getDeviceId()}") {
+            httpClient.post(
+                "/$API_VERSION/$basePath/key-packages/self/${appStorage.getDeviceId()}"
+            ) {
                 setBody(mlsKeyPackageRequest)
                 contentType(ContentType.Application.Json)
             }
