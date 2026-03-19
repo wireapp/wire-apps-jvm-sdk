@@ -25,8 +25,7 @@ import org.slf4j.LoggerFactory
 
 internal class TeamsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
-    private val basePath = "teams"
+    private val basePath = "$API_VERSION/teams"
 
     suspend fun deleteConversation(
         teamId: TeamId,
@@ -38,7 +37,7 @@ internal class TeamsApiClient(private val httpClient: HttpClient) {
             conversationId
         )
 
-        val path = "/$API_VERSION/$basePath/${teamId.value}/conversations/${conversationId.id}"
+        val path = "/$basePath/${teamId.value}/conversations/${conversationId.id}"
 
         httpClient.delete(path)
 

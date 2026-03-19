@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory
 
 internal class ConversationsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "conversations"
+    private val basePath = "$API_VERSION/conversations"
 
     private companion object {
         const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100
@@ -52,14 +52,14 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
     suspend fun getConversation(conversationId: QualifiedId): ConversationResponse {
         logger.info("Fetching conversation: $conversationId")
         return httpClient.get(
-            "/$API_VERSION/$basePath/${conversationId.domain}/${conversationId.id}"
+            "/$basePath/${conversationId.domain}/${conversationId.id}"
         ).body<ConversationResponse>()
     }
 
     suspend fun createGroupConversation(
         createConversationRequest: CreateConversationRequest
     ): ConversationResponse {
-        return httpClient.post("/$API_VERSION/$basePath") {
+        return httpClient.post("/$basePath") {
             setBody(createConversationRequest)
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
@@ -71,7 +71,7 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
         userId: QualifiedId,
         updateConversationMemberRoleRequest: UpdateConversationMemberRoleRequest
     ) {
-        val urlString = "/$API_VERSION/$basePath/${conversationId.domain}/${conversationId.id}" +
+        val urlString = "/$basePath/${conversationId.domain}/${conversationId.id}" +
             "/members/${userId.domain}/${userId.id}"
 
         httpClient.put(urlString) {
@@ -90,7 +90,7 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
 
         var hasMorePages: Boolean
         do {
-            val listIdsResponse = httpClient.post("/$API_VERSION/$basePath/list-ids") {
+            val listIdsResponse = httpClient.post("/$basePath/list-ids") {
                 setBody(pagingConfig)
                 contentType(ContentType.Application.Json)
                 accept(ContentType.Application.Json)
@@ -123,7 +123,7 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
                 )
 
                 val conversationsListResponse =
-                    httpClient.post("/$API_VERSION/$basePath/list") {
+                    httpClient.post("/$basePath/list") {
                         setBody(conversationIdsRequest)
                         contentType(ContentType.Application.Json)
                         accept(ContentType.Application.Json)
@@ -142,7 +142,7 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
     suspend fun getConversationGroupInfo(conversationId: QualifiedId): ByteArray {
         logger.info("Fetching conversation groupInfo: $conversationId")
         return httpClient.get(
-            "/$API_VERSION/$basePath/${conversationId.domain}/${conversationId.id}" +
+            "/$basePath/${conversationId.domain}/${conversationId.id}" +
                 "/groupinfo"
         ) {
             accept(Mls)
@@ -160,7 +160,7 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
             conversationId
         )
 
-        val path = "/$API_VERSION/$basePath/${conversationId.domain}/${conversationId.id}" +
+        val path = "/$basePath/${conversationId.domain}/${conversationId.id}" +
             "/members/${userId.domain}/${userId.id}"
 
         httpClient.delete(path)

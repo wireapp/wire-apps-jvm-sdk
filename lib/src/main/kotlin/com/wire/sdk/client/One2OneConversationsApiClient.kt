@@ -27,10 +27,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
 internal class One2OneConversationsApiClient(private val httpClient: HttpClient) {
-    private val basePath = "one2one-conversations"
+    private val basePath = "$API_VERSION/one2one-conversations"
 
     suspend fun getOneToOneConversation(userId: QualifiedId): OneToOneConversationResponse {
-        return httpClient.get("/$API_VERSION/$basePath/${userId.domain}/${userId.id}") {
+        return httpClient.get("/$basePath/${userId.domain}/${userId.id}") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
         }.body<OneToOneConversationResponse>()
