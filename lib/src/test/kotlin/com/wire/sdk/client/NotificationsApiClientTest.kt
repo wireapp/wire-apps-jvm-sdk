@@ -95,7 +95,7 @@ class NotificationsApiClientTest {
             var capturedPath: String? = null
             notificationsClient(eventResponseJson) { capturedPath = it.url.encodedPath }
                 .getLastNotification()
-            assertEquals("/notifications/last", capturedPath)
+            assertEquals("/v15/notifications/last", capturedPath)
         }
 
     @Test
@@ -147,7 +147,7 @@ class NotificationsApiClientTest {
             var capturedPath: String? = null
             notificationsClient(notificationsResponseJson) { capturedPath = it.url.encodedPath }
                 .getPaginatedNotifications(querySince = null)
-            assertEquals("/notifications", capturedPath)
+            assertEquals("/v15/notifications", capturedPath)
         }
 
     @Test

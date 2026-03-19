@@ -35,7 +35,7 @@ import kotlin.collections.component2
 
 internal class UsersApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "users"
+    private val basePath = "$API_VERSION/users"
 
     /**
      * Get User details
@@ -46,7 +46,7 @@ internal class UsersApiClient(private val httpClient: HttpClient) {
     suspend fun getUserData(userId: QualifiedId): UserResponse {
         logger.info("Fetching user: $userId")
         return httpClient.get(
-            "/$API_VERSION/$basePath/${userId.domain}/${userId.id}"
+            "/$basePath/${userId.domain}/${userId.id}"
         ).body<UserResponse>()
     }
 

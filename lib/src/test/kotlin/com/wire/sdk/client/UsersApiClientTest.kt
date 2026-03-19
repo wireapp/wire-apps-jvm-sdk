@@ -220,7 +220,7 @@ class UsersApiClientTest {
 
             UsersApiClient(client).getClientsByUserId(userId)
 
-            assertEquals("/users/${userId.domain}/${userId.id}/clients", capturedPath)
+            assertEquals("/v15/users/${userId.domain}/${userId.id}/clients", capturedPath)
         }
 
     @Test
@@ -294,7 +294,7 @@ class UsersApiClientTest {
 
             UsersApiClient(client).getClientsByUserIds(listOf(userId))
 
-            assertEquals("/users/list-clients", capturedPath)
+            assertEquals("/v15/users/list-clients", capturedPath)
         }
 
     @Test

@@ -16,6 +16,7 @@
 
 package com.wire.sdk.client
 
+import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.http.EventResponse
@@ -33,7 +34,7 @@ internal class NotificationsApiClient(
     private val appStorage: AppStorage
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "notifications"
+    private val basePath = "$API_VERSION/notifications"
 
     private companion object {
         const val SIZE_QUERY_KEY = "size"
