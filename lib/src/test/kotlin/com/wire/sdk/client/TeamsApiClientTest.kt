@@ -19,19 +19,9 @@ package com.wire.sdk.client
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.fullPath
-import io.ktor.http.headersOf
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.DisplayName
 import java.util.UUID
 import kotlin.test.Test
@@ -47,29 +37,6 @@ class TeamsApiClientTest {
     private val expectedPath = "/$API_VERSION/teams/${teamId.value}" +
         "/conversations/${conversationId.id}"
 
-    private fun createMockClient(
-        statusCode: HttpStatusCode = HttpStatusCode.OK,
-        assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ): HttpClient =
-        HttpClient(MockEngine) {
-            engine {
-                addHandler { request ->
-                    assertRequest(request)
-                    respond(
-                        content = "{}",
-                        status = statusCode,
-                        headers = headersOf(
-                            HttpHeaders.ContentType,
-                            ContentType.Application.Json.toString()
-                        )
-                    )
-                }
-            }
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-        }
-
     @Test
     @DisplayName(
         "given teamId and conversationId, when deleteConversation is called, then correct URL is requested"
@@ -77,7 +44,7 @@ class TeamsApiClientTest {
     fun `requests-correct-url`() =
         runTest {
             var capturedPath: String? = null
-            val client = createMockClient(assertRequest = { capturedPath = it.url.fullPath })
+            val client = createMockHttpClient(assertRequest = { capturedPath = it.url.fullPath })
 
             TeamsApiClient(client).deleteConversation(teamId, conversationId)
 
@@ -88,7 +55,7 @@ class TeamsApiClientTest {
     fun `uses-delete-method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            val client = createMockClient(assertRequest = { capturedMethod = it.method })
+            val client = createMockHttpClient(assertRequest = { capturedMethod = it.method })
 
             TeamsApiClient(client).deleteConversation(teamId, conversationId)
 

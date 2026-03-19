@@ -22,18 +22,8 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.headersOf
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -106,31 +96,15 @@ class ConversationsApiClientTest {
         }
     """.trimIndent()
 
-    private fun mockClient(
-        responseBody: String = "",
-        assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ): HttpClient =
-        HttpClient(MockEngine) {
-            engine {
-                addHandler { request ->
-                    assertRequest(request)
-                    respond(
-                        content = responseBody,
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(
-                            HttpHeaders.ContentType,
-                            ContentType.Application.Json.toString()
-                        )
-                    )
-                }
-            }
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-        }
-
     private fun apiClient(
         responseBody: String = "",
         assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ) = ConversationsApiClient(mockClient(responseBody, assertRequest))
+    ) = ConversationsApiClient(
+        createMockHttpClient(
+            responseBody = responseBody,
+            assertRequest = assertRequest
+        )
+    )
 
     @Test
     fun `when getConversation, then correct URL`() =

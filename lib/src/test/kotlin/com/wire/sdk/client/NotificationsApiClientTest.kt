@@ -63,31 +63,16 @@ class NotificationsApiClientTest {
         }
     """.trimIndent()
 
-    private fun mockClient(
-        responseBody: String = "",
-        assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ): HttpClient =
-        HttpClient(MockEngine) {
-            engine {
-                addHandler { request ->
-                    assertRequest(request)
-                    respond(
-                        content = responseBody,
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(
-                            HttpHeaders.ContentType,
-                            ContentType.Application.Json.toString()
-                        )
-                    )
-                }
-            }
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-        }
-
     private fun notificationsClient(
         responseBody: String = "",
         assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ) = NotificationsApiClient(mockClient(responseBody, assertRequest), appStorage)
+    ) = NotificationsApiClient(
+        createMockHttpClient(
+            responseBody = responseBody,
+            assertRequest = assertRequest
+        ),
+        appStorage
+    )
 
     @Test
     fun `when getLastNotification, then correct URL`() =
@@ -124,7 +109,7 @@ class NotificationsApiClientTest {
             val storageWithNullDevice = mockk<AppStorage> { every { getDeviceId() } returns null }
             var capturedParam: String? = "was-set"
             val client = NotificationsApiClient(
-                mockClient(eventResponseJson) {
+                createMockHttpClient(responseBody = eventResponseJson) {
                     capturedParam = it.url.parameters[CLIENT_QUERY_KEY]
                 },
                 storageWithNullDevice

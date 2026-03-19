@@ -18,19 +18,9 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.fullPath
-import io.ktor.http.headersOf
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.DisplayName
 import java.util.UUID
 import kotlin.test.Test
@@ -69,53 +59,6 @@ class One2OneConversationsApiClientTest {
         }
     """.trimIndent()
 
-    private val fullResponseJson = """
-        {
-            "public_keys": { "removal": "base64encodedkey==" },
-            "conversation": {
-                "qualified_id": { "id": "aabbccdd-1234-5678-abcd-aabbccddeeff", "domain": "example.com" },
-                "team": "ccddaabb-5678-1234-efab-112233445566",
-                "group_id": "dGVzdGdyb3VwaWQ=",
-                "name": "John Doe",
-                "epoch": 1,
-                "protocol": "mls",
-                "members": {
-                    "self": { "qualified_id": { "id": "3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a", "domain": "example.com" }, "conversation_role": "wire_member" },
-                    "others": [
-                        { "qualified_id": { "id": "aabbccdd-1234-5678-abcd-aabbccddeeff", "domain": "example.com" }, "conversation_role": "wire_member" }
-                    ]
-                },
-                "type": "2",
-                "public_keys": { "removal": "anotherbase64key==" },
-                "message_timer": 604800000
-            }
-        }
-    """.trimIndent()
-
-    private fun createMockClient(
-        responseBody: String,
-        statusCode: HttpStatusCode = HttpStatusCode.OK,
-        assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ): HttpClient =
-        HttpClient(MockEngine) {
-            engine {
-                addHandler { request ->
-                    assertRequest(request)
-                    respond(
-                        content = responseBody,
-                        status = statusCode,
-                        headers = headersOf(
-                            HttpHeaders.ContentType,
-                            ContentType.Application.Json.toString()
-                        )
-                    )
-                }
-            }
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-        }
-
     @Test
     @DisplayName(
         "given valid userId, when getOneToOneConversation is called, " +
@@ -124,7 +67,7 @@ class One2OneConversationsApiClientTest {
     fun `test-1`() =
         runTest {
             var capturedPath: String? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = minimalResponseJson,
                 assertRequest = { capturedPath = it.url.fullPath }
             )
@@ -138,7 +81,7 @@ class One2OneConversationsApiClientTest {
     fun `given valid userId, when getOneToOneConversation is called, then GET method is used`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = minimalResponseJson,
                 assertRequest = { capturedMethod = it.method }
             )
@@ -160,7 +103,7 @@ class One2OneConversationsApiClientTest {
                 domain = "sub.wire.com"
             )
             var capturedPath: String? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = minimalResponseJson,
                 assertRequest = { capturedPath = it.url.fullPath }
             )

@@ -101,35 +101,11 @@ class UsersApiClientTest {
         }
     """.trimIndent()
 
-    private fun createMockClient(
-        responseBody: String,
-        statusCode: HttpStatusCode = HttpStatusCode.OK,
-        assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ): HttpClient =
-        HttpClient(MockEngine) {
-            engine {
-                addHandler { request ->
-                    assertRequest(request)
-                    respond(
-                        content = responseBody,
-                        status = statusCode,
-                        headers = headersOf(
-                            HttpHeaders.ContentType,
-                            ContentType.Application.Json.toString()
-                        )
-                    )
-                }
-            }
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
-            }
-        }
-
     @Test
     fun `given userId, when getUserData, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = fullUserResponseJson,
                 assertRequest = { capturedPath = it.url.fullPath }
             )
@@ -143,7 +119,7 @@ class UsersApiClientTest {
     fun `given userId, when getUserData, then GET method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = fullUserResponseJson,
                 assertRequest = { capturedMethod = it.method }
             )
@@ -156,7 +132,7 @@ class UsersApiClientTest {
     @Test
     fun `given full response, when getUserData, then fields deserialized`() =
         runTest {
-            val client = createMockClient(responseBody = fullUserResponseJson)
+            val client = createMockHttpClient(responseBody = fullUserResponseJson)
 
             val result = UsersApiClient(client).getUserData(userId)
 
@@ -173,7 +149,7 @@ class UsersApiClientTest {
     @Test
     fun `given minimal response, when getUserData, then nullables are null`() =
         runTest {
-            val client = createMockClient(responseBody = minimalUserResponseJson)
+            val client = createMockHttpClient(responseBody = minimalUserResponseJson)
 
             val result = UsersApiClient(client).getUserData(userId)
 
@@ -213,7 +189,7 @@ class UsersApiClientTest {
     fun `given userId, when getClientsByUserId, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = userClientsResponseJson,
                 assertRequest = { capturedPath = it.url.fullPath }
             )
@@ -227,7 +203,7 @@ class UsersApiClientTest {
     fun `given userId, when getClientsByUserId, then GET method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = userClientsResponseJson,
                 assertRequest = { capturedMethod = it.method }
             )
@@ -240,7 +216,7 @@ class UsersApiClientTest {
     @Test
     fun `given clients, when getClientsByUserId, then deserialized`() =
         runTest {
-            val client = createMockClient(responseBody = userClientsResponseJson)
+            val client = createMockHttpClient(responseBody = userClientsResponseJson)
 
             val result = UsersApiClient(client).getClientsByUserId(userId)
 
@@ -252,7 +228,7 @@ class UsersApiClientTest {
     @Test
     fun `given empty response, when getClientsByUserId, then empty list`() =
         runTest {
-            val client = createMockClient(responseBody = "[]")
+            val client = createMockHttpClient(responseBody = "[]")
 
             val result = UsersApiClient(client).getClientsByUserId(userId)
 
@@ -287,7 +263,7 @@ class UsersApiClientTest {
     fun `given userIds, when getClientsByUserIds, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = listClientsResponseJson,
                 assertRequest = { capturedPath = it.url.fullPath }
             )
@@ -301,7 +277,7 @@ class UsersApiClientTest {
     fun `given userIds, when getClientsByUserIds, then POST method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            val client = createMockClient(
+            val client = createMockHttpClient(
                 responseBody = listClientsResponseJson,
                 assertRequest = { capturedMethod = it.method }
             )
@@ -314,7 +290,7 @@ class UsersApiClientTest {
     @Test
     fun `given multi-domain, when getClientsByUserIds, then keyed by QualifiedId`() =
         runTest {
-            val client = createMockClient(responseBody = listClientsResponseJson)
+            val client = createMockHttpClient(responseBody = listClientsResponseJson)
 
             val result = UsersApiClient(client).getClientsByUserIds(listOf(userId, secondUserId))
 
@@ -334,7 +310,7 @@ class UsersApiClientTest {
     @Test
     fun `given multi-domain, when getClientsByUserIds, then clients mapped`() =
         runTest {
-            val client = createMockClient(responseBody = listClientsResponseJson)
+            val client = createMockHttpClient(responseBody = listClientsResponseJson)
 
             val result = UsersApiClient(client).getClientsByUserIds(listOf(userId, secondUserId))
 
@@ -354,7 +330,7 @@ class UsersApiClientTest {
     @Test
     fun `given empty response, when getClientsByUserIds, then empty map`() =
         runTest {
-            val client = createMockClient(responseBody = "{}")
+            val client = createMockHttpClient(responseBody = "{}")
 
             val result = UsersApiClient(client).getClientsByUserIds(emptyList())
 

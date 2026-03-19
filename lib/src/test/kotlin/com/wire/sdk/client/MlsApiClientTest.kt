@@ -20,21 +20,11 @@ import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.persistence.AppStorage
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.fullPath
-import io.ktor.http.headersOf
-import io.ktor.serialization.kotlinx.json.json
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -78,31 +68,16 @@ class MlsApiClientTest {
         }
     """.trimIndent()
 
-    private fun mockClient(
-        responseBody: String = "",
-        assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ): HttpClient =
-        HttpClient(MockEngine) {
-            engine {
-                addHandler { request ->
-                    assertRequest(request)
-                    respond(
-                        content = responseBody,
-                        status = HttpStatusCode.OK,
-                        headers = headersOf(
-                            HttpHeaders.ContentType,
-                            ContentType.Application.Json.toString()
-                        )
-                    )
-                }
-            }
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-        }
-
     private fun mlsClient(
         responseBody: String = "",
         assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
-    ) = MlsApiClient(mockClient(responseBody, assertRequest), appStorage)
+    ) = MlsApiClient(
+        createMockHttpClient(
+            responseBody = responseBody,
+            assertRequest = assertRequest
+        ),
+        appStorage
+    )
 
     @Test
     fun `when getPublicKeys, then correct URL`() =
