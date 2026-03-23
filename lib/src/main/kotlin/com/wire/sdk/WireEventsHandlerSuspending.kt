@@ -56,49 +56,49 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         logger.debug("Received event: ConversationDeleted")
     }
 
-    open suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
+    open suspend fun onAssetMessageReceived(assetMessage: WireMessage.Asset) {
         logger.debug("Received event: AssetMessageReceived")
     }
 
-    open suspend fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
+    open suspend fun onButtonClicked(buttonAction: WireMessage.ButtonAction) {
         logger.debug("Received event: ButtonClicked")
     }
 
     /**
      * A user has sent a ping event to a conversation.
      *
-     * @param wireMessage the message received
+     * @param pingMessage the message received
      */
-    open suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
-        logger.debug("Received event: PingReceived: {}", wireMessage)
+    open suspend fun onPingReceived(pingMessage: WireMessage.Ping) {
+        logger.debug("Received event: PingReceived: {}", pingMessage)
     }
 
-    open suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
-        logger.debug("Received event: LocationMessageReceived: {}", wireMessage)
+    open suspend fun onLocationMessageReceived(locationMessage: WireMessage.Location) {
+        logger.debug("Received event: LocationMessageReceived: {}", locationMessage)
     }
 
-    open suspend fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
-        logger.debug("Received event: MessageDeleted: {}", wireMessage)
+    open suspend fun onMessageDeleted(deletedMessage: WireMessage.Deleted) {
+        logger.debug("Received event: MessageDeleted: {}", deletedMessage)
     }
 
-    open suspend fun onMessageDelivered(wireMessage: WireMessage) {
-        logger.debug("Received event: MessageDelivered: {}", wireMessage)
+    open suspend fun onMessageDelivered(deliveredMessage: WireMessage.Receipt) {
+        logger.debug("Received event: MessageDelivered: {}", deliveredMessage)
     }
 
-    open suspend fun onTextMessageEdited(wireMessage: WireMessage.TextEdited) {
-        logger.debug("Received event: TextMessageEdited: {}", wireMessage)
+    open suspend fun onTextMessageEdited(editedTextMessage: WireMessage.TextEdited) {
+        logger.debug("Received event: TextMessageEdited: {}", editedTextMessage)
     }
 
-    open suspend fun onMessageReactionReceived(wireMessage: WireMessage.Reaction) {
-        logger.debug("Received event: MessageReactionReceived: {}", wireMessage)
+    open suspend fun onMessageReactionReceived(reactionMessage: WireMessage.Reaction) {
+        logger.debug("Received event: MessageReactionReceived: {}", reactionMessage)
     }
 
-    open suspend fun onInCallReactionReceived(wireMessage: WireMessage.InCallEmoji) {
-        logger.debug("Received event: InCallReactionReceived: {}", wireMessage)
+    open suspend fun onInCallReactionReceived(inCallEmoji: WireMessage.InCallEmoji) {
+        logger.debug("Received event: InCallReactionReceived: {}", inCallEmoji)
     }
 
-    open suspend fun onInCallHandRaiseReceived(wireMessage: WireMessage.InCallHandRaise) {
-        logger.debug("Received event: InCallHandRaiseReceived: {}", wireMessage)
+    open suspend fun onInCallHandRaiseReceived(inCallHandRaise: WireMessage.InCallHandRaise) {
+        logger.debug("Received event: InCallHandRaiseReceived: {}", inCallHandRaise)
     }
 
     /**

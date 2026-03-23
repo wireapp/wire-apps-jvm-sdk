@@ -78,7 +78,7 @@ class WireEventsTest {
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onAssetMessageReceived(
-                wireMessage = WireMessage.Asset(
+                assetMessage = WireMessage.Asset(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
                     sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
@@ -108,7 +108,7 @@ class WireEventsTest {
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onPingReceived(
-                wireMessage = WireMessage.Ping(
+                pingMessage = WireMessage.Ping(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
                     sender = QualifiedId(UUID.randomUUID(), "anta.wire.link")
@@ -125,7 +125,7 @@ class WireEventsTest {
                 .get<WireEventsHandler>() as WireEventsHandlerSuspending
 
             wireEvents.onLocationMessageReceived(
-                wireMessage = WireMessage.Location(
+                locationMessage = WireMessage.Location(
                     id = UUID.randomUUID(),
                     conversationId = CONVERSATION_ID,
                     sender = QualifiedId(UUID.randomUUID(), "anta.wire.link"),
@@ -225,23 +225,25 @@ class WireEventsTest {
                     )
                 }
 
-                override suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
+                override suspend fun onAssetMessageReceived(assetMessage: WireMessage.Asset) {
                     assertEquals(
                         EXPECTED_NEW_MLS_MESSAGE_VALUE,
-                        wireMessage.name
+                        assetMessage.name
                     )
                 }
 
-                override suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
+                override suspend fun onPingReceived(pingMessage: WireMessage.Ping) {
                     assertEquals(
                         CONVERSATION_ID,
-                        wireMessage.conversationId
+                        pingMessage.conversationId
                     )
                 }
 
-                override suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
-                    assertEquals(EXPECTED_LOCATION_LATITUDE, wireMessage.latitude)
-                    assertEquals(EXPECTED_LOCATION_LONGITUDE, wireMessage.longitude)
+                override suspend fun onLocationMessageReceived(
+                    locationMessage: WireMessage.Location
+                ) {
+                    assertEquals(EXPECTED_LOCATION_LATITUDE, locationMessage.latitude)
+                    assertEquals(EXPECTED_LOCATION_LONGITUDE, locationMessage.longitude)
                 }
             }
 

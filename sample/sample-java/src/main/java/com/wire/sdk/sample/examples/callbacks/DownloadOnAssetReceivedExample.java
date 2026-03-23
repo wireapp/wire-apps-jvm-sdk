@@ -36,10 +36,10 @@ public class DownloadOnAssetReceivedExample extends WireEventsHandlerDefault {
     private static final Logger logger = LoggerFactory.getLogger(DownloadOnAssetReceivedExample.class);
 
     @Override
-    public void onAssetMessageReceived(WireMessage.Asset wireMessage) {
-        logger.info("Received Asset Message. conversationId: {}", wireMessage.conversationId());
-        saveAsset(wireMessage);
-        informChannelAfterDownload(wireMessage);
+    public void onAssetMessageReceived(WireMessage.Asset assetMessage) {
+        logger.info("Received Asset Message. conversationId: {}", assetMessage.conversationId());
+        saveAsset(assetMessage);
+        informChannelAfterDownload(assetMessage);
     }
 
     private void saveAsset(WireMessage.Asset wireMessage) {

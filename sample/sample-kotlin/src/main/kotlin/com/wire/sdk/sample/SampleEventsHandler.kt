@@ -126,19 +126,19 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         manager.sendMessageSuspending(message = reaction)
     }
 
-    override suspend fun onAssetMessageReceived(wireMessage: WireMessage.Asset) {
-        logger.info("Received Asset Message : $wireMessage")
+    override suspend fun onAssetMessageReceived(assetMessage: WireMessage.Asset) {
+        logger.info("Received Asset Message : $assetMessage")
 
         val message = WireMessage.Text.createReply(
-            text = "Received Asset : ${wireMessage.name}",
-            originalMessage = wireMessage
+            text = "Received Asset : ${assetMessage.name}",
+            originalMessage = assetMessage
         )
 
         manager.sendMessageSuspending(message = message)
 
-        wireMessage.remoteData?.let { remoteData ->
+        assetMessage.remoteData?.let { remoteData ->
             val asset = manager.downloadAssetSuspending(remoteData)
-            val fileName = wireMessage.name
+            val fileName = assetMessage.name
                 .takeUnless { it.isNullOrBlank() }
                 ?: "unknown-${UUID.randomUUID()}"
             val outputDir = File("build/downloaded_assets").apply { mkdirs() }
@@ -148,34 +148,34 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
     }
 
-    override suspend fun onButtonClicked(wireMessage: WireMessage.ButtonAction) {
-        logger.info("Received ButtonAction Message : $wireMessage")
+    override suspend fun onButtonClicked(buttonAction: WireMessage.ButtonAction) {
+        logger.info("Received ButtonAction Message : $buttonAction")
     }
 
-    override suspend fun onPingReceived(wireMessage: WireMessage.Ping) {
-        logger.info("Received Ping: $wireMessage")
+    override suspend fun onPingReceived(pingMessage: WireMessage.Ping) {
+        logger.info("Received Ping: $pingMessage")
 
         val ping = WireMessage.Ping.create(
-            conversationId = wireMessage.conversationId
+            conversationId = pingMessage.conversationId
         )
         delay(10000L)
-        logger.info("Sending back Ping: $wireMessage")
+        logger.info("Sending back Ping: $pingMessage")
         manager.sendMessageSuspending(message = ping)
     }
 
-    override suspend fun onLocationMessageReceived(wireMessage: WireMessage.Location) {
-        logger.info("Received Location Message : $wireMessage")
+    override suspend fun onLocationMessageReceived(locationMessage: WireMessage.Location) {
+        logger.info("Received Location Message : $locationMessage")
 
         val message = WireMessage.Text.createReply(
-            text = "Received Location\n\nLatitude: ${wireMessage.latitude}\n\nLongitude: ${wireMessage.longitude}\n\nName: ${wireMessage.name}\n\nZoom: ${wireMessage.zoom}",
-            originalMessage = wireMessage
+            text = "Received Location\n\nLatitude: ${locationMessage.latitude}\n\nLongitude: ${locationMessage.longitude}\n\nName: ${locationMessage.name}\n\nZoom: ${locationMessage.zoom}",
+            originalMessage = locationMessage
         )
 
         manager.sendMessageSuspending(message = message)
     }
 
-    override suspend fun onMessageDeleted(wireMessage: WireMessage.Deleted) {
-        super.onMessageDeleted(wireMessage)
+    override suspend fun onMessageDeleted(deletedMessage: WireMessage.Deleted) {
+        super.onMessageDeleted(deletedMessage)
     }
 
     private fun getSampleAudioMetadata(): AssetMetadata.Audio {
