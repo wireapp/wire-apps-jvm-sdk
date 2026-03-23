@@ -22,6 +22,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
+import com.wire.sdk.client.NotificationsApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.EventContentDTO
@@ -55,6 +56,7 @@ class WireTeamEventsListenerTest {
         runTest {
             // Arrange
             val backendClient = mockk<BackendClient>()
+            val notificationsApiClient = mockk<NotificationsApiClient>()
             val eventsRouter = mockk<EventsRouter>()
             val appStorage = mockk<AppStorage>()
             val mockConnectionListener = mockk<BackendConnectionListener>()
@@ -107,7 +109,7 @@ class WireTeamEventsListenerTest {
             coEvery { mockConnectionListener.onDisconnected() } just Runs
             coEvery { eventsRouter.route(any()) } returns Unit
             coEvery {
-                backendClient.getPaginatedNotifications(any(), any())
+                notificationsApiClient.getPaginatedNotifications(any(), any())
             } returns NotificationsResponse(
                 hasMore = false,
                 events = listOf(
@@ -123,7 +125,13 @@ class WireTeamEventsListenerTest {
             coEvery { appStorage.getLastNotificationId() } returns lastNotificationId
             coEvery { appStorage.setLastNotificationId(any()) } returns Unit
 
-            val listener = WireTeamEventsListener(backendClient, eventsRouter, appStorage)
+            val listener =
+                WireTeamEventsListener(
+                    backendClient,
+                    notificationsApiClient,
+                    eventsRouter,
+                    appStorage
+                )
             listener.setBackendConnectionListener(mockConnectionListener)
 
             // Act
@@ -155,13 +163,20 @@ class WireTeamEventsListenerTest {
         runTest {
             // Arrange
             val backendClient = mockk<BackendClient>()
+            val notificationsApiClient = mockk<NotificationsApiClient>()
             val eventsRouter = mockk<EventsRouter>()
             val appStorage = mockk<AppStorage>()
 
             coEvery { backendClient.connectWebSocket(any()) } throws
                 WebSocketException("Connection refused")
 
-            val listener = WireTeamEventsListener(backendClient, eventsRouter, appStorage)
+            val listener =
+                WireTeamEventsListener(
+                    backendClient,
+                    notificationsApiClient,
+                    eventsRouter,
+                    appStorage
+                )
 
             // Act & Assert
             assertThrows<InterruptedException> {
@@ -174,13 +189,20 @@ class WireTeamEventsListenerTest {
         runTest {
             // Arrange
             val backendClient = mockk<BackendClient>()
+            val notificationsApiClient = mockk<NotificationsApiClient>()
             val eventsRouter = mockk<EventsRouter>()
             val appStorage = mockk<AppStorage>()
 
             coEvery { backendClient.connectWebSocket(any()) } throws
                 ConnectTimeoutException("Some other error")
 
-            val listener = WireTeamEventsListener(backendClient, eventsRouter, appStorage)
+            val listener =
+                WireTeamEventsListener(
+                    backendClient,
+                    notificationsApiClient,
+                    eventsRouter,
+                    appStorage
+                )
 
             // Act and Assert
             // Should not throw exception
@@ -211,11 +233,18 @@ class WireTeamEventsListenerTest {
                 httpClient = httpClient,
                 appStorage = appStorage
             )
+            val notificationsApiClient = mockk<NotificationsApiClient>()
             val eventsRouter = mockk<EventsRouter>()
             val mockConnectionListener = mockk<BackendConnectionListener>()
             coEvery { mockConnectionListener.onConnected() } just Runs
             coEvery { mockConnectionListener.onDisconnected() } just Runs
-            val listener = WireTeamEventsListener(backendClient, eventsRouter, appStorage)
+            val listener =
+                WireTeamEventsListener(
+                    backendClient,
+                    notificationsApiClient,
+                    eventsRouter,
+                    appStorage
+                )
             listener.setBackendConnectionListener(mockConnectionListener)
 
             // Assert

@@ -17,7 +17,8 @@
 package com.wire.sdk.service
 
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
@@ -28,9 +29,7 @@ import com.wire.sdk.model.http.conversation.Member
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
-import io.mockk.Runs
 import io.mockk.coEvery
-import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -344,10 +343,8 @@ class EventsRouterConcurrencyTest {
         runTest {
             // Arrange
             val teamStorage = mockk<TeamStorage>()
-            val backendClient = mockk<BackendClient>()
             val processedTeamInvites = Collections.synchronizedList(mutableListOf<UUID>())
 
-            coEvery { backendClient.confirmTeam(any()) } just Runs
             coEvery { teamStorage.save(any()) } coAnswers {
                 // This should be TeamId, but there is an issue with mockk
                 //     and value classes, so we use UUID directly
@@ -358,7 +355,6 @@ class EventsRouterConcurrencyTest {
             val testDispatcher = StandardTestDispatcher(testScheduler)
             val eventsRouter = createEventsRouter(
                 teamStorage = teamStorage,
-                backendClient = backendClient,
                 dispatcher = testDispatcher
             )
 
@@ -408,7 +404,8 @@ class EventsRouterConcurrencyTest {
     private fun createEventsRouter(
         teamStorage: TeamStorage = mockk(relaxed = true),
         conversationService: ConversationService = mockk(relaxed = true),
-        backendClient: BackendClient = mockk(relaxed = true),
+        conversationsApiClient: ConversationsApiClient = mockk(relaxed = true),
+        mlsApiClient: MlsApiClient = mockk(relaxed = true),
         cryptoClient: CryptoClient = mockk(relaxed = true),
         dispatcher: CoroutineDispatcher = Dispatchers.Default
     ): EventsRouter {
@@ -418,7 +415,8 @@ class EventsRouterConcurrencyTest {
         return EventsRouter(
             teamStorage = teamStorage,
             conversationService = conversationService,
-            backendClient = backendClient,
+            conversationsApiClient = conversationsApiClient,
+            mlsApiClient = mlsApiClient,
             wireEventsHandler = wireEventsHandler,
             cryptoClient = cryptoClient,
             mlsFallbackStrategy = mlsFallbackStrategy,

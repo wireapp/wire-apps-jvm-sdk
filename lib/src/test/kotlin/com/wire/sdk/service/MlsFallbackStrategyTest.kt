@@ -19,7 +19,7 @@ package com.wire.sdk.service
 import com.wire.crypto.ConversationId
 import com.wire.crypto.toGroupInfo
 import com.wire.sdk.TestUtils
-import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
@@ -46,17 +46,18 @@ class MlsFallbackStrategyTest {
                 } returns MLS_GROUP_ID
             }
 
-            val backendClient = mockk<BackendClient> {
+            val conversationsApiClient = mockk<ConversationsApiClient> {
                 coEvery {
                     getConversation(conversationId = CONVERSATION_ID)
                 } returns CONVERSATION_RESPONSE
+
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)
                 } returns MLS_GROUP_ID.copyBytes()
             }
 
             val fallbackStrategy = MlsFallbackStrategy(
-                backendClient = backendClient,
+                conversationsApiClient = conversationsApiClient,
                 cryptoClient = cryptoClient
             )
 
@@ -83,17 +84,18 @@ class MlsFallbackStrategyTest {
                 } returns MLS_GROUP_ID
             }
 
-            val backendClient = mockk<BackendClient> {
+            val conversationsApiClient = mockk<ConversationsApiClient> {
                 coEvery {
                     getConversation(conversationId = CONVERSATION_ID)
                 } returns CONVERSATION_RESPONSE.copy(epoch = 2L)
+
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)
                 } returns MLS_GROUP_ID.copyBytes()
             }
 
             val fallbackStrategy = MlsFallbackStrategy(
-                backendClient = backendClient,
+                conversationsApiClient = conversationsApiClient,
                 cryptoClient = cryptoClient
             )
 
@@ -120,17 +122,18 @@ class MlsFallbackStrategyTest {
                 } returns MLS_GROUP_ID
             }
 
-            val backendClient = mockk<BackendClient> {
+            val conversationsApiClient = mockk<ConversationsApiClient> {
                 coEvery {
                     getConversation(conversationId = CONVERSATION_ID)
                 } returns CONVERSATION_RESPONSE.copy(epoch = 1L)
+
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)
                 } returns MLS_GROUP_ID.copyBytes()
             }
 
             val fallbackStrategy = MlsFallbackStrategy(
-                backendClient = backendClient,
+                conversationsApiClient = conversationsApiClient,
                 cryptoClient = cryptoClient
             )
 
@@ -143,7 +146,7 @@ class MlsFallbackStrategyTest {
                 cryptoClient.joinMlsConversationRequest(
                     groupInfo = MLS_GROUP_ID.copyBytes().toGroupInfo()
                 )
-                backendClient.getConversationGroupInfo(
+                conversationsApiClient.getConversationGroupInfo(
                     conversationId = CONVERSATION_ID
                 )
             }

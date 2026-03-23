@@ -20,9 +20,18 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.wire.crypto.MlsTransport
 import com.wire.sdk.AppsSdkDatabase
+import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.AuthTokenManager
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.BackendClientHttp
+import com.wire.sdk.client.ClientsApiClient
+import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.NotificationsApiClient
+import com.wire.sdk.client.OneToOneConversationsApiClient
+import com.wire.sdk.client.SelfApiClient
+import com.wire.sdk.client.TeamsApiClient
+import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.MlsTransportImpl
@@ -84,25 +93,48 @@ val sdkModule =
         single<ConversationStorage> { ConversationSqlLiteStorage(AppsSdkDatabase(get())) }
         single<AppStorage> { AppSqlLiteStorage(AppsSdkDatabase(get())) }
         single<BackendClient> { BackendClientHttp(get(), get()) }
+        single<ConversationsApiClient> { ConversationsApiClient(get()) }
+        single<OneToOneConversationsApiClient> { OneToOneConversationsApiClient(get()) }
+        single<UsersApiClient> { UsersApiClient(get()) }
+        single<SelfApiClient> { SelfApiClient(get()) }
+        single<AssetsApiClient> { AssetsApiClient(get()) }
+        single<TeamsApiClient> { TeamsApiClient(get()) }
+        single<NotificationsApiClient> { NotificationsApiClient(get(), get()) }
+        single<ClientsApiClient> { ClientsApiClient(get(), get()) }
+        single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get()) } onClose { it?.close() }
+        single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) } onClose
+            { it?.close() }
         single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost(), get())
         } onClose { it?.close() }
         single<CryptoClient> {
             runBlocking {
-                getOrInitCryptoClient(get(), get(), get())
+                getOrInitCryptoClient(get(), get(), get(), get(), get())
             }
         } onClose { it?.close() }
-        single { WireTeamEventsListener(get(), get(), get()) }
+        single { WireTeamEventsListener(get(), get(), get(), get()) }
 
         // Services
-        single { ConversationService(get(), get(), get(), get()) }
+        single {
+            ConversationService(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
 
         // Manager
-        single { WireApplicationManager(get(), get(), get(), get(), get()) }
+        single { WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get()) }
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
@@ -237,6 +269,8 @@ private fun initializeDatabase(dbUrl: String): SqlDriver {
 @Suppress("LongMethod")
 internal suspend fun getOrInitCryptoClient(
     backendClient: BackendClient,
+    clientsApiClient: ClientsApiClient,
+    mlsApiClient: MlsApiClient,
     appStorage: AppStorage,
     mlsTransport: MlsTransport
 ): CryptoClient {
@@ -277,7 +311,7 @@ internal suspend fun getOrInitCryptoClient(
         val lastKey = cryptoClient.generateProteusLastPreKey()
 
         val clientResponse = try {
-            backendClient.registerClient(
+            clientsApiClient.registerClient(
                 registerClientRequest = RegisterClientRequest(
                     lastKey = lastKey.toApi(),
                     preKeys = preKeys.map { it.toApi() },
@@ -309,12 +343,12 @@ internal suspend fun getOrInitCryptoClient(
             mlsTransport = mlsTransport
         )
 
-        backendClient.updateClientWithMlsPublicKey(
+        clientsApiClient.updateClientWithMlsPublicKey(
             cryptoClientId = cryptoClientId,
             mlsPublicKeys = cryptoClient.mlsGetPublicKey()
         )
 
-        backendClient.uploadMlsKeyPackages(
+        mlsApiClient.uploadMlsKeyPackages(
             cryptoClientId = cryptoClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
         )

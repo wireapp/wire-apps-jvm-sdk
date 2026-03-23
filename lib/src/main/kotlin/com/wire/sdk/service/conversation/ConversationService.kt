@@ -22,6 +22,12 @@ import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
 import com.wire.crypto.toMLSKeyPackage
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.OneToOneConversationsApiClient
+import com.wire.sdk.client.SelfApiClient
+import com.wire.sdk.client.TeamsApiClient
+import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
@@ -54,9 +60,15 @@ import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
+    private val usersApiClient: UsersApiClient,
+    private val selfApiClient: SelfApiClient,
+    private val conversationsApiClient: ConversationsApiClient,
+    private val oneToOneConversationsApiClient: OneToOneConversationsApiClient,
+    private val teamsApiClient: TeamsApiClient,
+    private val mlsApiClient: MlsApiClient,
     private val conversationStorage: ConversationStorage,
     private val appStorage: AppStorage,
     private val cryptoClient: CryptoClient
@@ -65,7 +77,7 @@ internal class ConversationService internal constructor(
 
     private val selfTeamId: Deferred<UUID?> by lazy {
         CoroutineScope(Dispatchers.IO).async {
-            backendClient.getSelfUser().teamId
+            selfApiClient.getSelfUser().teamId
         }
     }
 
@@ -88,7 +100,7 @@ internal class ConversationService internal constructor(
         userIds: List<QualifiedId>
     ): QualifiedId {
         val teamId = getSelfTeamId()
-        val conversationCreatedResponse = backendClient.createGroupConversation(
+        val conversationCreatedResponse = conversationsApiClient.createGroupConversation(
             createConversationRequest = CreateConversationRequest.createGroup(
                 name = name,
                 teamId = teamId
@@ -122,7 +134,7 @@ internal class ConversationService internal constructor(
     ): QualifiedId {
         try {
             val teamId = getSelfTeamId()
-            val conversationCreatedResponse = backendClient.createGroupConversation(
+            val conversationCreatedResponse = conversationsApiClient.createGroupConversation(
                 createConversationRequest = CreateConversationRequest.createChannel(
                     name = name,
                     teamId = teamId
@@ -158,7 +170,9 @@ internal class ConversationService internal constructor(
      * @return QualifiedId The Id of the created conversation
      */
     suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
-        val oneToOneConversationResponse = backendClient.getOneToOneConversation(userId = userId)
+        val oneToOneConversationResponse = oneToOneConversationsApiClient.getByUserId(
+            userId = userId
+        )
         val conversation = oneToOneConversationResponse.conversation
 
         establishMlsConversation(
@@ -181,7 +195,7 @@ internal class ConversationService internal constructor(
         val cipherSuiteCode = getCipherSuiteCode()
         val cipherSuite = MlsCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
-        val publicKeys = (publicKeysResponse ?: backendClient.getPublicKeys()).run {
+        val publicKeys = (publicKeysResponse ?: mlsApiClient.getPublicKeys()).run {
             getRemovalKey(cipherSuite = cipherSuite)
         }
 
@@ -244,7 +258,6 @@ internal class ConversationService internal constructor(
             .forEach { conversation ->
                 establishOrJoinMlsConversation(
                     conversation = conversation,
-                    backendClient = backendClient,
                     cryptoClient = cryptoClient
                 )
             }
@@ -260,7 +273,7 @@ internal class ConversationService internal constructor(
         val updateConversationMemberRoleRequest = UpdateConversationMemberRoleRequest(
             conversationRole = newRole
         )
-        backendClient.updateConversationMemberRole(
+        conversationsApiClient.updateConversationMemberRole(
             conversationId = conversationId,
             userId = userId,
             updateConversationMemberRoleRequest = updateConversationMemberRoleRequest
@@ -277,17 +290,16 @@ internal class ConversationService internal constructor(
     }
 
     private suspend fun fetchConversationsToRejoin(): List<ConversationResponse> {
-        val conversationIdsToRejoin = backendClient.getConversationIds()
+        val conversationIdsToRejoin = conversationsApiClient.getConversationIds()
 
         val conversations: List<ConversationResponse> =
-            backendClient.getConversationsById(conversationIds = conversationIdsToRejoin)
+            conversationsApiClient.getConversationsById(conversationIds = conversationIdsToRejoin)
 
         return conversations
     }
 
     private suspend fun establishOrJoinMlsConversation(
         conversation: ConversationResponse,
-        backendClient: BackendClient,
         cryptoClient: CryptoClient
     ) {
         if (cryptoClient.conversationExists(conversation.getDecodedMlsGroupId())) {
@@ -298,7 +310,9 @@ internal class ConversationService internal constructor(
         when {
             conversation.epoch != null && conversation.epoch != 0L -> {
                 val conversationGroupInfo: ByteArray =
-                    backendClient.getConversationGroupInfo(conversationId = conversation.id)
+                    conversationsApiClient.getConversationGroupInfo(
+                        conversationId = conversation.id
+                    )
 
                 // Not establishing now, asking the backend to join, that will send a welcome event
                 cryptoClient.joinMlsConversationRequest(
@@ -347,7 +361,7 @@ internal class ConversationService internal constructor(
 
         userIds.forEach { user ->
             try {
-                val result = backendClient.claimKeyPackages(
+                val result = mlsApiClient.claimKeyPackages(
                     user = user,
                     cipherSuite = cipherSuiteCode.toHexString()
                 )
@@ -440,7 +454,7 @@ internal class ConversationService internal constructor(
 
         requireAppIsInConversation(conversationId)
         val appUser = IsolatedKoinContext.getApplicationUser()
-        backendClient.leaveConversation(appUser, conversationId)
+        conversationsApiClient.leaveConversation(appUser, conversationId)
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
         logger.info(
@@ -466,7 +480,7 @@ internal class ConversationService internal constructor(
             "Conversation teamId must not be null."
         }
 
-        backendClient.deleteConversation(conversation.teamId, conversationId)
+        teamsApiClient.deleteConversation(conversation.teamId, conversationId)
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
         logger.info(
@@ -561,7 +575,7 @@ internal class ConversationService internal constructor(
 
     suspend fun getConversationById(conversationId: QualifiedId): ConversationEntity =
         conversationStorage.getById(conversationId = conversationId) ?: run {
-            val conversationResponse = backendClient.getConversation(conversationId)
+            val conversationResponse = conversationsApiClient.getConversation(conversationId)
             saveConversationWithMembers(
                 qualifiedConversation = conversationId,
                 conversationResponse = conversationResponse
@@ -712,13 +726,13 @@ internal class ConversationService internal constructor(
             val user = userIds.first()
             logger.info("Retrieving clients for User: {}", user)
 
-            val clients = backendClient.getClientsByUserId(userId = user)
+            val clients = usersApiClient.getClientsByUserId(userId = user)
 
             mapOf(user to clients)
         } else {
             logger.info("Retrieving clients for {} users.", userIds.size)
 
-            backendClient.getClientsByUserIds(userIds = userIds)
+            usersApiClient.getClientsByUserIds(userIds = userIds)
         }
 
         return usersClients.flatMap { (user, clients) ->

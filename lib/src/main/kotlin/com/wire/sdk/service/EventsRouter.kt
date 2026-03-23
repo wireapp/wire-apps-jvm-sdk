@@ -24,7 +24,6 @@ import com.wire.crypto.toWelcome
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationMember
@@ -44,6 +43,8 @@ import java.util.Base64
 import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.wire.sdk.client.ConversationsApiClient
+import com.wire.sdk.client.MlsApiClient
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineDispatcher
@@ -62,7 +63,8 @@ import org.slf4j.LoggerFactory
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationService: ConversationService,
-    private val backendClient: BackendClient,
+    private val conversationsApiClient: ConversationsApiClient,
+    private val mlsApiClient: MlsApiClient,
     private val wireEventsHandler: WireEventsHandler,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
@@ -399,7 +401,7 @@ internal class EventsRouter internal constructor(
             welcome = welcome,
             qualifiedConversation = qualifiedConversation
         )
-        val conversationResponse = backendClient.getConversation(qualifiedConversation)
+        val conversationResponse = conversationsApiClient.getConversation(qualifiedConversation)
         val (conversationEntity, members) = conversationService.saveConversationWithMembers(
             qualifiedConversation = qualifiedConversation,
             conversationResponse = conversationResponse
@@ -407,7 +409,7 @@ internal class EventsRouter internal constructor(
 
         if (cryptoClient.hasTooFewKeyPackageCount()) {
             cryptoClient.getCryptoClientId()?.let { cryptoClientId ->
-                backendClient.uploadMlsKeyPackages(
+                mlsApiClient.uploadMlsKeyPackages(
                     cryptoClientId = cryptoClientId,
                     mlsKeyPackages =
                         cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
@@ -445,7 +447,7 @@ internal class EventsRouter internal constructor(
             if (ex.mlsError is MlsException.OrphanWelcome) {
                 logger.info("Cannot process welcome, ask to join the conversation")
                 val groupInfo =
-                    backendClient.getConversationGroupInfo(qualifiedConversation)
+                    conversationsApiClient.getConversationGroupInfo(qualifiedConversation)
                 cryptoClient.joinMlsConversationRequest(groupInfo.toGroupInfo())
             } else {
                 logger.error("Cannot process welcome -- ${ex.mlsError}", ex)
@@ -457,7 +459,6 @@ internal class EventsRouter internal constructor(
     private suspend fun newTeamInvite(teamId: TeamId) {
         try {
             logger.debug("Confirming team: {}", teamId.value.toString())
-            backendClient.confirmTeam(teamId)
             teamStorage.save(teamId) // Can be done async ?
         } catch (e: ResponseException) {
             logger.error("Error fetching events from the backend", e)
