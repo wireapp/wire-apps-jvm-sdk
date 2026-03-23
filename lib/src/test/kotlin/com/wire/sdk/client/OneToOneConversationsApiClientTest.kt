@@ -26,7 +26,7 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class One2OneConversationsApiClientTest {
+class OneToOneConversationsApiClientTest {
     private val userId = QualifiedId(
         id = UUID.fromString("3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a"),
         domain = "example.com"
@@ -72,7 +72,7 @@ class One2OneConversationsApiClientTest {
                 assertRequest = { capturedPath = it.url.fullPath }
             )
 
-            One2OneConversationsApiClient(client).getOneToOneConversation(userId)
+            OneToOneConversationsApiClient(client).getByUserId(userId)
 
             assertEquals(expectedUrl, capturedPath)
         }
@@ -86,7 +86,7 @@ class One2OneConversationsApiClientTest {
                 assertRequest = { capturedMethod = it.method }
             )
 
-            One2OneConversationsApiClient(client).getOneToOneConversation(userId)
+            OneToOneConversationsApiClient(client).getByUserId(userId)
 
             assertEquals(HttpMethod.Get, capturedMethod)
         }
@@ -108,7 +108,7 @@ class One2OneConversationsApiClientTest {
                 assertRequest = { capturedPath = it.url.fullPath }
             )
 
-            One2OneConversationsApiClient(client).getOneToOneConversation(subdomainUserId)
+            OneToOneConversationsApiClient(client).getByUserId(subdomainUserId)
 
             assertEquals(
                 "/$API_VERSION/one2one-conversations/" +
