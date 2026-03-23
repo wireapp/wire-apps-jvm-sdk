@@ -27,6 +27,7 @@ import com.wire.sdk.client.BackendClientHttp
 import com.wire.sdk.client.ClientsApiClient
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.NotificationsApiClient
 import com.wire.sdk.client.OneToOneConversationsApiClient
 import com.wire.sdk.client.SelfApiClient
 import com.wire.sdk.client.TeamsApiClient
@@ -98,6 +99,7 @@ val sdkModule =
         single<SelfApiClient> { SelfApiClient(get()) }
         single<AssetsApiClient> { AssetsApiClient(get()) }
         single<TeamsApiClient> { TeamsApiClient(get()) }
+        single<NotificationsApiClient> { NotificationsApiClient(get(), get()) }
         single<ClientsApiClient> { ClientsApiClient(get(), get()) }
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
