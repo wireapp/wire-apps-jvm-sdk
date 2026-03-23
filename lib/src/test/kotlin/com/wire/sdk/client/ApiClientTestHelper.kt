@@ -29,7 +29,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 internal fun createMockHttpClient(
-    responseBody: String = "{}",
+    responseBody: Any = "{}",
     statusCode: HttpStatusCode = HttpStatusCode.OK,
     assertRequest: (HttpRequestData) -> Unit = {}
 ): HttpClient =
@@ -37,14 +37,28 @@ internal fun createMockHttpClient(
         engine {
             addHandler { request ->
                 assertRequest(request)
-                respond(
-                    content = responseBody,
-                    status = statusCode,
-                    headers = headersOf(
-                        HttpHeaders.ContentType,
-                        ContentType.Application.Json.toString()
+
+                when (responseBody) {
+                    is String -> respond(
+                        content = responseBody,
+                        status = statusCode,
+                        headers = headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.Application.Json.toString()
+                        )
                     )
-                )
+
+                    is ByteArray -> respond(
+                        content = responseBody,
+                        status = statusCode,
+                        headers = headersOf(
+                            HttpHeaders.ContentType,
+                            ContentType.Application.Json.toString()
+                        )
+                    )
+
+                    else -> error("Unsupported response body type")
+                }
             }
         }
         install(ContentNegotiation) {
