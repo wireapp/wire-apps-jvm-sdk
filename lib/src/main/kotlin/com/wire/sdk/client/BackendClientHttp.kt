@@ -21,15 +21,12 @@ import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
-import com.wire.sdk.model.http.user.SelfUserResponse
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.wss
-import io.ktor.client.request.accept
 import io.ktor.client.request.get
-import io.ktor.http.ContentType
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import org.slf4j.LoggerFactory
@@ -89,16 +86,5 @@ internal class BackendClientHttp(
                 .body<FeaturesResponse>()
                 .also { cachedFeatures = it }
         }
-    }
-
-    /**
-     * Get Self User (SDK User) details
-     *
-     * @return [SelfUserResponse]
-     */
-    override suspend fun getSelfUser(): SelfUserResponse {
-        return httpClient.get("/$API_VERSION/self") {
-            accept(ContentType.Application.Json)
-        }.body<SelfUserResponse>()
     }
 }

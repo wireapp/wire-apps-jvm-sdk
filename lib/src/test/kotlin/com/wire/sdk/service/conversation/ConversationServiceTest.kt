@@ -79,6 +79,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = backendClient,
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -114,6 +115,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -162,6 +164,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -221,6 +224,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -286,6 +290,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -348,6 +353,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -389,6 +395,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -444,6 +451,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = teamsApiClient,
@@ -498,6 +506,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = teamsApiClient,
@@ -552,6 +561,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = teamsApiClient,
@@ -607,6 +617,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = teamsApiClient,
@@ -675,6 +686,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = backendClient,
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -706,6 +718,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -738,6 +751,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -785,6 +799,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -829,6 +844,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -888,6 +904,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = backendClient,
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -976,6 +993,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = backendClient,
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1036,6 +1054,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1101,6 +1120,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1130,6 +1150,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1162,6 +1183,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1209,6 +1231,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1262,6 +1285,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1345,6 +1369,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = usersApiClient,
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1409,6 +1434,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = backendClient,
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = mockk(),
                 one2OneConversationsApiClient = one2OneConversationsApiClient,
                 teamsApiClient = mockk(),
@@ -1458,6 +1484,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1507,6 +1534,7 @@ class ConversationServiceTest {
             val service = ConversationService(
                 backendClient = mockk(),
                 usersApiClient = mockk(),
+                selfApiClient = mockk(),
                 conversationsApiClient = conversationsApiClient,
                 one2OneConversationsApiClient = mockk(),
                 teamsApiClient = mockk(),
@@ -1555,6 +1583,7 @@ class ConversationServiceTest {
         val service = ConversationService(
             backendClient = backendClient,
             usersApiClient = usersApiClient,
+            selfApiClient = mockk(),
             conversationsApiClient = mockk(),
             one2OneConversationsApiClient = mockk(),
             teamsApiClient = mockk(),

@@ -18,7 +18,6 @@ package com.wire.sdk.client
 
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.FeaturesResponse
-import com.wire.sdk.model.http.user.SelfUserResponse
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 
 interface BackendClient {
@@ -33,8 +32,6 @@ interface BackendClient {
     suspend fun getAvailableApiVersions(): ApiVersionResponse
 
     suspend fun getApplicationFeatures(): FeaturesResponse
-
-    suspend fun getSelfUser(): SelfUserResponse
 
     companion object {
         const val API_VERSION = "v15"

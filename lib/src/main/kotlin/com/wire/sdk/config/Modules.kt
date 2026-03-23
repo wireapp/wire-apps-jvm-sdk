@@ -28,6 +28,7 @@ import com.wire.sdk.client.ClientsApiClient
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.One2OneConversationsApiClient
+import com.wire.sdk.client.SelfApiClient
 import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
@@ -94,6 +95,7 @@ val sdkModule =
         single<ConversationsApiClient> { ConversationsApiClient(get()) }
         single<One2OneConversationsApiClient> { One2OneConversationsApiClient(get()) }
         single<UsersApiClient> { UsersApiClient(get()) }
+        single<SelfApiClient> { SelfApiClient(get()) }
         single<AssetsApiClient> { AssetsApiClient(get()) }
         single<TeamsApiClient> { TeamsApiClient(get()) }
         single<ClientsApiClient> { ClientsApiClient(get(), get()) }
@@ -115,7 +117,18 @@ val sdkModule =
 
         // Services
         single {
-            ConversationService(get(), get(), get(), get(), get(), get(), get(), get(), get())
+            ConversationService(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
         }
 
         // Manager

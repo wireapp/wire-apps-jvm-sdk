@@ -25,6 +25,7 @@ import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.One2OneConversationsApiClient
+import com.wire.sdk.client.SelfApiClient
 import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
@@ -63,6 +64,7 @@ import java.util.UUID
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
     private val usersApiClient: UsersApiClient,
+    private val selfApiClient: SelfApiClient,
     private val conversationsApiClient: ConversationsApiClient,
     private val one2OneConversationsApiClient: One2OneConversationsApiClient,
     private val teamsApiClient: TeamsApiClient,
@@ -75,7 +77,7 @@ internal class ConversationService internal constructor(
 
     private val selfTeamId: Deferred<UUID?> by lazy {
         CoroutineScope(Dispatchers.IO).async {
-            backendClient.getSelfUser().teamId
+            selfApiClient.getSelfUser().teamId
         }
     }
 
