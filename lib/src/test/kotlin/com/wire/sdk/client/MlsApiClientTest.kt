@@ -21,7 +21,6 @@ import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.http.HttpMethod
-import io.ktor.http.fullPath
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -30,44 +29,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MlsApiClientTest {
-    private val deviceId = "device-id-123"
-
-    private val appStorage = mockk<AppStorage> {
-        every { getDeviceId() } returns deviceId
-    }
-
-    private val userId = QualifiedId(
-        id = UUID.fromString("3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a"),
-        domain = "example.com"
-    )
-
-    private val cryptoClientId = CryptoClientId("client-id-123")
-
-    private val publicKeysResponseJson = """
-        {
-            "removal": {
-                "ed25519": "base64edkey==",
-                "ecdsa_secp256r1_sha256": "base64p256key==",
-                "ecdsa_secp384r1_sha384": null,
-                "ecdsa_secp521r1_sha512": null
-            }
-        }
-    """.trimIndent()
-
-    private val claimedKeyPackagesResponseJson = """
-        {
-            "key_packages": [
-                {
-                    "client": "client-abc",
-                    "domain": "example.com",
-                    "key_package": "base64keypackage==",
-                    "key_package_ref": "base64ref==",
-                    "user": "3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a"
-                }
-            ]
-        }
-    """.trimIndent()
-
     private fun mlsClient(
         responseBody: String = "",
         assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
@@ -83,7 +44,9 @@ class MlsApiClientTest {
     fun `when getPublicKeys, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            mlsClient(publicKeysResponseJson) { capturedPath = it.url.fullPath }.getPublicKeys()
+            mlsClient(PUBLIC_KEYS_RESPONSE_JSON) {
+                capturedPath = it.url.encodedPath
+            }.getPublicKeys()
             assertEquals("/$API_VERSION/mls/public-keys", capturedPath)
         }
 
@@ -91,7 +54,7 @@ class MlsApiClientTest {
     fun `when getPublicKeys, then GET method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            mlsClient(publicKeysResponseJson) { capturedMethod = it.method }.getPublicKeys()
+            mlsClient(PUBLIC_KEYS_RESPONSE_JSON) { capturedMethod = it.method }.getPublicKeys()
             assertEquals(HttpMethod.Get, capturedMethod)
         }
 
@@ -99,10 +62,10 @@ class MlsApiClientTest {
     fun `when claimKeyPackages, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            mlsClient(claimedKeyPackagesResponseJson) { capturedPath = it.url.encodedPath }
-                .claimKeyPackages(userId, "1")
+            mlsClient(CLAIMED_KEY_PACKAGES_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
+                .claimKeyPackages(USER_ID, "1")
             assertEquals(
-                "/$API_VERSION/mls/key-packages/claim/${userId.domain}/${userId.id}",
+                "/$API_VERSION/mls/key-packages/claim/${USER_ID.domain}/${USER_ID.id}",
                 capturedPath
             )
         }
@@ -111,8 +74,8 @@ class MlsApiClientTest {
     fun `when claimKeyPackages, then POST method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            mlsClient(claimedKeyPackagesResponseJson) { capturedMethod = it.method }
-                .claimKeyPackages(userId, "1")
+            mlsClient(CLAIMED_KEY_PACKAGES_RESPONSE_JSON) { capturedMethod = it.method }
+                .claimKeyPackages(USER_ID, "1")
             assertEquals(HttpMethod.Post, capturedMethod)
         }
 
@@ -120,10 +83,9 @@ class MlsApiClientTest {
     fun `when claimKeyPackages, then ciphersuite query param set`() =
         runTest {
             var capturedParam: String? = null
-            mlsClient(claimedKeyPackagesResponseJson) {
+            mlsClient(CLAIMED_KEY_PACKAGES_RESPONSE_JSON) {
                 capturedParam = it.url.parameters["ciphersuite"]
-            }
-                .claimKeyPackages(userId, "1")
+            }.claimKeyPackages(USER_ID, "1")
             assertEquals("1", capturedParam)
         }
 
@@ -131,9 +93,9 @@ class MlsApiClientTest {
     fun `when uploadMlsKeyPackages, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            mlsClient { capturedPath = it.url.fullPath }
-                .uploadMlsKeyPackages(cryptoClientId, listOf(byteArrayOf(0x01)))
-            assertEquals("/$API_VERSION/mls/key-packages/self/$deviceId", capturedPath)
+            mlsClient { capturedPath = it.url.encodedPath }
+                .uploadMlsKeyPackages(CRYPTO_CLIENT_ID, listOf(byteArrayOf(0x01)))
+            assertEquals("/$API_VERSION/mls/key-packages/self/$DEVICE_ID", capturedPath)
         }
 
     @Test
@@ -141,7 +103,7 @@ class MlsApiClientTest {
         runTest {
             var capturedMethod: HttpMethod? = null
             mlsClient { capturedMethod = it.method }
-                .uploadMlsKeyPackages(cryptoClientId, listOf(byteArrayOf(0x01)))
+                .uploadMlsKeyPackages(CRYPTO_CLIENT_ID, listOf(byteArrayOf(0x01)))
             assertEquals(HttpMethod.Post, capturedMethod)
         }
 
@@ -149,7 +111,7 @@ class MlsApiClientTest {
     fun `when uploadCommitBundle, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            mlsClient { capturedPath = it.url.fullPath }
+            mlsClient { capturedPath = it.url.encodedPath }
                 .uploadCommitBundle(byteArrayOf(0x01))
             assertEquals("/$API_VERSION/mls/commit-bundles", capturedPath)
         }
@@ -167,7 +129,7 @@ class MlsApiClientTest {
     fun `when sendMessage, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            mlsClient { capturedPath = it.url.fullPath }
+            mlsClient { capturedPath = it.url.encodedPath }
                 .sendMessage(byteArrayOf(0x01))
             assertEquals("/$API_VERSION/mls/messages", capturedPath)
         }
@@ -180,4 +142,44 @@ class MlsApiClientTest {
                 .sendMessage(byteArrayOf(0x01))
             assertEquals(HttpMethod.Post, capturedMethod)
         }
+
+    companion object {
+        private const val DEVICE_ID = "device-id-123"
+
+        private val USER_ID = QualifiedId(
+            id = UUID.randomUUID(),
+            domain = "example.com"
+        )
+
+        private val CRYPTO_CLIENT_ID = CryptoClientId("client-id-123")
+
+        private val appStorage = mockk<AppStorage> {
+            every { getDeviceId() } returns DEVICE_ID
+        }
+
+        private val PUBLIC_KEYS_RESPONSE_JSON = """
+            {
+                "removal": {
+                    "ed25519": "base64edkey==",
+                    "ecdsa_secp256r1_sha256": "base64p256key==",
+                    "ecdsa_secp384r1_sha384": null,
+                    "ecdsa_secp521r1_sha512": null
+                }
+            }
+        """.trimIndent()
+
+        private val CLAIMED_KEY_PACKAGES_RESPONSE_JSON = """
+            {
+                "key_packages": [
+                    {
+                        "client": "client-abc",
+                        "domain": "example.com",
+                        "key_package": "base64keypackage==",
+                        "key_package_ref": "base64ref==",
+                        "user": "${USER_ID.id}"
+                    }
+                ]
+            }
+        """.trimIndent()
+    }
 }

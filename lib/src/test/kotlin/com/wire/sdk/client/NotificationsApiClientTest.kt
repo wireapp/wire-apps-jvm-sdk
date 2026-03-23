@@ -18,51 +18,15 @@ package com.wire.sdk.client
 
 import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.persistence.AppStorage
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.headersOf
-import io.ktor.serialization.kotlinx.json.json
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class NotificationsApiClientTest {
-    private val deviceId = "device-id-123"
-
-    private val appStorage = mockk<AppStorage> {
-        every { getDeviceId() } returns deviceId
-    }
-
-    private val eventResponseJson = """
-        {
-            "id": "event-id-1",
-            "payload": null,
-            "transient": false
-        }
-    """.trimIndent()
-
-    private val notificationsResponseJson = """
-        {
-            "has_more": false,
-            "notifications": [
-                { "id": "event-id-1", "payload": null, "transient": false },
-                { "id": "event-id-2", "payload": null, "transient": true }
-            ],
-            "time": "2026-01-01T00:00:00.000Z"
-        }
-    """.trimIndent()
-
     private fun notificationsClient(
         responseBody: String = "",
         assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
@@ -71,14 +35,14 @@ class NotificationsApiClientTest {
             responseBody = responseBody,
             assertRequest = assertRequest
         ),
-        appStorage
+        APP_STORAGE
     )
 
     @Test
     fun `when getLastNotification, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            notificationsClient(eventResponseJson) { capturedPath = it.url.encodedPath }
+            notificationsClient(EVENT_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .getLastNotification()
             assertEquals("/v15/notifications/last", capturedPath)
         }
@@ -87,7 +51,7 @@ class NotificationsApiClientTest {
     fun `when getLastNotification, then GET method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            notificationsClient(eventResponseJson) { capturedMethod = it.method }
+            notificationsClient(EVENT_RESPONSE_JSON) { capturedMethod = it.method }
                 .getLastNotification()
             assertEquals(HttpMethod.Get, capturedMethod)
         }
@@ -96,11 +60,12 @@ class NotificationsApiClientTest {
     fun `when getLastNotification, then client query param set`() =
         runTest {
             var capturedParam: String? = null
-            notificationsClient(eventResponseJson) {
-                capturedParam = it.url.parameters[CLIENT_QUERY_KEY]
+            notificationsClient(EVENT_RESPONSE_JSON) {
+                capturedParam =
+                    it.url.parameters[CLIENT_QUERY_KEY]
             }
                 .getLastNotification()
-            assertEquals(deviceId, capturedParam)
+            assertEquals(DEVICE_ID, capturedParam)
         }
 
     @Test
@@ -108,20 +73,20 @@ class NotificationsApiClientTest {
         runTest {
             val storageWithNullDevice = mockk<AppStorage> { every { getDeviceId() } returns null }
             var capturedParam: String? = "was-set"
-            val client = NotificationsApiClient(
-                createMockHttpClient(responseBody = eventResponseJson) {
-                    capturedParam = it.url.parameters[CLIENT_QUERY_KEY]
+            NotificationsApiClient(
+                createMockHttpClient(EVENT_RESPONSE_JSON) {
+                    capturedParam =
+                        it.url.parameters[CLIENT_QUERY_KEY]
                 },
                 storageWithNullDevice
-            )
-            client.getLastNotification()
+            ).getLastNotification()
             assertNull(capturedParam)
         }
 
     @Test
     fun `when getLastNotification, then response deserialized`() =
         runTest {
-            val result = notificationsClient(eventResponseJson).getLastNotification()
+            val result = notificationsClient(EVENT_RESPONSE_JSON).getLastNotification()
             assertEquals("event-id-1", result.id)
             assertEquals(false, result.transient)
         }
@@ -130,7 +95,7 @@ class NotificationsApiClientTest {
     fun `when getPaginatedNotifications, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            notificationsClient(notificationsResponseJson) { capturedPath = it.url.encodedPath }
+            notificationsClient(NOTIFICATIONS_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .getPaginatedNotifications(querySince = null)
             assertEquals("/v15/notifications", capturedPath)
         }
@@ -139,7 +104,7 @@ class NotificationsApiClientTest {
     fun `when getPaginatedNotifications, then GET method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            notificationsClient(notificationsResponseJson) { capturedMethod = it.method }
+            notificationsClient(NOTIFICATIONS_RESPONSE_JSON) { capturedMethod = it.method }
                 .getPaginatedNotifications(querySince = null)
             assertEquals(HttpMethod.Get, capturedMethod)
         }
@@ -148,9 +113,8 @@ class NotificationsApiClientTest {
     fun `when getPaginatedNotifications, then size query param set`() =
         runTest {
             var capturedSize: String? = null
-            notificationsClient(notificationsResponseJson) {
-                capturedSize =
-                    it.url.parameters["size"]
+            notificationsClient(NOTIFICATIONS_RESPONSE_JSON) {
+                capturedSize = it.url.parameters["size"]
             }
                 .getPaginatedNotifications(querySize = 200, querySince = null)
             assertEquals("200", capturedSize)
@@ -160,9 +124,8 @@ class NotificationsApiClientTest {
     fun `when getPaginatedNotifications, then default size is 100`() =
         runTest {
             var capturedSize: String? = null
-            notificationsClient(notificationsResponseJson) {
-                capturedSize =
-                    it.url.parameters["size"]
+            notificationsClient(NOTIFICATIONS_RESPONSE_JSON) {
+                capturedSize = it.url.parameters["size"]
             }
                 .getPaginatedNotifications(querySince = null)
             assertEquals("100", capturedSize)
@@ -172,20 +135,21 @@ class NotificationsApiClientTest {
     fun `when getPaginatedNotifications, then client query param set`() =
         runTest {
             var capturedParam: String? = null
-            notificationsClient(notificationsResponseJson) {
+            notificationsClient(NOTIFICATIONS_RESPONSE_JSON) {
                 capturedParam =
                     it.url.parameters[CLIENT_QUERY_KEY]
             }
                 .getPaginatedNotifications(querySince = null)
-            assertEquals(deviceId, capturedParam)
+            assertEquals(DEVICE_ID, capturedParam)
         }
 
     @Test
-    fun `given querySince, when getPaginatedNotifications, then since query param set`() =
+    fun `given querySince, when getPaginatedNotifications, then since param set`() =
         runTest {
             var capturedSince: String? = null
-            notificationsClient(notificationsResponseJson) {
-                capturedSince = it.url.parameters["since"]
+            notificationsClient(NOTIFICATIONS_RESPONSE_JSON) {
+                capturedSince =
+                    it.url.parameters["since"]
             }
                 .getPaginatedNotifications(querySince = "event-id-99")
             assertEquals("event-id-99", capturedSince)
@@ -195,8 +159,9 @@ class NotificationsApiClientTest {
     fun `given null querySince, when getPaginatedNotifications, then since param not set`() =
         runTest {
             var capturedSince: String? = "was-set"
-            notificationsClient(notificationsResponseJson) {
-                capturedSince = it.url.parameters["since"]
+            notificationsClient(NOTIFICATIONS_RESPONSE_JSON) {
+                capturedSince =
+                    it.url.parameters["since"]
             }
                 .getPaginatedNotifications(querySince = null)
             assertNull(capturedSince)
@@ -205,7 +170,7 @@ class NotificationsApiClientTest {
     @Test
     fun `when getPaginatedNotifications, then response deserialized`() =
         runTest {
-            val result = notificationsClient(notificationsResponseJson)
+            val result = notificationsClient(NOTIFICATIONS_RESPONSE_JSON)
                 .getPaginatedNotifications(querySince = null)
             assertEquals(false, result.hasMore)
             assertEquals(2, result.events.size)
@@ -213,34 +178,30 @@ class NotificationsApiClientTest {
             assertEquals("event-id-2", result.events[1].id)
         }
 
-    @Test
-    fun `given ClientError, when getPaginatedNotifications, then empty response returned`() =
-        runTest {
-            val errorClient = HttpClient(MockEngine) {
-                engine {
-                    addHandler {
-                        respond(
-                            content = """{"code": 404, "message": "Not found"}""",
-                            status = HttpStatusCode.NotFound,
-                            headers = headersOf(
-                                HttpHeaders.ContentType,
-                                ContentType.Application.Json.toString()
-                            )
-                        )
-                    }
-                }
-                install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-                expectSuccess = true
-            }
-            // Simulate WireException.ClientError being thrown by wrapping the client
-            // In practice this depends on how your error handling maps 404 → WireException.ClientError
-            // If it doesn't, this test just verifies the happy-path fallback shape is correct:
-            val fallback = com.wire.sdk.model.http.NotificationsResponse(
-                hasMore = false,
-                events = emptyList(),
-                time = kotlin.time.Clock.System.now()
-            )
-            assertEquals(false, fallback.hasMore)
-            assertTrue(fallback.events.isEmpty())
+    companion object {
+        private const val DEVICE_ID = "device-id-123"
+
+        private val APP_STORAGE = mockk<AppStorage> {
+            every { getDeviceId() } returns DEVICE_ID
         }
+
+        private val EVENT_RESPONSE_JSON = """
+            {
+                "id": "event-id-1",
+                "payload": null,
+                "transient": false
+            }
+        """.trimIndent()
+
+        private val NOTIFICATIONS_RESPONSE_JSON = """
+            {
+                "has_more": false,
+                "notifications": [
+                    { "id": "event-id-1", "payload": null, "transient": false },
+                    { "id": "event-id-2", "payload": null, "transient": true }
+                ],
+                "time": "2026-01-01T00:00:00.000Z"
+            }
+        """.trimIndent()
+    }
 }

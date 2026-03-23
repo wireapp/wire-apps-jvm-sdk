@@ -29,73 +29,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ConversationsApiClientTest {
-    private val conversationId = QualifiedId(
-        id = UUID.fromString("aabbccdd-1234-5678-abcd-aabbccddeeff"),
-        domain = "example.com"
-    )
-
-    private val userId = QualifiedId(
-        id = UUID.fromString("3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a"),
-        domain = "example.com"
-    )
-
-    private val teamId = TeamId(UUID.fromString("ccddaabb-5678-1234-efab-112233445566"))
-
-    private val conversationResponseJson = """
-        {
-            "qualified_id": { "id": "aabbccdd-1234-5678-abcd-aabbccddeeff", "domain": "example.com" },
-            "team": null,
-            "group_id": null,
-            "name": "Test Group",
-            "epoch": null,
-            "protocol": "proteus",
-            "members": {
-                "self": {
-                    "qualified_id": { "id": "3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a", "domain": "example.com" },
-                    "conversation_role": "wire_member"
-                },
-                "others": []
-            },
-            "type": "0"
-        }
-    """.trimIndent()
-
-    private val conversationIdsPageOneJson = """
-        {
-            "has_more": false,
-            "paging_state": "page-state-1",
-            "qualified_conversations": [
-                { "id": "aabbccdd-1234-5678-abcd-aabbccddeeff", "domain": "example.com" },
-                { "id": "3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a", "domain": "example.com" }
-            ]
-        }
-    """.trimIndent()
-
-    private val conversationsListResponseJson = """
-        {
-            "found": [
-                {
-                    "qualified_id": { "id": "aabbccdd-1234-5678-abcd-aabbccddeeff", "domain": "example.com" },
-                    "team": null,
-                    "group_id": null,
-                    "name": "Test Group",
-                    "epoch": null,
-                    "protocol": "proteus",
-                    "members": {
-                        "self": {
-                            "qualified_id": { "id": "3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a", "domain": "example.com" },
-                            "conversation_role": "wire_member"
-                        },
-                        "others": []
-                    },
-                    "type": "0"
-                }
-            ],
-            "failed": [],
-            "not_found": []
-        }
-    """.trimIndent()
-
     private fun apiClient(
         responseBody: String = "",
         assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
@@ -110,10 +43,10 @@ class ConversationsApiClientTest {
     fun `when getConversation, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            apiClient(conversationResponseJson) { capturedPath = it.url.encodedPath }
-                .getConversation(conversationId)
+            apiClient(CONVERSATION_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
+                .getConversation(CONVERSATION_ID)
             assertEquals(
-                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}",
+                "/$API_VERSION/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}",
                 capturedPath
             )
         }
@@ -122,8 +55,8 @@ class ConversationsApiClientTest {
     fun `when getConversation, then GET method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            apiClient(conversationResponseJson) { capturedMethod = it.method }
-                .getConversation(conversationId)
+            apiClient(CONVERSATION_RESPONSE_JSON) { capturedMethod = it.method }
+                .getConversation(CONVERSATION_ID)
             assertEquals(HttpMethod.Get, capturedMethod)
         }
 
@@ -131,9 +64,8 @@ class ConversationsApiClientTest {
     fun `when createGroupConversation, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            val request = CreateConversationRequest.createGroup("Test Group", teamId)
-            apiClient(conversationResponseJson) { capturedPath = it.url.encodedPath }
-                .createGroupConversation(request)
+            apiClient(CONVERSATION_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
+                .createGroupConversation(CREATE_CONVERSATION_REQUEST)
             assertEquals("/$API_VERSION/conversations", capturedPath)
         }
 
@@ -141,9 +73,8 @@ class ConversationsApiClientTest {
     fun `when createGroupConversation, then POST method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            val request = CreateConversationRequest.createGroup("Test Group", teamId)
-            apiClient(conversationResponseJson) { capturedMethod = it.method }
-                .createGroupConversation(request)
+            apiClient(CONVERSATION_RESPONSE_JSON) { capturedMethod = it.method }
+                .createGroupConversation(CREATE_CONVERSATION_REQUEST)
             assertEquals(HttpMethod.Post, capturedMethod)
         }
 
@@ -151,12 +82,11 @@ class ConversationsApiClientTest {
     fun `when updateConversationMemberRole, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            val request = UpdateConversationMemberRoleRequest(ConversationRole.MEMBER)
             apiClient { capturedPath = it.url.encodedPath }
-                .updateConversationMemberRole(conversationId, userId, request)
+                .updateConversationMemberRole(CONVERSATION_ID, USER_ID, UPDATE_ROLE_REQUEST)
             assertEquals(
-                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
-                    "/members/${userId.domain}/${userId.id}",
+                "/$API_VERSION/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}" +
+                    "/members/${USER_ID.domain}/${USER_ID.id}",
                 capturedPath
             )
         }
@@ -165,9 +95,8 @@ class ConversationsApiClientTest {
     fun `when updateConversationMemberRole, then PUT method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            val request = UpdateConversationMemberRoleRequest(ConversationRole.MEMBER)
             apiClient { capturedMethod = it.method }
-                .updateConversationMemberRole(conversationId, userId, request)
+                .updateConversationMemberRole(CONVERSATION_ID, USER_ID, UPDATE_ROLE_REQUEST)
             assertEquals(HttpMethod.Put, capturedMethod)
         }
 
@@ -175,7 +104,7 @@ class ConversationsApiClientTest {
     fun `when getConversationIds, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            apiClient(conversationIdsPageOneJson) { capturedPath = it.url.encodedPath }
+            apiClient(CONVERSATION_IDS_PAGE_JSON) { capturedPath = it.url.encodedPath }
                 .getConversationIds()
             assertEquals("/$API_VERSION/conversations/list-ids", capturedPath)
         }
@@ -184,7 +113,7 @@ class ConversationsApiClientTest {
     fun `when getConversationIds, then POST method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            apiClient(conversationIdsPageOneJson) { capturedMethod = it.method }
+            apiClient(CONVERSATION_IDS_PAGE_JSON) { capturedMethod = it.method }
                 .getConversationIds()
             assertEquals(HttpMethod.Post, capturedMethod)
         }
@@ -192,17 +121,17 @@ class ConversationsApiClientTest {
     @Test
     fun `when getConversationIds, then returns all qualified ids`() =
         runTest {
-            val result = apiClient(conversationIdsPageOneJson).getConversationIds()
+            val result = apiClient(CONVERSATION_IDS_PAGE_JSON).getConversationIds()
             assertEquals(2, result.size)
-            assertEquals(conversationId, result[0])
+            assertEquals(CONVERSATION_ID, result[0])
         }
 
     @Test
     fun `when getConversationsById, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            apiClient(conversationsListResponseJson) { capturedPath = it.url.encodedPath }
-                .getConversationsById(listOf(conversationId))
+            apiClient(CONVERSATIONS_LIST_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
+                .getConversationsById(listOf(CONVERSATION_ID))
             assertEquals("/$API_VERSION/conversations/list", capturedPath)
         }
 
@@ -210,8 +139,8 @@ class ConversationsApiClientTest {
     fun `when getConversationsById, then POST method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            apiClient(conversationsListResponseJson) { capturedMethod = it.method }
-                .getConversationsById(listOf(conversationId))
+            apiClient(CONVERSATIONS_LIST_RESPONSE_JSON) { capturedMethod = it.method }
+                .getConversationsById(listOf(CONVERSATION_ID))
             assertEquals(HttpMethod.Post, capturedMethod)
         }
 
@@ -226,10 +155,10 @@ class ConversationsApiClientTest {
     @Test
     fun `when getConversationsById, then returns found conversations`() =
         runTest {
-            val result = apiClient(conversationsListResponseJson)
-                .getConversationsById(listOf(conversationId))
+            val result = apiClient(CONVERSATIONS_LIST_RESPONSE_JSON)
+                .getConversationsById(listOf(CONVERSATION_ID))
             assertEquals(1, result.size)
-            assertEquals(conversationId, result[0].id)
+            assertEquals(CONVERSATION_ID, result[0].id)
         }
 
     @Test
@@ -237,9 +166,9 @@ class ConversationsApiClientTest {
         runTest {
             var capturedPath: String? = null
             apiClient { capturedPath = it.url.encodedPath }
-                .getConversationGroupInfo(conversationId)
+                .getConversationGroupInfo(CONVERSATION_ID)
             assertEquals(
-                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}/groupinfo",
+                "/$API_VERSION/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/groupinfo",
                 capturedPath
             )
         }
@@ -249,7 +178,7 @@ class ConversationsApiClientTest {
         runTest {
             var capturedMethod: HttpMethod? = null
             apiClient { capturedMethod = it.method }
-                .getConversationGroupInfo(conversationId)
+                .getConversationGroupInfo(CONVERSATION_ID)
             assertEquals(HttpMethod.Get, capturedMethod)
         }
 
@@ -258,10 +187,10 @@ class ConversationsApiClientTest {
         runTest {
             var capturedPath: String? = null
             apiClient { capturedPath = it.url.encodedPath }
-                .leaveConversation(userId, conversationId)
+                .leaveConversation(USER_ID, CONVERSATION_ID)
             assertEquals(
-                "/$API_VERSION/conversations/${conversationId.domain}/${conversationId.id}" +
-                    "/members/${userId.domain}/${userId.id}",
+                "/$API_VERSION/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}" +
+                    "/members/${USER_ID.domain}/${USER_ID.id}",
                 capturedPath
             )
         }
@@ -271,7 +200,73 @@ class ConversationsApiClientTest {
         runTest {
             var capturedMethod: HttpMethod? = null
             apiClient { capturedMethod = it.method }
-                .leaveConversation(userId, conversationId)
+                .leaveConversation(USER_ID, CONVERSATION_ID)
             assertEquals(HttpMethod.Delete, capturedMethod)
         }
+
+    companion object {
+        private val CONVERSATION_ID = QualifiedId(id = UUID.randomUUID(), domain = "example.com")
+        private val USER_ID = QualifiedId(id = UUID.randomUUID(), domain = "example.com")
+        private val TEAM_ID = TeamId(UUID.randomUUID())
+
+        private val CREATE_CONVERSATION_REQUEST =
+            CreateConversationRequest.createGroup("Test Group", TEAM_ID)
+        private val UPDATE_ROLE_REQUEST =
+            UpdateConversationMemberRoleRequest(ConversationRole.MEMBER)
+
+        private val CONVERSATION_RESPONSE_JSON = """
+            {
+                "qualified_id": { "id": "${CONVERSATION_ID.id}", "domain": "${CONVERSATION_ID.domain}" },
+                "team": null,
+                "group_id": null,
+                "name": "Test Group",
+                "epoch": null,
+                "protocol": "proteus",
+                "members": {
+                    "self": {
+                        "qualified_id": { "id": "${USER_ID.id}", "domain": "${USER_ID.domain}" },
+                        "conversation_role": "wire_member"
+                    },
+                    "others": []
+                },
+                "type": "0"
+            }
+        """.trimIndent()
+
+        private val CONVERSATION_IDS_PAGE_JSON = """
+            {
+                "has_more": false,
+                "paging_state": "page-state-1",
+                "qualified_conversations": [
+                    { "id": "${CONVERSATION_ID.id}", "domain": "${CONVERSATION_ID.domain}" },
+                    { "id": "${USER_ID.id}", "domain": "${USER_ID.domain}" }
+                ]
+            }
+        """.trimIndent()
+
+        private val CONVERSATIONS_LIST_RESPONSE_JSON = """
+            {
+                "found": [
+                    {
+                        "qualified_id": { "id": "${CONVERSATION_ID.id}", "domain": "${CONVERSATION_ID.domain}" },
+                        "team": null,
+                        "group_id": null,
+                        "name": "Test Group",
+                        "epoch": null,
+                        "protocol": "proteus",
+                        "members": {
+                            "self": {
+                                "qualified_id": { "id": "${USER_ID.id}", "domain": "${USER_ID.domain}" },
+                                "conversation_role": "wire_member"
+                            },
+                            "others": []
+                        },
+                        "type": "0"
+                    }
+                ],
+                "failed": [],
+                "not_found": []
+            }
+        """.trimIndent()
+    }
 }

@@ -19,7 +19,6 @@ package com.wire.sdk.client
 import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import io.ktor.http.HttpMethod
-import io.ktor.http.fullPath
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.DisplayName
 import java.util.UUID
@@ -27,37 +26,15 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class OneToOneConversationsApiClientTest {
-    private val userId = QualifiedId(
-        id = UUID.fromString("3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a"),
-        domain = "example.com"
+    private fun apiClient(
+        responseBody: String = "",
+        assertRequest: (io.ktor.client.request.HttpRequestData) -> Unit = {}
+    ) = OneToOneConversationsApiClient(
+        createMockHttpClient(
+            responseBody = responseBody,
+            assertRequest = assertRequest
+        )
     )
-
-    private val expectedUrl =
-        "/$API_VERSION/one2one-conversations/example.com/3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a"
-
-    // Minimal valid ConversationResponse JSON — no publicKeys, no team, no groupId, no messageTimer
-    private val minimalConversationJson = """
-        {
-            "qualified_id": { "id": "aabbccdd-1234-5678-abcd-aabbccddeeff", "domain": "example.com" },
-            "team": null,
-            "group_id": null,
-            "name": "John Doe",
-            "epoch": null,
-            "protocol": "proteus",
-            "members": {
-                "self": { "qualified_id": { "id": "3b5efd97-2f3e-4ab8-8525-bc3e8e7c4e1a", "domain": "example.com" }, "conversation_role": "wire_member" },
-                "others": []
-            },
-            "type": "2",
-            "message_timer": null
-        }
-    """.trimIndent()
-
-    private val minimalResponseJson = """
-        {
-            "conversation": $minimalConversationJson
-        }
-    """.trimIndent()
 
     @Test
     @DisplayName(
@@ -67,27 +44,17 @@ class OneToOneConversationsApiClientTest {
     fun `test-1`() =
         runTest {
             var capturedPath: String? = null
-            val client = createMockHttpClient(
-                responseBody = minimalResponseJson,
-                assertRequest = { capturedPath = it.url.fullPath }
-            )
-
-            OneToOneConversationsApiClient(client).getByUserId(userId)
-
-            assertEquals(expectedUrl, capturedPath)
+            apiClient(MINIMAL_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
+                .getByUserId(USER_ID)
+            assertEquals(EXPECTED_URL, capturedPath)
         }
 
     @Test
     fun `given valid userId, when getOneToOneConversation is called, then GET method is used`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            val client = createMockHttpClient(
-                responseBody = minimalResponseJson,
-                assertRequest = { capturedMethod = it.method }
-            )
-
-            OneToOneConversationsApiClient(client).getByUserId(userId)
-
+            apiClient(MINIMAL_RESPONSE_JSON) { capturedMethod = it.method }
+                .getByUserId(USER_ID)
             assertEquals(HttpMethod.Get, capturedMethod)
         }
 
@@ -98,22 +65,54 @@ class OneToOneConversationsApiClientTest {
     )
     fun `test-2`() =
         runTest {
-            val subdomainUserId = QualifiedId(
-                id = UUID.fromString("aabbccdd-1234-5678-abcd-aabbccddeeff"),
-                domain = "sub.wire.com"
-            )
             var capturedPath: String? = null
-            val client = createMockHttpClient(
-                responseBody = minimalResponseJson,
-                assertRequest = { capturedPath = it.url.fullPath }
-            )
-
-            OneToOneConversationsApiClient(client).getByUserId(subdomainUserId)
-
+            apiClient(MINIMAL_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
+                .getByUserId(SUBDOMAIN_USER_ID)
             assertEquals(
                 "/$API_VERSION/one2one-conversations/" +
-                    "sub.wire.com/aabbccdd-1234-5678-abcd-aabbccddeeff",
+                    "${SUBDOMAIN_USER_ID.domain}/${SUBDOMAIN_USER_ID.id}",
                 capturedPath
             )
         }
+
+    companion object {
+        private val USER_ID = QualifiedId(
+            id = UUID.randomUUID(),
+            domain = "example.com"
+        )
+
+        private val SUBDOMAIN_USER_ID = QualifiedId(
+            id = UUID.randomUUID(),
+            domain = "sub.wire.com"
+        )
+
+        private val EXPECTED_URL =
+            "/$API_VERSION/one2one-conversations/${USER_ID.domain}/${USER_ID.id}"
+
+        private val MINIMAL_CONVERSATION_JSON = """
+            {
+                "qualified_id": { "id": "${USER_ID.id}", "domain": "${USER_ID.domain}" },
+                "team": null,
+                "group_id": null,
+                "name": "John Doe",
+                "epoch": null,
+                "protocol": "proteus",
+                "members": {
+                    "self": {
+                        "qualified_id": { "id": "${USER_ID.id}", "domain": "${USER_ID.domain}" },
+                        "conversation_role": "wire_member"
+                    },
+                    "others": []
+                },
+                "type": "2",
+                "message_timer": null
+            }
+        """.trimIndent()
+
+        private val MINIMAL_RESPONSE_JSON = """
+            {
+                "conversation": $MINIMAL_CONVERSATION_JSON
+            }
+        """.trimIndent()
+    }
 }
