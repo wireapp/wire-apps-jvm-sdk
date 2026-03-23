@@ -77,7 +77,7 @@ internal class MlsApiClient(
                 contentType(ContentType.Application.Json)
             }
         } catch (ex: WireException.ClientError) {
-            logger.info("MLS public key already set for DEMO user: $cryptoClientId", ex)
+            logger.info("MLS public key already set for user: $cryptoClientId", ex)
         }
         logger.info("Updated client with mls key packages for client: $cryptoClientId")
     }
