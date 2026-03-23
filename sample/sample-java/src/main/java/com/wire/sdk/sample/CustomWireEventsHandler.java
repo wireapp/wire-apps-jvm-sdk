@@ -94,64 +94,64 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     }
 
     @Override
-    public void onAssetMessageReceived(WireMessage.Asset wireMessage) {
-        logger.info("Received Asset Message. conversationId: {}", wireMessage.conversationId());
-        sendSimpleReply(wireMessage.conversationId(),
-                "Received Asset:" + wireMessage.name(),
-                wireMessage);
-        saveAsset(wireMessage);
+    public void onAssetMessageReceived(WireMessage.Asset assetMessage) {
+        logger.info("Received Asset Message. conversationId: {}", assetMessage.conversationId());
+        sendSimpleReply(assetMessage.conversationId(),
+                "Received Asset:" + assetMessage.name(),
+                assetMessage);
+        saveAsset(assetMessage);
     }
 
     @Override
-    public void onButtonClicked(WireMessage.ButtonAction wireMessage) {
-        super.onButtonClicked(wireMessage);
+    public void onButtonClicked(WireMessage.ButtonAction buttonAction) {
+        super.onButtonClicked(buttonAction);
     }
 
     @Override
-    public void onPingReceived(WireMessage.Ping wireMessage) {
-        logger.info("Received Ping. conversationId: {}", wireMessage.conversationId());
-        sendSimplePing(wireMessage.conversationId());
+    public void onPingReceived(WireMessage.Ping pingMessage) {
+        logger.info("Received Ping. conversationId: {}", pingMessage.conversationId());
+        sendSimplePing(pingMessage.conversationId());
     }
 
     @Override
-    public void onLocationMessageReceived(WireMessage.Location wireMessage) {
-        logger.info("Received Location message. conversationId: {}", wireMessage.conversationId());
+    public void onLocationMessageReceived(WireMessage.Location locationMessage) {
+        logger.info("Received Location message. conversationId: {}", locationMessage.conversationId());
         final var reply =
-                "Received Location: " + wireMessage.latitude() + ", " + wireMessage.longitude() +
-                        "\nname: " + wireMessage.name() +
-                        "\nzoom: " + wireMessage.zoom();
+                "Received Location: " + locationMessage.latitude() + ", " + locationMessage.longitude() +
+                        "\nname: " + locationMessage.name() +
+                        "\nzoom: " + locationMessage.zoom();
 
-        sendSimpleReply(wireMessage.conversationId(), reply, wireMessage);
+        sendSimpleReply(locationMessage.conversationId(), reply, locationMessage);
     }
 
     @Override
-    public void onMessageDeleted(WireMessage.Deleted wireMessage) {
-        super.onMessageDeleted(wireMessage);
+    public void onMessageDeleted(WireMessage.Deleted deletedMessage) {
+        super.onMessageDeleted(deletedMessage);
     }
 
     @Override
-    public void onMessageDelivered(@NotNull WireMessage wireMessage) {
-        super.onMessageDelivered(wireMessage);
+    public void onMessageDelivered(@NotNull WireMessage.Receipt deliveredMessage) {
+        super.onMessageDelivered(deliveredMessage);
     }
 
     @Override
-    public void onTextMessageEdited(WireMessage.TextEdited wireMessage) {
-        super.onTextMessageEdited(wireMessage);
+    public void onTextMessageEdited(WireMessage.TextEdited editedTextMessage) {
+        super.onTextMessageEdited(editedTextMessage);
     }
 
     @Override
-    public void onMessageReactionReceived(WireMessage.Reaction wireMessage) {
-        super.onMessageReactionReceived(wireMessage);
+    public void onMessageReactionReceived(WireMessage.Reaction reactionMessage) {
+        super.onMessageReactionReceived(reactionMessage);
     }
 
     @Override
-    public void onInCallReactionReceived(WireMessage.InCallEmoji wireMessage) {
-        super.onInCallReactionReceived(wireMessage);
+    public void onInCallReactionReceived(WireMessage.InCallEmoji inCallEmoji) {
+        super.onInCallReactionReceived(inCallEmoji);
     }
 
     @Override
-    public void onInCallHandRaiseReceived(WireMessage.InCallHandRaise wireMessage) {
-        super.onInCallHandRaiseReceived(wireMessage);
+    public void onInCallHandRaiseReceived(WireMessage.InCallHandRaise inCallHandRaise) {
+        super.onInCallHandRaiseReceived(inCallHandRaise);
     }
 
     @Override
