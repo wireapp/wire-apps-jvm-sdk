@@ -139,6 +139,7 @@ val sdkModule =
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
+private const val API_VERSION = "v15"
 
 @Suppress("LongMethod")
 @OptIn(ExperimentalLogbookKtorApi::class)
@@ -186,10 +187,11 @@ internal fun createHttpClient(
             createClientPlugin("VersionPrefixPlugin") {
                 onRequest { request, _ ->
                     val path = request.url.encodedPath
-                    if (!path.contains("/await") &&
-                        (!path.startsWith("/v15") && !path.startsWith("v15"))
-                    ) {
-                        request.url.encodedPath = "/v15$path"
+                    val hasVersionPrefix =
+                        path.startsWith("/$API_VERSION") || path.startsWith(API_VERSION)
+
+                    if (!path.contains("/await") && !hasVersionPrefix) {
+                        request.url.encodedPath = "/$API_VERSION$path"
                     }
                 }
             }
