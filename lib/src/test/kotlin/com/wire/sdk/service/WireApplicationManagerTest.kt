@@ -610,7 +610,22 @@ class WireApplicationManagerTest {
                 "name": "Test conversation",
                 "epoch": 0,
                 "members": {
-                    "others": [],
+                    "others": [
+                        {
+                            "conversation_role": "wire_member",
+                            "qualified_id": {
+                                "domain": "${USER_1.domain}",
+                                "id": "${USER_1.id}"
+                            }
+                        },
+                        {
+                            "conversation_role": "wire_member",
+                            "qualified_id": {
+                                "domain": "${USER_2.domain}",
+                                "id": "${USER_2.id}"
+                            }
+                        }
+                    ],
                     "self": $CONVERSATION_MEMBER_SELF_JSON
               },
               "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",
