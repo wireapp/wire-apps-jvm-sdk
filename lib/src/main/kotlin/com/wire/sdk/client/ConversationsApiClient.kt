@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.conversation.ConversationIdsRequest
 import com.wire.sdk.model.http.conversation.ConversationIdsResponse
@@ -40,7 +39,7 @@ import org.slf4j.LoggerFactory
 
 internal class ConversationsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "$API_VERSION/conversations"
+    private val basePath = "conversations"
 
     private companion object {
         const val CONVERSATION_LIST_IDS_PAGING_SIZE = 100

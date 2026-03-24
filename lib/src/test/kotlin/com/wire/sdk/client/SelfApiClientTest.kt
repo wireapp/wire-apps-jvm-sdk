@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import io.ktor.http.HttpMethod
 import kotlinx.coroutines.test.runTest
 import java.util.UUID
@@ -35,7 +34,7 @@ class SelfApiClientTest {
         runTest {
             var capturedPath: String? = null
             apiClient(SELF_RESPONSE_WITH_TEAM) { capturedPath = it.url.encodedPath }.getSelfUser()
-            assertEquals("/$API_VERSION/self", capturedPath)
+            assertEquals("/self", capturedPath)
         }
 
     @Test

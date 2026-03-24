@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -51,7 +50,7 @@ class UsersApiClientTest {
             var capturedPath: String? = null
             apiClient(FULL_USER_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .getUserData(USER_ID)
-            assertEquals("/$API_VERSION/users/${USER_ID.domain}/${USER_ID.id}", capturedPath)
+            assertEquals("/users/${USER_ID.domain}/${USER_ID.id}", capturedPath)
         }
 
     @Test
@@ -103,7 +102,7 @@ class UsersApiClientTest {
             var capturedPath: String? = null
             apiClient(USER_CLIENTS_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .getClientsByUserId(USER_ID)
-            assertEquals("/v15/users/${USER_ID.domain}/${USER_ID.id}/clients", capturedPath)
+            assertEquals("/users/${USER_ID.domain}/${USER_ID.id}/clients", capturedPath)
         }
 
     @Test
@@ -145,7 +144,7 @@ class UsersApiClientTest {
             var capturedPath: String? = null
             apiClient(LIST_CLIENTS_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .getClientsByUserIds(listOf(USER_ID))
-            assertEquals("/v15/users/list-clients", capturedPath)
+            assertEquals("/users/list-clients", capturedPath)
         }
 
     @Test

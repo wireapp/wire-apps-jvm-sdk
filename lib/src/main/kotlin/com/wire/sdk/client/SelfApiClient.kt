@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.http.user.SelfUserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -31,7 +30,8 @@ internal class SelfApiClient(private val httpClient: HttpClient) {
      * @return [SelfUserResponse]
      */
     suspend fun getSelfUser(): SelfUserResponse {
-        return httpClient.get("/$API_VERSION/self") {
+        val basePath = "self"
+        return httpClient.get("/$basePath") {
             accept(ContentType.Application.Json)
         }.body<SelfUserResponse>()
     }

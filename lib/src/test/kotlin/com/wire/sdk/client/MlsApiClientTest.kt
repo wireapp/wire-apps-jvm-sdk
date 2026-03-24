@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.persistence.AppStorage
@@ -47,7 +46,7 @@ class MlsApiClientTest {
             mlsClient(PUBLIC_KEYS_RESPONSE_JSON) {
                 capturedPath = it.url.encodedPath
             }.getPublicKeys()
-            assertEquals("/$API_VERSION/mls/public-keys", capturedPath)
+            assertEquals("/mls/public-keys", capturedPath)
         }
 
     @Test
@@ -65,7 +64,7 @@ class MlsApiClientTest {
             mlsClient(CLAIMED_KEY_PACKAGES_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .claimKeyPackages(USER_ID, "1")
             assertEquals(
-                "/$API_VERSION/mls/key-packages/claim/${USER_ID.domain}/${USER_ID.id}",
+                "/mls/key-packages/claim/${USER_ID.domain}/${USER_ID.id}",
                 capturedPath
             )
         }
@@ -95,7 +94,7 @@ class MlsApiClientTest {
             var capturedPath: String? = null
             mlsClient { capturedPath = it.url.encodedPath }
                 .uploadMlsKeyPackages(CRYPTO_CLIENT_ID, listOf(byteArrayOf(0x01)))
-            assertEquals("/$API_VERSION/mls/key-packages/self/$DEVICE_ID", capturedPath)
+            assertEquals("/mls/key-packages/self/$DEVICE_ID", capturedPath)
         }
 
     @Test
@@ -113,7 +112,7 @@ class MlsApiClientTest {
             var capturedPath: String? = null
             mlsClient { capturedPath = it.url.encodedPath }
                 .uploadCommitBundle(byteArrayOf(0x01))
-            assertEquals("/$API_VERSION/mls/commit-bundles", capturedPath)
+            assertEquals("/mls/commit-bundles", capturedPath)
         }
 
     @Test
@@ -131,7 +130,7 @@ class MlsApiClientTest {
             var capturedPath: String? = null
             mlsClient { capturedPath = it.url.encodedPath }
                 .sendMessage(byteArrayOf(0x01))
-            assertEquals("/$API_VERSION/mls/messages", capturedPath)
+            assertEquals("/mls/messages", capturedPath)
         }
 
     @Test

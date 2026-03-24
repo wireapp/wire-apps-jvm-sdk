@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationRole
@@ -46,7 +45,7 @@ class ConversationsApiClientTest {
             apiClient(CONVERSATION_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .getConversation(CONVERSATION_ID)
             assertEquals(
-                "/$API_VERSION/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}",
+                "/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}",
                 capturedPath
             )
         }
@@ -66,7 +65,7 @@ class ConversationsApiClientTest {
             var capturedPath: String? = null
             apiClient(CONVERSATION_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .createGroupConversation(CREATE_CONVERSATION_REQUEST)
-            assertEquals("/$API_VERSION/conversations", capturedPath)
+            assertEquals("/conversations", capturedPath)
         }
 
     @Test
@@ -85,7 +84,7 @@ class ConversationsApiClientTest {
             apiClient { capturedPath = it.url.encodedPath }
                 .updateConversationMemberRole(CONVERSATION_ID, USER_ID, UPDATE_ROLE_REQUEST)
             assertEquals(
-                "/$API_VERSION/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}" +
+                "/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}" +
                     "/members/${USER_ID.domain}/${USER_ID.id}",
                 capturedPath
             )
@@ -106,7 +105,7 @@ class ConversationsApiClientTest {
             var capturedPath: String? = null
             apiClient(CONVERSATION_IDS_PAGE_JSON) { capturedPath = it.url.encodedPath }
                 .getConversationIds()
-            assertEquals("/$API_VERSION/conversations/list-ids", capturedPath)
+            assertEquals("/conversations/list-ids", capturedPath)
         }
 
     @Test
@@ -132,7 +131,7 @@ class ConversationsApiClientTest {
             var capturedPath: String? = null
             apiClient(CONVERSATIONS_LIST_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .getConversationsById(listOf(CONVERSATION_ID))
-            assertEquals("/$API_VERSION/conversations/list", capturedPath)
+            assertEquals("/conversations/list", capturedPath)
         }
 
     @Test
@@ -168,7 +167,7 @@ class ConversationsApiClientTest {
             apiClient { capturedPath = it.url.encodedPath }
                 .getConversationGroupInfo(CONVERSATION_ID)
             assertEquals(
-                "/$API_VERSION/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/groupinfo",
+                "/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/groupinfo",
                 capturedPath
             )
         }
@@ -189,7 +188,7 @@ class ConversationsApiClientTest {
             apiClient { capturedPath = it.url.encodedPath }
                 .leaveConversation(USER_ID, CONVERSATION_ID)
             assertEquals(
-                "/$API_VERSION/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}" +
+                "/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}" +
                     "/members/${USER_ID.domain}/${USER_ID.id}",
                 capturedPath
             )

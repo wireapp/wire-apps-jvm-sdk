@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
 import io.ktor.http.HttpMethod
@@ -43,7 +42,7 @@ class AssetsApiClientTest {
             var capturedPath: String? = null
             apiClient(responseBody = FAKE_BYTES) { capturedPath = it.url.encodedPath }
                 .downloadAsset(ASSET_ID, ASSET_DOMAIN, ASSET_TOKEN)
-            assertEquals("/$API_VERSION/assets/$ASSET_DOMAIN/$ASSET_ID", capturedPath)
+            assertEquals("/assets/$ASSET_DOMAIN/$ASSET_ID", capturedPath)
         }
 
     @Test
@@ -69,7 +68,7 @@ class AssetsApiClientTest {
             var capturedPath: String? = null
             apiClient(UPLOAD_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .uploadAsset(FAKE_BYTES, FAKE_BYTES.size.toLong(), ASSET_UPLOAD_DATA)
-            assertEquals("/$API_VERSION/assets", capturedPath)
+            assertEquals("/assets", capturedPath)
         }
 
     @Test

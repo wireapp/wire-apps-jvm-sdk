@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
@@ -42,7 +41,7 @@ internal class MlsApiClient(
     private val appStorage: AppStorage
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "$API_VERSION/mls"
+    private val basePath = "mls"
 
     suspend fun getPublicKeys(): MlsPublicKeysResponse {
         return httpClient.get("/$basePath/public-keys") {
