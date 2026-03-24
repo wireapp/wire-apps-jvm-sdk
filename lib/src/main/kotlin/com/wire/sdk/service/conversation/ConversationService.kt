@@ -41,6 +41,8 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.conversation.ClaimedKeyPackagesResult
+import com.wire.sdk.model.http.conversation.ConversationMemberOther
+import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
@@ -234,9 +236,20 @@ internal class ConversationService internal constructor(
         )
 
         if (conversationResponse.type != ConversationResponse.Type.SELF) {
+            // When fetching a conversation the list of members is reliable, but when establishing
+            // it's better to trust the list of users passed
+            val userFixedConversation = conversationResponse.copy(
+                members =
+                    ConversationMembers(
+                        self = conversationResponse.members.self,
+                        others = userIds.map {
+                            ConversationMemberOther(it, ConversationRole.MEMBER)
+                        }
+                    )
+            )
             saveConversationWithMembers(
                 qualifiedConversation = conversationResponse.id,
-                conversationResponse = conversationResponse
+                conversationResponse = userFixedConversation
             )
         }
     }
@@ -324,18 +337,6 @@ internal class ConversationService internal constructor(
                 establishMlsConversation(
                     conversationResponse = conversation,
                     userIds = emptyList(),
-                    publicKeysResponse = null
-                )
-            }
-
-            conversation.type == ConversationResponse.Type.ONE_TO_ONE -> {
-                val users = conversationStorage
-                    .getMembersByConversationId(conversationId = conversation.id)
-                    .map { members -> members.userId }
-
-                establishMlsConversation(
-                    conversationResponse = conversation,
-                    userIds = users,
                     publicKeysResponse = null
                 )
             }

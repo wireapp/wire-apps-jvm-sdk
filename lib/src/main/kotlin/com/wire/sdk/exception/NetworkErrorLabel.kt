@@ -21,4 +21,5 @@ internal object NetworkErrorLabel {
     const val TOO_MANY_CLIENTS = "too-many-clients"
     const val OPERATION_DENIED = "operation-denied"
     const val INVALID_CREDENTIALS = "invalid-credentials"
+    const val NOT_FOUND = "not-found"
 }

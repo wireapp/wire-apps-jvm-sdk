@@ -66,6 +66,10 @@ internal class NotificationsApiClient(
             }.body<NotificationsResponse>()
             return notifications
         } catch (exception: WireException.ClientError) {
+            if (exception.response.isNotFound()) {
+                // 404 in this context is a valid state, forwarding it
+                throw exception
+            }
             logger.warn("Notifications not found.", exception)
             return NotificationsResponse(
                 hasMore = false,

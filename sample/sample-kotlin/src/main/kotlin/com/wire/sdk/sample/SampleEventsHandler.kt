@@ -256,11 +256,21 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     private suspend fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
         // Expected message: `create-one2one-conversation [USER_ID] [DOMAIN]
         val split = wireMessage.text.split(" ")
+        val one2oneUser = QualifiedId(
+            id = UUID.fromString(split[1]),
+            domain = split[2]
+        )
 
-        manager.createOneToOneConversationSuspending(
-            userId = QualifiedId(
-                id = UUID.fromString(split[1]),
-                domain = split[2]
+        manager.createOneToOneConversationSuspending(one2oneUser)
+
+        val newOne2OneConversation = manager.getStoredConversations()
+            .find { it.name == one2oneUser.toFullString()}
+
+        manager.sendMessageSuspending(
+            WireMessage.Text.create(
+                conversationId = newOne2OneConversation?.id
+                    ?: throw IllegalStateException("New one-to-one conversation not found"),
+                text = "Hello! This is a message from the SDK in your new one-to-one conversation."
             )
         )
     }

@@ -32,4 +32,6 @@ data class StandardError(
     fun isOperationDenied(): Boolean = (label == NetworkErrorLabel.OPERATION_DENIED)
 
     fun isCredentialsInvalid(): Boolean = (label == NetworkErrorLabel.INVALID_CREDENTIALS)
+
+    fun isNotFound(): Boolean = (label == NetworkErrorLabel.NOT_FOUND)
 }

@@ -152,14 +152,15 @@ class WireApplicationManagerTest {
             val conversationMembers = manager
                 .getStoredConversationMembers(conversationId = createdConversationId)
 
-            assertEquals(2, conversationMembers.size)
+            // 2 users added on creation + self user
+            assertEquals(3, conversationMembers.size)
             assertEquals(
                 ConversationRole.MEMBER,
-                conversationMembers.first().role
+                conversationMembers.find { it.userId == USER_1 }!!.role
             )
             assertEquals(
                 ConversationRole.ADMIN,
-                conversationMembers.last().role
+                conversationMembers.find { it.userId == USER_2 }!!.role
             )
         }
 
