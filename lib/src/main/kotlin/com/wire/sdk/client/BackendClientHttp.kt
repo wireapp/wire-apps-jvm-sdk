@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.http.ApiVersionResponse

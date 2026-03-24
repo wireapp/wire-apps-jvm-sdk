@@ -186,9 +186,6 @@ internal fun createHttpClient(
             createClientPlugin("VersionPrefixPlugin") {
                 onRequest { request, _ ->
                     val path = request.url.encodedPath
-                    println("----> Request path: $path")
-                    println("----> Request path: ${path.startsWith("/v15")}")
-                    println("----> Request path: ${path.startsWith("v15")}")
                     if (!path.contains("/await") &&
                         (!path.startsWith("/v15") && !path.startsWith("v15"))
                     ) {
@@ -197,8 +194,6 @@ internal fun createHttpClient(
                 }
             }
         )
-
-        // TODO::  bu awaiti bi degiskene al. v15'i de degiskene al .
 
         install(Auth) {
             bearer {

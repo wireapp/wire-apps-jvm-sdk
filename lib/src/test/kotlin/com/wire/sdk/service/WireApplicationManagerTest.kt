@@ -21,7 +21,7 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.wire.crypto.ConversationId
 import com.wire.crypto.KeyPackage
 import com.wire.sdk.TestUtils
-import com.wire.sdk.TestUtils.V
+import com.wire.sdk.TestUtils.TEST_API_VERSION
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
@@ -73,7 +73,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/$V/conversations"
+                        "/$TEST_API_VERSION/conversations"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -85,7 +85,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/$V/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
+                        "/$TEST_API_VERSION/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_1)
@@ -94,7 +94,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                        "/$TEST_API_VERSION/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(
@@ -123,7 +123,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.put(
                     WireMock.urlPathTemplate(
-                        "/$V" +
+                        "/$TEST_API_VERSION" +
                             "/conversations/$conversationIdPath" +
                             "/members/$userIdPath"
                     )
@@ -176,7 +176,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/$V/one2one-conversations/${USER_2.domain}/${USER_2.id}"
+                        "/$TEST_API_VERSION/one2one-conversations/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -189,7 +189,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                        "/$TEST_API_VERSION/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(
@@ -234,7 +234,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/$V/conversations"
+                        "/$TEST_API_VERSION/conversations"
                     )
                 ).willReturn(
                     WireMock.jsonResponse(
@@ -247,7 +247,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/$V/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
+                        "/$TEST_API_VERSION/mls/key-packages/claim/${USER_1.domain}/${USER_1.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(MLS_KEYPACKAGE_CLAIMED_USER_1)
@@ -256,7 +256,7 @@ class WireApplicationManagerTest {
             wireMockServer.stubFor(
                 WireMock.post(
                     WireMock.urlPathTemplate(
-                        "/$V/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
+                        "/$TEST_API_VERSION/mls/key-packages/claim/${USER_2.domain}/${USER_2.id}"
                     )
                 ).willReturn(
                     WireMock.okJson(
@@ -302,7 +302,7 @@ class WireApplicationManagerTest {
 
             wireMockServer.stubFor(
                 WireMock.get(
-                    WireMock.urlPathTemplate("/$V/self")
+                    WireMock.urlPathTemplate("/$TEST_API_VERSION/self")
                 ).willReturn(
                     WireMock.okJson(
                         SELF_USER_NO_TEAM_ID_RESPONSE

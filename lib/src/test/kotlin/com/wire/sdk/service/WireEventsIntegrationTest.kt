@@ -19,7 +19,7 @@ package com.wire.sdk.service
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.wire.sdk.TestUtils
-import com.wire.sdk.TestUtils.V
+import com.wire.sdk.TestUtils.TEST_API_VERSION
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
@@ -122,7 +122,7 @@ class WireEventsIntegrationTest {
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/$V/conversations/{conversationDomain}/{conversationId}"
+                        "/$TEST_API_VERSION/conversations/{conversationDomain}/{conversationId}"
                     )
                 ).willReturn(
                     WireMock.okJson(NEW_CONVERSATION_RESPONSE)
@@ -312,7 +312,7 @@ class WireEventsIntegrationTest {
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/$V/conversations/{conversationDomain}/{conversationId}"
+                        "/$TEST_API_VERSION/conversations/{conversationDomain}/{conversationId}"
                     )
                 ).willReturn(
                     WireMock.okJson(CONVERSATION_RESPONSE)
@@ -409,7 +409,7 @@ class WireEventsIntegrationTest {
             wireMockServer.stubFor(
                 WireMock.get(
                     WireMock.urlPathTemplate(
-                        "/$V/conversations/{conversationDomain}/{conversationId}"
+                        "/$TEST_API_VERSION/conversations/{conversationDomain}/{conversationId}"
                     )
                 ).willReturn(
                     WireMock.okJson(SELF_CONVERSATION_RESPONSE)
@@ -888,7 +888,8 @@ class WireEventsIntegrationTest {
             wireMockServer.start()
 
             // Mock conversation fetching
-            val stubConvPath = "/$V/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
+            val stubConvPath = "/$TEST_API_VERSION/conversations" +
+                "/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
             wireMockServer.stubFor(
                 WireMock.get(WireMock.urlPathTemplate(stubConvPath)).willReturn(
                     WireMock.okJson(
@@ -920,7 +921,7 @@ class WireEventsIntegrationTest {
                 )
             )
             val stubConvGroupInfoPath =
-                "/$V/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
+                "/$TEST_API_VERSION/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
             wireMockServer.stubFor(
                 WireMock.get(WireMock.urlPathTemplate(stubConvGroupInfoPath))
                     .willReturn(
