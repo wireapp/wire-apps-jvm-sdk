@@ -62,6 +62,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
+import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.cache.HttpCache
@@ -139,6 +140,7 @@ val sdkModule =
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
 
+@Suppress("LongMethod")
 @OptIn(ExperimentalLogbookKtorApi::class)
 internal fun createHttpClient(
     apiHost: String,
@@ -179,6 +181,24 @@ internal fun createHttpClient(
             header("Wire-Client", "SDK Kotlin")
             header("Wire-Client-Version", Versions.SDK_VERSION)
         }
+
+        install(
+            createClientPlugin("VersionPrefixPlugin") {
+                onRequest { request, _ ->
+                    val path = request.url.encodedPath
+                    println("----> Request path: $path")
+                    println("----> Request path: ${path.startsWith("/v15")}")
+                    println("----> Request path: ${path.startsWith("v15")}")
+                    if (!path.contains("/await") &&
+                        (!path.startsWith("/v15") && !path.startsWith("v15"))
+                    ) {
+                        request.url.encodedPath = "/v15$path"
+                    }
+                }
+            }
+        )
+
+        // TODO::  bu awaiti bi degiskene al. v15'i de degiskene al .
 
         install(Auth) {
             bearer {
