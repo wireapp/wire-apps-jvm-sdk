@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import io.ktor.http.HttpMethod
 import kotlinx.coroutines.test.runTest
@@ -69,7 +68,7 @@ class OneToOneConversationsApiClientTest {
             apiClient(MINIMAL_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
                 .getByUserId(SUBDOMAIN_USER_ID)
             assertEquals(
-                "/$API_VERSION/one2one-conversations/" +
+                "/one2one-conversations/" +
                     "${SUBDOMAIN_USER_ID.domain}/${SUBDOMAIN_USER_ID.id}",
                 capturedPath
             )
@@ -87,7 +86,7 @@ class OneToOneConversationsApiClientTest {
         )
 
         private val EXPECTED_URL =
-            "/$API_VERSION/one2one-conversations/${USER_ID.domain}/${USER_ID.id}"
+            "/one2one-conversations/${USER_ID.domain}/${USER_ID.id}"
 
         private val MINIMAL_CONVERSATION_JSON = """
             {

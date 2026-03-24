@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
@@ -35,7 +34,7 @@ import kotlin.collections.component2
 
 internal class UsersApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "$API_VERSION/users"
+    private val basePath = "users"
 
     /**
      * Get User details

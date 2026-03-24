@@ -62,6 +62,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
+import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.cache.HttpCache
@@ -138,7 +139,9 @@ val sdkModule =
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
+private const val API_VERSION = "v15"
 
+@Suppress("LongMethod")
 @OptIn(ExperimentalLogbookKtorApi::class)
 internal fun createHttpClient(
     apiHost: String,
@@ -179,6 +182,20 @@ internal fun createHttpClient(
             header("Wire-Client", "SDK Kotlin")
             header("Wire-Client-Version", Versions.SDK_VERSION)
         }
+
+        install(
+            createClientPlugin("VersionPrefixPlugin") {
+                onRequest { request, _ ->
+                    val path = request.url.encodedPath
+                    val hasVersionPrefix =
+                        path.startsWith("/$API_VERSION") || path.startsWith(API_VERSION)
+
+                    if (!path.contains("/await") && !hasVersionPrefix) {
+                        request.url.encodedPath = "/$API_VERSION$path"
+                    }
+                }
+            }
+        )
 
         install(Auth) {
             bearer {

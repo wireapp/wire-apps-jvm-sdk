@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.utils.obfuscateId
@@ -37,7 +36,7 @@ internal class AssetsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     private companion object {
-        const val BASE_PATH = "$API_VERSION/assets"
+        const val BASE_PATH = "assets"
         const val HEADER_ASSET_TOKEN = "Asset-Token"
     }
 
@@ -48,7 +47,7 @@ internal class AssetsApiClient(private val httpClient: HttpClient) {
     ): ByteArray {
         logger.info("Downloading asset ${assetId.obfuscateId()}")
 
-        return httpClient.prepareGet("$BASE_PATH/$assetDomain/$assetId") {
+        return httpClient.prepareGet("/$BASE_PATH/$assetDomain/$assetId") {
             headers {
                 if (!assetToken.isNullOrBlank()) {
                     append(HEADER_ASSET_TOKEN, assetToken)
@@ -66,7 +65,7 @@ internal class AssetsApiClient(private val httpClient: HttpClient) {
     ): AssetUploadResponse {
         logger.info("Uploading new asset")
 
-        return httpClient.post(BASE_PATH) {
+        return httpClient.post("/$BASE_PATH") {
             setBody(
                 AssetBody(
                     assetContent = encryptedFile,

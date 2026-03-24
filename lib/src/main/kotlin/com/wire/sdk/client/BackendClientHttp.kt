@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.http.ApiVersionResponse
@@ -75,14 +74,16 @@ internal class BackendClientHttp(
 
     override suspend fun getAvailableApiVersions(): ApiVersionResponse {
         logger.info("Fetching Wire backend version")
-        return httpClient.get("/$API_VERSION/api-version").body()
+        val basePath = "api-version"
+        return httpClient.get("/$basePath").body()
     }
 
     override suspend fun getApplicationFeatures(): FeaturesResponse {
         logger.info("Fetching application enabled features")
+        val basePath = "feature-configs"
         return cachedFeatures ?: run {
             httpClient
-                .get("/$API_VERSION/feature-configs")
+                .get("/$basePath")
                 .body<FeaturesResponse>()
                 .also { cachedFeatures = it }
         }

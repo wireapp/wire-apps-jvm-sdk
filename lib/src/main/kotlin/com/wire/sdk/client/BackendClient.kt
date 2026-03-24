@@ -34,7 +34,6 @@ interface BackendClient {
     suspend fun getApplicationFeatures(): FeaturesResponse
 
     companion object {
-        const val API_VERSION = "v15"
         const val CLIENT_QUERY_KEY = "client"
     }
 }

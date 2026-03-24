@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import io.ktor.client.HttpClient
@@ -27,7 +26,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
 internal class OneToOneConversationsApiClient(private val httpClient: HttpClient) {
-    private val basePath = "$API_VERSION/one2one-conversations"
+    private val basePath = "one2one-conversations"
 
     suspend fun getByUserId(userId: QualifiedId): OneToOneConversationResponse {
         return httpClient.get("/$basePath/${userId.domain}/${userId.id}") {

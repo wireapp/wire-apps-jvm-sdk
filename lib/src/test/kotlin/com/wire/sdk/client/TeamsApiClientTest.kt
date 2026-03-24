@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import io.ktor.http.HttpMethod
@@ -58,6 +57,6 @@ class TeamsApiClientTest {
             domain = "example.com"
         )
         private val EXPECTED_PATH =
-            "/$API_VERSION/teams/${TEAM_ID.value}/conversations/${CONVERSATION_ID.id}"
+            "/teams/${TEAM_ID.value}/conversations/${CONVERSATION_ID.id}"
     }
 }

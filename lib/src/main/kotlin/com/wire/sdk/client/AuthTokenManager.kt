@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
@@ -57,7 +56,8 @@ class AuthTokenManager(private val appStorage: AppStorage) {
         try {
             val cookie = appStorage.getBackendCookie()
             val deviceId = appStorage.getDeviceId()
-            val url = "/$API_VERSION/access".let {
+            val basePath = "access"
+            val url = "/$basePath".let {
                 if (deviceId != null) "$it?client_id=$deviceId" else it
             }
             httpClient.post(url) {

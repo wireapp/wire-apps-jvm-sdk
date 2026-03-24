@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.client.BackendClient.Companion.CLIENT_QUERY_KEY
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.http.EventResponse
@@ -34,7 +33,7 @@ internal class NotificationsApiClient(
     private val appStorage: AppStorage
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "$API_VERSION/notifications"
+    private val basePath = "notifications"
 
     private companion object {
         const val SIZE_QUERY_KEY = "size"
@@ -47,7 +46,7 @@ internal class NotificationsApiClient(
     }
 
     suspend fun getLastNotification(): EventResponse {
-        val lastNotification = httpClient.get("$basePath/last") {
+        val lastNotification = httpClient.get("/$basePath/last") {
             appStorage.getDeviceId()?.let { parameter(CLIENT_QUERY_KEY, it) }
         }.body<EventResponse>()
 
@@ -59,7 +58,7 @@ internal class NotificationsApiClient(
         querySince: String?
     ): NotificationsResponse {
         try {
-            val notifications = httpClient.get(basePath) {
+            val notifications = httpClient.get("/$basePath") {
                 parameter(SIZE_QUERY_KEY, querySize)
                 appStorage.getDeviceId()?.let { parameter(CLIENT_QUERY_KEY, it) }
                 querySince?.let { parameter(SINCE_QUERY_KEY, it) }

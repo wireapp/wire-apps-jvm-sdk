@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
-import com.wire.sdk.TestUtils
+import com.wire.sdk.TestUtils.TEST_API_VERSION
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.config.MAX_RETRY_NUMBER_ON_SERVER_ERROR
 import com.wire.sdk.utils.Mls
@@ -40,7 +40,7 @@ import org.junit.jupiter.api.assertThrows
 class HttpClientExceptionTest {
     @Test
     fun whenEpochIsTooOldThenThrowMlsStaleMessageException() {
-        val stubMlsMessagePath = "/${TestUtils.V}/mls/messages"
+        val stubMlsMessagePath = "/${TEST_API_VERSION}/mls/messages"
 
         wireMockServer.stubFor(
             WireMock.post(WireMock.urlPathEqualTo(stubMlsMessagePath))
@@ -74,7 +74,7 @@ class HttpClientExceptionTest {
 
     @Test
     fun whenResponseIsSuccessfulThenNoExceptionIsThrown() {
-        val stubMlsKeyPackagePath = "/${TestUtils.V}/mls/key-packages/self/{cryptoClientId}"
+        val stubMlsKeyPackagePath = "/${TEST_API_VERSION}/mls/key-packages/self/{cryptoClientId}"
         wireMockServer.stubFor(
             WireMock.post(
                 WireMock.urlPathEqualTo(stubMlsKeyPackagePath)
@@ -91,7 +91,7 @@ class HttpClientExceptionTest {
 
     @Test
     fun whenErrorResponseDoesNotContainLabelThenThrowUnknownException() {
-        val stubMlsMessagePath = "/${TestUtils.V}/mls/messages"
+        val stubMlsMessagePath = "/${TEST_API_VERSION}/mls/messages"
 
         wireMockServer.stubFor(
             WireMock.post(WireMock.urlPathEqualTo(stubMlsMessagePath))
@@ -125,7 +125,7 @@ class HttpClientExceptionTest {
     @Test
     fun whenServerReturns503ThenExponentialBackoffRetries() =
         runTest {
-            val stubPath = "/${TestUtils.V}/test-backoff"
+            val stubPath = "/${TEST_API_VERSION}/test-backoff"
 
             wireMockServer.stubFor(
                 WireMock.post(WireMock.urlPathEqualTo(stubPath))

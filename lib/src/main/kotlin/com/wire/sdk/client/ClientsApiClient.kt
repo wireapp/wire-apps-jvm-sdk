@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.ClientUpdateRequest
@@ -40,7 +39,7 @@ internal class ClientsApiClient(
     private val appStorage: AppStorage
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "$API_VERSION/clients"
+    private val basePath = "clients"
 
     suspend fun registerClient(
         registerClientRequest: RegisterClientRequest

@@ -21,18 +21,17 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
-import com.wire.sdk.client.BackendClient
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.conversation.ConversationMemberSelf
 import com.wire.sdk.model.http.conversation.ConversationRole
 import java.util.UUID
 
 object TestUtils {
-    const val V = BackendClient.API_VERSION
+    const val TEST_API_VERSION = "v15"
 
     fun setupWireMockStubs(wireMockServer: WireMockServer) {
         wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/$V/api-version")).willReturn(
+            WireMock.get(WireMock.urlMatching("/$TEST_API_VERSION/api-version")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -46,7 +45,7 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/$V/apps")).willReturn(
+            WireMock.get(WireMock.urlMatching("/$TEST_API_VERSION/apps")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -59,7 +58,7 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.post(WireMock.urlMatching("/$V/clients")).willReturn(
+            WireMock.post(WireMock.urlMatching("/$TEST_API_VERSION/clients")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -70,7 +69,7 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.post(WireMock.urlMatching("/$V/login")).willReturn(
+            WireMock.post(WireMock.urlMatching("/$TEST_API_VERSION/login")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -87,7 +86,7 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.post(WireMock.urlPathEqualTo("/$V/access"))
+            WireMock.post(WireMock.urlPathEqualTo("/$TEST_API_VERSION/access"))
                 .willReturn(
                     WireMock.okJson(
                         """
@@ -100,7 +99,7 @@ object TestUtils {
                 )
         )
         wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/$V/feature-configs")).willReturn(
+            WireMock.get(WireMock.urlMatching("/$TEST_API_VERSION/feature-configs")).willReturn(
                 WireMock.okJson(
                     """
                     {
@@ -119,19 +118,23 @@ object TestUtils {
             )
         )
         wireMockServer.stubFor(
-            WireMock.put(WireMock.urlPathTemplate("/$V/clients/{cryptoClientId}")).willReturn(
+            WireMock.put(
+                WireMock.urlPathTemplate("/$TEST_API_VERSION/clients/{cryptoClientId}")
+            ).willReturn(
                 ok()
             )
         )
         wireMockServer.stubFor(
             WireMock.post(
-                WireMock.urlPathTemplate("/$V/mls/key-packages/self/{cryptoClientId}")
+                WireMock.urlPathTemplate(
+                    "/$TEST_API_VERSION/mls/key-packages/self/{cryptoClientId}"
+                )
             ).willReturn(ok())
         )
         wireMockServer.stubFor(
             WireMock.get(
                 WireMock.urlPathTemplate(
-                    "/$V/mls/public-keys"
+                    "/$TEST_API_VERSION/mls/public-keys"
                 )
             ).willReturn(
                 WireMock.okJson(MLS_PUBLIC_KEYS_RESPONSE)
@@ -140,7 +143,7 @@ object TestUtils {
         wireMockServer.stubFor(
             WireMock.post(
                 WireMock.urlPathTemplate(
-                    "/$V/mls/commit-bundles"
+                    "/$TEST_API_VERSION/mls/commit-bundles"
                 )
             ).willReturn(
                 ok()
@@ -149,7 +152,7 @@ object TestUtils {
         wireMockServer.stubFor(
             WireMock.post(
                 WireMock.urlPathTemplate(
-                    "/$V/conversations/list-ids"
+                    "/$TEST_API_VERSION/conversations/list-ids"
                 )
             ).willReturn(
                 WireMock.okJson(
@@ -165,7 +168,7 @@ object TestUtils {
         )
         wireMockServer.stubFor(
             WireMock.get(
-                WireMock.urlPathTemplate("/$V/self")
+                WireMock.urlPathTemplate("/$TEST_API_VERSION/self")
             ).willReturn(
                 WireMock.okJson(
                     """

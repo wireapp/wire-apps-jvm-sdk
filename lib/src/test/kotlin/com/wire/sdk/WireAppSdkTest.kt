@@ -59,7 +59,9 @@ class WireAppSdkTest {
     fun fetchingApiVersionWithWireMockReturnsDummyData() {
         TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
         wireMockServer.stubFor(
-            WireMock.get(WireMock.urlMatching("/${TestUtils.V}/api-version")).willReturn(
+            WireMock.get(
+                WireMock.urlMatching("/${TestUtils.TEST_API_VERSION}/api-version")
+            ).willReturn(
                 WireMock.okJson(
                     """
                     {

@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
@@ -79,7 +78,7 @@ class ClientsApiClientTest {
                 com.wire.sdk.model.http.MlsPublicKeys()
             )
 
-            assertEquals("/" + API_VERSION + "/clients/$deviceId", capturedPath)
+            assertEquals("/clients/$deviceId", capturedPath)
             assertEquals(HttpMethod.Put, capturedMethod)
         }
 }

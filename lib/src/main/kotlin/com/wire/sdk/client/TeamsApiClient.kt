@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.client.BackendClient.Companion.API_VERSION
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import io.ktor.client.HttpClient
@@ -25,7 +24,7 @@ import org.slf4j.LoggerFactory
 
 internal class TeamsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "$API_VERSION/teams"
+    private val basePath = "teams"
 
     suspend fun deleteConversation(
         teamId: TeamId,
