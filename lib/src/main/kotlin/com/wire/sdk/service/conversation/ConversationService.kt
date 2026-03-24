@@ -41,6 +41,8 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.conversation.ClaimedKeyPackagesResult
+import com.wire.sdk.model.http.conversation.ConversationMemberOther
+import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
@@ -197,46 +199,69 @@ internal class ConversationService internal constructor(
 
         val publicKeys = (publicKeysResponse ?: mlsApiClient.getPublicKeys()).run {
             getRemovalKey(cipherSuite = cipherSuite)
-        }
-
-        publicKeys?.let { externalSenders ->
-            try {
-                cryptoClient.createConversation(
-                    mlsGroupId = mlsGroupId,
-                    externalSenders = externalSenders
-                )
-            } catch (exception: MlsException.ConversationAlreadyExists) {
-                throw WireException.CryptographicSystemError(
-                    "Conversation already exists.",
-                    throwable = exception
-                )
-            }
-
-            val users = userIds + listOf(IsolatedKoinContext.getApplicationUser())
-
-            val claimedKeyPackagesResult = claimKeyPackages(
-                userIds = users,
-                cipherSuiteCode = cipherSuiteCode
-            )
-
-            if (claimedKeyPackagesResult.keyPackages.isEmpty()) {
-                cryptoClient.updateKeyingMaterial(mlsGroupId)
-            } else {
-                cryptoClient.addMemberToMlsConversation(
-                    mlsGroupId = mlsGroupId,
-                    keyPackages = claimedKeyPackagesResult.keyPackages.map { keyPackage ->
-                        keyPackage.toMLSKeyPackage()
-                    }
-                )
-            }
         } ?: throw WireException.MissingParameter(
             message = "No Public Keys found, skipping creating a conversation."
         )
 
+        try {
+            cryptoClient.createConversation(
+                mlsGroupId = mlsGroupId,
+                externalSenders = publicKeys
+            )
+        } catch (exception: MlsException.ConversationAlreadyExists) {
+            throw WireException.CryptographicSystemError(
+                "Conversation already exists.",
+                throwable = exception
+            )
+        }
+
+        val users = userIds + listOf(IsolatedKoinContext.getApplicationUser())
+
+        val claimedKeyPackagesResult = claimKeyPackages(
+            userIds = users,
+            cipherSuiteCode = cipherSuiteCode
+        )
+
+        if (claimedKeyPackagesResult.keyPackages.isEmpty()) {
+            cryptoClient.updateKeyingMaterial(mlsGroupId)
+        } else {
+            cryptoClient.addMemberToMlsConversation(
+                mlsGroupId = mlsGroupId,
+                keyPackages = claimedKeyPackagesResult.keyPackages.map { keyPackage ->
+                    keyPackage.toMLSKeyPackage()
+                }
+            )
+        }
+
+        storeEstablishedConversation(conversationResponse, userIds)
+    }
+
+    private fun storeEstablishedConversation(
+        conversationResponse: ConversationResponse,
+        userIds: List<QualifiedId>
+    ) {
         if (conversationResponse.type != ConversationResponse.Type.SELF) {
+            // When fetching a conversation the list of members is reliable, but when establishing
+            // it's better to trust the list of users passed
+            val conversationToSave =
+                if (conversationResponse.type == ConversationResponse.Type.ONE_TO_ONE) {
+                    conversationResponse.copy(
+                        members = ConversationMembers(
+                            self = conversationResponse.members.self,
+                            others = userIds.map {
+                                ConversationMemberOther(
+                                    it,
+                                    ConversationRole.MEMBER
+                                )
+                            }
+                        )
+                    )
+                } else {
+                    conversationResponse
+                }
             saveConversationWithMembers(
                 qualifiedConversation = conversationResponse.id,
-                conversationResponse = conversationResponse
+                conversationResponse = conversationToSave
             )
         }
     }
@@ -324,18 +349,6 @@ internal class ConversationService internal constructor(
                 establishMlsConversation(
                     conversationResponse = conversation,
                     userIds = emptyList(),
-                    publicKeysResponse = null
-                )
-            }
-
-            conversation.type == ConversationResponse.Type.ONE_TO_ONE -> {
-                val users = conversationStorage
-                    .getMembersByConversationId(conversationId = conversation.id)
-                    .map { members -> members.userId }
-
-                establishMlsConversation(
-                    conversationResponse = conversation,
-                    userIds = users,
                     publicKeysResponse = null
                 )
             }
