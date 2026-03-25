@@ -339,9 +339,15 @@ internal class ConversationService internal constructor(
                         conversationId = conversation.id
                     )
 
-                // Not establishing now, asking the backend to join, that will send a welcome event
+                // Asking the backend to join, the response from MlsTransport will trigger
+                //  core-crypto to create the conversation. Storing immediately in SDK storage
                 cryptoClient.joinMlsConversationRequest(
                     groupInfo = conversationGroupInfo.toGroupInfo()
+                )
+
+                saveConversationWithMembers(
+                    qualifiedConversation = conversation.id,
+                    conversationResponse = conversation
                 )
             }
 
