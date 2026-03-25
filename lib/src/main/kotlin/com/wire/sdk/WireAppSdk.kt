@@ -199,6 +199,7 @@ class WireAppSdk(
      *                          to complete before forcing shutdown. Defaults to 20 seconds.
      */
     @Synchronized
+    @JvmOverloads
     fun stopListening(gracefulTimeoutMs: Long = DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT_MS) {
         if (!running.get()) {
             logger.info("Wire Apps SDK is not running")
