@@ -1295,7 +1295,7 @@ class ConversationServiceTest {
 
             service.establishOrRejoinConversations()
 
-            verify(exactly = 0) {
+            verify(exactly = 1) {
                 conversationStorage.save(any())
                 conversationStorage.saveMembers(CONVERSATION_ID, any())
             }

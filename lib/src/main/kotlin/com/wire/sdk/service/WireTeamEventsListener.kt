@@ -17,6 +17,7 @@ package com.wire.sdk.service
 
 import com.wire.sdk.BackendConnectionListener
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.utils.KtxSerializer
@@ -124,9 +125,19 @@ internal class WireTeamEventsListener internal constructor(
 
         var hasMore = true
         while (hasMore) {
-            val notifications = backendClient.getPaginatedNotifications(
-                querySince = lastNotificationId
-            )
+            val notifications = try {
+                backendClient.getPaginatedNotifications(
+                    querySince = lastNotificationId
+                )
+            } catch (e: WireException.ClientError) {
+                if (e.response.isNotFound()) {
+                    logger.warn("Last stored notification is invalid, fetching from backend")
+                    lastNotificationId = backendClient.getLastNotification().id
+                    continue
+                } else {
+                    throw e
+                }
+            }
 
             notifications.events.forEach { event ->
                 runCatching {

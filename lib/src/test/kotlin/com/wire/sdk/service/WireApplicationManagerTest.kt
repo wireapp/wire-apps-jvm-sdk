@@ -149,14 +149,14 @@ class WireApplicationManagerTest {
             val conversationMembers = manager
                 .getStoredConversationMembers(conversationId = createdConversationId)
 
-            assertEquals(2, conversationMembers.size)
+            assertEquals(3, conversationMembers.size)
             assertEquals(
                 ConversationRole.MEMBER,
-                conversationMembers.first().role
+                conversationMembers.find { it.userId == USER_1 }!!.role
             )
             assertEquals(
                 ConversationRole.ADMIN,
-                conversationMembers.last().role
+                conversationMembers.find { it.userId == USER_2 }!!.role
             )
         }
 
@@ -579,7 +579,22 @@ class WireApplicationManagerTest {
                 "name": "Test conversation",
                 "epoch": 0,
                 "members": {
-                    "others": [],
+                    "others": [
+                        {
+                            "conversation_role": "wire_member",
+                            "qualified_id": {
+                                "domain": "${USER_1.domain}",
+                                "id": "${USER_1.id}"
+                            }
+                        },
+                        {
+                            "conversation_role": "wire_member",
+                            "qualified_id": {
+                                "domain": "${USER_2.domain}",
+                                "id": "${USER_2.id}"
+                            }
+                        }
+                    ],
                     "self": $CONVERSATION_MEMBER_SELF_JSON
               },
               "group_id": "$GROUP_CONVERSATION_MLS_GROUP_ID_BASE64",

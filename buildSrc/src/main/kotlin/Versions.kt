@@ -1,3 +1,3 @@
 object Versions {
-    const val SDK_VERSION = "0.0.23"
+    const val SDK_VERSION = "0.0.24"
 }
