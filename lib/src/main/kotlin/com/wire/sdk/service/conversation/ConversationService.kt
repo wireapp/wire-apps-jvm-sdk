@@ -35,6 +35,8 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.conversation.ClaimedKeyPackagesResult
+import com.wire.sdk.model.http.conversation.ConversationMemberOther
+import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
@@ -172,6 +174,7 @@ internal class ConversationService internal constructor(
         return conversationId
     }
 
+    @Suppress("LongMethod")
     private suspend fun establishMlsConversation(
         conversationResponse: ConversationResponse,
         userIds: List<QualifiedId>,
@@ -225,9 +228,27 @@ internal class ConversationService internal constructor(
         )
 
         if (conversationResponse.type != ConversationResponse.Type.SELF) {
+            // When fetching a conversation the list of members is reliable, but when establishing
+            // it's better to trust the list of users passed
+            val conversationToSave =
+                if (conversationResponse.type == ConversationResponse.Type.ONE_TO_ONE) {
+                    conversationResponse.copy(
+                        members = ConversationMembers(
+                            self = conversationResponse.members.self,
+                            others = userIds.map {
+                                ConversationMemberOther(
+                                    it,
+                                    ConversationRole.MEMBER
+                                )
+                            }
+                        )
+                    )
+                } else {
+                    conversationResponse
+                }
             saveConversationWithMembers(
                 qualifiedConversation = conversationResponse.id,
-                conversationResponse = conversationResponse
+                conversationResponse = conversationToSave
             )
         }
     }
@@ -283,6 +304,7 @@ internal class ConversationService internal constructor(
 
     private suspend fun fetchConversationsToRejoin(): List<ConversationResponse> {
         val conversationIdsToRejoin = backendClient.getConversationIds()
+        logger.info("Total number of conversations to rejoin: ${conversationIdsToRejoin.size}")
 
         val conversations: List<ConversationResponse> =
             backendClient.getConversationsById(conversationIds = conversationIdsToRejoin)
@@ -309,24 +331,17 @@ internal class ConversationService internal constructor(
                 cryptoClient.joinMlsConversationRequest(
                     groupInfo = conversationGroupInfo.toGroupInfo()
                 )
+
+                saveConversationWithMembers(
+                    qualifiedConversation = conversation.id,
+                    conversationResponse = conversation
+                )
             }
 
             conversation.type == ConversationResponse.Type.SELF -> {
                 establishMlsConversation(
                     conversationResponse = conversation,
                     userIds = emptyList(),
-                    publicKeysResponse = null
-                )
-            }
-
-            conversation.type == ConversationResponse.Type.ONE_TO_ONE -> {
-                val users = conversationStorage
-                    .getMembersByConversationId(conversationId = conversation.id)
-                    .map { members -> members.userId }
-
-                establishMlsConversation(
-                    conversationResponse = conversation,
-                    userIds = users,
                     publicKeysResponse = null
                 )
             }

@@ -610,6 +610,10 @@ internal class BackendClientDemo(
             return notifications
         } catch (exception: WireException.ClientError) {
             logger.warn("Notifications not found.", exception)
+            if (exception.response.isNotFound()) {
+                // 404 in this context is a valid state, forwarding it
+                throw exception
+            }
             return NotificationsResponse(
                 hasMore = false,
                 events = emptyList(),
