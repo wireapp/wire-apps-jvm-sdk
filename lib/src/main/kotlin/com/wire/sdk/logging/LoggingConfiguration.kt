@@ -35,7 +35,8 @@ internal object LoggingConfiguration {
         "x-amz-meta-user",
         "sec-websocket-key",
         "sec-websocket-accept",
-        "sec-websocket-version"
+        "sec-websocket-version",
+        "asset-token"
     )
 
     private val sensitiveQueryParams = setOf(

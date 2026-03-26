@@ -21,6 +21,7 @@ import com.wire.sdk.model.asset.AssetUploadResponse
 import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.setBody
@@ -28,7 +29,6 @@ import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
-import io.ktor.http.headers
 import io.ktor.util.encodeBase64
 import org.slf4j.LoggerFactory
 
@@ -48,11 +48,7 @@ internal class AssetsApiClient(private val httpClient: HttpClient) {
         logger.info("Downloading asset ${assetId.obfuscateId()}")
 
         return httpClient.prepareGet("/$BASE_PATH/$assetDomain/$assetId") {
-            headers {
-                if (!assetToken.isNullOrBlank()) {
-                    append(HEADER_ASSET_TOKEN, assetToken)
-                }
-            }
+            assetToken?.let { header(HEADER_ASSET_TOKEN, it) }
         }.execute { httpResponse ->
             httpResponse.readRawBytes()
         }
