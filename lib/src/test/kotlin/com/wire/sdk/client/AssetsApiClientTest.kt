@@ -63,6 +63,24 @@ class AssetsApiClientTest {
         }
 
     @Test
+    fun `when downloadAsset with token, then Asset-Token header is set`() =
+        runTest {
+            var capturedHeaders: io.ktor.http.Headers? = null
+            apiClient(responseBody = FAKE_BYTES) { capturedHeaders = it.headers }
+                .downloadAsset(ASSET_ID, ASSET_DOMAIN, ASSET_TOKEN)
+            assertEquals(ASSET_TOKEN, capturedHeaders?.get("Asset-Token"))
+        }
+
+    @Test
+    fun `when downloadAsset without token, then Asset-Token header is absent`() =
+        runTest {
+            var capturedHeaders: io.ktor.http.Headers? = null
+            apiClient(responseBody = FAKE_BYTES) { capturedHeaders = it.headers }
+                .downloadAsset(ASSET_ID, ASSET_DOMAIN, assetToken = null)
+            assertEquals(null, capturedHeaders?.get("Asset-Token"))
+        }
+
+    @Test
     fun `when uploadAsset, then correct URL`() =
         runTest {
             var capturedPath: String? = null
