@@ -44,7 +44,7 @@ The SDK will start and your example class will receive and handle the relevant e
 
 ## standalone/
 
-Examples in this [directory](https://github.com/wireapp/wire-apps-jvm-sdk/tree/main/sample/sample-java/src/main/java/com/wire/sdk/sample/examples/callbacks) are **self-contained runnable programs**.
+Examples in this [directory](./standalone) are **self-contained runnable programs**.
 
 Each example includes its own `main()` method and demonstrates a complete workflow using the SDK.
 
