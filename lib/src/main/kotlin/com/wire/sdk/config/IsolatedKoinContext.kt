@@ -90,6 +90,11 @@ internal object IsolatedKoinContext {
             "Cryptography Storage Key is not set in Koin properties"
         }
 
+    fun getBackendDomain(): String =
+        checkNotNull(this.koinApp.koin.getProperty(BACKEND_DOMAIN)) {
+            "Backend domain is not set in Koin properties"
+        }
+
     fun setBackendDomain(value: String) {
         this.koinApp.koin.setProperty(BACKEND_DOMAIN, value)
         clearCachedApplicationUser()
