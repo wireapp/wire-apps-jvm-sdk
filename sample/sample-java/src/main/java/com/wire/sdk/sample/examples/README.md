@@ -14,7 +14,7 @@ examples/
 
 ## callbacks/
 
-Examples in this directory demonstrate how to **handle SDK events via callbacks**.
+Examples in this [directory](./callbacks) demonstrate how to **handle SDK events via callbacks**.
 
 Each class extends: `WireEventsHandlerDefault` and overrides the callback methods relevant to the specific example.
 
@@ -44,7 +44,7 @@ The SDK will start and your example class will receive and handle the relevant e
 
 ## standalone/
 
-Examples in this directory are **self-contained runnable programs**.
+Examples in this [directory](./standalone) are **self-contained runnable programs**.
 
 Each example includes its own `main()` method and demonstrates a complete workflow using the SDK.
 
