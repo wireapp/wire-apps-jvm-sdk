@@ -136,6 +136,23 @@ sealed class EventContentDTO {
     }
 
     @Serializable
+    sealed class Team : EventContentDTO() {
+        @Serializable
+        @SerialName("team.member-join")
+        data class MemberJoin(
+            @SerialName("data") val teamMember: TeamMemberIdData,
+            @Serializable(with = UUIDSerializer::class)
+            @SerialName("team") val teamId: UUID,
+            @SerialName("time") val time: String
+        ) : Team()
+    }
+
+    @Serializable
+    data class TeamMemberIdData(
+        @SerialName("user") val nonQualifiedUserId: String
+    )
+
+    @Serializable
     @SerialName("unknown")
     data class Unknown(val type: String) : EventContentDTO()
 

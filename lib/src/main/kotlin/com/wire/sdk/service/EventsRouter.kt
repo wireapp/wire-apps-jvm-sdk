@@ -24,6 +24,7 @@ import com.wire.crypto.toWelcome
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationMember
@@ -40,6 +41,7 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.service.conversation.ConversationService
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
@@ -266,6 +268,23 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.Typing -> {
                 // Ignore silently
+            }
+
+            is EventContentDTO.Team.MemberJoin -> {
+                val userId = QualifiedId(
+                    id = UUID.fromString(event.teamMember.nonQualifiedUserId),
+                    domain = IsolatedKoinContext.getBackendDomain()
+                )
+                val teamId = TeamId(event.teamId)
+                logger.info("Team member join: teamId={}, userId={}", teamId, userId)
+                handlerScope.launch {
+                    when (wireEventsHandler) {
+                        is WireEventsHandlerDefault ->
+                            wireEventsHandler.onTeamMemberJoined(userId = userId, teamId = teamId)
+                        is WireEventsHandlerSuspending ->
+                            wireEventsHandler.onTeamMemberJoined(userId = userId, teamId = teamId)
+                    }
+                }
             }
 
             is EventContentDTO.Unknown -> {

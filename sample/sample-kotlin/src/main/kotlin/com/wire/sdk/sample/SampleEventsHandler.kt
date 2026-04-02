@@ -19,6 +19,7 @@ package com.wire.sdk.sample
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.model.AssetResource
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireMessage.Asset.AssetMetadata
 import com.wire.sdk.model.asset.AssetRetention
@@ -176,6 +177,10 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     override suspend fun onMessageDeleted(deletedMessage: WireMessage.Deleted) {
         super.onMessageDeleted(deletedMessage)
+    }
+
+    override suspend fun onTeamMemberJoined(userId: QualifiedId, teamId: TeamId) {
+        logger.info("Team member joined: userId=$userId, teamId=$teamId")
     }
 
     private fun getSampleAudioMetadata(): AssetMetadata.Audio {
