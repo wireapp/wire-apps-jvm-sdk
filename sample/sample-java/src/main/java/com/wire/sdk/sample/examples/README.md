@@ -14,7 +14,7 @@ examples/
 
 ## callbacks/
 
-Examples in this [directory](https://github.com/wireapp/wire-apps-jvm-sdk/tree/main/sample/sample-java/src/main/java/com/wire/sdk/sample/examples/callbacks) demonstrate how to **handle SDK events via callbacks**.
+Examples in this [directory](./callbacks) demonstrate how to **handle SDK events via callbacks**.
 
 Each class extends: `WireEventsHandlerDefault` and overrides the callback methods relevant to the specific example.
 
