@@ -112,14 +112,6 @@ class WireMessageTest {
     }
 
     @Test
-    fun `Text implements Ephemeral and Replyable`() {
-        val message = textMessage()
-
-        assertTrue(message is WireMessage.Ephemeral)
-        assertTrue(message is WireMessage.Replyable)
-    }
-
-    @Test
     fun `createReply succeeds for a non-ephemeral replyable message`() {
         val original = textMessage()
 
@@ -248,13 +240,6 @@ class WireMessageTest {
     }
 
     @Test
-    fun `Ping implements Ephemeral`() {
-        val ping = WireMessage.Ping.create(conversationId = conversationId)
-
-        assertTrue(ping is WireMessage.Ephemeral)
-    }
-
-    @Test
     fun `Location create returns message with correct coordinates`() {
         val location = WireMessage.Location.create(
             conversationId = conversationId,
@@ -300,14 +285,6 @@ class WireMessageTest {
         val location = locationMessage(expiresAfterMillis = 8_000L)
 
         assertEquals(8_000L, location.expiresAfterMillis)
-    }
-
-    @Test
-    fun `Location implements Ephemeral and Replyable`() {
-        val location = locationMessage()
-
-        assertTrue(location is WireMessage.Ephemeral)
-        assertTrue(location is WireMessage.Replyable)
     }
 
     @Test

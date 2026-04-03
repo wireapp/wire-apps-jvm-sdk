@@ -1409,6 +1409,7 @@ class ConversationServiceTest {
             )
 
             val conversationStorage = mockk<ConversationStorage> {
+                every { getAll() } returns emptyList()
                 every { save(any()) } returns Unit
                 every { saveMembers(any(), any()) } returns Unit
             }
@@ -1427,6 +1428,7 @@ class ConversationServiceTest {
             }
 
             val cryptoClient = mockk<CryptoClient> {
+                coEvery { conversationExists(any()) } returns false
                 coEvery { createConversation(any(), any()) } returns Unit
                 coEvery { addMemberToMlsConversation(any(), any()) } returns Unit
             }
@@ -1450,6 +1452,159 @@ class ConversationServiceTest {
                 conversationStorage.save(any())
                 conversationStorage.saveMembers(ONE_TO_ONE_CONVERSATION_ID, any())
             }
+        }
+
+    @Test
+    fun whenCreatingOneToOneConversationAndAlreadyFullyEstablishedThenReturnExistingId() =
+        runTest {
+            val existingEntity = ConversationEntity(
+                id = ONE_TO_ONE_CONVERSATION_ID,
+                name = CONVERSATION_MEMBER_1.toFullString(),
+                mlsGroupId = ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID,
+                teamId = TEAM_ID,
+                type = ConversationEntity.Type.ONE_TO_ONE
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getAll() } returns listOf(existingEntity)
+            }
+
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery {
+                    conversationExists(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID)
+                } returns true
+            }
+
+            val oneToOneConversationsApiClient = mockk<OneToOneConversationsApiClient>()
+
+            val service = ConversationService(
+                backendClient = mockk(),
+                usersApiClient = mockk(),
+                selfApiClient = mockk(),
+                conversationsApiClient = mockk(),
+                oneToOneConversationsApiClient = oneToOneConversationsApiClient,
+                teamsApiClient = mockk(),
+                mlsApiClient = mockk(),
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = cryptoClient
+            )
+
+            val result = service.createOneToOne(CONVERSATION_MEMBER_1)
+
+            assertEquals(ONE_TO_ONE_CONVERSATION_ID, result)
+            coVerify(exactly = 0) { oneToOneConversationsApiClient.getByUserId(any()) }
+        }
+
+    @Test
+    fun whenCreatingOneToOneConversationAndExistsInStorageButNotInCryptoThenProceedNormally() =
+        runTest {
+            val existingEntity = ConversationEntity(
+                id = ONE_TO_ONE_CONVERSATION_ID,
+                name = CONVERSATION_MEMBER_1.toFullString(),
+                mlsGroupId = ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID,
+                teamId = TEAM_ID,
+                type = ConversationEntity.Type.ONE_TO_ONE
+            )
+
+            val claimResult = ClaimedKeyPackageList(
+                keyPackages = listOf(createDummyKeyPackage(CONVERSATION_MEMBER_1))
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getAll() } returns listOf(existingEntity)
+                every { save(any()) } returns Unit
+                every { saveMembers(any(), any()) } returns Unit
+            }
+
+            val backendClient = mockk<BackendClient> {
+                coEvery { getApplicationFeatures() } returns FEATURES_RESPONSE
+            }
+
+            val oneToOneConversationsApiClient = mockk<OneToOneConversationsApiClient> {
+                coEvery { getByUserId(CONVERSATION_MEMBER_1) } returns ONE_TO_ONE_RESPONSE
+            }
+
+            val mlsApiClient = mockk<MlsApiClient> {
+                coEvery { claimKeyPackages(any(), any()) } returns claimResult
+            }
+
+            val cryptoClient = mockk<CryptoClient> {
+                // Not in crypto → proceed with full establishment
+                coEvery { conversationExists(any()) } returns false
+                coEvery { createConversation(any(), any()) } returns Unit
+                coEvery { addMemberToMlsConversation(any(), any()) } returns Unit
+            }
+
+            val service = ConversationService(
+                backendClient = backendClient,
+                usersApiClient = mockk(),
+                selfApiClient = mockk(),
+                conversationsApiClient = mockk(),
+                oneToOneConversationsApiClient = oneToOneConversationsApiClient,
+                teamsApiClient = mockk(),
+                mlsApiClient = mlsApiClient,
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = cryptoClient
+            )
+
+            service.createOneToOne(CONVERSATION_MEMBER_1)
+
+            coVerify(exactly = 1) {
+                oneToOneConversationsApiClient.getByUserId(CONVERSATION_MEMBER_1)
+            }
+            coVerify(exactly = 1) { cryptoClient.createConversation(any(), any()) }
+        }
+
+    @Test
+    fun whenEstablishingConversationAndCryptoAlreadyExistsThenSkipCryptoSetupAndStore() =
+        runTest {
+            val claimResult = ClaimedKeyPackageList(
+                keyPackages = listOf(createDummyKeyPackage(CONVERSATION_MEMBER_1))
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getAll() } returns emptyList()
+                every { save(any()) } returns Unit
+                every { saveMembers(any(), any()) } returns Unit
+            }
+
+            val backendClient = mockk<BackendClient> {
+                coEvery { getApplicationFeatures() } returns FEATURES_RESPONSE
+            }
+
+            val oneToOneConversationsApiClient = mockk<OneToOneConversationsApiClient> {
+                coEvery { getByUserId(CONVERSATION_MEMBER_1) } returns ONE_TO_ONE_RESPONSE
+            }
+
+            val mlsApiClient = mockk<MlsApiClient> {
+                coEvery { claimKeyPackages(any(), any()) } returns claimResult
+            }
+
+            val cryptoClient = mockk<CryptoClient> {
+                // Local storage miss, but crypto already has it (e.g. storage was wiped)
+                coEvery { conversationExists(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID) } returns true
+            }
+
+            val service = ConversationService(
+                backendClient = backendClient,
+                usersApiClient = mockk(),
+                selfApiClient = mockk(),
+                conversationsApiClient = mockk(),
+                oneToOneConversationsApiClient = oneToOneConversationsApiClient,
+                teamsApiClient = mockk(),
+                mlsApiClient = mlsApiClient,
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = cryptoClient
+            )
+
+            service.createOneToOne(CONVERSATION_MEMBER_1)
+
+            coVerify(exactly = 0) { cryptoClient.createConversation(any(), any()) }
+            coVerify(exactly = 0) { cryptoClient.addMemberToMlsConversation(any(), any()) }
+            verify(exactly = 1) { conversationStorage.save(any()) }
         }
 
     @Test

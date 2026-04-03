@@ -62,7 +62,7 @@ import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
-@Suppress("TooManyFunctions", "LongParameterList")
+@Suppress("TooManyFunctions", "LongParameterList", "LargeClass")
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
     private val usersApiClient: UsersApiClient,
@@ -172,6 +172,25 @@ internal class ConversationService internal constructor(
      * @return QualifiedId The Id of the created conversation
      */
     suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
+        // Check storage and core-crypto to avoid creating it twice.
+        val existingConversation = conversationStorage.getAll()
+            .firstOrNull {
+                it.type == ConversationEntity.Type.ONE_TO_ONE &&
+                    it.name == userId.toFullString()
+            }
+
+        if (existingConversation != null &&
+            cryptoClient.conversationExists(existingConversation.mlsGroupId)
+        ) {
+            logger.info(
+                "OneToOne Conversation already established with userId: {}, " +
+                    "returning existing conversationId: {}",
+                userId,
+                existingConversation.id
+            )
+            return existingConversation.id
+        }
+
         val oneToOneConversationResponse = oneToOneConversationsApiClient.getByUserId(
             userId = userId
         )
@@ -194,6 +213,18 @@ internal class ConversationService internal constructor(
         publicKeysResponse: MlsPublicKeysResponse?
     ) {
         val mlsGroupId = conversationResponse.getDecodedMlsGroupId()
+
+        // If the MLS group already exists in CoreCrypto (e.g. createOneToOne called a second time)
+        //  skip crypto setup and only refresh local storage.
+        if (cryptoClient.conversationExists(mlsGroupId)) {
+            logger.info(
+                "Conversation {} already exists in crypto, skipping MLS setup",
+                conversationResponse.id
+            )
+            storeEstablishedConversation(conversationResponse, userIds)
+            return
+        }
+
         val cipherSuiteCode = getCipherSuiteCode()
         val cipherSuite = MlsCryptoClient.getMlsCipherSuiteName(code = cipherSuiteCode)
 
@@ -203,17 +234,10 @@ internal class ConversationService internal constructor(
             message = "No Public Keys found, skipping creating a conversation."
         )
 
-        try {
-            cryptoClient.createConversation(
-                mlsGroupId = mlsGroupId,
-                externalSenders = publicKeys
-            )
-        } catch (exception: MlsException.ConversationAlreadyExists) {
-            throw WireException.CryptographicSystemError(
-                "Conversation already exists.",
-                throwable = exception
-            )
-        }
+        cryptoClient.createConversation(
+            mlsGroupId = mlsGroupId,
+            externalSenders = publicKeys
+        )
 
         val users = userIds + listOf(IsolatedKoinContext.getApplicationUser())
 
