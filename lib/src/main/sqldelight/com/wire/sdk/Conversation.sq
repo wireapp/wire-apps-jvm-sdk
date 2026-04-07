@@ -19,6 +19,11 @@ SELECT *
 FROM conversation
 WHERE id = ? AND domain = ?;
 
+selectOneToOneByUserId:
+SELECT *
+FROM conversation
+WHERE type = 'ONE_TO_ONE' AND name = ?;
+
 insert:
 INSERT INTO conversation(id, domain, name, team_id, mls_group_id, type, message_timer)
 VALUES (?, ?, ?, ?, ?, ?, ?)

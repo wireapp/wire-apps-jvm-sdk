@@ -203,14 +203,8 @@ internal class ConversationService internal constructor(
         return conversationId
     }
 
-    fun getOneToOneByUserId(userId: QualifiedId): ConversationEntity? {
-        val existingConversation = conversationStorage.getAll()
-            .firstOrNull {
-                it.type == ConversationEntity.Type.ONE_TO_ONE &&
-                    it.name == userId.toFullString()
-            }
-        return existingConversation
-    }
+    fun getOneToOneByUserId(userId: QualifiedId): ConversationEntity? =
+        conversationStorage.getOneToOneByUserId(userId)
 
     private suspend fun establishMlsConversation(
         conversationResponse: ConversationResponse,

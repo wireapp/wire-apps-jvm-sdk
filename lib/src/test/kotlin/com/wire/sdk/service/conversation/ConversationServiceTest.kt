@@ -1410,6 +1410,7 @@ class ConversationServiceTest {
 
             val conversationStorage = mockk<ConversationStorage> {
                 every { getAll() } returns emptyList()
+                every { getOneToOneByUserId(CONVERSATION_MEMBER_1) } returns null
                 every { save(any()) } returns Unit
                 every { saveMembers(any(), any()) } returns Unit
             }
@@ -1466,7 +1467,7 @@ class ConversationServiceTest {
             )
 
             val conversationStorage = mockk<ConversationStorage> {
-                every { getAll() } returns listOf(existingEntity)
+                every { getOneToOneByUserId(CONVERSATION_MEMBER_1) } returns existingEntity
             }
 
             val cryptoClient = mockk<CryptoClient> {
@@ -1512,7 +1513,7 @@ class ConversationServiceTest {
             )
 
             val conversationStorage = mockk<ConversationStorage> {
-                every { getAll() } returns listOf(existingEntity)
+                every { getOneToOneByUserId(CONVERSATION_MEMBER_1) } returns existingEntity
                 every { save(any()) } returns Unit
                 every { saveMembers(any(), any()) } returns Unit
             }
@@ -1565,7 +1566,7 @@ class ConversationServiceTest {
             )
 
             val conversationStorage = mockk<ConversationStorage> {
-                every { getAll() } returns emptyList()
+                every { getOneToOneByUserId(CONVERSATION_MEMBER_1) } returns null
                 every { save(any()) } returns Unit
                 every { saveMembers(any(), any()) } returns Unit
             }
