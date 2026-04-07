@@ -173,11 +173,7 @@ internal class ConversationService internal constructor(
      */
     suspend fun createOneToOne(userId: QualifiedId): QualifiedId {
         // Check storage and core-crypto to avoid creating it twice.
-        val existingConversation = conversationStorage.getAll()
-            .firstOrNull {
-                it.type == ConversationEntity.Type.ONE_TO_ONE &&
-                    it.name == userId.toFullString()
-            }
+        val existingConversation = getOneToOneByUserId(userId)
 
         if (existingConversation != null &&
             cryptoClient.conversationExists(existingConversation.mlsGroupId)
@@ -205,6 +201,15 @@ internal class ConversationService internal constructor(
         val conversationId = conversation.id
         logger.info("OneToOne Conversation created with ID: $conversationId")
         return conversationId
+    }
+
+    fun getOneToOneByUserId(userId: QualifiedId): ConversationEntity? {
+        val existingConversation = conversationStorage.getAll()
+            .firstOrNull {
+                it.type == ConversationEntity.Type.ONE_TO_ONE &&
+                    it.name == userId.toFullString()
+            }
+        return existingConversation
     }
 
     private suspend fun establishMlsConversation(
