@@ -87,6 +87,13 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
     override fun getAll(): List<ConversationEntity> =
         conversationQueries.selectAll().executeAsList().map { conversationMapper(it) }
 
+    override fun getOneToOneByUserId(userId: QualifiedId): ConversationEntity? =
+        runCatching {
+            conversationQueries
+                .selectOneToOneByUserId(userId.toFullString())
+                .executeAsOne().let { conversationMapper(it) }
+        }.getOrNull()
+
     override fun getById(conversationId: QualifiedId): ConversationEntity? {
         return runCatching {
             conversationQueries

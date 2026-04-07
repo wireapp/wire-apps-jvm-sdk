@@ -75,6 +75,9 @@ class WireApplicationManager internal constructor(
             .filter { it.type != ConversationEntity.Type.SELF }
             .map { Conversation.fromEntity(it) }
 
+    fun getStoredOneToOneByUserId(userId: QualifiedId): Conversation? =
+        conversationService.getOneToOneByUserId(userId)?.let { Conversation.fromEntity(it) }
+
     fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
         conversationService.getStoredConversationMembers(conversationId = conversationId)
 

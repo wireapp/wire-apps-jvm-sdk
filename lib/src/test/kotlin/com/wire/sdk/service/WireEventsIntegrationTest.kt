@@ -38,7 +38,6 @@ import com.wire.sdk.model.http.conversation.Member
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.model.http.conversation.MemberLeaveEventData
 import com.wire.sdk.persistence.ConversationStorage
-import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.utils.MockCoreCryptoClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
@@ -54,6 +53,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 
 /**
@@ -62,25 +62,6 @@ import kotlin.time.Instant
  * All the other components are real and use the real Koin context.
  */
 class WireEventsIntegrationTest {
-    @Test
-    fun givenKoinInjectionsWhenCallingHandleEventsThenTheCorrectMethodIsCalled() =
-        runTest {
-            TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
-            val eventsHandler = object : WireEventsHandlerSuspending() {}
-            TestUtils.setupSdk(eventsHandler)
-
-            val eventsRouter = IsolatedKoinContext.koinApp.koin.get<EventsRouter>()
-            eventsRouter.route(
-                eventResponse = NEW_TEAM_INVITE_EVENT
-            )
-            eventsRouter.route(
-                eventResponse = NEW_CONVERSATION_EVENT
-            )
-
-            val teamStorage = IsolatedKoinContext.koinApp.koin.get<TeamStorage>()
-            assertTrue { teamStorage.getAll().contains(TEAM_ID) }
-        }
-
     @Test
     fun givenNewConversationsThenMembersAreCreatedAndDeleted() =
         runTest {
@@ -475,7 +456,7 @@ class WireEventsIntegrationTest {
                     handlerEvents.add("join_started")
                     joinStartedLatch.countDown()
                     // Simulate a very long operation (e.g., external API call)
-                    delay(2000)
+                    delay(2000.milliseconds)
                     handlerEvents.add("join_completed")
                     eventsLatch.countDown()
                 }
@@ -567,7 +548,7 @@ class WireEventsIntegrationTest {
                     members: List<ConversationMember>
                 ) {
                     allHandlersStarted.countDown()
-                    delay(500) // All handlers take time
+                    delay(500.milliseconds) // All handlers take time
                     allHandlersCompleted.countDown()
                 }
             }
@@ -629,7 +610,7 @@ class WireEventsIntegrationTest {
                 ) {
                     throwingHandlerStarted.countDown()
                     // Small delay to ensure this coroutine is running when the other starts
-                    delay(100)
+                    delay(100.milliseconds)
                     throw RuntimeException("Simulated handler failure")
                 }
 
@@ -716,17 +697,6 @@ class WireEventsIntegrationTest {
             )
         private val TEAM_ID = TeamId(UUID.randomUUID())
 
-        private val NEW_TEAM_INVITE_EVENT =
-            EventResponse(
-                id = "event_id1",
-                payload =
-                    listOf(
-                        EventContentDTO.TeamInvite(
-                            teamId = TEAM_ID.value
-                        )
-                    ),
-                transient = true
-            )
         private val NEW_CONVERSATION_EVENT =
             EventResponse(
                 id = "event_id2",

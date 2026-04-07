@@ -19,6 +19,7 @@ import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 
+@Suppress("TooManyFunctions")
 internal interface ConversationStorage {
     /**
      * Save (UPSERT) a conversation with its teamId and mlsGroupId.
@@ -44,6 +45,8 @@ internal interface ConversationStorage {
     )
 
     fun getAll(): List<ConversationEntity>
+
+    fun getOneToOneByUserId(userId: QualifiedId): ConversationEntity?
 
     fun getAllMembers(): List<ConversationMember>
 
