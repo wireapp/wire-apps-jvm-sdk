@@ -24,7 +24,7 @@ plugins {
     id("com.gradleup.shadow") version "9.3.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.1.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
-    id("app.cash.sqldelight") version "2.2.1"
+    id("app.cash.sqldelight") version "2.3.1"
     id("com.google.protobuf") version "0.9.6"
 
     // Maven Central
@@ -41,6 +41,7 @@ repositories {
 }
 
 val ktorVersion = "3.2.3"
+val sqlDelightVersion = "2.3.1"
 
 dependencies {
     constraints {
@@ -68,8 +69,8 @@ dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
     implementation("com.wire:core-crypto-jvm:9.1.3")
-    implementation("app.cash.sqldelight:sqlite-driver:2.2.1")
-    implementation("app.cash.sqldelight:sqlite-3-24-dialect:2.2.1")
+    implementation("app.cash.sqldelight:sqlite-driver:$sqlDelightVersion")
+    implementation("app.cash.sqldelight:sqlite-3-24-dialect:$sqlDelightVersion")
     implementation("org.zalando:logbook-core:3.12.3")
     implementation("org.zalando:logbook-ktor-client:3.12.3")
     implementation("org.zalando:logbook-json:3.12.3")
@@ -102,7 +103,7 @@ sqldelight {
     databases {
         register("AppsSdkDatabase") {
             packageName.set("com.wire.sdk")
-            dialect("app.cash.sqldelight:sqlite-3-24-dialect:2.2.1")
+            dialect("app.cash.sqldelight:sqlite-3-24-dialect:$sqlDelightVersion")
             schemaOutputDirectory.set(file("src/main/sqldelight/migrations"))
         }
     }
