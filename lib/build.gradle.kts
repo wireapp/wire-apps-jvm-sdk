@@ -40,7 +40,7 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.2.3"
+val ktorVersion = "3.2.4"
 val sqlDelightVersion = "2.3.1"
 
 dependencies {
