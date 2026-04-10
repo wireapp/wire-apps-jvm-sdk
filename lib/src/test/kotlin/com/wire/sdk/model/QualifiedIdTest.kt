@@ -17,12 +17,14 @@
 package com.wire.sdk.model
 
 import kotlinx.serialization.json.Json
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class QualifiedIdTest {
-
     private val uuid1: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
     private val uuid2: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174999")
 
@@ -84,7 +86,7 @@ class QualifiedIdTest {
 
         val result = qualifiedId.toFullString()
 
-        assertEquals("${uuid1}@$domainA", result)
+        assertEquals("$uuid1@$domainA", result)
     }
 
     // --- Serialization ---
