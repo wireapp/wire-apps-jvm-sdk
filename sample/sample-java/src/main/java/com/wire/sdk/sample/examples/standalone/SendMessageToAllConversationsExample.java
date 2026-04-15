@@ -59,7 +59,7 @@ public class SendMessageToAllConversationsExample {
                 "During this time, the service may be unavailable.";
 
         for (int i = 0; i < 10; i++) {
-            for (var conversation : app.getApplicationManager().getStoredConversations()) {
+            for (var conversation : app.getApplicationManager().getConversations()) {
                 var message = WireMessage.Text.create(
                         conversation.id(),
                         announcementText,

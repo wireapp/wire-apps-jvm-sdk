@@ -65,8 +65,8 @@ public class CreateGroupConversationExample {
         final Set<QualifiedId> userIds = new java.util.HashSet<>();
 
         // Iterate all stored conversations and collect all member user IDs
-        for (var conversation : app.getApplicationManager().getStoredConversations()) {
-            var members = app.getApplicationManager().getStoredConversationMembers(conversation.id());
+        for (var conversation : app.getApplicationManager().getConversations()) {
+            var members = app.getApplicationManager().getConversationMembers(conversation.id());
             for (var member : members) {
                 userIds.add(member.userId());
             }

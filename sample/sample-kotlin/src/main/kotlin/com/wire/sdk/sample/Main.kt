@@ -54,10 +54,10 @@ fun main() {
     wireAppSdk.startListening() // Will keep a coroutine running in the background until explicitly stopped
     val applicationManager = wireAppSdk.getApplicationManager()
 
-    applicationManager.getStoredTeams().forEach {
+    applicationManager.getTeams().forEach {
         logger.info("Team: $it")
     }
-    applicationManager.getStoredConversations().forEach {
+    applicationManager.getConversations().forEach {
         logger.info("Conversation: $it")
     }
     val backendConfig = applicationManager.getBackendConfiguration()
