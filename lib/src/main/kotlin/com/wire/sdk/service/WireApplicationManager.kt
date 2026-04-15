@@ -67,18 +67,38 @@ class WireApplicationManager internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun getStoredTeams(): List<TeamId> = teamStorage.getAll()
+    /**
+     * Returns a list of all team IDs that have been registered with this application.
+     */
+    fun getTeams(): List<TeamId> = teamStorage.getAll()
 
-    fun getStoredConversations(): List<Conversation> =
+    /**
+     * Returns all conversations that the application is a member of,
+     * excluding the self-conversation.
+     */
+    fun getConversations(): List<Conversation> =
         conversationService
             .getAll()
             .filter { it.type != ConversationEntity.Type.SELF }
             .map { Conversation.fromEntity(it) }
 
-    fun getStoredOneToOneByUserId(userId: QualifiedId): Conversation? =
+    /**
+     * Returns the one-to-one conversation with the given user, or null if none exists.
+     *
+     * @param userId The qualified ID of the user to look up the conversation for.
+     */
+    fun getOneToOneConversationByUserId(userId: QualifiedId): Conversation? =
         conversationService.getOneToOneByUserId(userId)?.let { Conversation.fromEntity(it) }
 
-    fun getStoredConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
+    /**
+     * Returns the list of members currently stored for the given conversation.
+     *
+     * Note: This reads from local storage and does not make a network request,
+     * so the result reflects the last known state.
+     *
+     * @param conversationId The qualified ID of the conversation.
+     */
+    fun getConversationMembers(conversationId: QualifiedId): List<ConversationMember> =
         conversationService.getStoredConversationMembers(conversationId = conversationId)
 
     /**

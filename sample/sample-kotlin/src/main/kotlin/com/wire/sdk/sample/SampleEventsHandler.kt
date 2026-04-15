@@ -263,7 +263,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         manager.createOneToOneConversationSuspending(one2oneUser)
 
-        val newOne2OneConversation = manager.getStoredConversations()
+        val newOne2OneConversation = manager.getConversations()
             .find { it.name == one2oneUser.toFullString()}
 
         manager.sendMessageSuspending(

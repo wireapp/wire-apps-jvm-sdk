@@ -150,7 +150,7 @@ class WireApplicationManagerTest {
             )
 
             val conversationMembers = manager
-                .getStoredConversationMembers(conversationId = createdConversationId)
+                .getConversationMembers(conversationId = createdConversationId)
 
             // 2 users added on creation + self user
             assertEquals(3, conversationMembers.size)
