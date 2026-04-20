@@ -68,7 +68,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
-    implementation("com.wire:core-crypto-jvm:9.1.3")
+    implementation("com.wire:core-crypto-jvm:9.3.3")
     implementation("app.cash.sqldelight:sqlite-driver:$sqlDelightVersion")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:$sqlDelightVersion")
     implementation("org.zalando:logbook-core:3.12.3")
