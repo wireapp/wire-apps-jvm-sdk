@@ -50,7 +50,7 @@ dependencies {
 
     // Kotlin stdlib and serialization are required for Java consumers
     api(kotlin("stdlib"))
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     implementation(
         files(rootProject.projectDir.resolve("buildSrc/build/classes/kotlin/main"))
