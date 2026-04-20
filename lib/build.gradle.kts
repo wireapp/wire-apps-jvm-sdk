@@ -41,7 +41,7 @@ repositories {
 }
 
 val ktorVersion = "3.2.4"
-val sqlDelightVersion = "2.3.1"
+val sqlDelightVersion = "2.3.2"
 
 dependencies {
     constraints {
