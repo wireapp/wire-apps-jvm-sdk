@@ -68,6 +68,8 @@ The `lib` module is structured in clear layers:
 - `persistence/`: SQLite-backed storage abstractions and implementations.
 - `model/`: public and internal data models, including protobuf-backed message types.
 - `utils/`: serialization, crypto helpers, and small shared utilities.
+- `exception/`: WireException hierarchy and transport/backend error types.
+- `logging/`: SLF4J/logback wrappers and shared logging utilities.
 
 ### State and data flow
 
@@ -195,3 +197,4 @@ Before opening or finalizing a change:
 - Tests cover the changed behavior.
 - Migrations or generated-source inputs are updated if needed.
 - Samples or docs are updated if the public API changed.
+- AGENTS.md should be updated whenever the public API, module layout, or CI pipeline changes.
