@@ -1,3 +1,3 @@
 object Versions {
-    const val SDK_VERSION = "0.1.0-beta"
+    const val SDK_VERSION = "0.1.0"
 }
