@@ -239,18 +239,24 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     private suspend fun processRemoveMembersFromConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN]
-         val split = wireMessage.text.split(" ")
+        // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
+        val split = wireMessage.text.split(" ")
+        val members = mutableListOf<QualifiedId>()
 
-        manager.removeMembersFromConversationSuspending(
-            conversationId = wireMessage.conversationId,
-            members = listOf(
-                QualifiedId(
-                    id = UUID.fromString(split[1]),
-                    domain = split[2]
-                )
+        // Start at index 1, increment by 2 to capture pairs of UUID and Domain
+        for (i in 1 until split.size step 2) {
+            // Basic check to ensure we have a Domain for the current UUID
+            if (i + 1 < split.size) {
+                members.add(QualifiedId(id = UUID.fromString(split[i]), domain = split[i + 1]))
+            }
+        }
+
+        if (members.isNotEmpty()) {
+            manager.removeMembersFromConversationSuspending(
+                conversationId = wireMessage.conversationId,
+                members = members
             )
-        )
+        }
     }
 
     private suspend fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
