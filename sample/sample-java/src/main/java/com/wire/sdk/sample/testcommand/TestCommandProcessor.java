@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -95,13 +96,26 @@ class TestCommandProcessor {
     }
 
     private void processRemoveMemberFromConversation(WireMessage.Text wireMessage) {
-        // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN]
-        final var split = wireMessage.text().split(" ");
-        final var members = List.of(new QualifiedId(UUID.fromString(split[1]), split[2]));
-        this.manager.removeMembersFromConversation(
+        // Expected message: `remove-members-from-conversation [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
+        final String[] split = wireMessage.text().split(" ");
+        final List<QualifiedId> members = new ArrayList<>();
+
+        // Start at index 1, increment by 2 to capture pairs of UUID and Domain
+        for (int i = 1; i < split.length; i += 2) {
+            // Basic check to ensure we have a Domain for the current UUID
+            if (i + 1 < split.length) {
+                var userId = UUID.fromString(split[i]);
+                var domain = split[i + 1];
+                members.add(new QualifiedId(userId, domain));
+            }
+        }
+
+        if (!members.isEmpty()) {
+            this.manager.removeMembersFromConversation(
                 wireMessage.conversationId(),
                 members
-        );
+            );
+        }
     }
 
     private void processAssetImage(WireMessage.Text wireMessage) {
