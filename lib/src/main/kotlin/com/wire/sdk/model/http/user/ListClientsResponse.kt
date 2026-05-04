@@ -21,5 +21,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ListClientsResponse(
-    @SerialName("qualified_user_map") val qualifiedUserMap: Map<String, Map<String, List<UserClientResponse>>>
+    @SerialName("qualified_user_map") val qualifiedUserMap:
+        Map<String, Map<String, List<UserClientResponse>>>
 )

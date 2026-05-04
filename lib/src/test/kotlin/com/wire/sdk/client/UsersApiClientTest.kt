@@ -25,6 +25,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
@@ -157,6 +158,32 @@ class UsersApiClientTest {
         }
 
     @Test
+    fun `given userIds,when getClientsByUserIds, then request body contains qualified_users key`() =
+        runTest {
+            var capturedBody: String? = null
+            apiClient(LIST_CLIENTS_RESPONSE_JSON) {
+                capturedBody = (it.body as TextContent).text
+            }.getClientsByUserIds(listOf(USER_ID))
+            assertTrue(
+                capturedBody?.contains("\"qualified_users\"") == true,
+                "Request body must contain qualified_users key, was: $capturedBody"
+            )
+        }
+
+    @Test
+    fun `given userIds, when getClientsByUserIds, then request body is not a bare array`() =
+        runTest {
+            var capturedBody: String? = null
+            apiClient(LIST_CLIENTS_RESPONSE_JSON) {
+                capturedBody = (it.body as TextContent).text
+            }.getClientsByUserIds(listOf(USER_ID))
+            assertTrue(
+                capturedBody?.trimStart()?.startsWith("[") == false,
+                "Request body must not be a bare array, was: $capturedBody"
+            )
+        }
+
+    @Test
     fun `given multi-domain, when getClientsByUserIds, then keyed by QualifiedId`() =
         runTest {
             val result = apiClient(LIST_CLIENTS_RESPONSE_JSON)
@@ -180,7 +207,8 @@ class UsersApiClientTest {
     @Test
     fun `given empty response, when getClientsByUserIds, then empty map`() =
         runTest {
-            val result = apiClient("{}").getClientsByUserIds(emptyList())
+            val result =
+                apiClient(EMPTY_LIST_CLIENTS_RESPONSE_JSON).getClientsByUserIds(emptyList())
             assertTrue(result.isEmpty())
         }
 
@@ -255,20 +283,28 @@ class UsersApiClientTest {
 
         private val LIST_CLIENTS_RESPONSE_JSON = """
             {
-                "example.com": {
-                    "${USER_ID.id}": [
-                        { "id": "client-abc" },
-                        { "id": "client-def" }
-                    ],
-                    "${SECOND_USER_ID.id}": [
-                        { "id": "client-xyz" }
-                    ]
-                },
-                "other.com": {
-                    "${REMOTE_USER_ID.id}": [
-                        { "id": "client-remote" }
-                    ]
+                "qualified_user_map": {
+                    "example.com": {
+                        "${USER_ID.id}": [
+                            { "id": "client-abc" },
+                            { "id": "client-def" }
+                        ],
+                        "${SECOND_USER_ID.id}": [
+                            { "id": "client-xyz" }
+                        ]
+                    },
+                    "other.com": {
+                        "${REMOTE_USER_ID.id}": [
+                            { "id": "client-remote" }
+                        ]
+                    }
                 }
+            }
+        """.trimIndent()
+
+        private val EMPTY_LIST_CLIENTS_RESPONSE_JSON = """
+            {
+                "qualified_user_map": {}
             }
         """.trimIndent()
     }
