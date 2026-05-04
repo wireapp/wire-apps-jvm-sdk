@@ -17,6 +17,8 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.http.user.ListClientsRequest
+import com.wire.sdk.model.http.user.ListClientsResponse
 import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.HttpClient
@@ -61,17 +63,15 @@ internal class UsersApiClient(private val httpClient: HttpClient) {
         userIds: List<QualifiedId>
     ): Map<QualifiedId, List<UserClientResponse>> {
         val response = httpClient.post("/$basePath/list-clients") {
-            setBody(userIds)
+            setBody(ListClientsRequest(qualifiedUsers = userIds))
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
-        }.body<Map<String, Map<String, List<UserClientResponse>>>>()
+        }.body<ListClientsResponse>()
 
-        val usersClients = response.flatMap { (domain, users) ->
+        return response.qualifiedUserMap.flatMap { (domain, users) ->
             users.map { (userId, clients) ->
                 QualifiedId(UUID.fromString(userId), domain) to clients
             }
         }.toMap()
-
-        return usersClients
     }
 }
