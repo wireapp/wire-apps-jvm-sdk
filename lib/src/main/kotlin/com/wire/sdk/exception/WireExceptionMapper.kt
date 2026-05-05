@@ -22,6 +22,7 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.statement.bodyAsText
 import io.ktor.serialization.JsonConvertException
 import org.slf4j.LoggerFactory
 
@@ -52,6 +53,7 @@ suspend fun ResponseException.mapToWireException(): Nothing {
         logger.error(
             "Error response is not in serializable mime type. ${e.message}"
         )
-        WireException.UnknownError(e.cause?.message, e)
+        val bodyText = runCatching { this.response.bodyAsText() }.getOrNull()
+        WireException.UnknownError(bodyText ?: e.cause?.message ?: e.message, e)
     }
 }

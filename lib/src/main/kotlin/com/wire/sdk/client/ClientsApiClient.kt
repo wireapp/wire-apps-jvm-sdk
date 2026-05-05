@@ -55,6 +55,7 @@ internal class ClientsApiClient(
             .filterIsInstance<BearerAuthProvider>()
             .first()
             .clearToken()
+        appStorage.deleteAccessToken()
 
         return clientCreatedResponse
     }

@@ -65,12 +65,12 @@ import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.bearer
-import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.header
 import io.ktor.http.encodedPath
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
@@ -151,7 +151,16 @@ internal fun createHttpClient(
         expectSuccess = true
         HttpResponseValidator {
             handleResponseExceptionWithRequest { exception, _ ->
-                (exception as? ResponseException)?.mapToWireException()
+                val responseException = exception as? ResponseException
+                    ?: return@handleResponseExceptionWithRequest
+
+                // Let Ktor's Auth plugin own 401 handling so token refresh + retry can complete
+                // without us consuming the failed response body first.
+                if (responseException.response.status == HttpStatusCode.Unauthorized) {
+                    throw responseException
+                }
+
+                responseException.mapToWireException()
             }
         }
         followRedirects = true
@@ -171,7 +180,6 @@ internal fun createHttpClient(
         }
 
         // Add headers for client and version
-        install(HttpCache)
         install(HttpRequestRetry) {
             retryOnServerErrors(maxRetries = MAX_RETRY_NUMBER_ON_SERVER_ERROR)
             exponentialDelay()
@@ -199,6 +207,11 @@ internal fun createHttpClient(
 
         install(Auth) {
             bearer {
+                loadTokens {
+                    authTokenManager.loadTokens()
+                }
+                cacheTokens = false
+                nonCancellableRefresh = true
                 sendWithoutRequest { request ->
                     val publicPath = listOf("/access", "/api-version")
 
@@ -208,7 +221,7 @@ internal fun createHttpClient(
                 }
 
                 refreshTokens {
-                    authTokenManager.refreshAccessToken(client)
+                    authTokenManager.refreshAccessToken(this)
                 }
             }
         }

@@ -27,6 +27,7 @@ import java.util.Base64
 
 private const val DEVICE_ID = "device_id"
 private const val BACKEND_COOKIE = "backend_cookie"
+private const val ACCESS_TOKEN = "access_token"
 private const val SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
 private const val LAST_NOTIFICATION_ID = "last_notification_id"
 
@@ -72,6 +73,21 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     }
 
     override fun deleteBackendCookie() = delete(BACKEND_COOKIE)
+
+    override fun getAccessToken(): String? =
+        runCatching {
+            val encryptedBytes = Base64.getDecoder().decode(getByKey(ACCESS_TOKEN).value)
+            val key = IsolatedKoinContext.getCryptographyStorageKey()
+            AESDecrypt.decryptData(encryptedBytes, key).toString(Charsets.UTF_8)
+        }.getOrNull()
+
+    override fun saveAccessToken(accessToken: String) {
+        val key = IsolatedKoinContext.getCryptographyStorageKey()
+        val encryptedBytes = AESEncrypt.encryptData(accessToken.toByteArray(Charsets.UTF_8), key)
+        save(ACCESS_TOKEN, Base64.getEncoder().encodeToString(encryptedBytes))
+    }
+
+    override fun deleteAccessToken() = delete(ACCESS_TOKEN)
 
     override fun getShouldRejoinConversations(): Boolean? =
         runCatching {
