@@ -41,17 +41,15 @@ data class SearchContactsResponse(
     @SerialName("documents")
     val documents: List<ContactDocument>,
     @SerialName("found")
-    val found: Long,
+    val found: Long? = null,
     @SerialName("has_more")
-    val hasMore: Boolean? = null, // TODO: Is it ok to have null as default? Actually seems better than true or false.
+    val hasMore: Boolean? = null,
     @SerialName("paging_state")
-    val pagingState: String?,
+    val pagingState: String? = null,
     @SerialName("returned")
-    val returned: Long,
-    @SerialName("search_policy")
-    val searchPolicy: SearchPolicy,
+    val returned: Long? = null,
     @SerialName("took")
-    val took: Long
+    val took: Long? = null,
 )
 
 @Serializable
@@ -69,35 +67,6 @@ data class ContactDocument(
     @SerialName("team")
     val team: String?,
     @SerialName("type")
-    val type: UserType?
+    val type: String?
 )
 
-@Serializable
-enum class SearchPolicy {
-    @SerialName("no_search")
-    NO_SEARCH,
-
-    @SerialName("exact_handle_search")
-    EXACT_HANDLE_SEARCH,
-
-    @SerialName("full_search")
-    FULL_SEARCH
-}
-
-@Serializable
-enum class UserType {
-    @SerialName("regular")
-    REGULAR,
-
-    @SerialName("bot")
-    BOT,
-
-    @SerialName("external")
-    EXTERNAL,
-
-    @SerialName("federated")
-    FEDERATED,
-
-    @SerialName("guest")
-    GUEST
-}

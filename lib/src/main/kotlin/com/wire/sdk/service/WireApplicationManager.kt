@@ -18,6 +18,7 @@ package com.wire.sdk.service
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.SearchApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -34,6 +35,7 @@ import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.search.SearchContactsResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
@@ -61,6 +63,7 @@ class WireApplicationManager internal constructor(
     private val usersApiClient: UsersApiClient,
     private val mlsApiClient: MlsApiClient,
     private val assetsApiClient: AssetsApiClient,
+    private val searchApiClient: SearchApiClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
@@ -648,4 +651,13 @@ class WireApplicationManager internal constructor(
             members = members
         )
     }
+
+    fun searchContacts(): SearchContactsResponse {
+        return runBlocking {
+            searchApiClient.searchContacts(
+                query = "baris"
+            )
+        }
+    }
+
 }
