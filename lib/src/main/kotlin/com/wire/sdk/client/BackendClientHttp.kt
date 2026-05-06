@@ -52,13 +52,13 @@ internal class BackendClientHttp(
     ) {
         logger.info("Connecting to the webSocket, waiting for events")
 
-        val path = "/await" +
-            (appStorage.getDeviceId()?.let { "?$CLIENT_QUERY_KEY=$it" } ?: "")
-
         httpClient.wss(
             host = IsolatedKoinContext.getApiHost().replace("https://", "")
                 .replace("-https", "-ssl"),
-            path = path
+            path = "/await",
+            request = {
+                appStorage.getDeviceId()?.let { url.parameters.append(CLIENT_QUERY_KEY, it) }
+            }
         ) {
             activeWebSocketSession = this
             handleFrames(this)

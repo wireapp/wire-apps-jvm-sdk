@@ -51,6 +51,7 @@ internal object LoggingConfiguration {
     private val sensitiveBodyParams = setOf(
         "id",
         "user",
+        "password",
         "team",
         "access_token",
         "creator_client",
