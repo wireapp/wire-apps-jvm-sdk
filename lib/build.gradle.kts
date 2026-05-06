@@ -43,10 +43,27 @@ repositories {
 val ktorVersion = "3.4.2"
 val sqlDelightVersion = "2.3.1"
 val logbookVersion = "4.0.4"
+val ktorModules = listOf(
+    "io.ktor:ktor-client-core",
+    "io.ktor:ktor-client-cio",
+    "io.ktor:ktor-client-logging",
+    "io.ktor:ktor-client-content-negotiation",
+    "io.ktor:ktor-serialization-kotlinx-json",
+    "io.ktor:ktor-client-websockets",
+    "io.ktor:ktor-client-auth"
+)
 
 dependencies {
     constraints {
         api("commons-io:commons-io:2.21.0")
+        ktorModules.forEach { module ->
+            implementation(module) {
+                version {
+                    strictly(ktorVersion)
+                }
+                because("the SDK is only verified against Ktor $ktorVersion")
+            }
+        }
     }
 
     // Kotlin stdlib and serialization are required for Java consumers
