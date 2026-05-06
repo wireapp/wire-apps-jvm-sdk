@@ -35,11 +35,6 @@ import org.slf4j.LoggerFactory
 class AuthTokenManager(private val appStorage: AppStorage) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun loadTokens(): BearerTokens? =
-        appStorage.getAccessToken()?.let { accessToken ->
-            BearerTokens(accessToken, null)
-        }
-
     suspend fun refreshAccessToken(params: RefreshTokensParams): BearerTokens {
         logger.debug("Refreshing access token using stored cookie")
         val accessResponse = getAccessResponse(params)
@@ -55,8 +50,6 @@ class AuthTokenManager(private val appStorage: AppStorage) {
         }
 
         val accessToken = accessResponse.body<AccessResponse>().accessToken
-        appStorage.saveAccessToken(accessToken)
-        logger.debug("Stored refreshed access token")
         return BearerTokens(accessToken, null)
     }
 
@@ -81,7 +74,6 @@ class AuthTokenManager(private val appStorage: AppStorage) {
             logger.error("Unable to retrieve access token, Error: ${ex.message}")
             if (ex.response.isCredentialsInvalid()) {
                 appStorage.deleteBackendCookie()
-                appStorage.deleteAccessToken()
             }
             // TODO Can't recover from this, need to restart the app with a valid api token
             error("Current cookie/api-token is expired. Get a apiToken and restart the App")

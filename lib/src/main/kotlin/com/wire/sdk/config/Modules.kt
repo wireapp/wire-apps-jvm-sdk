@@ -70,7 +70,6 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.header
 import io.ktor.http.encodedPath
-import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
@@ -154,12 +153,6 @@ internal fun createHttpClient(
                 val responseException = exception as? ResponseException
                     ?: return@handleResponseExceptionWithRequest
 
-                // Let Ktor's Auth plugin own 401 handling so token refresh + retry can complete
-                // without us consuming the failed response body first.
-                if (responseException.response.status == HttpStatusCode.Unauthorized) {
-                    throw responseException
-                }
-
                 responseException.mapToWireException()
             }
         }
@@ -207,10 +200,6 @@ internal fun createHttpClient(
 
         install(Auth) {
             bearer {
-                loadTokens {
-                    authTokenManager.loadTokens()
-                }
-                cacheTokens = false
                 nonCancellableRefresh = true
                 sendWithoutRequest { request ->
                     val publicPath = listOf("/access", "/api-version")

@@ -43,12 +43,6 @@ interface AppStorage {
 
     fun deleteBackendCookie()
 
-    fun getAccessToken(): String?
-
-    fun saveAccessToken(accessToken: String)
-
-    fun deleteAccessToken()
-
     fun getShouldRejoinConversations(): Boolean?
 
     fun setShouldRejoinConversations(should: Boolean)
