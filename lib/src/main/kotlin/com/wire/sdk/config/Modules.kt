@@ -29,6 +29,7 @@ import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.NotificationsApiClient
 import com.wire.sdk.client.OneToOneConversationsApiClient
+import com.wire.sdk.client.SearchApiClient
 import com.wire.sdk.client.SelfApiClient
 import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
@@ -99,6 +100,7 @@ val sdkModule =
         single<SelfApiClient> { SelfApiClient(get()) }
         single<AssetsApiClient> { AssetsApiClient(get()) }
         single<TeamsApiClient> { TeamsApiClient(get()) }
+        single<SearchApiClient> { SearchApiClient(get()) }
         single<NotificationsApiClient> { NotificationsApiClient(get(), get()) }
         single<ClientsApiClient> { ClientsApiClient(get(), get()) }
         single<MlsApiClient> { MlsApiClient(get(), get()) }
@@ -134,7 +136,9 @@ val sdkModule =
         }
 
         // Manager
-        single { WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get()) }
+        single {
+            WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get(), get())
+        }
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10

@@ -27,7 +27,8 @@ public enum TestCommand {
     ASSET_IMAGE("asset-image"),
     ASSET_AUDIO("asset-audio"),
     ASSET_VIDEO("asset-video"),
-    ASSET_PDF_DOCUMENT("asset-document-pdf");
+    ASSET_PDF_DOCUMENT("asset-document-pdf"),
+    SEARCH_USER("search-user");
 
     private final String commandStr;
 

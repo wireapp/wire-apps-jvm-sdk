@@ -89,6 +89,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             return
         }
 
+        if (isSearchUser(text = wireMessage.text)) {
+            processSearchUser(wireMessage = wireMessage)
+            return
+        }
+
         // Sends an Ephemeral message if received message is Ephemeral
         wireMessage.expiresAfterMillis?.let {
             val ephemeralMessage = WireMessage.Text.create(
@@ -222,6 +227,9 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     private fun isAssetPDFDocumentTestMessage(text: String): Boolean =
         text.startsWith("asset-document-pdf")
+
+    private fun isSearchUser(text: String): Boolean =
+        text.startsWith("search-user")
 
     private suspend fun processAddMembersToConversation(wireMessage: WireMessage.Text) {
         // Expected message: `add-members-to-conversation [USER_ID] [DOMAIN]
@@ -375,6 +383,52 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             name = asset.name,
             mimeType = "video/mp4",
             retention = AssetRetention.VOLATILE
+        )
+    }
+
+    private suspend fun processSearchUser(wireMessage: WireMessage.Text) {
+        // Expected message: `search-user [queryString]`
+        val split = wireMessage.text.split(" ", limit = 2)
+        if (split.size < 2 || split[1].isBlank()) {
+            manager.sendMessageSuspending(
+                WireMessage.Text.create(
+                    conversationId = wireMessage.conversationId,
+                    text = "⚠️ Usage: search-user [queryString]  (Exp: search-user alex)"
+                )
+            )
+            return
+        }
+
+        val query = split[1].trim()
+        val response = manager.searchUsersSuspending(
+            query = query,
+            domain = wireMessage.sender.domain,
+            numberOfResults = 100
+        )
+
+        val sb = StringBuilder()
+        sb.append("Search results for \"$query\" ")
+            .append("(${response.returned ?: 0} of ${response.found ?: "?"} found):\n\n")
+
+        if (response.documents.isEmpty()) {
+            sb.append("No users found.")
+        } else {
+            response.documents.forEach { doc ->
+                sb.append("👉 ${doc.name}")
+                doc.handle?.let { sb.append(" (@$it)") }
+                doc.qualifiedId?.let {
+                    sb.append(", ID: `${it.id}` @ ${it.domain}")
+                }
+                doc.team?.let { sb.append(", team: $it") }
+                sb.append("\n")
+            }
+        }
+
+        manager.sendMessageSuspending(
+            WireMessage.Text.create(
+                conversationId = wireMessage.conversationId,
+                text = sb.toString()
+            )
         )
     }
 

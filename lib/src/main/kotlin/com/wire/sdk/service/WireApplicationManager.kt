@@ -18,6 +18,7 @@ package com.wire.sdk.service
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.SearchApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -34,6 +35,7 @@ import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.search.SearchContactsResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
@@ -61,6 +63,7 @@ class WireApplicationManager internal constructor(
     private val usersApiClient: UsersApiClient,
     private val mlsApiClient: MlsApiClient,
     private val assetsApiClient: AssetsApiClient,
+    private val searchApiClient: SearchApiClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
@@ -646,6 +649,45 @@ class WireApplicationManager internal constructor(
         conversationService.removeMembersFromConversation(
             conversationId = conversationId,
             members = members
+        )
+    }
+
+    /**
+     * Searches for Wire users matching the given query.
+     *
+     * @param query The search string to match against user names and handles.
+     * @param domain The domain to restrict the search to, or null to search across all domains.
+     * @param numberOfResults The maximum number of results to return,
+     * or null to use the SDK default.
+     * @return A [SearchContactsResponse] containing the list of matched users.
+     * @throws WireException If the request fails or an error occurs while searching.
+     */
+    fun searchUsers(
+        query: String,
+        domain: String? = null,
+        numberOfResults: Int? = null
+    ): SearchContactsResponse {
+        return runBlocking {
+            searchUsersSuspending(
+                query = query,
+                domain = domain,
+                numberOfResults = numberOfResults
+            )
+        }
+    }
+
+    /**
+     * See [searchUsers]
+     */
+    suspend fun searchUsersSuspending(
+        query: String,
+        domain: String? = null,
+        numberOfResults: Int? = null
+    ): SearchContactsResponse {
+        return searchApiClient.searchUsers(
+            query = query,
+            domain = domain,
+            numberOfResults = numberOfResults
         )
     }
 }
