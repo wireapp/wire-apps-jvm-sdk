@@ -61,10 +61,6 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
         // ___ Case-3: Normal text message
 
-        System.out.println("heey1");
-        System.out.println(getManager().searchContacts());
-        System.out.println("heey2");
-
         // Send read receipt
         final var readReceipt = WireMessage.Receipt.create(
                 wireMessage.conversationId(),

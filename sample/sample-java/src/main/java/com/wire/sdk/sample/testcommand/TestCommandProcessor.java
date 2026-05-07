@@ -51,6 +51,7 @@ class TestCommandProcessor {
             case ASSET_AUDIO -> processAssetAudio(wireMessage);
             case ASSET_VIDEO -> processAssetVideo(wireMessage);
             case ASSET_PDF_DOCUMENT -> replyWithSamplePDFDocument(wireMessage);
+            case SEARCH_USER -> processSearchUser(wireMessage);
         }
     }
 
@@ -232,6 +233,50 @@ class TestCommandProcessor {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void processSearchUser(WireMessage.Text wireMessage) {
+        // Expected message: `search-user [queryString]`
+        final var split = wireMessage.text().split(" ", 2);
+        if (split.length < 2 || split[1].isBlank()) {
+            this.manager.sendMessage(WireMessage.Text.create(
+                    wireMessage.conversationId(),
+                    "⚠️ Usage: search-user [queryString]  (Exp: search-user alex)",
+                    List.of(), List.of(), null)
+            );
+
+            return;
+        }
+
+        final var query = split[1].trim();
+        final var response = this.manager.searchUsers(query, wireMessage.sender().domain(), 100);
+
+        final var sb = new StringBuilder();
+        sb.append("Search results for \"").append(query).append("\" ")
+                .append("(").append(response.getReturned() != null ? response.getReturned() : 0)
+                .append(" of ").append(response.getFound() != null ? response.getFound() : "?")
+                .append(" found):\n\n");
+
+        if (response.getDocuments().isEmpty()) {
+            sb.append("No users found.");
+        } else {
+            for (final var doc : response.getDocuments()) {
+                sb.append("👉").append(doc.getName());
+                if (doc.getHandle() != null) {
+                    sb.append(" (@").append(doc.getHandle()).append(")");
+                }
+                if (doc.getQualifiedId() != null) {
+                    sb.append(", ID: ").append("`").append(doc.getQualifiedId().id()).append("`")
+                            .append(" @ ").append(doc.getQualifiedId().domain());
+                }
+                sb.append("\n");
+            }
+        }
+
+        this.manager.sendMessage(WireMessage.Text.create(
+                wireMessage.conversationId(),
+                sb.toString(),
+                List.of(), List.of(), null));
     }
 
 }
