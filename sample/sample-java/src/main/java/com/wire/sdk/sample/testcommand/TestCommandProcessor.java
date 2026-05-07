@@ -268,6 +268,7 @@ class TestCommandProcessor {
                 if (doc.getQualifiedId() != null) {
                     sb.append(", ID: ").append("`").append(doc.getQualifiedId().id()).append("`")
                             .append(" @ ").append(doc.getQualifiedId().domain());
+                    sb.append(", team: ").append(doc.getTeam());
                 }
                 sb.append("\n");
             }
