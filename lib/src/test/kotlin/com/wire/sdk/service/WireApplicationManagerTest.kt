@@ -585,7 +585,7 @@ class WireApplicationManagerTest {
 
             // Act
             val result = manager.searchUsersSuspending(
-                queryFor = SEARCH_QUERY,
+                query = SEARCH_QUERY,
                 domain = SEARCH_DOMAIN,
                 numberOfResults = SEARCH_NUMBER_OF_RESULTS
             )
@@ -627,7 +627,7 @@ class WireApplicationManagerTest {
             )
 
             // Act
-            manager.searchUsersSuspending(queryFor = SEARCH_QUERY)
+            manager.searchUsersSuspending(query = SEARCH_QUERY)
 
             // Assert
             coVerify(exactly = 1) {

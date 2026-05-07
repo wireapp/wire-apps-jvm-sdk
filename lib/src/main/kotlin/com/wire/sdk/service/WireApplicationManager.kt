@@ -655,7 +655,7 @@ class WireApplicationManager internal constructor(
     /**
      * Searches for Wire users matching the given query.
      *
-     * @param queryFor The search string to match against user names and handles.
+     * @param query The search string to match against user names and handles.
      * @param domain The domain to restrict the search to, or null to search across all domains.
      * @param numberOfResults The maximum number of results to return,
      * or null to use the backend default.
@@ -663,13 +663,13 @@ class WireApplicationManager internal constructor(
      * @throws WireException If the request fails or an error occurs while searching.
      */
     fun searchUsers(
-        queryFor: String,
+        query: String,
         domain: String? = null,
         numberOfResults: Int? = null
     ): SearchContactsResponse {
         return runBlocking {
             searchUsersSuspending(
-                queryFor = queryFor,
+                query = query,
                 domain = domain,
                 numberOfResults = numberOfResults
             )
@@ -680,12 +680,12 @@ class WireApplicationManager internal constructor(
      * See [searchUsers]
      */
     suspend fun searchUsersSuspending(
-        queryFor: String,
+        query: String,
         domain: String? = null,
         numberOfResults: Int? = null
     ): SearchContactsResponse {
         return searchApiClient.searchUsers(
-            query = queryFor,
+            query = query,
             domain = domain,
             numberOfResults = numberOfResults
         )

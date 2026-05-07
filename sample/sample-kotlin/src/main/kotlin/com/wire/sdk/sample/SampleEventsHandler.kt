@@ -401,7 +401,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         val query = split[1].trim()
         val response = manager.searchUsersSuspending(
-            queryFor = query,
+            query = query,
             domain = wireMessage.sender.domain,
             numberOfResults = 100
         )
