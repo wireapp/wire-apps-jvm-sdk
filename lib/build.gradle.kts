@@ -40,12 +40,30 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.2.4"
+val ktorVersion = "3.4.2"
 val sqlDelightVersion = "2.3.1"
+val logbookVersion = "4.0.4"
+val ktorModules = listOf(
+    "io.ktor:ktor-client-core",
+    "io.ktor:ktor-client-cio",
+    "io.ktor:ktor-client-logging",
+    "io.ktor:ktor-client-content-negotiation",
+    "io.ktor:ktor-serialization-kotlinx-json",
+    "io.ktor:ktor-client-websockets",
+    "io.ktor:ktor-client-auth"
+)
 
 dependencies {
     constraints {
         api("commons-io:commons-io:2.21.0")
+        ktorModules.forEach { module ->
+            implementation(module) {
+                version {
+                    strictly(ktorVersion)
+                }
+                because("the SDK is only verified against Ktor $ktorVersion")
+            }
+        }
     }
 
     // Kotlin stdlib and serialization are required for Java consumers
@@ -61,7 +79,7 @@ dependencies {
     // We use logback but libraries like logstash-encoder, logbook and Wiremock use Jackson.
     //  If one library is updated and transitively updates Jackson to 3.x.y, make sure the other
     //  libraries can also be updated to use Jackson 3.x.y
-    implementation("net.logstash.logback:logstash-logback-encoder:8.1")
+    implementation("net.logstash.logback:logstash-logback-encoder:9.0")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-logging:$ktorVersion")
@@ -71,9 +89,9 @@ dependencies {
     implementation("com.wire:core-crypto-jvm:9.1.3")
     implementation("app.cash.sqldelight:sqlite-driver:$sqlDelightVersion")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:$sqlDelightVersion")
-    implementation("org.zalando:logbook-core:3.12.3")
-    implementation("org.zalando:logbook-ktor-client:3.12.3")
-    implementation("org.zalando:logbook-json:3.12.3")
+    implementation("org.zalando:logbook-core:$logbookVersion")
+    implementation("org.zalando:logbook-ktor-client:$logbookVersion")
+    implementation("org.zalando:logbook-json:$logbookVersion")
     implementation("com.google.protobuf:protobuf-kotlin:4.33.5")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.6")
     implementation("com.github.ben-manes.caffeine:caffeine:3.2.3")

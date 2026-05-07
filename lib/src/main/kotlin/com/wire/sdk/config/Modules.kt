@@ -65,7 +65,6 @@ import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.bearer
-import io.ktor.client.plugins.cache.HttpCache
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
@@ -151,7 +150,10 @@ internal fun createHttpClient(
         expectSuccess = true
         HttpResponseValidator {
             handleResponseExceptionWithRequest { exception, _ ->
-                (exception as? ResponseException)?.mapToWireException()
+                val responseException = exception as? ResponseException
+                    ?: return@handleResponseExceptionWithRequest
+
+                responseException.mapToWireException()
             }
         }
         followRedirects = true
@@ -171,7 +173,6 @@ internal fun createHttpClient(
         }
 
         // Add headers for client and version
-        install(HttpCache)
         install(HttpRequestRetry) {
             retryOnServerErrors(maxRetries = MAX_RETRY_NUMBER_ON_SERVER_ERROR)
             exponentialDelay()
@@ -199,6 +200,7 @@ internal fun createHttpClient(
 
         install(Auth) {
             bearer {
+                nonCancellableRefresh = true
                 sendWithoutRequest { request ->
                     val publicPath = listOf("/access", "/api-version")
 
@@ -208,7 +210,7 @@ internal fun createHttpClient(
                 }
 
                 refreshTokens {
-                    authTokenManager.refreshAccessToken(client)
+                    authTokenManager.refreshAccessToken(this)
                 }
             }
         }

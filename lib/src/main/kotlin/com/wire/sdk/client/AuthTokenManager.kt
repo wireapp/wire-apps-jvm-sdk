@@ -18,9 +18,9 @@ package com.wire.sdk.client
 
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.persistence.AppStorage
-import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.providers.BearerTokens
+import io.ktor.client.plugins.auth.providers.RefreshTokensParams
 import io.ktor.client.request.accept
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
@@ -35,9 +35,9 @@ import org.slf4j.LoggerFactory
 class AuthTokenManager(private val appStorage: AppStorage) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    suspend fun refreshAccessToken(httpClient: HttpClient): BearerTokens {
+    suspend fun refreshAccessToken(params: RefreshTokensParams): BearerTokens {
         logger.debug("Refreshing access token using stored cookie")
-        val accessResponse = getAccessResponse(httpClient)
+        val accessResponse = getAccessResponse(params)
 
         // Chance of cookie renewal -> Store new cookie
         val responseCookies = accessResponse.setCookie()
@@ -49,10 +49,11 @@ class AuthTokenManager(private val appStorage: AppStorage) {
             }
         }
 
-        return BearerTokens(accessResponse.body<AccessResponse>().accessToken, null)
+        val accessToken = accessResponse.body<AccessResponse>().accessToken
+        return BearerTokens(accessToken, null)
     }
 
-    private suspend fun getAccessResponse(httpClient: HttpClient): HttpResponse =
+    private suspend fun getAccessResponse(params: RefreshTokensParams): HttpResponse =
         try {
             val cookie = appStorage.getBackendCookie()
             val deviceId = appStorage.getDeviceId()
@@ -60,11 +61,14 @@ class AuthTokenManager(private val appStorage: AppStorage) {
             val url = "/$basePath".let {
                 if (deviceId != null) "$it?client_id=$deviceId" else it
             }
-            httpClient.post(url) {
-                headers {
-                    append(HttpHeaders.Cookie, "zuid=$cookie")
+            with(params) {
+                client.post(url) {
+                    markAsRefreshTokenRequest()
+                    headers {
+                        append(HttpHeaders.Cookie, "zuid=$cookie")
+                    }
+                    accept(ContentType.Application.Json)
                 }
-                accept(ContentType.Application.Json)
             }
         } catch (ex: WireException.ClientError) {
             logger.error("Unable to retrieve access token, Error: ${ex.message}")
