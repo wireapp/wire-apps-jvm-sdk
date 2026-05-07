@@ -658,7 +658,7 @@ class WireApplicationManager internal constructor(
      * @param query The search string to match against user names and handles.
      * @param domain The domain to restrict the search to, or null to search across all domains.
      * @param numberOfResults The maximum number of results to return,
-     * or null to use the backend default.
+     * or null to use the SDK default.
      * @return A [SearchContactsResponse] containing the list of matched users.
      * @throws WireException If the request fails or an error occurs while searching.
      */
