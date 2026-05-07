@@ -54,6 +54,17 @@ class SearchApiClientTest {
         }
 
     @Test
+    fun `when searchUsers with null numberOfResults, then size parameter is 15`() =
+        runTest {
+            var capturedParams: io.ktor.http.Parameters? = null
+            apiClient { capturedParams = it.url.parameters }.searchUsers(
+                query = "Alice",
+                numberOfResults = null
+            )
+            assertEquals("15", capturedParams?.get("size"))
+        }
+
+    @Test
     fun `when searchUsers with domain, then domain parameter is set`() =
         runTest {
             var capturedParams: io.ktor.http.Parameters? = null
