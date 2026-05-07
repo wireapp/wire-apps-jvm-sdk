@@ -17,9 +17,10 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.model.http.search.SearchContactsResponse
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
+import io.ktor.client.call.body
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import org.slf4j.LoggerFactory
 
 internal class SearchApiClient(private val httpClient: HttpClient) {
@@ -27,35 +28,33 @@ internal class SearchApiClient(private val httpClient: HttpClient) {
     private val basePath = "search"
 
     private companion object {
-        const val QUERY_KEY = "q"
-        const val DOMAIN_KEY = "domain"
-        const val SIZE_KEY = "size"
-        const val TYPE_KEY = "type"
-
-        const val DEFAULT_SIZE = 15
-        const val MIN_SIZE = 1
-        const val MAX_SIZE = 500
+        const val DEFAULT_RESULT_SIZE = 15
+        const val MIN_RESULT_SIZE = 1
+        const val MAX_RESULT_SIZE = 500
     }
 
-    suspend fun searchContacts(
+    suspend fun searchUsers(
         query: String,
         domain: String? = null,
-        size: Int = DEFAULT_SIZE,
-        type: String? = null
+        numberOfResults: Int? = DEFAULT_RESULT_SIZE
     ): SearchContactsResponse {
         require(query.isNotBlank()) { "Search query must not be blank." }
-        require(size in MIN_SIZE..MAX_SIZE) { "Size must be between $MIN_SIZE and $MAX_SIZE." }
+        require(numberOfResults in MIN_RESULT_SIZE..MAX_RESULT_SIZE) {
+            "Size must be between $MIN_RESULT_SIZE and $MAX_RESULT_SIZE."
+        }
 
         logger.debug(
-            "Searching contacts with query='{}', domain='{}', size={}, type={}",
-            query, domain, size, type
+            "Searching users with query='{}', domain='{}', numberOfResults={}",
+            query,
+            domain,
+            numberOfResults
         )
 
         return httpClient.get("/$basePath/contacts") {
-            parameter(QUERY_KEY, query)
-            domain?.let { parameter(DOMAIN_KEY, it) }
-            type?.let { parameter(TYPE_KEY, it) }
-            parameter(SIZE_KEY, size)
+            parameter("q", query)
+            domain?.let { parameter("domain", it) }
+            parameter("type", "regular") // Search users only, not apps.
+            parameter("size", numberOfResults)
         }.body<SearchContactsResponse>()
     }
 }
