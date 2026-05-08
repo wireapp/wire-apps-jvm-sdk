@@ -241,7 +241,7 @@ class TestCommandProcessor {
         if (split.length < 2 || split[1].isBlank()) {
             this.manager.sendMessage(WireMessage.Text.create(
                     wireMessage.conversationId(),
-                    "⚠️ Usage: search-user [queryString]  (Exp: search-user alex)",
+                    "⚠️ Usage: search-user [queryString]  (e.g. search-user alex)",
                     List.of(), List.of(), null)
             );
 
@@ -254,7 +254,7 @@ class TestCommandProcessor {
         final var sb = new StringBuilder();
         sb.append("Search results for \"").append(query).append("\" ")
                 .append("(").append(response.getReturned() != null ? response.getReturned() : 0)
-                .append(" of ").append(response.getFound() != null ? response.getFound() : "?")
+                .append(" of ").append(response.getFound() != null ? response.getFound() : 0)
                 .append(" found):\n\n");
 
         if (response.getDocuments().isEmpty()) {

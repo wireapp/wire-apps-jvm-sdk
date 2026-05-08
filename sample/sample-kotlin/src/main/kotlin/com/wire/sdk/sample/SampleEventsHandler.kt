@@ -393,7 +393,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             manager.sendMessageSuspending(
                 WireMessage.Text.create(
                     conversationId = wireMessage.conversationId,
-                    text = "⚠️ Usage: search-user [queryString]  (Exp: search-user alex)"
+                    text = "⚠️ Usage: search-user [queryString]  (e.g. search-user alex)"
                 )
             )
             return

@@ -41,7 +41,7 @@ internal class SearchApiClient(private val httpClient: HttpClient) {
         val size = numberOfResults ?: DEFAULT_RESULT_SIZE
 
         require(size in MIN_RESULT_SIZE..MAX_RESULT_SIZE) {
-            "Size must be between $MIN_RESULT_SIZE and $MAX_RESULT_SIZE."
+            "Number of results value must be between $MIN_RESULT_SIZE and $MAX_RESULT_SIZE."
         }
         require(query.isNotBlank()) { "Search query must not be blank." }
 
