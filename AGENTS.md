@@ -15,6 +15,16 @@ This guide is for contributors and coding agents working in this repository. Kee
 - `config/detekt/`: Detekt configuration and baseline.
 - `storage/`: local runtime state used when running the SDK or samples. Treat as local data, not source.
 
+Within `lib/`, a few paths are especially important when making changes:
+
+- `lib/src/main/kotlin/com/wire/sdk/`: public SDK entrypoints such as `WireAppSdk` and event handler APIs.
+- `lib/src/main/kotlin/com/wire/sdk/client/`: backend HTTP and WebSocket clients such as `BackendClientHttp`.
+- `lib/src/main/kotlin/com/wire/sdk/config/`: DI wiring such as `Modules.kt`.
+- `lib/src/main/kotlin/com/wire/sdk/model/protobuf/`: protobuf serializers and deserializers.
+- `lib/src/main/proto/messages.proto`: protobuf message definitions.
+- `lib/src/main/sqldelight/com/wire/sdk/`: SQLDelight schema sources.
+- `lib/src/main/sqldelight/migrations/`: checked-in database migrations.
+
 ## Setup
 
 ### Requirements
@@ -27,6 +37,7 @@ This guide is for contributors and coding agents working in this repository. Kee
 
 ```sh
 ./gradlew build
+./gradlew test
 ./gradlew ktlintCheck
 ./gradlew detekt
 ```
@@ -37,6 +48,15 @@ This guide is for contributors and coding agents working in this repository. Kee
 ./gradlew :lib:test
 ./gradlew :sample-kotlin:run
 ./gradlew :sample-java:build
+```
+
+### Additional useful commands
+
+```sh
+./gradlew test --tests "com.wire.sdk.WireAppSdkTest"
+./gradlew test --tests "com.wire.sdk.WireAppSdkTest.koinModulesLoadCorrectly"
+./gradlew ktlintFormat
+./gradlew publishToMavenLocal -PskipSigning=true
 ```
 
 ### Local runtime notes
@@ -57,6 +77,17 @@ This guide is for contributors and coding agents working in this repository. Kee
 - `com.wire.sdk.service.WireApplicationManager`: higher-level API for teams, conversations, assets, and messages.
 - `com.wire.sdk.WireEventsHandler*`: event callback abstractions for incoming Wire events.
 
+Operational details that matter when modifying these APIs:
+
+- `WireAppSdk` is initialized with `applicationId`, `apiToken`, `apiHost`, `cryptographyStoragePassword`, and a `WireEventsHandler` implementation.
+- `cryptographyStoragePassword` must be 32 characters.
+- `WireAppSdk.startListening()` starts the WebSocket listener in a background thread.
+- `WireAppSdk.stopListening()` stops the listener.
+- `WireAppSdk.getApplicationManager()` returns the `WireApplicationManager` used for backend operations.
+- `WireApplicationManager` intentionally exposes both blocking methods for Java consumers and suspending methods for Kotlin consumers.
+- `WireEventsHandler` consumers typically extend `WireEventsHandlerDefault` or `WireEventsHandlerSuspending` rather than implementing lower-level behavior directly.
+- Event handlers can use their `manager` property to send follow-up actions and responses.
+
 ### Internal layering
 
 The `lib` module is structured in clear layers:
@@ -74,12 +105,20 @@ The `lib` module is structured in clear layers:
 ### State and data flow
 
 - HTTP and WebSocket transport are provided by Ktor.
-- Dependency injection is isolated through Koin.
+- Dependency injection is isolated through Koin using `IsolatedKoinContext`.
 - Persistent state is stored in SQLite via SQLDelight.
 - Protocol buffers live under `lib/src/main/proto`.
 - SQLDelight schema and migrations live under `lib/src/main/sqldelight`.
 
+Persistence currently centers around SQLDelight tables such as `App`, `Conversation`, `ConversationMember`, and `Team`.
+
 When adding features, keep transport code in `client/`, orchestration in `service/`, persistence in `persistence/`, and avoid pushing behavior into model classes unless it is truly model-local.
+
+When adding SDK functionality, keep these placement rules in mind:
+
+- Add backend REST or WebSocket behavior in `client/`, not in service or model packages.
+- Add protobuf encoding or decoding logic in `model/protobuf/`, and update `lib/src/main/proto/messages.proto` when the wire format changes.
+- Add DI registrations in `config/Modules.kt` when introducing new SDK components.
 
 ## Build and Tooling Conventions
 
@@ -93,6 +132,7 @@ When adding features, keep transport code in `client/`, orchestration in `servic
 ### Static analysis
 
 - Formatting is enforced with Ktlint.
+- Ktlint excludes generated code.
 - Static analysis is enforced with Detekt using `config/detekt/detekt.yml`.
 - CI runs `ktlintCheck`, `detekt`, and `build` on pull requests.
 
@@ -121,6 +161,7 @@ Kotlin-specific conventions already in use:
 - No trailing commas
 - Import ordering is not using Ktlint defaults
 - Some wrapping rules are intentionally relaxed
+- Wildcard imports are disallowed except for `java.util.*`
 
 Run the Gradle lint tasks instead of guessing style rules.
 
@@ -144,7 +185,10 @@ Source files in this repository use the Wire GPL header. Preserve existing heade
 
 - Unit and integration-style tests live under `lib/src/test/kotlin`.
 - Existing tests use JUnit 5, MockK, Kotlin test, coroutine test utilities, and WireMock.
+- Test environment variables are configured in `lib/build.gradle.kts`.
 - PR CI runs the full build, so keep test additions deterministic and local.
+
+Whenever a code change introduces new behavior or changes existing behavior, evaluate whether new tests are required and add them when appropriate.
 
 Before finishing a change, run the narrowest useful commands first, then the broader checks if the change crosses boundaries:
 
