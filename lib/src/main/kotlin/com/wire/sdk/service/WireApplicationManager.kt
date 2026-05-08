@@ -662,6 +662,7 @@ class WireApplicationManager internal constructor(
      * @return A [SearchContactsResponse] containing the list of matched users.
      * @throws WireException If the request fails or an error occurs while searching.
      */
+    @JvmOverloads
     fun searchUsers(
         query: String,
         domain: String? = null,
