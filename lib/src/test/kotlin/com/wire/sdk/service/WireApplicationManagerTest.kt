@@ -601,44 +601,6 @@ class WireApplicationManagerTest {
             }
         }
 
-    @Test
-    fun `when searchUsers without optional parameters, then delegates with nulls`() =
-        runTest {
-            // Arrange
-            val searchApiClient = mockk<SearchApiClient>(relaxed = true)
-            coEvery {
-                searchApiClient.searchUsers(
-                    query = SEARCH_QUERY,
-                    domain = null,
-                    numberOfResults = null
-                )
-            } returns SEARCH_CONTACTS_RESPONSE
-
-            val manager = WireApplicationManager(
-                teamStorage = mockk(relaxed = true),
-                backendClient = mockk(relaxed = true),
-                usersApiClient = mockk(relaxed = true),
-                mlsApiClient = mockk(relaxed = true),
-                assetsApiClient = mockk(relaxed = true),
-                searchApiClient = searchApiClient,
-                cryptoClient = mockk(relaxed = true),
-                mlsFallbackStrategy = mockk(relaxed = true),
-                conversationService = mockk(relaxed = true)
-            )
-
-            // Act
-            manager.searchUsersSuspending(query = SEARCH_QUERY)
-
-            // Assert
-            coVerify(exactly = 1) {
-                searchApiClient.searchUsers(
-                    query = SEARCH_QUERY,
-                    domain = null,
-                    numberOfResults = null
-                )
-            }
-        }
-
     private suspend fun generateUser2Packages(): List<KeyPackage> =
         MlsCryptoClient.create(
             appId = USER_2.id,

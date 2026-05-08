@@ -33,7 +33,9 @@ class SearchApiClientTest {
     fun `when searchUsers, then correct URL path`() =
         runTest {
             var capturedPath: String? = null
-            apiClient { capturedPath = it.url.encodedPath }.searchUsers(query = "Alice")
+            apiClient {
+                capturedPath = it.url.encodedPath
+            }.searchUsers(query = "Alice", domain = "wire.com")
             assertEquals("/search/contacts", capturedPath)
         }
 
@@ -41,7 +43,9 @@ class SearchApiClientTest {
     fun `when searchUsers, then GET method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            apiClient { capturedMethod = it.method }.searchUsers(query = "Alice")
+            apiClient {
+                capturedMethod = it.method
+            }.searchUsers(query = "Alice", domain = "wire.com")
             assertEquals(HttpMethod.Get, capturedMethod)
         }
 
@@ -49,7 +53,9 @@ class SearchApiClientTest {
     fun `when searchUsers, then query parameter is set`() =
         runTest {
             var capturedParams: io.ktor.http.Parameters? = null
-            apiClient { capturedParams = it.url.parameters }.searchUsers(query = "Alice")
+            apiClient {
+                capturedParams = it.url.parameters
+            }.searchUsers(query = "Alice", domain = "wire.com")
             assertEquals("Alice", capturedParams?.get("q"))
         }
 
@@ -59,6 +65,7 @@ class SearchApiClientTest {
             var capturedParams: io.ktor.http.Parameters? = null
             apiClient { capturedParams = it.url.parameters }.searchUsers(
                 query = "Alice",
+                domain = "wire.com",
                 numberOfResults = null
             )
             assertEquals("15", capturedParams?.get("size"))
@@ -76,20 +83,20 @@ class SearchApiClientTest {
         }
 
     @Test
-    fun `when searchUsers without domain, then domain parameter is absent`() =
+    fun `given blank domain, when searchUsers, then throws IAException`() =
         runTest {
-            var capturedParams: io.ktor.http.Parameters? = null
-            apiClient {
-                capturedParams = it.url.parameters
-            }.searchUsers(query = "Alice", domain = null)
-            assertEquals(false, capturedParams?.contains("domain"))
+            assertFailsWith<IllegalArgumentException> {
+                apiClient().searchUsers(query = "Alice", domain = "   ")
+            }
         }
 
     @Test
     fun `when searchUsers, then type parameter is always regular`() =
         runTest {
             var capturedParams: io.ktor.http.Parameters? = null
-            apiClient { capturedParams = it.url.parameters }.searchUsers(query = "Alice")
+            apiClient {
+                capturedParams = it.url.parameters
+            }.searchUsers(query = "Alice", domain = "wire.com")
             assertEquals("regular", capturedParams?.get("type"))
         }
 
@@ -99,6 +106,7 @@ class SearchApiClientTest {
             var capturedParams: io.ktor.http.Parameters? = null
             apiClient { capturedParams = it.url.parameters }.searchUsers(
                 query = "Alice",
+                domain = "wire.com",
                 numberOfResults = 42
             )
             assertEquals("42", capturedParams?.get("size"))
@@ -108,7 +116,9 @@ class SearchApiClientTest {
     fun `when searchUsers with default numberOfResults, then size parameter is 15`() =
         runTest {
             var capturedParams: io.ktor.http.Parameters? = null
-            apiClient { capturedParams = it.url.parameters }.searchUsers(query = "Alice")
+            apiClient {
+                capturedParams = it.url.parameters
+            }.searchUsers(query = "Alice", domain = "wire.com")
             assertEquals("15", capturedParams?.get("size"))
         }
 
@@ -116,7 +126,7 @@ class SearchApiClientTest {
     fun `given blank query, when searchUsers, then throws IAException`() =
         runTest {
             assertFailsWith<IllegalArgumentException> {
-                apiClient().searchUsers(query = "   ")
+                apiClient().searchUsers(query = "   ", domain = "wire.com")
             }
         }
 
@@ -124,7 +134,7 @@ class SearchApiClientTest {
     fun `given empty query, when searchUsers, then throws IAException`() =
         runTest {
             assertFailsWith<IllegalArgumentException> {
-                apiClient().searchUsers(query = "")
+                apiClient().searchUsers(query = "", domain = "wire.com")
             }
         }
 
@@ -132,7 +142,7 @@ class SearchApiClientTest {
     fun `given numberOfResults below minimum, when searchUsers, then throws IAException`() =
         runTest {
             assertFailsWith<IllegalArgumentException> {
-                apiClient().searchUsers(query = "Alice", numberOfResults = 0)
+                apiClient().searchUsers(query = "Alice", domain = "wire.com", numberOfResults = 0)
             }
         }
 
@@ -140,26 +150,28 @@ class SearchApiClientTest {
     fun `given numberOfResults above maximum, when searchUsers, then throws IAException`() =
         runTest {
             assertFailsWith<IllegalArgumentException> {
-                apiClient().searchUsers(query = "Alice", numberOfResults = 501)
+                apiClient().searchUsers(query = "Alice", domain = "wire.com", numberOfResults = 501)
             }
         }
 
     @Test
     fun `given numberOfResults at minimum boundary, when searchUsers, then succeeds`() =
         runTest {
-            apiClient().searchUsers(query = "Alice", numberOfResults = 1)
+            apiClient().searchUsers(query = "Alice", domain = "wire.com", numberOfResults = 1)
         }
 
     @Test
     fun `given numberOfResults at maximum boundary, when searchUsers, then succeeds`() =
         runTest {
-            apiClient().searchUsers(query = "Alice", numberOfResults = 500)
+            apiClient().searchUsers(query = "Alice", domain = "wire.com", numberOfResults = 500)
         }
 
     @Test
     fun `given documents in response, when searchUsers, then documents deserialized`() =
         runTest {
-            val result = apiClient(SEARCH_RESPONSE_WITH_RESULTS).searchUsers(query = "Alice")
+            val result = apiClient(
+                SEARCH_RESPONSE_WITH_RESULTS
+            ).searchUsers(query = "Alice", domain = "wire.com")
             assertEquals(1, result.documents.size)
             assertEquals("Alice", result.documents.first().name)
             assertEquals("alice", result.documents.first().handle)
@@ -168,7 +180,9 @@ class SearchApiClientTest {
     @Test
     fun `given document with qualifiedId, when searchUsers, then qualifiedId deserialized`() =
         runTest {
-            val result = apiClient(SEARCH_RESPONSE_WITH_RESULTS).searchUsers(query = "Alice")
+            val result = apiClient(
+                SEARCH_RESPONSE_WITH_RESULTS
+            ).searchUsers(query = "Alice", domain = "wire.com")
             assertEquals("wire.com", result.documents.first().qualifiedId?.domain)
             assertEquals(UUID.fromString(USER_ID), result.documents.first().qualifiedId?.id)
         }
@@ -176,28 +190,36 @@ class SearchApiClientTest {
     @Test
     fun `given hasMore true in response, when searchUsers, then hasMore is true`() =
         runTest {
-            val result = apiClient(SEARCH_RESPONSE_WITH_RESULTS).searchUsers(query = "Alice")
+            val result = apiClient(
+                SEARCH_RESPONSE_WITH_RESULTS
+            ).searchUsers(query = "Alice", domain = "wire.com")
             assertEquals(true, result.hasMore)
         }
 
     @Test
     fun `given empty documents in response, when searchUsers, then documents list is empty`() =
         runTest {
-            val result = apiClient(SEARCH_RESPONSE_EMPTY).searchUsers(query = "Alice")
+            val result = apiClient(
+                SEARCH_RESPONSE_EMPTY
+            ).searchUsers(query = "Alice", domain = "wire.com")
             assertEquals(0, result.documents.size)
         }
 
     @Test
     fun `given pagingState in response, when searchUsers, then pagingState deserialized`() =
         runTest {
-            val result = apiClient(SEARCH_RESPONSE_WITH_RESULTS).searchUsers(query = "Alice")
+            val result = apiClient(
+                SEARCH_RESPONSE_WITH_RESULTS
+            ).searchUsers(query = "Alice", domain = "wire.com")
             assertEquals("next-page-token", result.pagingState)
         }
 
     @Test
     fun `given null pagingState in response, when searchUsers, then pagingState is null`() =
         runTest {
-            val result = apiClient(SEARCH_RESPONSE_EMPTY).searchUsers(query = "Alice")
+            val result = apiClient(
+                SEARCH_RESPONSE_EMPTY
+            ).searchUsers(query = "Alice", domain = "wire.com")
             assertEquals(null, result.pagingState)
         }
 

@@ -656,7 +656,7 @@ class WireApplicationManager internal constructor(
      * Searches for Wire users matching the given query.
      *
      * @param query The search string to match against user names and handles.
-     * @param domain The domain to restrict the search to, or null to search across all domains.
+     * @param domain The domain to restrict the search to.
      * @param numberOfResults The maximum number of results to return,
      * or null to use the SDK default (15).
      * @return A [SearchContactsResponse] containing the list of matched users.
@@ -665,7 +665,7 @@ class WireApplicationManager internal constructor(
     @JvmOverloads
     fun searchUsers(
         query: String,
-        domain: String? = null,
+        domain: String,
         numberOfResults: Int? = null
     ): SearchContactsResponse {
         return runBlocking {
@@ -682,7 +682,7 @@ class WireApplicationManager internal constructor(
      */
     suspend fun searchUsersSuspending(
         query: String,
-        domain: String? = null,
+        domain: String,
         numberOfResults: Int? = null
     ): SearchContactsResponse {
         return searchApiClient.searchUsers(

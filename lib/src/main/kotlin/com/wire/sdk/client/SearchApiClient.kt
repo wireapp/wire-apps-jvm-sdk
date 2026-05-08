@@ -35,7 +35,7 @@ internal class SearchApiClient(private val httpClient: HttpClient) {
 
     suspend fun searchUsers(
         query: String,
-        domain: String? = null,
+        domain: String,
         numberOfResults: Int? = null
     ): SearchContactsResponse {
         val size = numberOfResults ?: DEFAULT_RESULT_SIZE
@@ -44,6 +44,7 @@ internal class SearchApiClient(private val httpClient: HttpClient) {
             "Number of results value must be between $MIN_RESULT_SIZE and $MAX_RESULT_SIZE."
         }
         require(query.isNotBlank()) { "Search query must not be blank." }
+        require(domain.isNotBlank()) { "Domain must not be blank." }
 
         logger.debug(
             "Searching users with query='{}', domain='{}', size={}",
@@ -54,7 +55,7 @@ internal class SearchApiClient(private val httpClient: HttpClient) {
 
         return httpClient.get("/$basePath/contacts") {
             parameter("q", query)
-            domain?.let { parameter("domain", it) }
+            parameter("domain", domain)
             parameter("type", "regular") // Search users only, not apps.
             parameter("size", size)
         }.body<SearchContactsResponse>()
