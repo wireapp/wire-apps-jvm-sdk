@@ -679,7 +679,7 @@ class ConversationServiceTest {
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
-                    addMemberToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
+                    addClientsToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
                 } returns Unit
             }
 
@@ -705,7 +705,7 @@ class ConversationServiceTest {
             assertEquals(0, result.failedUsers.size)
 
             coVerify(exactly = 1) {
-                cryptoClient.addMemberToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
+                cryptoClient.addClientsToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             verify(exactly = 1) {
                 conversationStorage.saveMembers(CONVERSATION_ID, any())
@@ -897,7 +897,7 @@ class ConversationServiceTest {
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
-                    addMemberToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
+                    addClientsToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
                 } throws MlsException.Other("Failed to add member")
             }
 
@@ -922,7 +922,7 @@ class ConversationServiceTest {
             }
 
             coVerify(exactly = 1) {
-                cryptoClient.addMemberToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
+                cryptoClient.addClientsToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             verify(exactly = 0) {
                 conversationStorage.saveMembers(any(), any())
@@ -986,7 +986,7 @@ class ConversationServiceTest {
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
-                    addMemberToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
+                    addClientsToMlsConversation(CONVERSATION_MLS_GROUP_ID, any())
                 } returns Unit
             }
 
@@ -1047,7 +1047,7 @@ class ConversationServiceTest {
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
-                    removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
+                    removeClientsFromConversation(CONVERSATION_MLS_GROUP_ID, any())
                 } returns Unit
             }
 
@@ -1068,7 +1068,7 @@ class ConversationServiceTest {
 
             coVerify(exactly = 1) {
                 usersApiClient.getClientsByUserId(CONVERSATION_MEMBER_1)
-                cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
+                cryptoClient.removeClientsFromConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             verify(exactly = 1) {
                 conversationStorage.deleteMembers(CONVERSATION_ID, membersToRemove)
@@ -1113,7 +1113,7 @@ class ConversationServiceTest {
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
-                    removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
+                    removeClientsFromConversation(CONVERSATION_MLS_GROUP_ID, any())
                 } returns Unit
             }
 
@@ -1134,7 +1134,7 @@ class ConversationServiceTest {
 
             coVerify(exactly = 1) {
                 usersApiClient.getClientsByUserIds(membersToRemove)
-                cryptoClient.removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
+                cryptoClient.removeClientsFromConversation(CONVERSATION_MLS_GROUP_ID, any())
             }
             coVerify(exactly = 0) {
                 usersApiClient.getClientsByUserId(any())
@@ -1278,7 +1278,7 @@ class ConversationServiceTest {
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
-                    removeMembersFromConversation(CONVERSATION_MLS_GROUP_ID, any())
+                    removeClientsFromConversation(CONVERSATION_MLS_GROUP_ID, any())
                 } throws MlsException.Other("Failed to remove members")
             }
 
@@ -1303,7 +1303,7 @@ class ConversationServiceTest {
             }
 
             coVerify(exactly = 1) {
-                cryptoClient.removeMembersFromConversation(
+                cryptoClient.removeClientsFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(client1).map { client ->
                         CryptoClientId.create(
@@ -1359,7 +1359,7 @@ class ConversationServiceTest {
             val capturedClients = slot<List<CryptoClientId>>()
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
-                    removeMembersFromConversation(
+                    removeClientsFromConversation(
                         mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                         clientIds = capture(lst = capturedClients)
                     )
@@ -1385,7 +1385,7 @@ class ConversationServiceTest {
 
             coVerify(exactly = 1) {
                 usersApiClient.getClientsByUserId(CONVERSATION_MEMBER_1)
-                cryptoClient.removeMembersFromConversation(
+                cryptoClient.removeClientsFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(client1, client2, client3).map { client ->
                         CryptoClientId.create(
@@ -1431,7 +1431,7 @@ class ConversationServiceTest {
             val cryptoClient = mockk<CryptoClient> {
                 coEvery { conversationExists(any()) } returns false
                 coEvery { createConversation(any(), any()) } returns Unit
-                coEvery { addMemberToMlsConversation(any(), any()) } returns Unit
+                coEvery { addClientsToMlsConversation(any(), any()) } returns Unit
             }
 
             val service = ConversationService(
@@ -1534,7 +1534,7 @@ class ConversationServiceTest {
                 // Not in crypto → proceed with full establishment
                 coEvery { conversationExists(any()) } returns false
                 coEvery { createConversation(any(), any()) } returns Unit
-                coEvery { addMemberToMlsConversation(any(), any()) } returns Unit
+                coEvery { addClientsToMlsConversation(any(), any()) } returns Unit
             }
 
             val service = ConversationService(
@@ -1604,7 +1604,7 @@ class ConversationServiceTest {
             service.createOneToOne(CONVERSATION_MEMBER_1)
 
             coVerify(exactly = 0) { cryptoClient.createConversation(any(), any()) }
-            coVerify(exactly = 0) { cryptoClient.addMemberToMlsConversation(any(), any()) }
+            coVerify(exactly = 0) { cryptoClient.addClientsToMlsConversation(any(), any()) }
             verify(exactly = 1) { conversationStorage.save(any()) }
         }
 

@@ -131,7 +131,7 @@ internal class MockCoreCryptoClient private constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun addMemberToMlsConversation(
+    override suspend fun addClientsToMlsConversation(
         mlsGroupId: ConversationId,
         keyPackages: List<KeyPackage>
     ) {
@@ -149,7 +149,7 @@ internal class MockCoreCryptoClient private constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun removeMembersFromConversation(
+    override suspend fun removeClientsFromConversation(
         mlsGroupId: ConversationId,
         clientIds: List<CryptoClientId>
     ) {
