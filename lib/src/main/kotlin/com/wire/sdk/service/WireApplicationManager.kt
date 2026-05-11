@@ -653,7 +653,16 @@ class WireApplicationManager internal constructor(
     }
 
     /**
-     * Searches for Wire users matching the given query.
+     * Performs user search using a normalized version of the query.
+     *
+     * The search query is normalized by converting all characters to lower case
+     * and removing diacritical marks (for example, "Björn" becomes "bjorn").
+     *
+     * Matching users are returned according to the following priority order:
+     * 1. Users whose normalized full handle exactly matches the query
+     * 2. Users whose normalized full display name exactly matches the query
+     * 3. Users whose normalized handle starts with the query
+     * 4. Users whose normalized display name starts with the query
      *
      * @param query The search string to match against user names and handles.
      * @param domain The domain to restrict the search to.
