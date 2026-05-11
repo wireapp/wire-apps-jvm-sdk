@@ -18,6 +18,7 @@ package com.wire.sdk.service
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.client.SearchApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -34,6 +35,7 @@ import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.search.SearchContactsResponse
 import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
@@ -61,6 +63,7 @@ class WireApplicationManager internal constructor(
     private val usersApiClient: UsersApiClient,
     private val mlsApiClient: MlsApiClient,
     private val assetsApiClient: AssetsApiClient,
+    private val searchApiClient: SearchApiClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
@@ -646,6 +649,55 @@ class WireApplicationManager internal constructor(
         conversationService.removeMembersFromConversation(
             conversationId = conversationId,
             members = members
+        )
+    }
+
+    /**
+     * Performs user search using a normalized version of the query.
+     *
+     * The search query is normalized by converting all characters to lower case
+     * and removing diacritical marks (for example, "Björn" becomes "bjorn").
+     *
+     * Matching users are returned according to the following priority order:
+     * 1. Users whose normalized full handle exactly matches the query
+     * 2. Users whose normalized full display name exactly matches the query
+     * 3. Users whose normalized handle starts with the query
+     * 4. Users whose normalized display name starts with the query
+     *
+     * @param query The search string to match against user names and handles.
+     * @param domain The domain to restrict the search to.
+     * @param numberOfResults The maximum number of results to return,
+     * or null to use the SDK default (15).
+     * @return A [SearchContactsResponse] containing the list of matched users.
+     * @throws WireException If the request fails or an error occurs while searching.
+     */
+    @JvmOverloads
+    fun searchUsers(
+        query: String,
+        domain: String,
+        numberOfResults: Int? = null
+    ): SearchContactsResponse {
+        return runBlocking {
+            searchUsersSuspending(
+                query = query,
+                domain = domain,
+                numberOfResults = numberOfResults
+            )
+        }
+    }
+
+    /**
+     * See [searchUsers]
+     */
+    suspend fun searchUsersSuspending(
+        query: String,
+        domain: String,
+        numberOfResults: Int? = null
+    ): SearchContactsResponse {
+        return searchApiClient.searchUsers(
+            query = query,
+            domain = domain,
+            numberOfResults = numberOfResults
         )
     }
 }
