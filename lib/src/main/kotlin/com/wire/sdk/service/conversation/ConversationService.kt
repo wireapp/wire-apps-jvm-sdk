@@ -248,7 +248,7 @@ internal class ConversationService internal constructor(
         if (claimedKeyPackagesResult.keyPackages.isEmpty()) {
             cryptoClient.updateKeyingMaterial(mlsGroupId)
         } else {
-            cryptoClient.addMemberToMlsConversation(
+            cryptoClient.addClientsToMlsConversation(
                 mlsGroupId = mlsGroupId,
                 keyPackages = claimedKeyPackagesResult.keyPackages.map { keyPackage ->
                     keyPackage.toMLSKeyPackage()
@@ -666,7 +666,7 @@ internal class ConversationService internal constructor(
         )
 
         try {
-            cryptoClient.addMemberToMlsConversation(
+            cryptoClient.addClientsToMlsConversation(
                 mlsGroupId = conversation.mlsGroupId,
                 keyPackages = claimedKeyPackagesResult.keyPackages.map { keyPackage ->
                     keyPackage.toMLSKeyPackage()
@@ -740,7 +740,7 @@ internal class ConversationService internal constructor(
             conversationId
         )
 
-        cryptoClient.removeMembersFromConversation(
+        cryptoClient.removeClientsFromConversation(
             mlsGroupId = conversation.mlsGroupId,
             clientIds = clients
         )

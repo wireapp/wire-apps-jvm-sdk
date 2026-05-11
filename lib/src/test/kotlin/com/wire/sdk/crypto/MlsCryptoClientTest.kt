@@ -161,7 +161,7 @@ class MlsCryptoClientTest {
             assertFalse { aliceClient.conversationExists(mlsGroupId) }
 
             assertNotEquals(bobClient.mlsGetPublicKey(), aliceClient.mlsGetPublicKey())
-            bobClient.addMemberToMlsConversation(mlsGroupId, keyPackages)
+            bobClient.addClientsToMlsConversation(mlsGroupId, keyPackages)
 
             // Alice accepts joining the conversation
             val welcomeMessage = testMlsTransport.getLastWelcome()

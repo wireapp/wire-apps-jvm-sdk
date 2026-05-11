@@ -205,26 +205,32 @@ internal class MlsCryptoClient private constructor(
         }
     }
 
-    override suspend fun addMemberToMlsConversation(
+    override suspend fun addClientsToMlsConversation(
         mlsGroupId: ConversationId,
         keyPackages: List<KeyPackage>
     ) {
         coreCryptoClient.transaction {
+            logger.debug("Clients will be added to conversation. mlsGroupId: {}", mlsGroupId)
             it.addClientsToConversation(mlsGroupId, keyPackages)
+            logger.debug("Clients are added to conversation. mlsGroupId: {}", mlsGroupId)
         }
     }
 
-    override suspend fun removeMembersFromConversation(
+    override suspend fun removeClientsFromConversation(
         mlsGroupId: ConversationId,
         clientIds: List<CryptoClientId>
     ) {
         coreCryptoClient.transaction {
+            logger.debug("Clients will be removed from conversation. mlsGroupId: {}", mlsGroupId)
+
             it.removeClientsFromConversation(
                 conversationId = mlsGroupId,
                 clients = clientIds.map { client ->
                     ClientId(client.value.toByteArray())
                 }
             )
+
+            logger.debug("Clients are removed from conversation. mlsGroupId: {}", mlsGroupId)
         }
     }
 

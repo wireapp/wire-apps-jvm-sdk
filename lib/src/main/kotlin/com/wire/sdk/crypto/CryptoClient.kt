@@ -80,16 +80,16 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun updateKeyingMaterial(mlsGroupId: ConversationId)
 
     /**
-     * Alternative way to add a member to an MLS conversation.
+     * Alternative way to add members (clients) to an MLS conversation.
      * Instead of creating a join request accepted by the new client,
-     * this method directly adds a member to a conversation.
+     * this method directly adds members (clients) to a conversation.
      */
-    suspend fun addMemberToMlsConversation(
+    suspend fun addClientsToMlsConversation(
         mlsGroupId: ConversationId,
         keyPackages: List<KeyPackage>
     )
 
-    suspend fun removeMembersFromConversation(
+    suspend fun removeClientsFromConversation(
         mlsGroupId: ConversationId,
         clientIds: List<CryptoClientId>
     )
