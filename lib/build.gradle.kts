@@ -55,7 +55,7 @@ val ktorModules = listOf(
 
 dependencies {
     constraints {
-        api("commons-io:commons-io:2.21.0")
+        api("commons-io:commons-io:2.22.0")
         ktorModules.forEach { module ->
             implementation(module) {
                 version {
