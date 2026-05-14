@@ -484,6 +484,36 @@ internal class ConversationService internal constructor(
         }
     }
 
+    /**
+     * Resets the MLS group of a conversation. Called when receiving a conversation.mls-reset event.
+     * If the conversation already has the new MLS groupId, no-op (idempotent for duplicate events).
+     * Otherwise wipes the old MLS group from CoreCrypto and deletes the conversation (and its
+     * members) from local storage. It will be re-established on the next interaction.
+     */
+    suspend fun resetMlsConversation(
+        conversationId: QualifiedId,
+        newGroupId: String
+    ) {
+        val newMlsGroupId = ConversationId(newGroupId.decodeBase64Bytes())
+        val conversation = conversationStorage.getById(conversationId)
+        if (conversation == null) {
+            logger.warn(
+                "Conversation {} not found in storage during MLS reset. Already deleted?",
+                conversationId
+            )
+            return
+        }
+        if (conversation.mlsGroupId == newMlsGroupId) {
+            logger.info(
+                "Conversation {} already has the new MLS Group ID, skipping reset.",
+                conversationId
+            )
+            return
+        }
+        deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
+        logger.info("MLS conversation reset. conversationId: {}", conversationId)
+    }
+
     suspend fun leaveConversation(conversationId: QualifiedId) {
         logger.info("Attempting to leave conversation. conversationId: {}", conversationId)
 

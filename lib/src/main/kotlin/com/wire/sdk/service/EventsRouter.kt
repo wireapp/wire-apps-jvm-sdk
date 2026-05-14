@@ -243,13 +243,13 @@ internal class EventsRouter internal constructor(
                         timestamp = event.time
                     )
                 } catch (exception: MlsException) {
-                    logger.debug("Message decryption failed, MlsException: ", exception)
+                    logger.warn("Message decryption failed, MlsException: ", exception)
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
                         conversationId = event.qualifiedConversation
                     )
                 } catch (exception: CoreCryptoException.Mls) {
-                    logger.debug(
+                    logger.warn(
                         "Message decryption failed, CoreCryptoException.Mls:",
                         exception
                     )
@@ -262,6 +262,14 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.MessageTimerUpdateDTO -> {
                 processMessageTimerUpdateDTO(event)
+            }
+
+            is EventContentDTO.Conversation.MlsReset -> {
+                logger.info("MLS reset event received for: ${event.qualifiedConversation}")
+                conversationService.resetMlsConversation(
+                    conversationId = event.qualifiedConversation,
+                    newGroupId = event.data.newGroupId
+                )
             }
 
             is EventContentDTO.Conversation.Typing -> {

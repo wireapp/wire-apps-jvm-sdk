@@ -30,6 +30,7 @@ import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -380,6 +381,52 @@ class EventsRouterConcurrencyTest {
             assertEquals(2, processedTeamInvites.size)
             assertTrue(processedTeamInvites.contains(teamId1))
             assertTrue(processedTeamInvites.contains(teamId2))
+
+            eventsRouter.close()
+        }
+
+    @Test
+    fun `mls reset event delegates to conversationService with new groupId`() =
+        runTest {
+            val conversationId = QualifiedId(id = UUID.randomUUID(), domain = "wire.test")
+            val newGroupId = "newGroupIdBase64=="
+            val conversationService = mockk<ConversationService>()
+
+            coEvery {
+                conversationService.resetMlsConversation(any(), any())
+            } returns Unit
+
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val eventsRouter = createEventsRouter(
+                conversationService = conversationService,
+                dispatcher = testDispatcher
+            )
+
+            val event = EventContentDTO.Conversation.MlsReset(
+                qualifiedConversation = conversationId,
+                qualifiedFrom = QualifiedId(UUID.randomUUID(), "wire.test"),
+                time = Clock.System.now(),
+                data = EventContentDTO.MlsConversationResetData(
+                    groupId = "oldGroupIdBase64==",
+                    newGroupId = newGroupId
+                )
+            )
+
+            eventsRouter.route(
+                EventResponse(
+                    id = UUID.randomUUID().toString(),
+                    payload = listOf(event)
+                )
+            )
+
+            testScheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                conversationService.resetMlsConversation(
+                    conversationId = conversationId,
+                    newGroupId = newGroupId
+                )
+            }
 
             eventsRouter.close()
         }
