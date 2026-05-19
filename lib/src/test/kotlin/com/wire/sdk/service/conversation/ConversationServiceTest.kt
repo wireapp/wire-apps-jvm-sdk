@@ -1759,6 +1759,99 @@ class ConversationServiceTest {
         coVerify(exactly = 0) { usersApiClient.getUserData(any()) }
     }
 
+    @Test
+    fun whenResettingMlsConversationThenWipeOldGroupAndDeleteFromLocalStorage() =
+        runTest {
+            val newMlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
+            val newMlsGroupIdBase64 =
+                Base64.getEncoder().encodeToString(newMlsGroupId.copyBytes())
+            val existingConversation = ConversationEntity(
+                id = CONVERSATION_ID,
+                name = "Test-Group-Conversation",
+                mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                teamId = TEAM_ID,
+                type = ConversationEntity.Type.GROUP
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getById(CONVERSATION_ID) } returns existingConversation
+                every { delete(CONVERSATION_ID) } returns Unit
+                every { deleteAllMembersInConversation(CONVERSATION_ID) } returns Unit
+            }
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery { conversationExists(CONVERSATION_MLS_GROUP_ID) } returns true
+                coEvery { wipeConversation(CONVERSATION_MLS_GROUP_ID) } returns Unit
+            }
+
+            val service = ConversationService(
+                backendClient = mockk(),
+                usersApiClient = mockk(),
+                selfApiClient = mockk(),
+                conversationsApiClient = mockk(),
+                oneToOneConversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
+                mlsApiClient = mockk(),
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = cryptoClient
+            )
+
+            service.resetMlsConversation(
+                conversationId = CONVERSATION_ID,
+                newGroupId = newMlsGroupIdBase64
+            )
+
+            coVerify(exactly = 1) {
+                cryptoClient.wipeConversation(CONVERSATION_MLS_GROUP_ID)
+            }
+            verify(exactly = 1) { conversationStorage.delete(any()) }
+        }
+
+    @Test
+    fun whenResettingMlsConversationAndCryptoGroupDoesNotExistThenSkipWipeAndStillDelete() =
+        runTest {
+            val newMlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
+            val newMlsGroupIdBase64 =
+                Base64.getEncoder().encodeToString(newMlsGroupId.copyBytes())
+            val existingConversation = ConversationEntity(
+                id = CONVERSATION_ID,
+                name = "Test-Group-Conversation",
+                mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                teamId = TEAM_ID,
+                type = ConversationEntity.Type.GROUP
+            )
+
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getById(CONVERSATION_ID) } returns existingConversation
+                every { delete(CONVERSATION_ID) } returns Unit
+                every { deleteAllMembersInConversation(CONVERSATION_ID) } returns Unit
+            }
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery { conversationExists(CONVERSATION_MLS_GROUP_ID) } returns false
+            }
+
+            val service = ConversationService(
+                backendClient = mockk(),
+                usersApiClient = mockk(),
+                selfApiClient = mockk(),
+                conversationsApiClient = mockk(),
+                oneToOneConversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
+                mlsApiClient = mockk(),
+                conversationStorage = conversationStorage,
+                appStorage = mockk(),
+                cryptoClient = cryptoClient
+            )
+
+            service.resetMlsConversation(
+                conversationId = CONVERSATION_ID,
+                newGroupId = newMlsGroupIdBase64
+            )
+
+            coVerify(exactly = 0) { cryptoClient.wipeConversation(any()) }
+            verify(exactly = 1) { conversationStorage.delete(any()) }
+        }
+
     private companion object {
         const val BACKEND_DOMAIN = "wire.com"
         val CONVERSATION_ID =

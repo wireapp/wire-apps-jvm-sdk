@@ -133,6 +133,15 @@ sealed class EventContentDTO {
             @SerialName("time") override val time: Instant,
             @SerialName("data") override val data: MessageTimerUpdateEventData
         ) : Conversation()
+
+        @Serializable
+        @SerialName("conversation.mls-reset")
+        data class MlsReset(
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: MlsConversationResetData
+        ) : Conversation()
     }
 
     @Serializable
@@ -142,5 +151,11 @@ sealed class EventContentDTO {
     @Serializable
     data class MessageTimerUpdateEventData(
         @SerialName("message_timer") val messageTimer: Long?
+    )
+
+    @Serializable
+    data class MlsConversationResetData(
+        @SerialName("group_id") val groupId: String,
+        @SerialName("new_group_id") val newGroupId: String
     )
 }

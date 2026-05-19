@@ -23,6 +23,7 @@ import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
+import com.wire.sdk.utils.obfuscateId
 import io.ktor.util.encodeBase64
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -266,10 +267,16 @@ internal class MlsCryptoClient private constructor(
         }
 
     override suspend fun wipeConversation(mlsGroupId: ConversationId) {
-        logger.debug("Conversation will be deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
+        logger.debug(
+            "Conversation will be deleted from CoreCrypto. mlsGroupId: {}",
+            mlsGroupId.toString().obfuscateId()
+        )
         coreCryptoClient.transaction {
             it.wipeConversation(mlsGroupId)
-            logger.debug("Conversation is deleted from CoreCrypto. mlsGroupId: {}", mlsGroupId)
+            logger.debug(
+                "Conversation is deleted from CoreCrypto. mlsGroupId: {}",
+                mlsGroupId.toString().obfuscateId()
+            )
         }
     }
 

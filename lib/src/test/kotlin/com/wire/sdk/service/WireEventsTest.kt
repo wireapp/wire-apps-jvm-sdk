@@ -100,6 +100,19 @@ class WireEventsTest {
     }
 
     @Test
+    fun whenDeserializingMlsResetEventThenItShouldMapCorrectlyToMlsReset() {
+        val event =
+            KtxSerializer.json.decodeFromString<EventResponse>(
+                DUMMY_MLS_RESET_EVENT_RESPONSE
+            )
+
+        val payload = event.payload?.first()
+        assertIs<EventContentDTO.Conversation.MlsReset>(payload)
+        assertEquals("oldGroupIdBase64==", payload.data.groupId)
+        assertEquals("newGroupIdBase64==", payload.data.newGroupId)
+    }
+
+    @Test
     fun givenWireEventsHandlerIsInjectedThenCallingNewPingMethodItSucceeds() =
         runBlocking {
             val wireEvents = IsolatedKoinContext
@@ -145,6 +158,30 @@ class WireEventsTest {
 
         private const val EXPECTED_LOCATION_LATITUDE = 11.12345F
         private const val EXPECTED_LOCATION_LONGITUDE = 12.12345F
+
+        private val DUMMY_MLS_RESET_EVENT_RESPONSE =
+            """{
+                  "id": "4c2c48f6-84af-11ef-8001-860acb7b851a",
+                  "payload": [
+                    {
+                      "qualified_conversation": {
+                        "domain": "${CONVERSATION_ID.domain}",
+                        "id": "${CONVERSATION_ID.id}"
+                      },
+                      "qualified_from": {
+                        "domain": "anta.wire.link",
+                        "id": "95d52e20-8428-4619-9a81-dbc2298a3f28"
+                      },
+                      "time": "2024-10-07T13:23:10.386Z",
+                      "data": {
+                        "group_id": "oldGroupIdBase64==",
+                        "new_group_id": "newGroupIdBase64=="
+                      },
+                      "type": "conversation.mls-reset"
+                    }
+                  ]
+                }
+            """
 
         private val DUMMY_CONVERSATION_CREATE_EVENT_RESPONSE =
             """{
