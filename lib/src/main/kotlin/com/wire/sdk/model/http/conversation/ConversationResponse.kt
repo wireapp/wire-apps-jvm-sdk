@@ -21,10 +21,10 @@ import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.utils.UUIDSerializer
-import io.ktor.util.decodeBase64Bytes
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
+import kotlin.io.encoding.Base64
 
 @Serializable
 data class ConversationResponse(
@@ -64,7 +64,7 @@ data class ConversationResponse(
 }
 
 fun ConversationResponse.getDecodedMlsGroupId(): ConversationId =
-    this.groupId?.decodeBase64Bytes()?.let { ConversationId(it) }
+    groupId?.let { Base64.decode(it) }?.let { ConversationId(it) }
         ?: throw WireException.MissingParameter("MLSGroupId should not be empty or null.")
 
 @Serializable

@@ -44,7 +44,6 @@ import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.MlsTransportLastWelcome
 import io.ktor.http.HttpStatusCode
-import io.ktor.util.encodeBase64
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -56,8 +55,8 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.util.Base64
 import java.util.UUID
+import kotlin.io.encoding.Base64
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -102,7 +101,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = newPackages[0].copyBytes().encodeBase64()
+                            keyPackage = Base64.encode(newPackages[0].copyBytes())
                         )
                     )
                 )
@@ -198,7 +197,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = newPackages[1].copyBytes().encodeBase64()
+                            keyPackage = Base64.encode(newPackages[1].copyBytes())
                         )
                     )
                 )
@@ -265,7 +264,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = newPackages[2].copyBytes().encodeBase64()
+                            keyPackage = Base64.encode(newPackages[2].copyBytes())
                         )
                     )
                 )
@@ -473,9 +472,8 @@ class WireApplicationManagerTest {
 
             // Assert
             assertEquals(originalMessage.id, resultId)
-            val capturedMessage = captured.captured
             // Should have overridden expiresAfterMillis to conversation.messageTimer
-            val expires = when (capturedMessage) {
+            val expires = when (val capturedMessage = captured.captured) {
                 is WireMessage.Text -> capturedMessage.expiresAfterMillis
                 is WireMessage.Asset -> capturedMessage.expiresAfterMillis
                 is WireMessage.Location -> capturedMessage.expiresAfterMillis
@@ -638,17 +636,17 @@ class WireApplicationManagerTest {
         val GROUP_CONVERSATION_MLS_GROUP_ID =
             ConversationId(UUID.randomUUID().toString().toByteArray())
         val GROUP_CONVERSATION_MLS_GROUP_ID_BASE64 =
-            Base64.getEncoder().encodeToString(GROUP_CONVERSATION_MLS_GROUP_ID.copyBytes())
+            Base64.encode(GROUP_CONVERSATION_MLS_GROUP_ID.copyBytes())
 
         val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID =
             ConversationId(UUID.randomUUID().toString().toByteArray())
         val ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID_BASE64 =
-            Base64.getEncoder().encodeToString(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID.copyBytes())
+            Base64.encode(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID.copyBytes())
 
         val CHANNEL_CONVERSATION_MLS_GROUP_ID =
             ConversationId(UUID.randomUUID().toString().toByteArray())
         val CHANNEL_CONVERSATION_MLS_GROUP_ID_BASE64 =
-            Base64.getEncoder().encodeToString(CHANNEL_CONVERSATION_MLS_GROUP_ID.copyBytes())
+            Base64.encode(CHANNEL_CONVERSATION_MLS_GROUP_ID.copyBytes())
 
         private val CONVERSATION_MEMBER_SELF_JSON =
             """

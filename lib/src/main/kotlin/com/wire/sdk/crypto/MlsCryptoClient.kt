@@ -24,12 +24,11 @@ import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.utils.obfuscateId
-import io.ktor.util.encodeBase64
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.Base64
 import java.util.UUID
+import kotlin.io.encoding.Base64
 
 /**
  * Wrapper client on top of the client provided by the Core-Crypto library,
@@ -67,7 +66,7 @@ internal class MlsCryptoClient private constructor(
         mlsGroupId: ConversationId,
         encryptedMessage: String
     ): ByteArray? {
-        val encryptedMessageBytes: ByteArray = Base64.getDecoder().decode(encryptedMessage)
+        val encryptedMessageBytes: ByteArray = Base64.decode(encryptedMessage)
         val decryptedMessage =
             coreCryptoClient.transaction {
                 it.decryptMessage(
@@ -90,7 +89,7 @@ internal class MlsCryptoClient private constructor(
         coreCryptoClient.transaction { crypto ->
             from.until(from + count).map {
                 val pkb = crypto.proteusNewPrekey(it.toUShort())
-                PreKeyCrypto(it, pkb.encodeBase64())
+                PreKeyCrypto(it, Base64.encode(pkb))
             }
         }
 
@@ -98,7 +97,7 @@ internal class MlsCryptoClient private constructor(
         coreCryptoClient.transaction { context ->
             val id = context.proteusLastResortPrekeyId()
             val pkb = context.proteusLastResortPrekey()
-            PreKeyCrypto(id.toInt(), pkb.encodeBase64())
+            PreKeyCrypto(id.toInt(), Base64.encode(pkb))
         }
 
     override suspend fun initializeMlsClient(
@@ -126,7 +125,7 @@ internal class MlsCryptoClient private constructor(
                     credentialType = getCredentialType(it)
                 )
             }
-        val encodedKey = Base64.getEncoder().encodeToString(key)
+        val encodedKey = Base64.encode(key)
         return when (ciphersuite) {
             Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256 -> {
                 MlsPublicKeys(ecdsaSecp256r1Sha256 = encodedKey)
@@ -177,7 +176,7 @@ internal class MlsCryptoClient private constructor(
     /**
      * Creates a conversation in CoreCrypto.
      *
-     * @param ConversationId Group ID from creating the conversation on the backend
+     * @param mlsGroupId Group ID from creating the conversation on the backend
      * @param externalSenders Keys fetched from backend for validating external remove proposals
      */
     override suspend fun createConversation(

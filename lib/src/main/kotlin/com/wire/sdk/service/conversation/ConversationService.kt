@@ -54,13 +54,13 @@ import com.wire.sdk.model.http.conversation.getRemovalKey
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.utils.obfuscateId
-import io.ktor.util.decodeBase64Bytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
 import java.util.UUID
+import kotlin.io.encoding.Base64
 
 @Suppress("TooManyFunctions", "LongParameterList", "LargeClass")
 internal class ConversationService internal constructor(
@@ -423,7 +423,7 @@ internal class ConversationService internal constructor(
         }
 
         return ClaimedKeyPackagesResult(
-            keyPackages = claimedKeyPackages.map { it.keyPackage.decodeBase64Bytes() },
+            keyPackages = claimedKeyPackages.map { Base64.decode(it.keyPackage) },
             successUsers = successUsers,
             failedUsers = failedUsers
         )
@@ -494,7 +494,7 @@ internal class ConversationService internal constructor(
         conversationId: QualifiedId,
         newGroupId: String
     ) {
-        val newMlsGroupId = ConversationId(newGroupId.decodeBase64Bytes())
+        val newMlsGroupId = ConversationId(Base64.decode(newGroupId))
         val conversation = conversationStorage.getById(conversationId)
         if (conversation == null) {
             logger.warn(
