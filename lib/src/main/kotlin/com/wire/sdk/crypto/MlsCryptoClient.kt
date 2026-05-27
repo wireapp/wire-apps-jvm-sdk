@@ -176,7 +176,7 @@ internal class MlsCryptoClient private constructor(
     /**
      * Creates a conversation in CoreCrypto.
      *
-     * @param mlsGroupId Group ID from creating the conversation on the backend
+     * @param mlsGroupId Group ID from creating the conversation in core-crypto storage
      * @param externalSenders Keys fetched from backend for validating external remove proposals
      */
     override suspend fun createConversation(

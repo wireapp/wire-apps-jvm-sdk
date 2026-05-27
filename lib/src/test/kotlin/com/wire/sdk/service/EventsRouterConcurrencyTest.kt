@@ -363,8 +363,16 @@ class EventsRouterConcurrencyTest {
             val teamId1 = UUID.randomUUID()
             val teamId2 = UUID.randomUUID()
             val events = listOf(
-                EventContentDTO.TeamInvite(teamId = teamId1),
-                EventContentDTO.TeamInvite(teamId = teamId2)
+                EventContentDTO.Team.TeamInvite(
+                    teamId = teamId1,
+                    time = Clock.System.now(),
+                    data = "Invite for teamId1"
+                ),
+                EventContentDTO.Team.TeamInvite(
+                    teamId = teamId2,
+                    time = Clock.System.now(),
+                    data = "Invite for teamId2"
+                )
             )
 
             eventsRouter.route(

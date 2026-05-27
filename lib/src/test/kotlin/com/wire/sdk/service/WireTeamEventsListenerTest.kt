@@ -48,6 +48,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.UUID
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 class WireTeamEventsListenerTest {
@@ -64,7 +65,13 @@ class WireTeamEventsListenerTest {
             val lastNotificationId = UUID.randomUUID().toString()
             val webSocketEventResponse = EventResponse(
                 id = UUID.randomUUID().toString(),
-                payload = listOf(EventContentDTO.TeamInvite(teamId = UUID.randomUUID()))
+                payload = listOf(
+                    EventContentDTO.Team.TeamInvite(
+                        teamId = UUID.randomUUID(),
+                        time = Clock.System.now(),
+                        data = "Random team invite"
+                    )
+                )
             )
 
             val conversationId = QualifiedId(

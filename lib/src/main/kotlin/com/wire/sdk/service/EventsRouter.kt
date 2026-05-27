@@ -126,7 +126,7 @@ internal class EventsRouter internal constructor(
     @Suppress("LongMethod", "NestedBlockDepth", "CyclomaticComplexMethod")
     private suspend fun processEvent(event: EventContentDTO) {
         when (event) {
-            is EventContentDTO.TeamInvite -> {
+            is EventContentDTO.Team.TeamInvite -> {
                 val teamId = TeamId(event.teamId)
                 logger.info("Team invite from: $teamId")
                 newTeamInvite(teamId)
@@ -280,7 +280,7 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Team.MemberJoin -> {
                 val userId = QualifiedId(
-                    id = UUID.fromString(event.teamMember.nonQualifiedUserId),
+                    id = UUID.fromString(event.data.nonQualifiedUserId),
                     domain = IsolatedKoinContext.getBackendDomain()
                 )
                 val teamId = TeamId(event.teamId)
@@ -483,7 +483,7 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private suspend fun newTeamInvite(teamId: TeamId) {
+    private fun newTeamInvite(teamId: TeamId) {
         try {
             logger.debug("Confirming team: {}", teamId.value.toString())
             teamStorage.save(teamId) // Can be done async ?

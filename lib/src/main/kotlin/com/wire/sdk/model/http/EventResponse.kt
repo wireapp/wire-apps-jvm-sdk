@@ -38,12 +38,29 @@ data class EventResponse(
 @Serializable
 sealed class EventContentDTO {
     @Serializable
-    @SerialName("team.invite")
-    data class TeamInvite(
-        @Serializable(with = UUIDSerializer::class)
-        @SerialName("teamId")
-        val teamId: UUID
-    ) : EventContentDTO()
+    sealed class Team : EventContentDTO() {
+        abstract val teamId: UUID
+        abstract val time: Instant
+        abstract val data: Any?
+
+        @Serializable
+        @SerialName("team.invite")
+        data class TeamInvite(
+            @Serializable(with = UUIDSerializer::class)
+            @SerialName("team") override val teamId: UUID,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: String
+        ) : Team()
+
+        @Serializable
+        @SerialName("team.member-join")
+        data class MemberJoin(
+            @Serializable(with = UUIDSerializer::class)
+            @SerialName("team") override val teamId: UUID,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: TeamMemberIdData
+        ) : Team()
+    }
 
     @Serializable
     sealed class Conversation : EventContentDTO() {
@@ -142,18 +159,6 @@ sealed class EventContentDTO {
             @SerialName("time") override val time: Instant,
             @SerialName("data") override val data: MlsConversationResetData
         ) : Conversation()
-    }
-
-    @Serializable
-    sealed class Team : EventContentDTO() {
-        @Serializable
-        @SerialName("team.member-join")
-        data class MemberJoin(
-            @SerialName("data") val teamMember: TeamMemberIdData,
-            @Serializable(with = UUIDSerializer::class)
-            @SerialName("team") val teamId: UUID,
-            @SerialName("time") val time: String
-        ) : Team()
     }
 
     @Serializable
