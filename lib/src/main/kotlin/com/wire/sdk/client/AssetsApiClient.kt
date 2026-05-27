@@ -29,8 +29,8 @@ import io.ktor.client.statement.readRawBytes
 import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
-import io.ktor.util.encodeBase64
 import org.slf4j.LoggerFactory
+import kotlin.io.encoding.Base64
 
 internal class AssetsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -101,7 +101,7 @@ internal class AssetsApiClient(private val httpClient: HttpClient) {
                 .append(assetSize)
                 .append("\r\n")
             body.append("Content-MD5: ")
-                .append(metadata.md5.encodeBase64())
+                .append(Base64.encode(metadata.md5))
                 .append("\r\n\r\n")
 
             body.toString()

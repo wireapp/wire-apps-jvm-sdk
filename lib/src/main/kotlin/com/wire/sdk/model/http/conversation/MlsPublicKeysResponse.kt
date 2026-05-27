@@ -19,9 +19,9 @@ package com.wire.sdk.model.http.conversation
 import com.wire.crypto.Ciphersuite
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.http.MlsPublicKeys
-import io.ktor.util.decodeBase64Bytes
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.io.encoding.Base64
 
 @Serializable
 data class MlsPublicKeysResponse(
@@ -50,5 +50,5 @@ fun MlsPublicKeysResponse.getRemovalKey(cipherSuite: Ciphersuite): ByteArray? {
         }
     }
 
-    return key?.decodeBase64Bytes()
+    return key?.let { Base64.decode(it) }
 }

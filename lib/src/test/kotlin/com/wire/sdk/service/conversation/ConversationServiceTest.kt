@@ -58,13 +58,13 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.verify
-import java.util.Base64
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeAll
+import kotlin.io.encoding.Base64
 
 class ConversationServiceTest {
     @Test
@@ -947,7 +947,7 @@ class ConversationServiceTest {
             val keyPackage1 = KeyPackage(
                 clientID = UUID.randomUUID().toString(),
                 domain = BACKEND_DOMAIN,
-                keyPackage = UUID.randomUUID().toString(),
+                keyPackage = Base64.encode(UUID.randomUUID().toString().toByteArray()),
                 keyPackageRef = UUID.randomUUID().toString(),
                 userId = successMember.id.toString()
             )
@@ -1764,7 +1764,7 @@ class ConversationServiceTest {
         runTest {
             val newMlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
             val newMlsGroupIdBase64 =
-                Base64.getEncoder().encodeToString(newMlsGroupId.copyBytes())
+                Base64.encode(newMlsGroupId.copyBytes())
             val existingConversation = ConversationEntity(
                 id = CONVERSATION_ID,
                 name = "Test-Group-Conversation",
@@ -1812,7 +1812,7 @@ class ConversationServiceTest {
         runTest {
             val newMlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
             val newMlsGroupIdBase64 =
-                Base64.getEncoder().encodeToString(newMlsGroupId.copyBytes())
+                Base64.encode(newMlsGroupId.copyBytes())
             val existingConversation = ConversationEntity(
                 id = CONVERSATION_ID,
                 name = "Test-Group-Conversation",
@@ -1862,7 +1862,7 @@ class ConversationServiceTest {
         val TEAM_ID = TeamId(UUID.randomUUID())
         val CONVERSATION_MLS_GROUP_ID = ConversationId(UUID.randomUUID().toString().toByteArray())
         val CONVERSATION_MLS_GROUP_ID_BASE64 =
-            Base64.getEncoder().encodeToString(CONVERSATION_MLS_GROUP_ID.copyBytes())
+            Base64.encode(CONVERSATION_MLS_GROUP_ID.copyBytes())
         val CONVERSATION_RESPONSE = ConversationResponse(
             id = CONVERSATION_ID,
             teamId = TEAM_ID.value,
@@ -1890,8 +1890,7 @@ class ConversationServiceTest {
             conversation = ConversationResponse(
                 id = ONE_TO_ONE_CONVERSATION_ID,
                 teamId = TEAM_ID.value,
-                groupId = Base64.getEncoder()
-                    .encodeToString(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID.copyBytes()),
+                groupId = Base64.encode(ONE_TO_ONE_CONVERSATION_MLS_GROUP_ID.copyBytes()),
                 name = null,
                 epoch = 0L,
                 members = ConversationMembers(
@@ -1927,7 +1926,7 @@ class ConversationServiceTest {
             KeyPackage(
                 clientID = UUID.randomUUID().toString(),
                 domain = BACKEND_DOMAIN,
-                keyPackage = UUID.randomUUID().toString(),
+                keyPackage = Base64.encode(UUID.randomUUID().toString().toByteArray()),
                 keyPackageRef = UUID.randomUUID().toString(),
                 userId = userId.id.toString()
             )

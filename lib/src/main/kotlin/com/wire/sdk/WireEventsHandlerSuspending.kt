@@ -16,10 +16,11 @@
 
 package com.wire.sdk
 
+import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
-import com.wire.sdk.model.Conversation
 import org.slf4j.LoggerFactory
 
 /**
@@ -120,5 +121,18 @@ abstract class WireEventsHandlerSuspending : WireEventsHandler() {
         members: List<QualifiedId>
     ) {
         logger.debug("Received event: UserLeftConversation")
+    }
+
+    /**
+     * A user has joined the team.
+     *
+     * @param userId the user ID of the user who joined
+     * @param teamId the ID of the team
+     */
+    open suspend fun onTeamMemberJoined(
+        userId: QualifiedId,
+        teamId: TeamId
+    ) {
+        logger.debug("Received event: TeamMemberJoined")
     }
 }

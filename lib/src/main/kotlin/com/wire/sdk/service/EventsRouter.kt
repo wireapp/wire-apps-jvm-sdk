@@ -24,6 +24,7 @@ import com.wire.crypto.toWelcome
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationMember
@@ -40,6 +41,7 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.service.conversation.ConversationService
 import io.ktor.client.plugins.ResponseException
 import java.util.Base64
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
@@ -124,7 +126,7 @@ internal class EventsRouter internal constructor(
     @Suppress("LongMethod", "NestedBlockDepth", "CyclomaticComplexMethod")
     private suspend fun processEvent(event: EventContentDTO) {
         when (event) {
-            is EventContentDTO.TeamInvite -> {
+            is EventContentDTO.Team.TeamInvite -> {
                 val teamId = TeamId(event.teamId)
                 logger.info("Team invite from: $teamId")
                 newTeamInvite(teamId)
@@ -243,14 +245,14 @@ internal class EventsRouter internal constructor(
                         timestamp = event.time
                     )
                 } catch (exception: MlsException) {
-                    logger.warn("Message decryption failed, MlsException: ", exception)
+                    logger.warn("Message decryption failed, exception: ", exception)
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
                         conversationId = event.qualifiedConversation
                     )
                 } catch (exception: CoreCryptoException.Mls) {
                     logger.warn(
-                        "Message decryption failed, CoreCryptoException.Mls:",
+                        "Message decryption failed, exception:",
                         exception
                     )
                     mlsFallbackStrategy.verifyConversationOutOfSync(
@@ -274,6 +276,23 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.Typing -> {
                 // Ignore silently
+            }
+
+            is EventContentDTO.Team.MemberJoin -> {
+                val userId = QualifiedId(
+                    id = UUID.fromString(event.data.nonQualifiedUserId),
+                    domain = IsolatedKoinContext.getBackendDomain()
+                )
+                val teamId = TeamId(event.teamId)
+                logger.info("Team member join: teamId={}, userId={}", teamId, userId)
+                handlerScope.launch {
+                    when (wireEventsHandler) {
+                        is WireEventsHandlerDefault ->
+                            wireEventsHandler.onTeamMemberJoined(userId = userId, teamId = teamId)
+                        is WireEventsHandlerSuspending ->
+                            wireEventsHandler.onTeamMemberJoined(userId = userId, teamId = teamId)
+                    }
+                }
             }
 
             is EventContentDTO.Unknown -> {
@@ -464,7 +483,7 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private suspend fun newTeamInvite(teamId: TeamId) {
+    private fun newTeamInvite(teamId: TeamId) {
         try {
             logger.debug("Confirming team: {}", teamId.value.toString())
             teamStorage.save(teamId) // Can be done async ?
