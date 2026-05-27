@@ -245,14 +245,14 @@ internal class EventsRouter internal constructor(
                         timestamp = event.time
                     )
                 } catch (exception: MlsException) {
-                    logger.warn("Message decryption failed, MlsException: ", exception)
+                    logger.warn("Message decryption failed, exception: ", exception)
                     mlsFallbackStrategy.verifyConversationOutOfSync(
                         mlsGroupId = mlsGroupId,
                         conversationId = event.qualifiedConversation
                     )
                 } catch (exception: CoreCryptoException.Mls) {
                     logger.warn(
-                        "Message decryption failed, CoreCryptoException.Mls:",
+                        "Message decryption failed, exception:",
                         exception
                     )
                     mlsFallbackStrategy.verifyConversationOutOfSync(
