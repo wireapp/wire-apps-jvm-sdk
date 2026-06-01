@@ -27,7 +27,6 @@ import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.SearchApiClient
-import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
@@ -352,7 +351,7 @@ class WireApplicationManagerTest {
             val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
             coEvery { mlsApiClient.sendMessage(any()) } returns Unit
 
-            val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val userService = mockk<UserService>(relaxed = true)
             val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
             val searchApiClient = mockk<SearchApiClient>(relaxed = true)
 
@@ -365,7 +364,7 @@ class WireApplicationManagerTest {
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
                 backendClient = backendClient,
-                usersApiClient = usersApiClient,
+                userService = userService,
                 mlsApiClient = mlsApiClient,
                 assetsApiClient = assetsApiClient,
                 searchApiClient = searchApiClient,
@@ -431,7 +430,7 @@ class WireApplicationManagerTest {
             val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
             coEvery { mlsApiClient.sendMessage(any()) } returns Unit
 
-            val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val userService = mockk<UserService>(relaxed = true)
             val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
             val searchApiClient = mockk<SearchApiClient>(relaxed = true)
 
@@ -444,7 +443,7 @@ class WireApplicationManagerTest {
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
                 backendClient = backendClient,
-                usersApiClient = usersApiClient,
+                userService = userService,
                 assetsApiClient = assetsApiClient,
                 searchApiClient = searchApiClient,
                 mlsApiClient = mlsApiClient,
@@ -508,7 +507,7 @@ class WireApplicationManagerTest {
                 conversationEntity
 
             val backendClient = mockk<BackendClient>(relaxed = true)
-            val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val userService = mockk<UserService>(relaxed = true)
             val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
             val searchApiClient = mockk<SearchApiClient>(relaxed = true)
             val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
@@ -519,7 +518,7 @@ class WireApplicationManagerTest {
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
                 backendClient = backendClient,
-                usersApiClient = usersApiClient,
+                userService = userService,
                 assetsApiClient = assetsApiClient,
                 searchApiClient = searchApiClient,
                 mlsApiClient = mlsApiClient,
@@ -553,7 +552,7 @@ class WireApplicationManagerTest {
             val conversationService = mockk<ConversationService>(relaxed = true)
             val backendClient = mockk<BackendClient>(relaxed = true)
             val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
-            val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val userService = mockk<UserService>(relaxed = true)
             val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
             val searchApiClient = mockk<SearchApiClient>(relaxed = true)
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
@@ -572,7 +571,7 @@ class WireApplicationManagerTest {
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
                 backendClient = backendClient,
-                usersApiClient = usersApiClient,
+                userService = userService,
                 mlsApiClient = mlsApiClient,
                 assetsApiClient = assetsApiClient,
                 searchApiClient = searchApiClient,

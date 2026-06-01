@@ -39,7 +39,7 @@ public class GreetNewJoinerInConversationExample extends WireEventsHandlerDefaul
         logger.info("User(s) joined conversation. conversationId: {}, membersCount: {}", conversationId, members.size());
         members.forEach(member -> {
             try {
-                final var name = getManager().getUser(member.userId()).getName();
+                final var name = getManager().getUser(member.userId()).name();
                 welcomeTheNewJoiner(conversationId, name);
             } catch (WireException e) {
                 throw new RuntimeException(e);

@@ -19,7 +19,6 @@ import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.SearchApiClient
-import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AssetResource
@@ -30,13 +29,13 @@ import com.wire.sdk.model.EncryptionKey
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
+import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.search.SearchContactsResponse
-import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
@@ -60,7 +59,7 @@ import org.slf4j.LoggerFactory
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val backendClient: BackendClient,
-    private val usersApiClient: UsersApiClient,
+    private val userService: UserService,
     private val mlsApiClient: MlsApiClient,
     private val assetsApiClient: AssetsApiClient,
     private val searchApiClient: SearchApiClient,
@@ -403,7 +402,7 @@ class WireApplicationManager internal constructor(
      * Blocking method for Java interoperability
      */
     @Throws(WireException::class)
-    fun getUser(userId: QualifiedId): UserResponse =
+    fun getUser(userId: QualifiedId): WireUser =
         runBlocking {
             getUserSuspending(userId)
         }
@@ -413,8 +412,8 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers
      */
     @Throws(WireException::class)
-    suspend fun getUserSuspending(userId: QualifiedId): UserResponse =
-        usersApiClient.getUserData(userId)
+    suspend fun getUserSuspending(userId: QualifiedId): WireUser =
+        userService.getUser(userId)
 
     /**
      * Creates a Group Conversation where currently the only admin is the App
