@@ -135,11 +135,11 @@ val sdkModule =
                 get()
             )
         }
-        single { UserService(get()) }
+        single { UserService(get(), get()) }
 
         // Manager
         single {
-            WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get(), get())
+            WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get())
         }
     }
 

@@ -26,7 +26,6 @@ import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
-import com.wire.sdk.client.SearchApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
@@ -36,8 +35,8 @@ import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
+import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.http.conversation.ConversationRole
-import com.wire.sdk.model.http.search.SearchContactsResponse
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
@@ -353,7 +352,6 @@ class WireApplicationManagerTest {
 
             val userService = mockk<UserService>(relaxed = true)
             val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
-            val searchApiClient = mockk<SearchApiClient>(relaxed = true)
 
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
             coEvery { cryptoClient.encryptMls(any(), any()) } returns byteArrayOf(1, 2, 3)
@@ -367,7 +365,6 @@ class WireApplicationManagerTest {
                 userService = userService,
                 mlsApiClient = mlsApiClient,
                 assetsApiClient = assetsApiClient,
-                searchApiClient = searchApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService
@@ -432,7 +429,6 @@ class WireApplicationManagerTest {
 
             val userService = mockk<UserService>(relaxed = true)
             val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
-            val searchApiClient = mockk<SearchApiClient>(relaxed = true)
 
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
             coEvery { cryptoClient.encryptMls(any(), any()) } returns byteArrayOf(2)
@@ -445,7 +441,6 @@ class WireApplicationManagerTest {
                 backendClient = backendClient,
                 userService = userService,
                 assetsApiClient = assetsApiClient,
-                searchApiClient = searchApiClient,
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
@@ -509,7 +504,6 @@ class WireApplicationManagerTest {
             val backendClient = mockk<BackendClient>(relaxed = true)
             val userService = mockk<UserService>(relaxed = true)
             val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
-            val searchApiClient = mockk<SearchApiClient>(relaxed = true)
             val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
@@ -520,7 +514,6 @@ class WireApplicationManagerTest {
                 backendClient = backendClient,
                 userService = userService,
                 assetsApiClient = assetsApiClient,
-                searchApiClient = searchApiClient,
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
@@ -546,38 +539,38 @@ class WireApplicationManagerTest {
         }
 
     @Test
-    fun `when searchUsers, then delegates to searchApiClient with correct parameters`() =
+    fun `when searchUsers, then delegates to userService with correct parameters`() =
         runTest {
             // Arrange
-            val conversationService = mockk<ConversationService>(relaxed = true)
-            val backendClient = mockk<BackendClient>(relaxed = true)
-            val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
             val userService = mockk<UserService>(relaxed = true)
-            val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
-            val searchApiClient = mockk<SearchApiClient>(relaxed = true)
-            val cryptoClient = mockk<CryptoClient>(relaxed = true)
-            val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
-            val teamStorage = mockk<TeamStorage>(relaxed = true)
-
-            val expectedResponse = SEARCH_CONTACTS_RESPONSE
+            val expectedUsers = listOf(
+                WireUser(
+                    id = SEARCH_USER_QUALIFIED_ID,
+                    name = SEARCH_USER_NAME,
+                    email = null,
+                    handle = SEARCH_USER_HANDLE,
+                    teamId = null,
+                    supportedProtocols = emptyList(),
+                    deleted = null
+                )
+            )
             coEvery {
-                searchApiClient.searchUsers(
+                userService.searchUsers(
                     query = SEARCH_QUERY,
                     domain = SEARCH_DOMAIN,
                     numberOfResults = SEARCH_NUMBER_OF_RESULTS
                 )
-            } returns expectedResponse
+            } returns expectedUsers
 
             val manager = WireApplicationManager(
-                teamStorage = teamStorage,
-                backendClient = backendClient,
+                teamStorage = mockk(relaxed = true),
+                backendClient = mockk(relaxed = true),
                 userService = userService,
-                mlsApiClient = mlsApiClient,
-                assetsApiClient = assetsApiClient,
-                searchApiClient = searchApiClient,
-                cryptoClient = cryptoClient,
-                mlsFallbackStrategy = mlsFallbackStrategy,
-                conversationService = conversationService
+                mlsApiClient = mockk(relaxed = true),
+                assetsApiClient = mockk(relaxed = true),
+                cryptoClient = mockk(relaxed = true),
+                mlsFallbackStrategy = mockk(relaxed = true),
+                conversationService = mockk(relaxed = true)
             )
 
             // Act
@@ -588,14 +581,40 @@ class WireApplicationManagerTest {
             )
 
             // Assert
-            assertEquals(expectedResponse, result)
+            assertEquals(expectedUsers, result)
             coVerify(exactly = 1) {
-                searchApiClient.searchUsers(
+                userService.searchUsers(
                     query = SEARCH_QUERY,
                     domain = SEARCH_DOMAIN,
                     numberOfResults = SEARCH_NUMBER_OF_RESULTS
                 )
             }
+        }
+
+    @Test
+    fun `when searchUsers returns empty list, then returns empty list`() =
+        runTest {
+            val userService = mockk<UserService>(relaxed = true)
+            coEvery { userService.searchUsers(any(), any(), any()) } returns emptyList()
+
+            val manager = WireApplicationManager(
+                teamStorage = mockk(relaxed = true),
+                backendClient = mockk(relaxed = true),
+                userService = userService,
+                mlsApiClient = mockk(relaxed = true),
+                assetsApiClient = mockk(relaxed = true),
+                cryptoClient = mockk(relaxed = true),
+                mlsFallbackStrategy = mockk(relaxed = true),
+                conversationService = mockk(relaxed = true)
+            )
+
+            val result = manager.searchUsersSuspending(
+                query = SEARCH_QUERY,
+                domain = SEARCH_DOMAIN,
+                numberOfResults = null
+            )
+
+            assertTrue(result.isEmpty())
         }
 
     private suspend fun generateUser2Packages(): List<KeyPackage> =
@@ -783,14 +802,12 @@ class WireApplicationManagerTest {
         private const val SEARCH_QUERY = "Alice"
         private const val SEARCH_DOMAIN = "wire.com"
         private const val SEARCH_NUMBER_OF_RESULTS = 25
-        private val SEARCH_CONTACTS_RESPONSE = SearchContactsResponse(
-            documents = emptyList(),
-            found = 0,
-            hasMore = false,
-            pagingState = null,
-            returned = 0,
-            took = 5
+        private val SEARCH_USER_QUALIFIED_ID = QualifiedId(
+            id = UUID.fromString("11111111-1111-1111-1111-111111111111"),
+            domain = "wire.com"
         )
+        private const val SEARCH_USER_NAME = "Alice"
+        private const val SEARCH_USER_HANDLE = "alice"
 
         @JvmStatic
         @BeforeAll

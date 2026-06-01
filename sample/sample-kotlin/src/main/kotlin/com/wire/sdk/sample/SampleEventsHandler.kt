@@ -405,27 +405,26 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
 
         val query = split[1].trim()
-        val response = manager.searchUsersSuspending(
+        val users = manager.searchUsersSuspending(
             query = query,
             domain = wireMessage.sender.domain,
             numberOfResults = 100
         )
 
         val sb = StringBuilder()
-        sb.append("Search results for \"$query\" ")
-            .append("(${response.returned ?: 0} of ${response.found ?: "?"} found):\n\n")
+        sb.append("🔍 Search results for \"$query\" ")
+            .append("(${users.size} found):\n\n")
 
-        if (response.documents.isEmpty()) {
+        if (users.isEmpty()) {
             sb.append("No users found.")
         } else {
-            response.documents.forEach { doc ->
-                sb.append("👉 ${doc.name}")
-                doc.handle?.let { sb.append(" (@$it)") }
-                doc.qualifiedId?.let {
-                    sb.append(", ID: `${it.id}` @ ${it.domain}")
-                }
-                doc.team?.let { sb.append(", team: $it") }
-                sb.append("\n")
+            users.forEach { user ->
+                sb.append("👤 ${user.name}")
+                user.handle?.let { sb.append(" (@$it)") }
+                sb.append("\n   ID: ${user.id.id} @ ${user.id.domain}")
+                user.teamId?.let { sb.append("\n   Team: $it") }
+                user.email?.let { sb.append("\n   Email: $it") }
+                sb.append("\n\n")
             }
         }
 
