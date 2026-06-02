@@ -89,8 +89,7 @@ internal class UserService(
 
     private fun ContactDocument.toWireUser(): WireUser =
         WireUser(
-            id = qualifiedId ?: QualifiedId(id = UUID.fromString(id), domain = ""),
-            // TODO: Baris is currently clarifying if qualifiedId can be null. Asked to backend
+            id = qualifiedId,
             name = name,
             email = null,
             handle = handle,

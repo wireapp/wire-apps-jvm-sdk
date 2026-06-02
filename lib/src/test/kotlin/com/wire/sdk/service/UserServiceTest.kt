@@ -66,7 +66,7 @@ class UserServiceTest {
         id: String = userId.toString(),
         name: String = "Alice",
         handle: String? = "alice",
-        qualifiedId: QualifiedId? = this.qualifiedId,
+        qualifiedId: QualifiedId = this.qualifiedId,
         team: String? = null
     ) = ContactDocument(
         accentId = null,
@@ -75,7 +75,7 @@ class UserServiceTest {
         name = name,
         qualifiedId = qualifiedId,
         team = team,
-        type = null
+        type = "regular"
     )
 
     // =========================================================================
@@ -296,27 +296,6 @@ class UserServiceTest {
             )
 
             assertEquals(qualifiedId, result.first().id)
-        }
-
-    @Test
-    fun `searchUsers falls back to bare id with empty domain when qualifiedId is null`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>(relaxed = true)
-            val searchApiClient = mockk<SearchApiClient>()
-            coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
-                SearchContactsResponse(
-                    documents = listOf(buildContactDocument(qualifiedId = null))
-                )
-            val service = UserService(usersApiClient, searchApiClient)
-
-            val result = service.searchUsers(
-                query = "Alice",
-                domain = domain,
-                numberOfResults = null
-            )
-
-            assertEquals(userId, result.first().id.id)
-            assertEquals("", result.first().id.domain)
         }
 
     @Test

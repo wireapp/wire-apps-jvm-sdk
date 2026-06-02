@@ -38,18 +38,18 @@ data class SearchContactsResponse(
 
 @Serializable
 data class ContactDocument(
-    @SerialName("accent_id")
-    val accentId: Long?,
-    @SerialName("handle")
-    val handle: String?,
+    @SerialName("qualified_id")
+    val qualifiedId: QualifiedId,
     @SerialName("id")
     val id: String,
+    @SerialName("handle")
+    val handle: String?,
     @SerialName("name")
     val name: String,
-    @SerialName("qualified_id")
-    val qualifiedId: QualifiedId?,
-    @SerialName("team")
-    val team: String?,
+    @SerialName("accent_id")
+    val accentId: Long?,
     @SerialName("type")
-    val type: String?
+    val type: String,
+    @SerialName("team")
+    val team: String?
 )
