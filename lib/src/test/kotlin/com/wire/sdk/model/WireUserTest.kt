@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test
 import java.util.UUID
 
 class WireUserTest {
-
     private val userId = UUID.fromString("00000000-0000-0000-0000-000000000001")
     private val teamId = UUID.fromString("00000000-0000-0000-0000-000000000002")
     private val domain = "example.com"

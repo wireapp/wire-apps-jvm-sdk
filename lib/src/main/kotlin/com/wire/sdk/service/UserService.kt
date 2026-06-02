@@ -33,7 +33,6 @@ internal class UserService(
     private val usersApiClient: UsersApiClient,
     private val searchApiClient: SearchApiClient
 ) {
-
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     /**
@@ -77,24 +76,26 @@ internal class UserService(
         ).documents.map { it.toWireUser() }
     }
 
-    private fun UserResponse.toWireUser(): WireUser = WireUser(
-        id = id,
-        name = name,
-        email = email,
-        handle = handle,
-        teamId = teamId,
-        supportedProtocols = supportedProtocols,
-        deleted = deleted
-    )
+    private fun UserResponse.toWireUser(): WireUser =
+        WireUser(
+            id = id,
+            name = name,
+            email = email,
+            handle = handle,
+            teamId = teamId,
+            supportedProtocols = supportedProtocols,
+            deleted = deleted
+        )
 
-    private fun ContactDocument.toWireUser(): WireUser = WireUser(
-        id = qualifiedId ?: QualifiedId(id = UUID.fromString(id), domain = ""),
-        // TODO: Baris is currently clarifying if qualifiedId can be null. Asked to backend
-        name = name,
-        email = null,
-        handle = handle,
-        teamId = team?.let { runCatching { UUID.fromString(it) }.getOrNull() },
-        supportedProtocols = emptyList(),
-        deleted = null
-    )
+    private fun ContactDocument.toWireUser(): WireUser =
+        WireUser(
+            id = qualifiedId ?: QualifiedId(id = UUID.fromString(id), domain = ""),
+            // TODO: Baris is currently clarifying if qualifiedId can be null. Asked to backend
+            name = name,
+            email = null,
+            handle = handle,
+            teamId = team?.let { runCatching { UUID.fromString(it) }.getOrNull() },
+            supportedProtocols = emptyList(),
+            deleted = null
+        )
 }

@@ -409,8 +409,7 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers
      */
     @Throws(WireException::class)
-    suspend fun getUserSuspending(userId: QualifiedId): WireUser =
-        userService.getUser(userId)
+    suspend fun getUserSuspending(userId: QualifiedId): WireUser = userService.getUser(userId)
 
     /**
      * Creates a Group Conversation where currently the only admin is the App
@@ -689,9 +688,10 @@ class WireApplicationManager internal constructor(
         query: String,
         domain: String,
         numberOfResults: Int? = null
-    ): List<WireUser> = userService.searchUsers(
-        query = query,
-        domain = domain,
-        numberOfResults = numberOfResults
-    )
+    ): List<WireUser> =
+        userService.searchUsers(
+            query = query,
+            domain = domain,
+            numberOfResults = numberOfResults
+        )
 }
