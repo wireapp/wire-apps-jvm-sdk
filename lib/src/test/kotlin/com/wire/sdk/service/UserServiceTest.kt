@@ -248,9 +248,7 @@ class UserServiceTest {
         val searchApiClient = mockk<SearchApiClient>()
         coEvery {
             searchApiClient.searchUsers(
-                query = "Alice",
-                domain = domain,
-                numberOfResults = 10
+                query = "Alice", domain = domain, numberOfResults = 10
             )
         } returns SearchContactsResponse(documents = listOf(buildContactDocument()))
         val service = UserService(usersApiClient, searchApiClient)
@@ -266,8 +264,9 @@ class UserServiceTest {
     fun `searchUsers maps qualifiedId to WireUser id`() = runTest {
         val usersApiClient = mockk<UsersApiClient>(relaxed = true)
         val searchApiClient = mockk<SearchApiClient>()
-        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
-                SearchContactsResponse(documents = listOf(buildContactDocument(qualifiedId = qualifiedId)))
+        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns SearchContactsResponse(
+            documents = listOf(buildContactDocument(qualifiedId = qualifiedId))
+        )
         val service = UserService(usersApiClient, searchApiClient)
 
         val result = service.searchUsers(query = "Alice", domain = domain, numberOfResults = null)
@@ -279,8 +278,9 @@ class UserServiceTest {
     fun `searchUsers falls back to bare id with empty domain when qualifiedId is null`() = runTest {
         val usersApiClient = mockk<UsersApiClient>(relaxed = true)
         val searchApiClient = mockk<SearchApiClient>()
-        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
-                SearchContactsResponse(documents = listOf(buildContactDocument(qualifiedId = null)))
+        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns SearchContactsResponse(
+            documents = listOf(buildContactDocument(qualifiedId = null))
+        )
         val service = UserService(usersApiClient, searchApiClient)
 
         val result = service.searchUsers(query = "Alice", domain = domain, numberOfResults = null)
@@ -293,10 +293,9 @@ class UserServiceTest {
     fun `searchUsers maps name and handle correctly`() = runTest {
         val usersApiClient = mockk<UsersApiClient>(relaxed = true)
         val searchApiClient = mockk<SearchApiClient>()
-        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
-                SearchContactsResponse(
-                    documents = listOf(buildContactDocument(name = "Bob", handle = "bob"))
-                )
+        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns SearchContactsResponse(
+            documents = listOf(buildContactDocument(name = "Bob", handle = "bob"))
+        )
         val service = UserService(usersApiClient, searchApiClient)
 
         val result = service.searchUsers(query = "Bob", domain = domain, numberOfResults = null)
@@ -309,10 +308,9 @@ class UserServiceTest {
     fun `searchUsers parses team as UUID for teamId`() = runTest {
         val usersApiClient = mockk<UsersApiClient>(relaxed = true)
         val searchApiClient = mockk<SearchApiClient>()
-        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
-                SearchContactsResponse(
-                    documents = listOf(buildContactDocument(team = teamId.toString()))
-                )
+        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns SearchContactsResponse(
+            documents = listOf(buildContactDocument(team = teamId.toString()))
+        )
         val service = UserService(usersApiClient, searchApiClient)
 
         val result = service.searchUsers(query = "Alice", domain = domain, numberOfResults = null)
@@ -324,8 +322,9 @@ class UserServiceTest {
     fun `searchUsers sets teamId to null when team is null`() = runTest {
         val usersApiClient = mockk<UsersApiClient>(relaxed = true)
         val searchApiClient = mockk<SearchApiClient>()
-        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
-                SearchContactsResponse(documents = listOf(buildContactDocument(team = null)))
+        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns SearchContactsResponse(
+            documents = listOf(buildContactDocument(team = null))
+        )
         val service = UserService(usersApiClient, searchApiClient)
 
         val result = service.searchUsers(query = "Alice", domain = domain, numberOfResults = null)
@@ -337,8 +336,9 @@ class UserServiceTest {
     fun `searchUsers sets email deleted and supportedProtocols to null or empty`() = runTest {
         val usersApiClient = mockk<UsersApiClient>(relaxed = true)
         val searchApiClient = mockk<SearchApiClient>()
-        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
-                SearchContactsResponse(documents = listOf(buildContactDocument()))
+        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns SearchContactsResponse(
+            documents = listOf(buildContactDocument())
+        )
         val service = UserService(usersApiClient, searchApiClient)
 
         val result = service.searchUsers(query = "Alice", domain = domain, numberOfResults = null)
@@ -352,8 +352,9 @@ class UserServiceTest {
     fun `searchUsers returns empty list when documents are empty`() = runTest {
         val usersApiClient = mockk<UsersApiClient>(relaxed = true)
         val searchApiClient = mockk<SearchApiClient>()
-        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
-                SearchContactsResponse(documents = emptyList())
+        coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns SearchContactsResponse(
+            documents = emptyList()
+        )
         val service = UserService(usersApiClient, searchApiClient)
 
         val result = service.searchUsers(query = "Alice", domain = domain, numberOfResults = null)

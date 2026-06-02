@@ -35,7 +35,10 @@ class WireUserTest {
         email: String? = "alice@example.com",
         handle: String? = "alice",
         teamId: UUID? = this.teamId,
-        supportedProtocols: List<CryptoProtocol> = listOf(CryptoProtocol.PROTEUS, CryptoProtocol.MLS),
+        supportedProtocols: List<CryptoProtocol> = listOf(
+            CryptoProtocol.PROTEUS,
+            CryptoProtocol.MLS
+        ),
         deleted: Boolean? = false
     ) = WireUser(
         id = id,
