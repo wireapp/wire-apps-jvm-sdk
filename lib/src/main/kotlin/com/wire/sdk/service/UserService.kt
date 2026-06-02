@@ -54,8 +54,8 @@ internal class UserService(
      * Searches for users matching the given [query] on the specified [domain] and returns
      * a list of [WireUser] objects.
      *
-     * Fields not present in the search response ([WireUser.email], [WireUser.supportedProtocols],
-     * [WireUser.deleted]) are set to `null` or an empty list respectively.
+     * Fields not present in the search response ([WireUser.email],
+     * [WireUser.deleted]) are set to `null`.
      *
      * @param query The search string to match against user names and handles.
      * @param domain The domain to restrict the search to.
@@ -83,7 +83,6 @@ internal class UserService(
             email = email,
             handle = handle,
             teamId = teamId,
-            supportedProtocols = supportedProtocols,
             deleted = deleted
         )
 
@@ -94,7 +93,6 @@ internal class UserService(
             email = null,
             handle = handle,
             teamId = team?.let { runCatching { UUID.fromString(it) }.getOrNull() },
-            supportedProtocols = emptyList(),
             deleted = null
         )
 }

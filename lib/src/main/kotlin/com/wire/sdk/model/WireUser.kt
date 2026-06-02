@@ -26,7 +26,6 @@ import java.util.UUID
  * @property email The email address of the user.
  * @property handle The unique handle (username) of the user.
  * @property teamId The UUID of the team the user belongs to.
- * @property supportedProtocols The list of cryptographic protocols supported by the user.
  * @property deleted Whether the user account has been deleted.
  */
 @JvmRecord
@@ -36,6 +35,5 @@ data class WireUser(
     val email: String?,
     val handle: String?,
     val teamId: UUID?,
-    val supportedProtocols: List<CryptoProtocol>,
     val deleted: Boolean?
 )

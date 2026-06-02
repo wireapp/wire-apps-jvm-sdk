@@ -19,7 +19,6 @@ package com.wire.sdk.model
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -34,10 +33,6 @@ class WireUserTest {
         email: String? = "alice@example.com",
         handle: String? = "alice",
         teamId: UUID? = this.teamId,
-        supportedProtocols: List<CryptoProtocol> = listOf(
-            CryptoProtocol.PROTEUS,
-            CryptoProtocol.MLS
-        ),
         deleted: Boolean? = false
     ) = WireUser(
         id = id,
@@ -45,7 +40,6 @@ class WireUserTest {
         email = email,
         handle = handle,
         teamId = teamId,
-        supportedProtocols = supportedProtocols,
         deleted = deleted
     )
 
@@ -61,7 +55,6 @@ class WireUserTest {
         assertEquals("alice@example.com", user.email)
         assertEquals("alice", user.handle)
         assertEquals(teamId, user.teamId)
-        assertEquals(listOf(CryptoProtocol.PROTEUS, CryptoProtocol.MLS), user.supportedProtocols)
         assertEquals(false, user.deleted)
     }
 
@@ -98,29 +91,6 @@ class WireUserTest {
         val user = buildUser(deleted = true)
 
         assertEquals(true, user.deleted)
-    }
-
-    @Test
-    fun `should allow empty supportedProtocols list`() {
-        val user = buildUser(supportedProtocols = emptyList())
-
-        assertTrue(user.supportedProtocols.isEmpty())
-    }
-
-    @Test
-    fun `should allow single protocol in supportedProtocols`() {
-        val user = buildUser(supportedProtocols = listOf(CryptoProtocol.MLS))
-
-        assertEquals(1, user.supportedProtocols.size)
-        assertEquals(CryptoProtocol.MLS, user.supportedProtocols[0])
-    }
-
-    @Test
-    fun `should allow all CryptoProtocol values in supportedProtocols`() {
-        val allProtocols = listOf(CryptoProtocol.PROTEUS, CryptoProtocol.MLS, CryptoProtocol.MIXED)
-        val user = buildUser(supportedProtocols = allProtocols)
-
-        assertEquals(allProtocols, user.supportedProtocols)
     }
 
     // --- Equality ---
@@ -193,14 +163,6 @@ class WireUserTest {
     fun `two users with null and non-null teamId should not be equal`() {
         val userA = buildUser(teamId = UUID.randomUUID())
         val userB = buildUser(teamId = null)
-
-        assertNotEquals(userA, userB)
-    }
-
-    @Test
-    fun `two users with different supportedProtocols should not be equal`() {
-        val userA = buildUser(supportedProtocols = listOf(CryptoProtocol.PROTEUS))
-        val userB = buildUser(supportedProtocols = listOf(CryptoProtocol.MLS))
 
         assertNotEquals(userA, userB)
     }

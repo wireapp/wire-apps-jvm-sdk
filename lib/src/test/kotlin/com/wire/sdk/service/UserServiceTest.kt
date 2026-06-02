@@ -119,20 +119,6 @@ class UserServiceTest {
         }
 
     @Test
-    fun `getUser maps supportedProtocols correctly`() =
-        runTest {
-            val protocols = listOf(CryptoProtocol.MLS, CryptoProtocol.PROTEUS)
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns
-                buildResponse(supportedProtocols = protocols)
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
-            assertEquals(protocols, user.supportedProtocols)
-        }
-
-    @Test
     fun `getUser maps non-null email correctly`() =
         runTest {
             val usersApiClient = mockk<UsersApiClient>()
@@ -374,7 +360,6 @@ class UserServiceTest {
 
             assertNull(result.first().email)
             assertNull(result.first().deleted)
-            assertTrue(result.first().supportedProtocols.isEmpty())
         }
 
     @Test

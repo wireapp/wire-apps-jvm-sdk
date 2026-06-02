@@ -550,7 +550,6 @@ class WireApplicationManagerTest {
                     email = null,
                     handle = SEARCH_USER_HANDLE,
                     teamId = null,
-                    supportedProtocols = emptyList(),
                     deleted = null
                 )
             )
