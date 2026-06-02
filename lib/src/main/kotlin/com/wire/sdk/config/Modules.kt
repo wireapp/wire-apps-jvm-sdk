@@ -50,6 +50,7 @@ import com.wire.sdk.persistence.TeamSqlLiteStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.EventsRouter
 import com.wire.sdk.service.MlsFallbackStrategy
+import com.wire.sdk.service.UserService
 import com.wire.sdk.service.WireApplicationManager
 import com.wire.sdk.service.WireTeamEventsListener
 import com.wire.sdk.service.conversation.ConversationService
@@ -134,10 +135,11 @@ val sdkModule =
                 get()
             )
         }
+        single { UserService(get(), get()) }
 
         // Manager
         single {
-            WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get(), get())
+            WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get())
         }
     }
 

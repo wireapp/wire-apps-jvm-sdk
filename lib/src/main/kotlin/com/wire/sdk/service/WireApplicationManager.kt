@@ -18,8 +18,6 @@ package com.wire.sdk.service
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
-import com.wire.sdk.client.SearchApiClient
-import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AssetResource
@@ -30,13 +28,12 @@ import com.wire.sdk.model.EncryptionKey
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
+import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
-import com.wire.sdk.model.http.search.SearchContactsResponse
-import com.wire.sdk.model.http.user.UserResponse
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
@@ -60,10 +57,9 @@ import org.slf4j.LoggerFactory
 class WireApplicationManager internal constructor(
     private val teamStorage: TeamStorage,
     private val backendClient: BackendClient,
-    private val usersApiClient: UsersApiClient,
+    private val userService: UserService,
     private val mlsApiClient: MlsApiClient,
     private val assetsApiClient: AssetsApiClient,
-    private val searchApiClient: SearchApiClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService
@@ -403,7 +399,7 @@ class WireApplicationManager internal constructor(
      * Blocking method for Java interoperability
      */
     @Throws(WireException::class)
-    fun getUser(userId: QualifiedId): UserResponse =
+    fun getUser(userId: QualifiedId): WireUser =
         runBlocking {
             getUserSuspending(userId)
         }
@@ -413,8 +409,7 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers
      */
     @Throws(WireException::class)
-    suspend fun getUserSuspending(userId: QualifiedId): UserResponse =
-        usersApiClient.getUserData(userId)
+    suspend fun getUserSuspending(userId: QualifiedId): WireUser = userService.getUser(userId)
 
     /**
      * Creates a Group Conversation where currently the only admin is the App
@@ -668,7 +663,7 @@ class WireApplicationManager internal constructor(
      * @param domain The domain to restrict the search to.
      * @param numberOfResults The maximum number of results to return,
      * or null to use the SDK default (15).
-     * @return A [SearchContactsResponse] containing the list of matched users.
+     * @return A list of [WireUser] objects matching the query.
      * @throws WireException If the request fails or an error occurs while searching.
      */
     @JvmOverloads
@@ -676,7 +671,7 @@ class WireApplicationManager internal constructor(
         query: String,
         domain: String,
         numberOfResults: Int? = null
-    ): SearchContactsResponse {
+    ): List<WireUser> {
         return runBlocking {
             searchUsersSuspending(
                 query = query,
@@ -693,11 +688,10 @@ class WireApplicationManager internal constructor(
         query: String,
         domain: String,
         numberOfResults: Int? = null
-    ): SearchContactsResponse {
-        return searchApiClient.searchUsers(
+    ): List<WireUser> =
+        userService.searchUsers(
             query = query,
             domain = domain,
             numberOfResults = numberOfResults
         )
-    }
 }

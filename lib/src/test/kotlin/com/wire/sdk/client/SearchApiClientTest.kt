@@ -183,8 +183,8 @@ class SearchApiClientTest {
             val result = apiClient(
                 SEARCH_RESPONSE_WITH_RESULTS
             ).searchUsers(query = "Alice", domain = "wire.com")
-            assertEquals("wire.com", result.documents.first().qualifiedId?.domain)
-            assertEquals(UUID.fromString(USER_ID), result.documents.first().qualifiedId?.id)
+            assertEquals("wire.com", result.documents.first().qualifiedId.domain)
+            assertEquals(UUID.fromString(USER_ID), result.documents.first().qualifiedId.id)
         }
 
     @Test
