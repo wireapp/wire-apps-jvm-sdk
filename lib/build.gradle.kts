@@ -25,7 +25,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
     id("app.cash.sqldelight") version "2.3.2"
-    id("com.google.protobuf") version "0.9.6"
+    id("com.google.protobuf") version "0.10.0"
 
     // Maven Central
     id("com.vanniktech.maven.publish") version "0.36.0"
@@ -93,7 +93,7 @@ dependencies {
     implementation("org.zalando:logbook-ktor-client:$logbookVersion")
     implementation("org.zalando:logbook-json:$logbookVersion")
     implementation("com.google.protobuf:protobuf-kotlin:4.33.5")
-    implementation("com.google.protobuf:protobuf-gradle-plugin:0.9.6")
+    implementation("com.google.protobuf:protobuf-gradle-plugin:0.10.0")
     implementation("com.github.ben-manes.caffeine:caffeine:3.2.3")
     implementation("io.ktor:ktor-client-auth:$ktorVersion")
 
