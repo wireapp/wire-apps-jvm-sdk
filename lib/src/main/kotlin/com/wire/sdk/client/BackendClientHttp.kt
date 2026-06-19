@@ -134,7 +134,7 @@ internal class BackendClientHttp(
         }.body<ByteArray>()
 
     override suspend fun getCallConfig(limit: Int?): String =
-        httpClient.get("/calls/config") {
+        httpClient.get("/calls/config/v2") {
             limit?.let { parameter("limit", it) }
         }.body<String>()
 }

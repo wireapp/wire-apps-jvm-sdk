@@ -17,6 +17,7 @@
 package com.wire.sdk.service
 
 import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.sdk.calling.CallManager
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.crypto.CryptoClient
@@ -462,6 +463,7 @@ class EventsRouterConcurrencyTest {
         conversationsApiClient: ConversationsApiClient = mockk(relaxed = true),
         mlsApiClient: MlsApiClient = mockk(relaxed = true),
         cryptoClient: CryptoClient = mockk(relaxed = true),
+        callingManager: CallManager = mockk(relaxed = true),
         dispatcher: CoroutineDispatcher = Dispatchers.Default
     ): EventsRouter {
         val wireEventsHandler = object : WireEventsHandlerSuspending() {}
@@ -475,6 +477,7 @@ class EventsRouterConcurrencyTest {
             wireEventsHandler = wireEventsHandler,
             cryptoClient = cryptoClient,
             mlsFallbackStrategy = mlsFallbackStrategy,
+            callingManager = callingManager,
             dispatcher = dispatcher
         )
     }

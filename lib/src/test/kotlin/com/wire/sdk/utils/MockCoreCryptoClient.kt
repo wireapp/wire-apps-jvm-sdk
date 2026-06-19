@@ -17,16 +17,21 @@
 package com.wire.sdk.utils
 
 import com.wire.crypto.Ciphersuite
+import com.wire.crypto.ClientId
 import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCrypto
 import com.wire.crypto.CoreCryptoClient
 import com.wire.crypto.CoreCryptoException
+import com.wire.crypto.CredentialType
 import com.wire.crypto.DatabaseKey
+import com.wire.crypto.DecryptedMessage
+import com.wire.crypto.DeviceStatus
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsException
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
+import com.wire.crypto.WireIdentity
 import com.wire.crypto.invoke
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
@@ -89,7 +94,23 @@ internal class MockCoreCryptoClient private constructor(
     override suspend fun decryptMls(
         mlsGroupId: ConversationId,
         encryptedMessage: String
-    ): ByteArray = GENERIC_TEXT_MESSAGE.toByteArray()
+    ): DecryptedMessage =
+        DecryptedMessage(
+            message = GENERIC_TEXT_MESSAGE.toByteArray(),
+            isActive = true,
+            commitDelay = null,
+            senderClientId = ClientId("sender-client".toByteArray()),
+            hasEpochChanged = false,
+            identity = WireIdentity(
+                clientId = "sender-client",
+                status = DeviceStatus.VALID,
+                thumbprint = "",
+                credentialType = CredentialType.BASIC,
+                x509Identity = null
+            ),
+            bufferedMessages = null,
+            crlNewDistributionPoints = null
+        )
 
     // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
     override suspend fun processWelcomeMessage(welcome: Welcome): ConversationId =

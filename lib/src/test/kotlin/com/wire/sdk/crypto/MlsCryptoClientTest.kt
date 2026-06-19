@@ -183,9 +183,9 @@ class MlsCryptoClientTest {
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
 
             // Bob decrypts the message
-            val decrypted: ByteArray? = bobClient.decryptMls(mlsGroupId, encryptedBase64Message)
+            val decrypted = bobClient.decryptMls(mlsGroupId, encryptedBase64Message)
 
-            val genericMessage = GenericMessage.parseFrom(decrypted)
+            val genericMessage = GenericMessage.parseFrom(decrypted.message)
             val wireMessage = ProtobufDeserializer.processGenericMessage(
                 genericMessage = genericMessage,
                 conversationId = QualifiedId(

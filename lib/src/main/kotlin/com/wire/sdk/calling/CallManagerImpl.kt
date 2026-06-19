@@ -32,8 +32,7 @@ import com.wire.sdk.calling.callbacks.implementations.OnSendOTR
 import com.wire.sdk.calling.types.Handle
 import com.wire.sdk.calling.types.Uint32Native
 import com.wire.sdk.client.BackendClient
-import com.wire.sdk.client.BackendClientDemo.Companion.DEMO_ENVIRONMENT
-import com.wire.sdk.client.BackendClientDemo.Companion.DEMO_USER_ID
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
@@ -79,10 +78,10 @@ class CallManagerImpl internal constructor(
         logger.info("startHandleAsync is called")
         return scope.async(start = CoroutineStart.LAZY) {
             logger.info("Creating Handle")
-            val selfUserId = DEMO_USER_ID
-            val selfUserDomain = DEMO_ENVIRONMENT
-            val selfUser = QualifiedId(selfUserId, selfUserDomain)
-            val selfClientId = appStorage.getDeviceId()!!
+            val selfUser = IsolatedKoinContext.getApplicationUser()
+            val selfClientId = checkNotNull(appStorage.getDeviceId()) {
+                "Cannot start AVS calling before the SDK client is registered"
+            }
 
             val waitInitializationJob = Job()
 
@@ -165,12 +164,11 @@ class CallManagerImpl internal constructor(
                 msg_time = Uint32Native(value = message.timestamp.epochSeconds),
                 convId = message.conversationId.toFederatedId(),
                 userId = message.sender.toFederatedId(),
-                clientId = Base64.getEncoder().encodeToString(senderClient.value),
+                clientId = Base64.getEncoder().encodeToString(senderClient.copyBytes()),
                 // Hard coding 3 as for "Conference MLS"
                 convType = 3
             )
-            logger.
-            info("wcall_recv_msg() called")
+            logger.info("wcall_recv_msg() called")
         }
     }
 

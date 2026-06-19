@@ -18,7 +18,7 @@
 
 package com.wire.sdk.utils
 
-import com.wire.crypto.MLSGroupId
+import com.wire.crypto.ConversationId
 import com.wire.sdk.model.QualifiedId
 import java.util.UUID
 
@@ -32,7 +32,7 @@ fun String.obfuscateId(): String = obfuscateId(END_INDEX_ID)
 
 fun String.obfuscateClientId(): String = obfuscateId(END_INDEX_CLIENT_ID)
 
-fun MLSGroupId.obfuscateGroupId(): String = this.toString().obfuscateId(END_INDEX_ID)
+fun ConversationId.obfuscateGroupId(): String = this.toString().obfuscateId(END_INDEX_ID)
 
 private fun String.obfuscateId(lastChar: Int): String =
     if (this.length < END_INDEX_ID) this else this.substring(START_INDEX, lastChar) + "***"
