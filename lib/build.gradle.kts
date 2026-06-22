@@ -73,8 +73,8 @@ dependencies {
     implementation(
         files(rootProject.projectDir.resolve("buildSrc/build/classes/kotlin/main"))
     )
-    implementation(platform("io.insert-koin:koin-bom:4.2.1"))
-    implementation("io.insert-koin:koin-core:4.2.1")
+    implementation(platform("io.insert-koin:koin-bom:4.2.2"))
+    implementation("io.insert-koin:koin-core:4.2.2")
     implementation("ch.qos.logback:logback-classic:1.5.34")
     // We use logback but libraries like logstash-encoder, logbook and Wiremock use Jackson.
     //  If one library is updated and transitively updates Jackson to 3.x.y, make sure the other
