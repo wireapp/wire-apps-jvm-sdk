@@ -40,6 +40,24 @@ class HttpClientTest {
         authTokenManager
     )
 
+    companion object {
+        private val wireMockServer = WireMockServer(8086)
+
+        @JvmStatic
+        @BeforeAll
+        fun before() {
+            IsolatedKoinContext.start()
+            wireMockServer.start()
+        }
+
+        @JvmStatic
+        @AfterAll
+        fun after() {
+            wireMockServer.stop()
+            IsolatedKoinContext.stop()
+        }
+    }
+
     @Test
     fun `when concurrent unauthorized request, then should refresh access token only once`() =
         runTest {
@@ -68,22 +86,4 @@ class HttpClientTest {
 
             coVerify(exactly = 1) { authTokenManager.refreshAccessToken(any()) }
         }
-
-    companion object {
-        private val wireMockServer = WireMockServer(8086)
-
-        @JvmStatic
-        @BeforeAll
-        fun before() {
-            IsolatedKoinContext.start()
-            wireMockServer.start()
-        }
-
-        @JvmStatic
-        @AfterAll
-        fun after() {
-            wireMockServer.stop()
-            IsolatedKoinContext.stop()
-        }
-    }
 }
