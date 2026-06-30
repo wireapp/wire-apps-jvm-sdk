@@ -28,7 +28,7 @@ plugins {
     id("com.google.protobuf") version "0.10.0"
 
     // Maven Central
-    id("com.vanniktech.maven.publish") version "0.36.0"
+    id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
 group = "com.wire"
