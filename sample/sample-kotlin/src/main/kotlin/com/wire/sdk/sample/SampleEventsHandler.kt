@@ -295,17 +295,17 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     private suspend fun processCreateGroupConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
+        // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
         val split = wireMessage.text.split(" ")
+
+        val userIds = split.drop(2)
+            .chunked(2)
+            .filter { it.size == 2 }
+            .map { (id, domain) -> QualifiedId(id = UUID.fromString(id), domain = domain) }
 
         val conversationId = manager.createGroupConversationSuspending(
             name = split[1],
-            userIds = listOf(
-                QualifiedId(
-                    id = UUID.fromString(split[2]),
-                    domain = split[3]
-                )
-            )
+            userIds = userIds
         )
 
         manager.updateConversationMemberRole(
@@ -326,17 +326,17 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     private suspend fun processCreateChannelConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN]`
+        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
         val split = wireMessage.text.split(" ")
+
+        val userIds = split.drop(2)
+            .chunked(2)
+            .filter { it.size == 2 }
+            .map { (id, domain) -> QualifiedId(id = UUID.fromString(id), domain = domain) }
 
         manager.createChannelConversationSuspending(
             name = split[1],
-            userIds = listOf(
-                QualifiedId(
-                    id = UUID.fromString(split[2]),
-                    domain = split[3]
-                )
-            )
+            userIds = userIds
         )
     }
 

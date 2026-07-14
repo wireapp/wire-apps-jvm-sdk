@@ -63,10 +63,17 @@ class TestCommandProcessor {
     }
 
     private void processCreateGroupConversation(WireMessage.Text wireMessage) {
-        // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN]`
+        // Expected message: `create-group-conversation [NAME] [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
         final var split = wireMessage.text().split(" ");
-        final var userIds = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
-        this.manager.createGroupConversation(split[1], userIds);
+
+        final var name = split[1];
+        final var userIds = new ArrayList<QualifiedId>();
+
+        for (int i = 2; i + 1 < split.length; i += 2) {
+            userIds.add(new QualifiedId(UUID.fromString(split[i]), split[i + 1]));
+        }
+
+        this.manager.createGroupConversation(name, userIds);
     }
 
     private void processLeaveGroupConversation(WireMessage.Text wireMessage) {
@@ -80,10 +87,17 @@ class TestCommandProcessor {
     }
 
     private void processCreateChannelConversation(WireMessage.Text wireMessage) {
-        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN]`
+        // Expected message: `create-channel-conversation [NAME] [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
         final var split = wireMessage.text().split(" ");
-        final var userIds = List.of(new QualifiedId(UUID.fromString(split[2]), split[3]));
-        this.manager.createChannelConversation(split[1], userIds);
+
+        final var name = split[1];
+        final var userIds = new ArrayList<QualifiedId>();
+
+        for (int i = 2; i + 1 < split.length; i += 2) {
+            userIds.add(new QualifiedId(UUID.fromString(split[i]), split[i + 1]));
+        }
+
+        this.manager.createChannelConversation(name, userIds);
     }
 
     private void processAddMemberInConversation(WireMessage.Text wireMessage) {
