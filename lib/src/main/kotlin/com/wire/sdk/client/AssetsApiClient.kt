@@ -48,7 +48,7 @@ internal class AssetsApiClient(private val httpClient: HttpClient) {
         logger.info("Downloading asset ${assetId.obfuscateId()}")
 
         return httpClient.prepareGet("/$BASE_PATH/$assetDomain/$assetId") {
-            assetToken?.let { header(HEADER_ASSET_TOKEN, it) }
+            if (!assetToken.isNullOrBlank()) header(HEADER_ASSET_TOKEN, assetToken)
         }.execute { httpResponse ->
             httpResponse.readRawBytes()
         }
