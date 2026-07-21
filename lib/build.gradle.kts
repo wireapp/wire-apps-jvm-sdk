@@ -40,7 +40,7 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.5.0"
+val ktorVersion = "3.5.1"
 val sqlDelightVersion = "2.3.2"
 val logbookVersion = "4.0.4"
 val ktorModules = listOf(
