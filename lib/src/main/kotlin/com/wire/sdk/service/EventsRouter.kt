@@ -296,7 +296,7 @@ internal class EventsRouter internal constructor(
             }
 
             is EventContentDTO.Unknown -> {
-                logger.warn("Unknown event type: {}", event)
+                logger.debug("Unknown event type: {}", event)
             }
         }
     }
@@ -348,8 +348,8 @@ internal class EventsRouter internal constructor(
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
                         wireMessage
                     )
-                    is WireMessage.Ignored -> logger.warn("Ignored event received.")
-                    is WireMessage.Unknown -> logger.warn("Unknown event received.")
+                    is WireMessage.Ignored -> logger.debug("Ignored event received.")
+                    is WireMessage.Unknown -> logger.debug("Unknown event received.")
                     is WireMessage.Composite -> logger.debug("Composite event received.")
                     is WireMessage.ButtonActionConfirmation ->
                         logger.debug("ButtonActionConfirmation event received.")
@@ -374,8 +374,8 @@ internal class EventsRouter internal constructor(
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
                         wireMessage
                     )
-                    is WireMessage.Ignored -> logger.warn("Ignored event received.")
-                    is WireMessage.Unknown -> logger.warn("Unknown event received.")
+                    is WireMessage.Ignored -> logger.debug("Ignored event received.")
+                    is WireMessage.Unknown -> logger.debug("Unknown event received.")
                     is WireMessage.Composite -> logger.debug("Composite event received.")
                     is WireMessage.ButtonActionConfirmation ->
                         logger.debug("ButtonActionConfirmation event received.")
