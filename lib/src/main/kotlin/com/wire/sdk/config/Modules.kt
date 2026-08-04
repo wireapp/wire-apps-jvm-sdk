@@ -219,9 +219,10 @@ internal fun createHttpClient(
                     val publicPath = listOf("/access", "/api-version")
                     val isBackendRequest = request.url.host == apiUrl.host
 
-                    isBackendRequest && publicPath.none {
-                        request.url.encodedPath.endsWith(it)
-                    }
+                    isBackendRequest &&
+                        publicPath.none {
+                            request.url.encodedPath.endsWith(it)
+                        }
                 }
 
                 refreshTokens {

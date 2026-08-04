@@ -26,6 +26,7 @@ import com.wire.crypto.CredentialType
 import com.wire.crypto.DatabaseKey
 import com.wire.crypto.DecryptedMessage
 import com.wire.crypto.DeviceStatus
+import com.wire.crypto.EpochObserver
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsException
@@ -40,6 +41,7 @@ import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
+import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import java.util.Base64
 import java.util.UUID
@@ -165,6 +167,21 @@ internal class MockCoreCryptoClient private constructor(
     }
 
     override suspend fun conversationEpoch(mlsGroupId: ConversationId): ULong = 0UL
+
+    override suspend fun getClientIds(mlsGroupId: ConversationId): List<ClientId> =
+        listOf(ClientId("sender-client".toByteArray()))
+
+    override suspend fun exportSecretKey(
+        mlsGroupId: ConversationId,
+        keyLength: UInt
+    ): ByteArray = ByteArray(keyLength.toInt())
+
+    override suspend fun registerEpochObserver(
+        scope: CoroutineScope,
+        observer: EpochObserver
+    ) {
+        // Do nothing
+    }
 
     override suspend fun wipeConversation(mlsGroupId: ConversationId) {
         TODO("Not yet implemented")

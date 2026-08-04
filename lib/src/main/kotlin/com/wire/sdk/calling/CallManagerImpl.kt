@@ -29,6 +29,7 @@ import com.wire.sdk.calling.callbacks.implementations.OnMissedCall
 import com.wire.sdk.calling.callbacks.implementations.OnParticipantsVideoStateChanged
 import com.wire.sdk.calling.callbacks.implementations.OnSFTRequest
 import com.wire.sdk.calling.callbacks.implementations.OnSendOTR
+import com.wire.sdk.calling.types.EpochInfo
 import com.wire.sdk.calling.types.Handle
 import com.wire.sdk.calling.types.Uint32Native
 import com.wire.sdk.client.BackendClient
@@ -59,6 +60,11 @@ class CallManagerImpl internal constructor(
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val job = SupervisorJob()
     private val scope = CoroutineScope(job)
+    private val epochInfoObserver = CallingEpochInfoObserver(
+        cryptoClient = cryptoClient,
+        scope = scope,
+        updateEpochInfo = ::updateEpochInfo
+    )
 
     private val callingAvsClient by lazy {
         CallingAvsClient.INSTANCE.apply {
@@ -74,6 +80,7 @@ class CallManagerImpl internal constructor(
 
     private val deferredHandle: Deferred<Handle> = startHandleAsync()
 
+    @Suppress("LongMethod")
     private fun startHandleAsync(): Deferred<Handle> {
         logger.info("startHandleAsync is called")
         return scope.async(start = CoroutineStart.LAZY) {
@@ -103,6 +110,7 @@ class CallManagerImpl internal constructor(
                 incomingCallHandler = OnIncomingCall(
                     backendClient,
                     cryptoClient,
+                    epochInfoObserver,
                     deferredHandle,
                     callingAvsClient,
                     scope
@@ -113,6 +121,7 @@ class CallManagerImpl internal constructor(
                 closeCallHandler = OnCloseCall(
                     backendClient = backendClient,
                     callingAvsClient = callingAvsClient,
+                    stopEpochInfoObservation = epochInfoObserver::stopObserving,
                     handle = deferredHandle,
                     scope = scope
                 ),
@@ -172,15 +181,35 @@ class CallManagerImpl internal constructor(
         }
     }
 
-    override suspend fun endCall(conversationId: QualifiedId) =
+    override suspend fun updateEpochInfo(
+        conversationId: QualifiedId,
+        epochInfo: EpochInfo
+    ) {
         withCalling {
-            logger.info("endCall -> ConversationId: $conversationId")
-
-            wcall_end(
-                inst = it,
-                conversationId = conversationId.toFederatedId()
+            wcall_set_epoch_info(
+                it,
+                conversationId.toFederatedId(),
+                Uint32Native(epochInfo.epoch.toLong()),
+                epochInfo.members.toJsonString(),
+                kotlin.io.encoding.Base64.encode(epochInfo.sharedSecret)
             )
         }
+    }
+
+    override suspend fun endCall(conversationId: QualifiedId) {
+        try {
+            withCalling {
+                logger.info("endCall -> ConversationId: $conversationId")
+
+                wcall_end(
+                    inst = it,
+                    conversationId = conversationId.toFederatedId()
+                )
+            }
+        } finally {
+            epochInfoObserver.stopObserving(conversationId)
+        }
+    }
 
     override suspend fun reportProcessNotifications(isStarted: Boolean) {
         withCalling {

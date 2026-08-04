@@ -1,40 +1,24 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2024 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
+package com.wire.sdk.calling.types
 
-package com.wire.sdk.calling
-
-import com.wire.crypto.ClientId
-import com.wire.sdk.calling.types.EpochInfo
-import com.wire.sdk.model.QualifiedId
-import com.wire.sdk.model.WireMessage
-
-interface CallManager {
-    suspend fun endCall(conversationId: QualifiedId)
-
-    suspend fun reportProcessNotifications(isStarted: Boolean)
-
-    fun cancelJobs()
-
-    suspend fun onCallingMessageReceived(
-        message: WireMessage.Calling,
-        senderClient: ClientId
-    )
-
-    suspend fun updateEpochInfo(
-        conversationId: QualifiedId,
-        epochInfo: EpochInfo
-    )
-}
+data class EpochInfo(
+    val epoch: ULong,
+    val members: CallClientList,
+    val sharedSecret: ByteArray
+)

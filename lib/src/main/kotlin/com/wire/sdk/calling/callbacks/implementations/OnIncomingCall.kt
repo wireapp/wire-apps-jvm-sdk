@@ -18,14 +18,15 @@ package com.wire.sdk.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
 import com.wire.crypto.toGroupInfo
+import com.wire.sdk.calling.CallingEpochInfoObserver
 import com.wire.sdk.calling.CallingAvsClient
 import com.wire.sdk.calling.callbacks.IncomingCallHandler
 import com.wire.sdk.calling.callbacks.implementations.CallTypeCalling.AUDIO
 import com.wire.sdk.calling.callbacks.implementations.CallTypeCalling.VIDEO
 import com.wire.sdk.calling.types.Handle
-import com.wire.sdk.calling.types.Uint32Native
 import com.wire.sdk.client.BackendClient
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.calling.types.Uint32Native
 import com.wire.sdk.utils.obfuscateId
 import com.wire.sdk.utils.toQualifiedId
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +42,7 @@ import java.util.UUID
 internal class OnIncomingCall(
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient,
+    private val epochInfoObserver: CallingEpochInfoObserver,
     private val handle: Deferred<Handle>,
     private val callingAvsClient: CallingAvsClient,
     private val scope: CoroutineScope
@@ -90,7 +92,13 @@ internal class OnIncomingCall(
         val subConversationGroupInfo = backendClient.getSubConversationGroupInfo(
             qualifiedConversationId
         )
-        cryptoClient.joinMlsConversationRequest(subConversationGroupInfo.toGroupInfo())
+        val subConversationGroupId = cryptoClient.joinMlsConversationRequest(
+            subConversationGroupInfo.toGroupInfo()
+        )
+        epochInfoObserver.startObserving(
+            conversationId = qualifiedConversationId,
+            mlsGroupId = subConversationGroupId
+        )
 
         callingAvsClient.wcall_audio_record(
             inst = handle.await(),
@@ -110,7 +118,6 @@ internal class OnIncomingCall(
         )
 
         // AVS will close the call when the last participant is alone for more than 30s
-        // TODO listen epoch changes in subconversation and let AVS know with wcall_set_epoch_info
     }
 }
 

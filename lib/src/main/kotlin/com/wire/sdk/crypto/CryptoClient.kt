@@ -18,13 +18,16 @@ package com.wire.sdk.crypto
 
 import com.wire.crypto.ConversationId
 import com.wire.crypto.DecryptedMessage
+import com.wire.crypto.EpochObserver
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.KeyPackage
+import com.wire.crypto.ClientId
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
+import kotlinx.coroutines.CoroutineScope
 
 internal interface CryptoClient : AutoCloseable {
     fun getCryptoClientId(): CryptoClientId?
@@ -105,6 +108,18 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun conversationExists(mlsGroupId: ConversationId): Boolean
 
     suspend fun conversationEpoch(mlsGroupId: ConversationId): ULong
+
+    suspend fun getClientIds(mlsGroupId: ConversationId): List<ClientId>
+
+    suspend fun exportSecretKey(
+        mlsGroupId: ConversationId,
+        keyLength: UInt
+    ): ByteArray
+
+    suspend fun registerEpochObserver(
+        scope: CoroutineScope,
+        observer: EpochObserver
+    )
 
     suspend fun wipeConversation(mlsGroupId: ConversationId)
 

@@ -23,6 +23,7 @@ import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
 import com.wire.crypto.ClientId
 import com.wire.sdk.calling.CallManager
+import com.wire.sdk.calling.types.EpochInfo
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
@@ -240,6 +241,12 @@ object TestUtils {
                     override suspend fun onCallingMessageReceived(
                         message: WireMessage.Calling,
                         senderClient: ClientId
+                    ) {
+                    }
+
+                    override suspend fun updateEpochInfo(
+                        conversationId: QualifiedId,
+                        epochInfo: EpochInfo
                     ) {
                     }
                 }

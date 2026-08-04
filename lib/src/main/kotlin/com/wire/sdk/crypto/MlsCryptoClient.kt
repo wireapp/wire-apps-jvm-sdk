@@ -11,6 +11,7 @@ import com.wire.crypto.CoreCryptoContext
 import com.wire.crypto.CredentialType
 import com.wire.crypto.DatabaseKey
 import com.wire.crypto.DecryptedMessage
+import com.wire.crypto.EpochObserver
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsTransport
@@ -25,6 +26,7 @@ import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.utils.obfuscateId
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -265,6 +267,29 @@ internal class MlsCryptoClient private constructor(
         coreCryptoClient.transaction {
             it.conversationEpoch(mlsGroupId)
         }
+
+    override suspend fun getClientIds(mlsGroupId: ConversationId): List<ClientId> =
+        coreCryptoClient.transaction {
+            it.getClientIds(mlsGroupId)
+        }
+
+    override suspend fun exportSecretKey(
+        mlsGroupId: ConversationId,
+        keyLength: UInt
+    ): ByteArray =
+        coreCryptoClient.transaction {
+            val secretKey = it.exportSecretKey(mlsGroupId, keyLength)
+            try {
+                secretKey.copyBytes()
+            } finally {
+                secretKey.close()
+            }
+        }
+
+    override suspend fun registerEpochObserver(
+        scope: CoroutineScope,
+        observer: EpochObserver
+    ) = coreCryptoClient.registerEpochObserver(scope, observer)
 
     override suspend fun wipeConversation(mlsGroupId: ConversationId) {
         logger.debug(

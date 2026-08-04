@@ -22,6 +22,7 @@ import com.wire.sdk.calling.callbacks.CloseCallHandler
 import com.wire.sdk.calling.types.Handle
 import com.wire.sdk.calling.types.Uint32Native
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.utils.obfuscateId
 import com.wire.sdk.utils.toQualifiedId
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory
 class OnCloseCall(
     private val backendClient: BackendClient,
     private val callingAvsClient: CallingAvsClient,
+    private val stopEpochInfoObservation: (QualifiedId) -> Unit,
     private val handle: Deferred<Handle>,
     private val scope: CoroutineScope
 ) : CloseCallHandler {
@@ -53,15 +55,19 @@ class OnCloseCall(
         val qualifiedConversationId = conversationId.toQualifiedId()
 
         scope.launch {
-            backendClient.leaveSubConversation(qualifiedConversationId)
-            logger.info(
-                "[OnCloseCall] -> Left MLS conference" +
-                    "ConversationId: ${conversationId.obfuscateId()}"
-            )
-            callingAvsClient.wcall_end(
-                inst = handle.await(),
-                conversationId = conversationId
-            )
+            try {
+                backendClient.leaveSubConversation(qualifiedConversationId)
+                logger.info(
+                    "[OnCloseCall] -> Left MLS conference" +
+                        "ConversationId: ${conversationId.obfuscateId()}"
+                )
+                callingAvsClient.wcall_end(
+                    inst = handle.await(),
+                    conversationId = conversationId
+                )
+            } finally {
+                stopEpochInfoObservation(qualifiedConversationId)
+            }
         }
     }
 }
