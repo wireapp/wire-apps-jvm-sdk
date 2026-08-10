@@ -61,6 +61,6 @@ internal class MlsTransportImpl(private val mlsApiClient: MlsApiClient) : MlsTra
     }
 
     override suspend fun prepareForTransport(historySecret: HistorySecret): MlsTransportData {
-        TODO("Not yet implemented")
+        TODO("This method is not applicable for SDKs")
     }
 }
