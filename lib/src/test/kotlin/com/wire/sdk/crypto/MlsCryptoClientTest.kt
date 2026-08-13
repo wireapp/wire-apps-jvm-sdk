@@ -52,6 +52,33 @@ class MlsCryptoClientTest {
     }
 
     @Test
+    fun deleteClientStorageRemovesKeystoreDirectory() {
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val cryptoClient = MlsCryptoClient.create(
+                appId = userId,
+                ciphersuiteCode = 1
+            )
+            cryptoClient.close()
+
+            val directory = MlsCryptoClient.clientStorageDirectory(userId)
+            assertTrue { directory.exists() }
+
+            val deleted = MlsCryptoClient.deleteClientStorage(userId)
+
+            assertTrue { deleted }
+            assertFalse { directory.exists() }
+        }
+    }
+
+    @Test
+    fun deleteClientStorageReturnsTrueWhenDirectoryMissing() {
+        val userId = UUID.randomUUID()
+        assertFalse { MlsCryptoClient.clientStorageDirectory(userId).exists() }
+        assertTrue { MlsCryptoClient.deleteClientStorage(userId) }
+    }
+
+    @Test
     fun testMlsClientFailOnDifferentPassword() {
         runBlocking {
             val userId = UUID.randomUUID()

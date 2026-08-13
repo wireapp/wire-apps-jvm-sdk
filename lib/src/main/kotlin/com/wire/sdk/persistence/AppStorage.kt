@@ -37,6 +37,8 @@ interface AppStorage {
 
     fun saveDeviceId(deviceId: String)
 
+    fun deleteDeviceId()
+
     fun getBackendCookie(): String?
 
     fun saveBackendCookie(cookie: String)

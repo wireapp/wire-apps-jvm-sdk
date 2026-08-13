@@ -73,7 +73,13 @@ class AuthTokenManager(private val appStorage: AppStorage) {
         } catch (ex: WireException.ClientError) {
             logger.error("Unable to retrieve access token, Error: ${ex.message}")
             if (ex.response.isCredentialsInvalid()) {
+                // The cookie is no longer valid for the stored (temporary) client. Clear both so
+                // that on the next restart the SDK registers a fresh client. The associated
+                // cryptography keystore is wiped at startup in getOrInitCryptoClient, which is the
+                // only point where no CoreCrypto client holds the keystore open.
+                logger.error("Removing current cookie and deviceId from storage")
                 appStorage.deleteBackendCookie()
+                appStorage.deleteDeviceId()
             }
             // TODO Can't recover from this, need to restart the app with a valid api token
             error("Current cookie/api-token is expired. Get a apiToken and restart the App")
