@@ -289,16 +289,36 @@ internal class MlsCryptoClient private constructor(
     companion object {
         private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
         private const val KEYSTORE_NAME = "keystore"
+        private const val CLIENT_STORAGE_ROOT = "storage/cryptography"
+
+        /**
+         * Local directory holding the CoreCrypto keystore (Proteus + MLS state) for [appId].
+         */
+        fun clientStorageDirectory(appId: UUID): File = File("$CLIENT_STORAGE_ROOT/$appId")
+
+        /**
+         * Deletes the local CoreCrypto keystore directory for [appId], wiping all Proteus and
+         * MLS state so a new client can be registered from a clean slate.
+         *
+         * Must only be called while no CoreCrypto client holds the keystore open (e.g. at
+         * startup before [create]); deleting an open keystore leads to undefined behaviour.
+         *
+         * @return true if the directory was absent or fully deleted, false if deletion failed.
+         */
+        fun deleteClientStorage(appId: UUID): Boolean {
+            val directory = clientStorageDirectory(appId)
+            return if (directory.exists()) directory.deleteRecursively() else true
+        }
 
         suspend fun create(
             appId: UUID,
             ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
         ): MlsCryptoClient {
-            val clientDirectoryPath = "storage/cryptography/$appId"
-            val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
+            val clientDirectory = clientStorageDirectory(appId)
+            val keystorePath = "${clientDirectory.path}/$KEYSTORE_NAME"
             val ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
 
-            File(clientDirectoryPath).mkdirs()
+            clientDirectory.mkdirs()
 
             val coreCryptoClient = CoreCrypto.invoke(
                 keystore = keystorePath,

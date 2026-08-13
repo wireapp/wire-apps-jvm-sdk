@@ -309,14 +309,14 @@ internal suspend fun getOrInitCryptoClient(
 
     val appId = IsolatedKoinContext.getApplicationUser().id
 
-    val cryptoClient = MlsCryptoClient.create(
-        appId = appId,
-        ciphersuiteCode = mlsCipherSuiteCode
-    )
-
     val storedDeviceId = appStorage.getDeviceId()
-    if (storedDeviceId != null) {
+
+    return if (storedDeviceId != null) {
         logger.info("Loading MLS Client for: ${storedDeviceId.obfuscateClientId()}")
+        val cryptoClient = MlsCryptoClient.create(
+            appId = appId,
+            ciphersuiteCode = mlsCipherSuiteCode
+        )
         val cryptoClientId = CryptoClientId.create(
             appId = appId,
             deviceId = storedDeviceId,
@@ -328,9 +328,21 @@ internal suspend fun getOrInitCryptoClient(
             mlsTransport = mlsTransport
         )
         appStorage.setShouldRejoinConversations(should = false)
+        cryptoClient
     } else {
         // App doesn't have a client, create one
         logger.info("Initializing Proteus Client")
+
+        // No registered client: either a fresh install, or a previous client was invalidated
+        // (invalid-credentials) and its deviceId cleared. Wipe any stale keystore so CoreCrypto
+        // starts from a clean state. Safe here as no CoreCrypto client has the keystore open yet.
+        val wiped = MlsCryptoClient.deleteClientStorage(appId)
+        logger.info("No registered client found, cleared any stale keystore (success={})", wiped)
+
+        val cryptoClient = MlsCryptoClient.create(
+            appId = appId,
+            ciphersuiteCode = mlsCipherSuiteCode
+        )
         cryptoClient.initializeProteusClient()
         val preKeys = cryptoClient.generateProteusPreKeys()
         val lastKey = cryptoClient.generateProteusLastPreKey()
@@ -379,7 +391,6 @@ internal suspend fun getOrInitCryptoClient(
         )
 
         appStorage.setShouldRejoinConversations(should = true)
+        cryptoClient
     }
-
-    return cryptoClient
 }

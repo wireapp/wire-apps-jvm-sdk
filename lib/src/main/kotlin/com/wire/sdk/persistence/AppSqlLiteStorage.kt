@@ -58,6 +58,8 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
 
     override fun saveDeviceId(deviceId: String) = save(DEVICE_ID, deviceId)
 
+    override fun deleteDeviceId() = delete(DEVICE_ID)
+
     override fun getBackendCookie(): String? =
         runCatching {
             val encryptedBytes = Base64.getDecoder().decode(getByKey(BACKEND_COOKIE).value)
