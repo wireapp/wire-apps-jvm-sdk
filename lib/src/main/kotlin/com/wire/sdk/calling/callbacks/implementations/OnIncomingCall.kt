@@ -17,6 +17,7 @@
 package com.wire.sdk.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
+import com.wire.crypto.ConversationId
 import com.wire.crypto.toGroupInfo
 import com.wire.sdk.calling.CallingEpochInfoObserver
 import com.wire.sdk.calling.CallingAvsClient
@@ -25,13 +26,19 @@ import com.wire.sdk.calling.callbacks.implementations.CallTypeCalling.AUDIO
 import com.wire.sdk.calling.callbacks.implementations.CallTypeCalling.VIDEO
 import com.wire.sdk.calling.types.Handle
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.calling.types.Uint32Native
 import com.wire.sdk.utils.obfuscateId
 import com.wire.sdk.utils.toQualifiedId
+import com.wire.sdk.model.SubconversationResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.launch
+import kotlin.io.encoding.Base64
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromByteArray
 import org.slf4j.LoggerFactory
 import java.util.UUID
 
@@ -42,6 +49,7 @@ import java.util.UUID
 internal class OnIncomingCall(
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient,
+    private val conversationServive: ConversationService,
     private val epochInfoObserver: CallingEpochInfoObserver,
     private val handle: Deferred<Handle>,
     private val callingAvsClient: CallingAvsClient,
@@ -92,12 +100,16 @@ internal class OnIncomingCall(
         val subConversationGroupInfo = backendClient.getSubConversationGroupInfo(
             qualifiedConversationId
         )
-        val subConversationGroupId = cryptoClient.joinMlsConversationRequest(
+
+        val wellcomeBundleId = cryptoClient.joinMlsConversationRequest(
             subConversationGroupInfo.toGroupInfo()
         )
+
+        conversationServive.setSubConversationInfo(qualifiedConversationId, wellcomeBundleId)
+
         epochInfoObserver.startObserving(
             conversationId = qualifiedConversationId,
-            mlsGroupId = subConversationGroupId
+            mlsGroupId = wellcomeBundleId
         )
 
         callingAvsClient.wcall_audio_record(

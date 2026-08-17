@@ -28,6 +28,8 @@ import com.wire.sdk.calling.callbacks.IncomingCallHandler
 import com.wire.sdk.calling.callbacks.LogHandler
 import com.wire.sdk.calling.callbacks.MetricsHandler
 import com.wire.sdk.calling.callbacks.MissedCallHandler
+import com.wire.sdk.calling.callbacks.ParticipantListChangedHandler
+import com.wire.sdk.calling.callbacks.RequestNewEpochHandler
 import com.wire.sdk.calling.callbacks.ReadyHandler
 import com.wire.sdk.calling.callbacks.SFTRequestHandler
 import com.wire.sdk.calling.callbacks.SendHandler
@@ -175,6 +177,17 @@ interface CallingAvsClient : Library {
     fun wcall_process_notifications(
         inst: Handle,
         isStarted: Boolean
+    )
+
+    fun wcall_set_req_new_epoch_handler(
+        inst: Handle,
+        requestNewEpochHandler: RequestNewEpochHandler
+    )
+
+    fun wcall_set_participant_changed_handler(
+        inst: Handle,
+        participantListChanedHandler: ParticipantListChangedHandler,
+        arg: Pointer?
     )
 
     fun kcall_init(env: Int)

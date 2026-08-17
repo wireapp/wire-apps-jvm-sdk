@@ -56,17 +56,18 @@ class OnCloseCall(
 
         scope.launch {
             try {
+                stopEpochInfoObservation(qualifiedConversationId)
                 backendClient.leaveSubConversation(qualifiedConversationId)
                 logger.info(
                     "[OnCloseCall] -> Left MLS conference" +
                         "ConversationId: ${conversationId.obfuscateId()}"
                 )
-                callingAvsClient.wcall_end(
-                    inst = handle.await(),
-                    conversationId = conversationId
-                )
-            } finally {
-                stopEpochInfoObservation(qualifiedConversationId)
+//                callingAvsClient.wcall_end(
+//                    inst = handle.await(),
+//                    conversationId = conversationId
+//                )
+            } catch (exception: Exception) {
+                logger.info("[OnCloseCall] exception at deregistering ${exception.message}")
             }
         }
     }

@@ -60,6 +60,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.encoding.Base64
 
 @Suppress("TooManyFunctions", "LongParameterList", "LargeClass")
@@ -82,6 +83,22 @@ internal class ConversationService internal constructor(
             selfApiClient.getSelfUser().teamId
         }
     }
+
+    private val groupIdsByConversationId = ConcurrentHashMap<QualifiedId, ConversationId>()
+
+    suspend fun getMlsGroupIdFromConversationInfo(conversationId: QualifiedId, subConversation: String?) =
+        subConversation ?. let {
+            groupIdsByConversationId.getValue(conversationId)
+        } ?: getConversationById(conversationId).mlsGroupId
+
+    suspend fun setSubConversationInfo(conversationId: QualifiedId, mlsGroupId: ConversationId) {
+        groupIdsByConversationId[conversationId] = mlsGroupId
+    }
+
+    suspend fun deleteSubConversationInfo(conversationId: QualifiedId) {
+        groupIdsByConversationId.remove(conversationId)
+    }
+
 
     private suspend fun getSelfTeamId(): TeamId =
         selfTeamId.await()

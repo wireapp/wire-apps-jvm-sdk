@@ -41,10 +41,20 @@ internal class CallingEpochInfoObserver(
     private val conversationIdsByGroupId = ConcurrentHashMap<ConversationId, QualifiedId>()
     private val groupIdsByConversationId = ConcurrentHashMap<QualifiedId, ConversationId>()
 
+    private val epochObserver = object : EpochObserver {
+                    override suspend fun epochChanged(
+                        conversationId: ConversationId,
+                        epoch: ULong
+                    ) {
+                        handleEpochChanged(conversationId, epoch)
+                    }
+    }
+
     suspend fun startObserving(
         conversationId: QualifiedId,
         mlsGroupId: ConversationId
     ) {
+        logger.info("WPB-XXX [startObserving] request to observe conf ${conversationId} with mlsgroupid ${mlsGroupId} ")
         groupIdsByConversationId.put(conversationId, mlsGroupId)?.let {
             conversationIdsByGroupId.remove(it)
         }
@@ -56,6 +66,33 @@ internal class CallingEpochInfoObserver(
                 conversationId = conversationId,
                 mlsGroupId = mlsGroupId,
                 epoch = cryptoClient.conversationEpoch(mlsGroupId)
+            )
+        } catch (exception: Exception) {
+            logger.warn("WPB-XXX [startObserving] Exception in register conf ${conversationId} with mlsgroupid ${mlsGroupId} with exception ${exception.message}")
+            stopObserving(conversationId)
+            throw exception
+        }
+    }
+
+    // Probably we dont need this fnc but added to check if we will be able to
+    // proceed with subconversation epoch problems
+    suspend fun updateEpoch(
+        conversationId: QualifiedId
+    ) {
+        val mlsGroupId = groupIdsByConversationId[conversationId]
+
+        if (null == mlsGroupId) {
+            return
+        }
+
+        logger.info("[updateEpoch] will query for epoch information ${conversationId} ${mlsGroupId}")
+
+        try {
+            val epoch = cryptoClient.conversationEpoch(mlsGroupId)
+            sendEpochInfo(
+                conversationId = conversationId,
+                mlsGroupId = mlsGroupId,
+                epoch = epoch
             )
         } catch (exception: Exception) {
             stopObserving(conversationId)
@@ -77,14 +114,7 @@ internal class CallingEpochInfoObserver(
         try {
             cryptoClient.registerEpochObserver(
                 scope = scope,
-                observer = object : EpochObserver {
-                    override suspend fun epochChanged(
-                        conversationId: ConversationId,
-                        epoch: ULong
-                    ) {
-                        handleEpochChanged(conversationId, epoch)
-                    }
-                }
+                observer = epochObserver
             )
         } catch (exception: Exception) {
             isObserverRegistered.set(false)
@@ -108,7 +138,7 @@ internal class CallingEpochInfoObserver(
             throw exception
         } catch (exception: Exception) {
             logger.warn(
-                "Failed to send epoch info for conversation {}",
+                "Failed to send epoch info for conversation ${conversationId}",
                 conversationId,
                 exception
             )

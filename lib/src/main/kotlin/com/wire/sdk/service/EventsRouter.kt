@@ -227,20 +227,20 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.NewMLSMessageDTO -> {
                 val mlsGroupId = conversationService
-                    .getConversationById(event.qualifiedConversation)
-                    .mlsGroupId
+                    .getMlsGroupIdFromConversationInfo(event.qualifiedConversation, event.subconversation)
+                logger.info("[NewMLSMessageDTO] ${event.qualifiedConversation}, ${event.subconversation} -> ${mlsGroupId}")
                 try {
                     val decryptedMessage = cryptoClient.decryptMls(
                         mlsGroupId = mlsGroupId,
                         encryptedMessage = event.data
                     )
 
-                    logger.debug("Decryption successful")
+                    logger.info("[NewMLSMessageDTO] Decryption successful decryptedMessage ${decryptedMessage}")
                     if (
                         decryptedMessage.message == null ||
                         decryptedMessage.senderClientId == null
                     ) {
-                        logger.debug("Decryption success but no message, probably epoch update")
+                        logger.info("Decryption success but no message, probably epoch update")
                         return
                     }
 
@@ -266,6 +266,8 @@ internal class EventsRouter internal constructor(
                         mlsGroupId = mlsGroupId,
                         conversationId = event.qualifiedConversation
                     )
+                } catch (exception: Exception) {
+                    logger.warn("Any other excepion: ${exception.message}")
                 }
             }
 

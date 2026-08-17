@@ -103,7 +103,7 @@ internal class BackendClientHttp(
     }
 
     override suspend fun getSubConversationGroupInfo(conversationId: QualifiedId): ByteArray {
-        logger.info("Fetching sub conversation groupInfo: $conversationId")
+        logger.info("Fetching sub conversation groupInfo for conversationId ${conversationId}")
         return httpClient.get(
             "/conversations/${conversationId.domain}/${conversationId.id}" +
                 "/subconversations/$SUB_CONVERSATION_ID/groupinfo"
@@ -112,8 +112,18 @@ internal class BackendClientHttp(
         }.body<ByteArray>()
     }
 
+    override suspend fun getSubConversationGroupDetails(conversationId: QualifiedId): ByteArray {
+        logger.info("Fetching sub conversation group for conversation ${conversationId}")
+        return httpClient.get(
+            "/conversations/${conversationId.domain}/${conversationId.id}" +
+                "/subconversations/$SUB_CONVERSATION_ID"
+        ) {
+            accept(Mls)
+        }.body<ByteArray>()
+    }
+
     override suspend fun leaveSubConversation(conversationId: QualifiedId) {
-        logger.info("Leaving sub conversation: $conversationId")
+        logger.info("Leaving sub conversation: ${conversationId}")
         httpClient.delete(
             "/conversations/${conversationId.domain}/${conversationId.id}" +
                 "/subconversations/$SUB_CONVERSATION_ID/self"

@@ -36,3 +36,40 @@ data class QualifiedId(
 
     fun toFederatedId(): String = toFullString()
 }
+
+@JvmRecord
+@Serializable
+data class SubconversationResponse(
+    @SerialName("subconv_id")
+    val id: SubconversationId,
+
+    @SerialName("parent_qualified_id")
+    val parentId: ConversationId,
+
+    @SerialName("group_id")
+    val groupId: String,
+
+    @SerialName("epoch")
+    val epoch: ULong,
+
+    @SerialName("epoch_timestamp")
+    val epochTimestamp: String?,
+
+    @SerialName("cipher_suite")
+    val mlsCipherSuiteTag: Int?,
+
+    @SerialName("members")
+    val members: List<SubconversationMemberDTO>,
+)
+
+@JvmRecord
+@Serializable
+data class SubconversationMemberDTO(
+    @SerialName("client_id") val clientId: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("domain") val domain: String
+)
+
+typealias ConversationId = QualifiedId
+typealias SubconversationId = String
+

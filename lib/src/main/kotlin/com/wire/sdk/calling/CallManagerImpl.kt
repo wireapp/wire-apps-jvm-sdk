@@ -26,13 +26,16 @@ import com.wire.sdk.calling.callbacks.implementations.OnConfigRequest
 import com.wire.sdk.calling.callbacks.implementations.OnEstablishedCall
 import com.wire.sdk.calling.callbacks.implementations.OnIncomingCall
 import com.wire.sdk.calling.callbacks.implementations.OnMissedCall
+import com.wire.sdk.calling.callbacks.implementations.OnParticipantListChanged
 import com.wire.sdk.calling.callbacks.implementations.OnParticipantsVideoStateChanged
+import com.wire.sdk.calling.callbacks.implementations.OnRequestNewEpoch
 import com.wire.sdk.calling.callbacks.implementations.OnSFTRequest
 import com.wire.sdk.calling.callbacks.implementations.OnSendOTR
 import com.wire.sdk.calling.types.EpochInfo
 import com.wire.sdk.calling.types.Handle
 import com.wire.sdk.calling.types.Uint32Native
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.model.QualifiedId
@@ -47,14 +50,17 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.util.Base64
+import java.util.Collections
 import kotlin.time.Clock
 
 @Suppress("LongParameterList", "TooManyFunctions")
 class CallManagerImpl internal constructor(
     private val backendClient: BackendClient,
     private val cryptoClient: CryptoClient,
+    private val conversationService: ConversationService,
     private val appStorage: AppStorage
 ) : CallManager {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -80,6 +86,12 @@ class CallManagerImpl internal constructor(
 
     private val deferredHandle: Deferred<Handle> = startHandleAsync()
 
+    private val strongReferences = Collections.synchronizedList(mutableListOf<Any>())
+    private fun <T : Any> T.keepingStrongReference(): T {
+        strongReferences.add(this)
+        return this
+    }
+
     @Suppress("LongMethod")
     private fun startHandleAsync(): Deferred<Handle> {
         logger.info("startHandleAsync is called")
@@ -97,24 +109,26 @@ class CallManagerImpl internal constructor(
                 clientId = selfClientId,
                 readyHandler = ReadyHandler { version: Int, arg: Pointer? ->
                     logger.info("readyHandler version=$version; arg=$arg")
+                    onCallingReady()
                     waitInitializationJob.complete()
                     Unit
-                },
+                }.keepingStrongReference(),
                 sendHandler = OnSendOTR(),
                 sftRequestHandler = OnSFTRequest(
                     deferredHandle,
                     callingAvsClient,
                     backendClient,
                     scope
-                ),
+                ).keepingStrongReference(),
                 incomingCallHandler = OnIncomingCall(
                     backendClient,
                     cryptoClient,
+                    conversationService,
                     epochInfoObserver,
                     deferredHandle,
                     callingAvsClient,
                     scope
-                ),
+                ).keepingStrongReference(),
                 missedCallHandler = OnMissedCall(),
                 answeredCallHandler = OnAnsweredCall(),
                 establishedCallHandler = OnEstablishedCall(),
@@ -124,7 +138,7 @@ class CallManagerImpl internal constructor(
                     stopEpochInfoObservation = epochInfoObserver::stopObserving,
                     handle = deferredHandle,
                     scope = scope
-                ),
+                ).keepingStrongReference(),
                 metricsHandler =
                     { conversationId: String, metricsJson: String, _: Pointer? ->
                         logger.info("Calling metrics on conversation $conversationId: $metricsJson")
@@ -133,7 +147,7 @@ class CallManagerImpl internal constructor(
                     callingAvsClient,
                     backendClient,
                     scope
-                ),
+                ).keepingStrongReference(),
                 constantBitRateStateChangeHandler =
                     { userId: String, clientId: String, isEnabled: Boolean, _: Pointer? ->
                         logger.info(
@@ -141,7 +155,7 @@ class CallManagerImpl internal constructor(
                                 "clientId: ${clientId.obfuscateId()}  isCbrEnabled: $isEnabled"
                         )
                     },
-                videoReceiveStateHandler = OnParticipantsVideoStateChanged(),
+                videoReceiveStateHandler = OnParticipantsVideoStateChanged().keepingStrongReference(),
                 arg = null
             )
             logger.info("wcall_create() called")
@@ -221,6 +235,45 @@ class CallManagerImpl internal constructor(
         deferredHandle.cancel()
         scope.cancel()
         job.cancel()
+    }
+
+    private fun onCallingReady() {
+        initParticipantsHandler()
+        initRequestNewEpochHandler()
+    }
+
+    private fun initParticipantsHandler() {
+        scope.launch {
+            withCalling {
+                val participantListChangedHandler = OnParticipantListChanged().keepingStrongReference()
+                wcall_set_participant_changed_handler(
+                    inst = deferredHandle.await(),
+                    participantListChanedHandler = participantListChangedHandler,
+                    arg = null
+                )
+                logger.info("[Participants Changed]")
+                // Here e can have custom logic for informing pstn user / leaving earls
+                // instead of waiting 90 sec avs timeout
+            }
+        }
+    }
+
+    private fun initRequestNewEpochHandler() {
+        scope.launch {
+            withCalling {
+                val requestNewEpochHandler = OnRequestNewEpoch(
+                    epochInfoObserver = epochInfoObserver,
+                    callingScope = scope
+                ).keepingStrongReference()
+
+                wcall_set_req_new_epoch_handler(
+                    inst = deferredHandle.await(),
+                    requestNewEpochHandler = requestNewEpochHandler
+                )
+
+                logger.info("wcall_set_req_new_epoch_handler() called")
+            }
+        }
     }
 }
 

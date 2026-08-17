@@ -35,6 +35,7 @@ interface BackendClient {
     suspend fun getApplicationFeatures(): FeaturesResponse
 
     suspend fun getSubConversationGroupInfo(conversationId: QualifiedId): ByteArray
+    suspend fun getSubConversationGroupDetails(conversationId: QualifiedId): ByteArray
 
     suspend fun leaveSubConversation(conversationId: QualifiedId)
 

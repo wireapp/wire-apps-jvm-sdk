@@ -145,7 +145,7 @@ val sdkModule =
             WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get())
         }
         // AVS library is initialized lazily inside CallManagerImpl.
-        single<CallManager> { CallManagerImpl(get(), get(), get()) } onClose { it?.cancelJobs() }
+        single<CallManager> { CallManagerImpl(get(), get(), get(), get()) } onClose { it?.cancelJobs() }
     }
 
 internal const val MAX_RETRY_NUMBER_ON_SERVER_ERROR = 10
