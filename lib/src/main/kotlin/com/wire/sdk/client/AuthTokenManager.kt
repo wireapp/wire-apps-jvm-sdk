@@ -18,6 +18,7 @@ package com.wire.sdk.client
 
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.persistence.AppStorage
+import com.wire.sdk.utils.obfuscateId
 import io.ktor.client.call.body
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.RefreshTokensParams
@@ -44,8 +45,15 @@ class AuthTokenManager(private val appStorage: AppStorage) {
         if (responseCookies.isNotEmpty()) {
             val newCookie = responseCookies.firstOrNull { it.name == "zuid" }?.value
             if (!newCookie.isNullOrBlank()) {
+                logger.info(
+                    "Refresh access token. Storing API token in AppStorage. " +
+                        "apiToken:${newCookie.obfuscateId()}"
+                )
                 appStorage.saveBackendCookie(newCookie)
-                logger.info("Received new api token from backend, updated stored cookie")
+                logger.info(
+                    "Refreshed API token is stored in AppStorage. " +
+                        "apiToken:${newCookie.obfuscateId()}"
+                )
             }
         }
 

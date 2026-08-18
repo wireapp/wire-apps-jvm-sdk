@@ -24,6 +24,7 @@ import com.wire.sdk.service.conversation.ConversationService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
+import com.wire.sdk.utils.obfuscateId
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.UUID
@@ -125,8 +126,12 @@ class WireAppSdk(
         val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
         val existingCookie = appStorage.getBackendCookie()
         if (existingCookie == null) {
-            logger.info("Storing API token in AppStorage")
+            logger.info(
+                "No API token found. Storing API token in AppStorage. " +
+                    "apiToken:${apiToken.obfuscateId()}"
+            )
             appStorage.saveBackendCookie(apiToken)
+            logger.info("API token is stored in AppStorage. apiToken:${apiToken.obfuscateId()}")
         } else {
             logger.info("API token already stored in AppStorage (initial apiToken or a refresh)")
         }
