@@ -25,6 +25,7 @@ import com.wire.sdk.utils.KtxSerializer
 import io.ktor.client.network.sockets.ConnectTimeoutException
 import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.websocket.Frame
+import java.net.ProtocolException
 import java.util.Collections
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -84,6 +85,13 @@ internal class WireTeamEventsListener internal constructor(
                     "WebSocket connection timeout, log exception but close gracefully",
                     exception
                 )
+                is ProtocolException -> {
+                    val error = exception.message
+                        ?: "Error connecting to WebSocket or establishing MLS client"
+                    logger.error(error, exception)
+                    backendConnectionListener?.onDisconnected()
+                    throw InterruptedException(error)
+                }
                 is IOException -> logger.error(
                     "WebSocket IO issue, log exception but close gracefully",
                     exception
