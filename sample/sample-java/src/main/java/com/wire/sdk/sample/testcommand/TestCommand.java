@@ -28,7 +28,12 @@ public enum TestCommand {
     ASSET_AUDIO("asset-audio"),
     ASSET_VIDEO("asset-video"),
     ASSET_PDF_DOCUMENT("asset-document-pdf"),
-    SEARCH_USER("search-user");
+    SEARCH_USER("search-user"),
+    TEST_DELETED_MESSAGE("test-deleted-message"),
+    SEND_EPHEMERAL_TEXT("send-ephemeral-text"),
+    SEND_EPHEMERAL_PING("send-ephemeral-ping"),
+    SEND_LOCATION_MESSAGE("send-location-message"),
+    SEND_EPHEMERAL_LOCATION_MESSAGE("send-ephemeral-location-message");
 
     private final String commandStr;
 

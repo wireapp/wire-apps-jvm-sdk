@@ -95,11 +95,36 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             return
         }
 
+        if (isTestDeletedMessage(text = wireMessage.text)) {
+            processTestDeletedMessage(wireMessage = wireMessage)
+            return
+        }
+
+        if (isSendEphemeralText(text = wireMessage.text)) {
+            processSendEphemeralText(wireMessage = wireMessage)
+            return
+        }
+
+        if (isSendEphemeralPing(text = wireMessage.text)) {
+            processSendEphemeralPing(wireMessage = wireMessage)
+            return
+        }
+
+        if (isSendLocationMessage(text = wireMessage.text)) {
+            processSendLocationMessage(wireMessage = wireMessage)
+            return
+        }
+
+        if (isSendEphemeralLocationMessage(text = wireMessage.text)) {
+            processSendEphemeralLocationMessage(wireMessage = wireMessage)
+            return
+        }
+
         // Sends an Ephemeral message if received message is Ephemeral
         wireMessage.expiresAfterMillis?.let {
             val ephemeralMessage = WireMessage.Text.create(
                 conversationId = wireMessage.conversationId,
-                text = "${wireMessage.text} -- Ephemeral Message sent from the SDK",
+                text = "${wireMessage.text} -- Ephemeral Message sent from the Sample-Kotlin App",
                 mentions = wireMessage.mentions,
                 expiresAfterMillis = 10_000
             )
@@ -109,7 +134,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
 
         val message = WireMessage.Text.createReply(
-            text = "${wireMessage.text} -- Sent from the SDK",
+            text = "${wireMessage.text} -- Sent from the Sample-Kotlin App",
             mentions = wireMessage.mentions,
             originalMessage = wireMessage
         )
@@ -235,6 +260,21 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     private fun isSearchUser(text: String): Boolean =
         text.startsWith("search-user")
+
+    private fun isTestDeletedMessage(text: String): Boolean =
+        text.startsWith("test-deleted-message")
+
+    private fun isSendEphemeralText(text: String): Boolean =
+        text.startsWith("send-ephemeral-text")
+
+    private fun isSendEphemeralPing(text: String): Boolean =
+        text.startsWith("send-ephemeral-ping")
+
+    private fun isSendLocationMessage(text: String): Boolean =
+        text.startsWith("send-location-message")
+
+    private fun isSendEphemeralLocationMessage(text: String): Boolean =
+        text.startsWith("send-ephemeral-location-message")
 
     private suspend fun processAddMembersToConversation(wireMessage: WireMessage.Text) {
         // Expected message: `add-members-to-conversation [USER_ID] [DOMAIN]
@@ -451,5 +491,77 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             mimeType = "application/pdf",
             retention = AssetRetention.VOLATILE
         )
+    }
+
+    private suspend fun processTestDeletedMessage(wireMessage: WireMessage.Text) {
+        // Expected message: `test-deleted-message`
+        // Sends a text message and then deletes it after 3 seconds.
+        val message = WireMessage.Text.create(
+            conversationId = wireMessage.conversationId,
+            text = "This message will be deleted in 3 seconds"
+        )
+
+        val messageId = manager.sendMessageSuspending(message = message)
+
+        delay(3000L)
+
+        manager.sendMessageSuspending(
+            message = WireMessage.Deleted.create(
+                conversationId = wireMessage.conversationId,
+                messageId = messageId
+            )
+        )
+    }
+
+    private suspend fun processSendEphemeralText(wireMessage: WireMessage.Text) {
+        // Expected message: `send-ephemeral-text`
+        manager.sendMessageSuspending(
+            message = WireMessage.Text.create(
+                conversationId = wireMessage.conversationId,
+                text = "This is an Ephemeral Text message",
+                expiresAfterMillis = EPHEMERAL_MSG_EXPIRE_MILLIS
+            )
+        )
+    }
+
+    private suspend fun processSendEphemeralPing(wireMessage: WireMessage.Text) {
+        // Expected message: `send-ephemeral-ping`
+        manager.sendMessageSuspending(
+            message = WireMessage.Ping.create(
+                conversationId = wireMessage.conversationId,
+                expiresAfterMillis = EPHEMERAL_MSG_EXPIRE_MILLIS
+            )
+        )
+    }
+
+    private suspend fun processSendLocationMessage(wireMessage: WireMessage.Text) {
+        // Expected message: `send-location-message`
+        manager.sendMessageSuspending(
+            message = WireMessage.Location.create(
+                conversationId = wireMessage.conversationId,
+                latitude = 52.52527f,
+                longitude = 13.36923f,
+                name = "Berlin Hauptbahnhof, 10557 Berlin",
+                zoom = 50
+            )
+        )
+    }
+
+    private suspend fun processSendEphemeralLocationMessage(wireMessage: WireMessage.Text) {
+        // Expected message: `send-ephemeral-location-message`
+        manager.sendMessageSuspending(
+            message = WireMessage.Location.create(
+                conversationId = wireMessage.conversationId,
+                latitude = 52.51615f,
+                longitude = 13.37827f,
+                name = "Pariser Platz, 10117 Berlin",
+                zoom = 50,
+                expiresAfterMillis = EPHEMERAL_MSG_EXPIRE_MILLIS
+            )
+        )
+    }
+
+    private companion object {
+        private const val EPHEMERAL_MSG_EXPIRE_MILLIS = 10_000L
     }
 }

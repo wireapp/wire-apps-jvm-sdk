@@ -192,30 +192,18 @@ class WireApplicationManager internal constructor(
         conversation: ConversationEntity,
         originalMessage: WireMessage
     ): WireMessage {
-        val preparedMessage =
-            if (conversation.messageTimer != null) {
-                if (originalMessage is WireMessage.Ephemeral) {
-                    originalMessage.overrideExpirationDuration(conversation.messageTimer)
-                        .also {
-                            logger.info(
-                                "Setting (overriding) expiration duration of the message " +
-                                    "${conversation.id} to ${conversation.messageTimer} ms"
-                            )
-                        }
-                } else {
-                    logger.warn(
-                        "Message ${originalMessage.id} is not ephemeral but the conversation " +
-                            "${conversation.id} has a message timer set. " +
-                            "The message can not be sent."
-                    )
+        if (conversation.messageTimer == null || originalMessage !is WireMessage.Ephemeral) {
+            return originalMessage
+        }
 
-                    throw WireException.InvalidParameter.messageIsNotEphemeral()
-                }
-            } else {
-                originalMessage
+        return originalMessage.overrideExpirationDuration(conversation.messageTimer)
+            .also {
+                logger.info(
+                    "Setting (overriding) expiration duration of the message " +
+                        "${originalMessage.id} in conversation ${conversation.id} " +
+                        "to ${conversation.messageTimer} ms"
+                )
             }
-
-        return preparedMessage
     }
 
     private fun WireMessage.Ephemeral.overrideExpirationDuration(expiresAfter: Long): WireMessage =
