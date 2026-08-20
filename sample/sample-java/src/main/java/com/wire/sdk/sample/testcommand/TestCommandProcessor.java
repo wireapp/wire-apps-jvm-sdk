@@ -22,6 +22,8 @@ import com.wire.sdk.model.WireMessage;
 import com.wire.sdk.model.asset.AssetRetention;
 import com.wire.sdk.service.WireApplicationManager;
 
+import kotlin.time.Clock;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -31,6 +33,8 @@ import java.util.List;
 import java.util.UUID;
 
 class TestCommandProcessor {
+
+    private static final long EPHEMERAL_MSG_EXPIRE_MILLIS = 10_000L;
 
     private final WireApplicationManager manager;
 
@@ -54,6 +58,11 @@ class TestCommandProcessor {
             case ASSET_PDF_DOCUMENT -> replyWithSamplePDFDocument(wireMessage);
             case SEARCH_USER -> processSearchUser(wireMessage);
             case TEST_DELETED_MESSAGE -> processTestDeletedMessage(wireMessage);
+            case SEND_EPHEMERAL_TEXT -> processSendEphemeralText(wireMessage);
+            case SEND_EPHEMERAL_PING -> processSendEphemeralPing(wireMessage);
+            case SEND_LOCATION_MESSAGE -> processSendLocationMessage(wireMessage);
+            case SEND_EPHEMERAL_LOCATION_MESSAGE ->
+                    processSendEphemeralLocationMessage(wireMessage);
         }
     }
 
@@ -321,6 +330,46 @@ class TestCommandProcessor {
         this.manager.sendMessage(WireMessage.Deleted.create(
                 wireMessage.conversationId(),
                 messageId));
+    }
+
+    private void processSendEphemeralText(WireMessage.Text wireMessage) {
+        // Expected message: `send-ephemeral-text`
+        this.manager.sendMessage(WireMessage.Text.create(
+                wireMessage.conversationId(),
+                "This is an Ephemeral Text message",
+                List.of(), List.of(),
+                EPHEMERAL_MSG_EXPIRE_MILLIS));
+    }
+
+    private void processSendEphemeralPing(WireMessage.Text wireMessage) {
+        // Expected message: `send-ephemeral-ping`
+        this.manager.sendMessage(WireMessage.Ping.create(
+                wireMessage.conversationId(),
+                EPHEMERAL_MSG_EXPIRE_MILLIS));
+    }
+
+    private void processSendLocationMessage(WireMessage.Text wireMessage) {
+        // Expected message: `send-location-message`
+        this.manager.sendMessage(WireMessage.Location.create(
+                wireMessage.conversationId(),
+                52.52527f,
+                13.36923f,
+                "Berlin Hauptbahnhof, 10557 Berlin",
+                50,
+                Clock.System.INSTANCE.now(),
+                null));
+    }
+
+    private void processSendEphemeralLocationMessage(WireMessage.Text wireMessage) {
+        // Expected message: `send-ephemeral-location-message`
+        this.manager.sendMessage(WireMessage.Location.create(
+                wireMessage.conversationId(),
+                52.51615f,
+                13.37827f,
+                "Pariser Platz, 10117 Berlin",
+                50,
+                Clock.System.INSTANCE.now(),
+                EPHEMERAL_MSG_EXPIRE_MILLIS));
     }
 
 }
