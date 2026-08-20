@@ -481,7 +481,7 @@ class WireApplicationManagerTest {
         }
 
     @Test
-    fun `throws when conversation has messageTimer and message is not ephemeral`() =
+    fun `non-ephemeral message is sent unmodified when conversation has messageTimer`() =
         runTest {
             // Arrange
             val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
@@ -504,8 +504,13 @@ class WireApplicationManagerTest {
             val backendClient = mockk<BackendClient>(relaxed = true)
             val userService = mockk<UserService>(relaxed = true)
             val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
+
             val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
+            coEvery { mlsApiClient.sendMessage(any()) } returns Unit
+
             val cryptoClient = mockk<CryptoClient>(relaxed = true)
+            coEvery { cryptoClient.encryptMls(any(), any()) } returns byteArrayOf(4)
+
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
             val teamStorage = mockk<TeamStorage>(relaxed = true)
 
@@ -532,10 +537,229 @@ class WireApplicationManagerTest {
                 emojiSet = setOf("🙂")
             )
 
-            // Act & Assert
-            assertThrows<WireException.InvalidParameter> {
-                manager.sendMessageSuspending(reaction)
+            mockkObject(ProtobufSerializer)
+            val captured = slot<WireMessage>()
+            every { ProtobufSerializer.toGenericMessageByteArray(capture(captured)) } answers {
+                byteArrayOf(5)
             }
+
+            // Act
+            val resultId = manager.sendMessageSuspending(reaction)
+
+            // Assert
+            assertEquals(reaction.id, resultId)
+            assertEquals(reaction.id, captured.captured.id)
+
+            coVerify(exactly = 1) { cryptoClient.encryptMls(any(), any()) }
+            coVerify(exactly = 1) { mlsApiClient.sendMessage(any()) }
+        }
+
+    @Test
+    fun `non-ephemeral message is sent unmodified when conversation has no messageTimer`() =
+        runTest {
+            // Arrange
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
+
+            val conversationEntity = ConversationEntity(
+                id = conversationId,
+                name = "test",
+                teamId = null,
+                mlsGroupId = mlsGroupId,
+                type = ConversationEntity.Type.GROUP,
+                messageTimer = null
+            )
+
+            val conversationService = mockk<ConversationService>(relaxed = true)
+            coEvery { conversationService.getConversationById(conversationId) } returns
+                conversationEntity
+
+            val backendClient = mockk<BackendClient>(relaxed = true)
+            val userService = mockk<UserService>(relaxed = true)
+            val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
+
+            val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
+            coEvery { mlsApiClient.sendMessage(any()) } returns Unit
+
+            val cryptoClient = mockk<CryptoClient>(relaxed = true)
+            coEvery { cryptoClient.encryptMls(any(), any()) } returns byteArrayOf(6)
+
+            val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
+            val teamStorage = mockk<TeamStorage>(relaxed = true)
+
+            val manager = WireApplicationManager(
+                teamStorage = teamStorage,
+                backendClient = backendClient,
+                userService = userService,
+                assetsApiClient = assetsApiClient,
+                mlsApiClient = mlsApiClient,
+                cryptoClient = cryptoClient,
+                mlsFallbackStrategy = mlsFallbackStrategy,
+                conversationService = conversationService
+            )
+
+            val originalMessage = WireMessage.Text.create(
+                conversationId = conversationId,
+                text = "base",
+                expiresAfterMillis = null
+            )
+            val reaction = WireMessage.Reaction.create(
+                originalMessage = originalMessage,
+                emojiSet = setOf("👍")
+            )
+
+            mockkObject(ProtobufSerializer)
+            val captured = slot<WireMessage>()
+            every { ProtobufSerializer.toGenericMessageByteArray(capture(captured)) } answers {
+                byteArrayOf(7)
+            }
+
+            // Act
+            val resultId = manager.sendMessageSuspending(reaction)
+
+            // Assert
+            assertEquals(reaction.id, resultId)
+            assertEquals(reaction.id, captured.captured.id)
+
+            coVerify(exactly = 1) { cryptoClient.encryptMls(any(), any()) }
+            coVerify(exactly = 1) { mlsApiClient.sendMessage(any()) }
+        }
+
+    @Test
+    fun `existing expiresAfterMillis is overridden by conversation messageTimer`() =
+        runTest {
+            // Arrange
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
+
+            val messageTimerValue = 5_000L
+            val conversationEntity = ConversationEntity(
+                id = conversationId,
+                name = "test",
+                teamId = null,
+                mlsGroupId = mlsGroupId,
+                type = ConversationEntity.Type.GROUP,
+                messageTimer = messageTimerValue
+            )
+
+            val conversationService = mockk<ConversationService>(relaxed = true)
+            coEvery { conversationService.getConversationById(conversationId) } returns
+                conversationEntity
+
+            val backendClient = mockk<BackendClient>(relaxed = true)
+            val userService = mockk<UserService>(relaxed = true)
+            val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
+
+            val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
+            coEvery { mlsApiClient.sendMessage(any()) } returns Unit
+
+            val cryptoClient = mockk<CryptoClient>(relaxed = true)
+            coEvery { cryptoClient.encryptMls(any(), any()) } returns byteArrayOf(8)
+
+            val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
+            val teamStorage = mockk<TeamStorage>(relaxed = true)
+
+            val manager = WireApplicationManager(
+                teamStorage = teamStorage,
+                backendClient = backendClient,
+                userService = userService,
+                assetsApiClient = assetsApiClient,
+                mlsApiClient = mlsApiClient,
+                cryptoClient = cryptoClient,
+                mlsFallbackStrategy = mlsFallbackStrategy,
+                conversationService = conversationService
+            )
+
+            // Message already has its OWN expiry set, different from the conversation's timer
+            val originalMessage = WireMessage.Text.create(
+                conversationId = conversationId,
+                text = "already ephemeral",
+                expiresAfterMillis = 60_000L
+            )
+
+            mockkObject(ProtobufSerializer)
+            val captured = slot<WireMessage>()
+            every { ProtobufSerializer.toGenericMessageByteArray(capture(captured)) } answers {
+                byteArrayOf(9)
+            }
+
+            // Act
+            manager.sendMessageSuspending(originalMessage)
+
+            // Assert: conversation's messageTimer wins over the message's own value
+            val expires = (captured.captured as WireMessage.Text).expiresAfterMillis
+            assertEquals(messageTimerValue, expires)
+
+            coVerify(exactly = 1) { cryptoClient.encryptMls(any(), any()) }
+            coVerify(exactly = 1) { mlsApiClient.sendMessage(any()) }
+        }
+
+    @Test
+    fun `expiration is overridden for a non-Text ephemeral message type`() =
+        runTest {
+            // Arrange
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
+
+            val messageTimerValue = 15_000L
+            val conversationEntity = ConversationEntity(
+                id = conversationId,
+                name = "test",
+                teamId = null,
+                mlsGroupId = mlsGroupId,
+                type = ConversationEntity.Type.GROUP,
+                messageTimer = messageTimerValue
+            )
+
+            val conversationService = mockk<ConversationService>(relaxed = true)
+            coEvery { conversationService.getConversationById(conversationId) } returns
+                conversationEntity
+
+            val backendClient = mockk<BackendClient>(relaxed = true)
+            val userService = mockk<UserService>(relaxed = true)
+            val assetsApiClient = mockk<AssetsApiClient>(relaxed = true)
+
+            val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
+            coEvery { mlsApiClient.sendMessage(any()) } returns Unit
+
+            val cryptoClient = mockk<CryptoClient>(relaxed = true)
+            coEvery { cryptoClient.encryptMls(any(), any()) } returns byteArrayOf(10)
+
+            val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
+            val teamStorage = mockk<TeamStorage>(relaxed = true)
+
+            val manager = WireApplicationManager(
+                teamStorage = teamStorage,
+                backendClient = backendClient,
+                userService = userService,
+                assetsApiClient = assetsApiClient,
+                mlsApiClient = mlsApiClient,
+                cryptoClient = cryptoClient,
+                mlsFallbackStrategy = mlsFallbackStrategy,
+                conversationService = conversationService
+            )
+
+            // Use Ping instead of Text to prove the override isn't Text-specific
+            val originalMessage = WireMessage.Ping.create(
+                conversationId = conversationId,
+                expiresAfterMillis = null
+            )
+
+            mockkObject(ProtobufSerializer)
+            val captured = slot<WireMessage>()
+            every { ProtobufSerializer.toGenericMessageByteArray(capture(captured)) } answers {
+                byteArrayOf(11)
+            }
+
+            // Act
+            manager.sendMessageSuspending(originalMessage)
+
+            // Assert
+            val expires = (captured.captured as WireMessage.Ping).expiresAfterMillis
+            assertEquals(messageTimerValue, expires)
+
+            coVerify(exactly = 1) { cryptoClient.encryptMls(any(), any()) }
+            coVerify(exactly = 1) { mlsApiClient.sendMessage(any()) }
         }
 
     @Test
