@@ -28,7 +28,8 @@ public enum TestCommand {
     ASSET_AUDIO("asset-audio"),
     ASSET_VIDEO("asset-video"),
     ASSET_PDF_DOCUMENT("asset-document-pdf"),
-    SEARCH_USER("search-user");
+    SEARCH_USER("search-user"),
+    TEST_DELETED_MESSAGE("test-deleted-message");
 
     private final String commandStr;
 

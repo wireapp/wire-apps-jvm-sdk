@@ -46,12 +46,14 @@ class TestCommandProcessor {
             case DELETE_GROUP_CONVERSATION -> processDeleteGroupConversation(wireMessage);
             case CREATE_CHANNEL_CONVERSATION -> processCreateChannelConversation(wireMessage);
             case ADD_MEMBER_IN_CONVERSATION -> processAddMemberInConversation(wireMessage);
-            case REMOVE_MEMBER_FROM_CONVERSATION -> processRemoveMemberFromConversation(wireMessage);
+            case REMOVE_MEMBER_FROM_CONVERSATION ->
+                    processRemoveMemberFromConversation(wireMessage);
             case ASSET_IMAGE -> processAssetImage(wireMessage);
             case ASSET_AUDIO -> processAssetAudio(wireMessage);
             case ASSET_VIDEO -> processAssetVideo(wireMessage);
             case ASSET_PDF_DOCUMENT -> replyWithSamplePDFDocument(wireMessage);
             case SEARCH_USER -> processSearchUser(wireMessage);
+            case TEST_DELETED_MESSAGE -> processTestDeletedMessage(wireMessage);
         }
     }
 
@@ -127,8 +129,8 @@ class TestCommandProcessor {
 
         if (!members.isEmpty()) {
             this.manager.removeMembersFromConversation(
-                wireMessage.conversationId(),
-                members
+                    wireMessage.conversationId(),
+                    members
             );
         }
     }
@@ -297,6 +299,28 @@ class TestCommandProcessor {
                 wireMessage.conversationId(),
                 sb.toString(),
                 List.of(), List.of(), null));
+    }
+
+    private void processTestDeletedMessage(WireMessage.Text wireMessage) {
+        // Expected message: `test-deleted-message`
+        // Sends a text message and then deletes it after 3 seconds.
+        final var message = WireMessage.Text.create(
+                wireMessage.conversationId(),
+                "This message will be deleted in 3 seconds",
+                List.of(), List.of(), null);
+
+        final var messageId = this.manager.sendMessage(message);
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+
+        this.manager.sendMessage(WireMessage.Deleted.create(
+                wireMessage.conversationId(),
+                messageId));
     }
 
 }
