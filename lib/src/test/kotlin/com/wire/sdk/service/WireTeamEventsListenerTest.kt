@@ -225,7 +225,7 @@ class WireTeamEventsListenerTest {
             IsolatedKoinContext.koinApp.koin.setProperty("API_HOST", "http://localhost:8086")
             wireMockServer.start()
             wireMockServer.stubFor(
-                WireMock.get(WireMock.anyUrl())
+                WireMock.post(WireMock.anyUrl())
                     .willReturn(
                         aResponse()
                             .withStatus(503)

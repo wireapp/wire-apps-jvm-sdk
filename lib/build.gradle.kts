@@ -45,7 +45,7 @@ val sqlDelightVersion = "2.3.2"
 val logbookVersion = "4.0.4"
 val ktorModules = listOf(
     "io.ktor:ktor-client-core",
-    "io.ktor:ktor-client-okhttp",
+    "io.ktor:ktor-client-cio",
     "io.ktor:ktor-client-logging",
     "io.ktor:ktor-client-content-negotiation",
     "io.ktor:ktor-serialization-kotlinx-json",
@@ -81,7 +81,7 @@ dependencies {
     //  libraries can also be updated to use Jackson 3.x.y
     implementation("net.logstash.logback:logstash-logback-encoder:9.0")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
-    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-logging:$ktorVersion")
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")

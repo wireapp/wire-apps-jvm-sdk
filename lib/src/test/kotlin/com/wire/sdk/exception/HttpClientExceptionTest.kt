@@ -28,7 +28,6 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.contentType
-import io.ktor.utils.io.core.toByteArray
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -75,7 +74,7 @@ class HttpClientExceptionTest {
 
     @Test
     fun whenResponseIsSuccessfulThenNoExceptionIsThrown() {
-        val stubMlsKeyPackagePath = "/${TEST_API_VERSION}/mls/key-packages/self/client-id"
+        val stubMlsKeyPackagePath = "/${TEST_API_VERSION}/mls/key-packages/self/{cryptoClientId}"
         wireMockServer.stubFor(
             WireMock.post(
                 WireMock.urlPathEqualTo(stubMlsKeyPackagePath)
