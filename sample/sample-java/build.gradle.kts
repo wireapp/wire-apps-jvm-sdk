@@ -18,5 +18,5 @@ repositories {
 dependencies {
     implementation(project(":lib"))
     implementation("org.slf4j:slf4j-api:2.0.18")
-    implementation("ch.qos.logback:logback-classic:1.6.1")
+    implementation("ch.qos.logback:logback-classic:1.6.3")
 }
