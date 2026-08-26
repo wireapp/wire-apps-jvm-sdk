@@ -17,6 +17,7 @@
 package com.wire.sdk.logging
 
 import org.zalando.logbook.Logbook
+import org.zalando.logbook.core.Conditions
 import org.zalando.logbook.core.DefaultHttpLogWriter
 import org.zalando.logbook.core.DefaultSink
 import org.zalando.logbook.core.HeaderFilters
@@ -63,7 +64,11 @@ internal object LoggingConfiguration {
     )
 
     val logbook: Logbook = Logbook.builder()
-        .condition { true }
+        // .condition { true }
+        .condition(Conditions.exclude(
+            Conditions.contentType("message/mls"),
+            Conditions.contentType("application/x-protobuf")
+        ))
         .headerFilter(
             HeaderFilters.replaceHeaders(
                 sensitiveHeaderParams,

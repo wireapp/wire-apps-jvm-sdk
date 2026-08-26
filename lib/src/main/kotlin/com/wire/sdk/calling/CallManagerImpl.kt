@@ -25,6 +25,7 @@ import com.wire.sdk.calling.callbacks.implementations.OnCloseCall
 import com.wire.sdk.calling.callbacks.implementations.OnConfigRequest
 import com.wire.sdk.calling.callbacks.implementations.OnEstablishedCall
 import com.wire.sdk.calling.callbacks.implementations.OnIncomingCall
+import com.wire.sdk.calling.callbacks.implementations.OnMetrics
 import com.wire.sdk.calling.callbacks.implementations.OnMissedCall
 import com.wire.sdk.calling.callbacks.implementations.OnParticipantListChanged
 import com.wire.sdk.calling.callbacks.implementations.OnParticipantsVideoStateChanged
@@ -113,7 +114,7 @@ class CallManagerImpl internal constructor(
                     waitInitializationJob.complete()
                     Unit
                 }.keepingStrongReference(),
-                sendHandler = OnSendOTR(),
+                sendHandler = OnSendOTR().keepingStrongReference(),
                 sftRequestHandler = OnSFTRequest(
                     deferredHandle,
                     callingAvsClient,
@@ -129,9 +130,9 @@ class CallManagerImpl internal constructor(
                     callingAvsClient,
                     scope
                 ).keepingStrongReference(),
-                missedCallHandler = OnMissedCall(),
-                answeredCallHandler = OnAnsweredCall(),
-                establishedCallHandler = OnEstablishedCall(),
+                missedCallHandler = OnMissedCall().keepingStrongReference(),
+                answeredCallHandler = OnAnsweredCall().keepingStrongReference(),
+                establishedCallHandler = OnEstablishedCall().keepingStrongReference(),
                 closeCallHandler = OnCloseCall(
                     backendClient = backendClient,
                     callingAvsClient = callingAvsClient,
@@ -139,22 +140,19 @@ class CallManagerImpl internal constructor(
                     handle = deferredHandle,
                     scope = scope
                 ).keepingStrongReference(),
-                metricsHandler =
-                    { conversationId: String, metricsJson: String, _: Pointer? ->
-                        logger.info("Calling metrics on conversation $conversationId: $metricsJson")
-                    },
+                metricsHandler = OnMetrics().keepingStrongReference(),
                 callConfigRequestHandler = OnConfigRequest(
                     callingAvsClient,
                     backendClient,
                     scope
                 ).keepingStrongReference(),
-                constantBitRateStateChangeHandler =
+                constantBitRateStateChangeHandler = 
                     { userId: String, clientId: String, isEnabled: Boolean, _: Pointer? ->
                         logger.info(
                             "ConstantBitRate changed for userId: ${userId.obfuscateId()} " +
                                 "clientId: ${clientId.obfuscateId()}  isCbrEnabled: $isEnabled"
                         )
-                    },
+                    }.keepingStrongReference(),
                 videoReceiveStateHandler = OnParticipantsVideoStateChanged().keepingStrongReference(),
                 arg = null
             )

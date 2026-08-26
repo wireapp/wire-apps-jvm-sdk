@@ -48,11 +48,12 @@ class OnCloseCall(
         clientId: String?,
         arg: Pointer?
     ) {
+        // have a copy in stack and refer this in async functions
+        val qualifiedConversationId = conversationId.toQualifiedId()
         logger.info(
             "[OnCloseCall] -> ConversationId: ${conversationId.obfuscateId()} |" +
                 " UserId: ${userId.obfuscateId()} | Reason: $reason"
         )
-        val qualifiedConversationId = conversationId.toQualifiedId()
 
         scope.launch {
             try {

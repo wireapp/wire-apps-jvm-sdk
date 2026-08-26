@@ -37,7 +37,8 @@ internal class OnRequestNewEpoch(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    override fun onRequestNewEpoch(inst: Handle, conversationId: String, arg: Pointer?) {
+    override fun onRequestNewEpoch(inst: Handle, _conversationId: String, arg: Pointer?) {
+        val conversationId = _conversationId.toString()
         callingScope.launch {
             logger.info("[OnRequestNewEpoch] - ConversationId: ${conversationId}")
           

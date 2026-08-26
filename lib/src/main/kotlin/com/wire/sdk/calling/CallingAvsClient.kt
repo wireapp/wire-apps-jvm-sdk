@@ -87,6 +87,7 @@ interface CallingAvsClient : Library {
 
     fun wcall_audio_record(
         inst: Handle,
+        convId: String,
         filePath: String
     )
 

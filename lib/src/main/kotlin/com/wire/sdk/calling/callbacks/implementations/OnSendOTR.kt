@@ -29,17 +29,24 @@ internal class OnSendOTR : SendHandler {
     @Suppress("TooGenericExceptionCaught", "NestedBlockDepth")
     override fun onSend(
         context: Pointer?,
-        remoteConversationId: String,
-        remoteSelfUserId: String,
-        remoteClientIdSelf: String,
-        targetRecipientsJson: String?,
-        clientIdDestination: String?,
+        _remoteConversationId: String,
+        _remoteSelfUserId: String,
+        _remoteClientIdSelf: String,
+        _targetRecipientsJson: String?,
+        _clientIdDestination: String?,
         data: Pointer?,
         length: Handle,
         isTransient: Boolean,
         myClientsOnly: Boolean,
         arg: Pointer?
     ): Int {
+
+        val remoteConversationId = _remoteConversationId.toString()
+        val remoteSelfUserId = _remoteSelfUserId.toString()
+        val remoteClientIdSelf = _remoteClientIdSelf.toString()
+        val targetRecipientsJson = _targetRecipientsJson?.toString()
+        val clientIdDestination = _clientIdDestination?.toString()
+
         logger.info(
             "[Calling] OnSendOTR: ${remoteConversationId.obfuscateId()} - " +
                 "${remoteSelfUserId.obfuscateId()} - ${remoteClientIdSelf.obfuscateId()} - " +

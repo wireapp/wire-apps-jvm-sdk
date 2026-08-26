@@ -23,7 +23,7 @@ import com.wire.sdk.calling.types.SizeNative
 fun interface SFTRequestHandler : Callback {
     fun onSFTRequest(
         ctx: Pointer?,
-        url: String,
+        url: Pointer?,
         data: Pointer?,
         length: SizeNative,
         arg: Pointer?

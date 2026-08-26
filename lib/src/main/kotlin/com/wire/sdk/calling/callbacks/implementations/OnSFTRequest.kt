@@ -39,19 +39,24 @@ class OnSFTRequest(
 
     override fun onSFTRequest(
         ctx: Pointer?,
-        url: String,
+        url: Pointer?,
         data: Pointer?,
         length: SizeNative,
         arg: Pointer?
     ): Int {
-        val dataString = data?.getString(0, UTF8_ENCODING)
-        logger.info("[OnSFTRequest] -> Connecting to SFT Server $url with data $dataString")
+        logger.info("[OnSFTRequest] with size ${length}")
+        if (url == null || data == null) return AvsCallBackError.INVALID_ARGUMENT.value
+
+        val urlStr = url.getString(0, UTF8_ENCODING)
+        val dataStr = data.getString(0, UTF8_ENCODING)
+        logger.info("[OnSFTRequest] -> Connecting to SFT Server $urlStr with data $data")
 
         callingScope.launch {
-            dataString?.let {
+            dataStr?.let {
+                logger.info("[OnSFTRequest In Scope] -> Requesting from backend")
                 val responseData = backendClient.connectToSFT(
-                    url = url,
-                    data = dataString
+                    url = urlStr,
+                    data = dataStr
                 )
 
                 onSFTResponse(data = responseData, context = ctx)
@@ -66,7 +71,8 @@ class OnSFTRequest(
         data: ByteArray?,
         context: Pointer?
     ) {
-        logger.info("[OnSFTRequest] -> Sending SFT Response")
+        logger.info("[OnSFTRequest] -> sft response arrived, will set to wcall")
+        logger.info("[OnSFTRequest] -> will forward to handle ${handle}")
         val responseData = data ?: byteArrayOf()
         callingAvsClient.wcall_sft_resp(
             inst = handle.await(),

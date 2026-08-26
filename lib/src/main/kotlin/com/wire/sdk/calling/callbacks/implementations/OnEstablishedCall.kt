@@ -26,11 +26,14 @@ class OnEstablishedCall : EstablishedCallHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     override fun onEstablishedCall(
-        remoteConversationId: String,
-        userId: String,
-        clientId: String,
+        _remoteConversationId: String,
+        _userId: String,
+        _clientId: String,
         arg: Pointer?
     ) {
+        val remoteConversationId = _remoteConversationId.toString()
+        val userId = _userId.toString()
+        val clientId = _clientId.toString()
         logger.info(
             "[Calling] OnEstablishedCall: ${remoteConversationId.obfuscateId()} - " +
                 "${userId.obfuscateId()} - ${clientId.obfuscateClientId()}"

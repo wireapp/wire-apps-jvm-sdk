@@ -17,23 +17,17 @@
 package com.wire.sdk.calling.callbacks.implementations
 
 import com.sun.jna.Pointer
-import com.wire.sdk.calling.callbacks.VideoReceiveStateHandler
+import com.wire.sdk.calling.callbacks.MetricsHandler
 import org.slf4j.LoggerFactory
 
-class OnParticipantsVideoStateChanged : VideoReceiveStateHandler {
+class OnMetrics : MetricsHandler {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    override fun onVideoReceiveStateChanged(
+    override fun onMetricsReady(
         conversationId: String,
-        _userId: String,
-        _clientId: String,
-        state: Int,
+        metricsJson: String,
         arg: Pointer?
     ) {
-        val userId = _userId.toString()
-        val clientId = _clientId.toString()
-        logger.info(
-            "[Calling] onVideoReceiveStateChanged: $conversationId - $userId - $clientId : $state"
-        )
+        logger.info("[onMetricsReady]: Conversation Id: $conversationId Metrics: $metricsJson")
     }
 }

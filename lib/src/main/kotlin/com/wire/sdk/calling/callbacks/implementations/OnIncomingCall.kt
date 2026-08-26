@@ -114,7 +114,8 @@ internal class OnIncomingCall(
 
         callingAvsClient.wcall_audio_record(
             inst = handle.await(),
-            filePath = "/tmp/wire_call_recording_${qualifiedConversationId.id}_$callId.wav"
+            convId = conversationId,
+            filePath = "/tmp/wire_call_recording_${callId}.raw"
         )
 
         callingAvsClient.wcall_answer(

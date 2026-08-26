@@ -56,7 +56,6 @@ class OnParticipantListChanged : ParticipantListChangedHandler {
     private val jsonDecoder: Json = Json
    
     override fun onParticipantChanged(remoteConversationId: String, data: String, arg: Pointer?) {
-       
         val participantsChange = jsonDecoder.decodeFromString<CallParticipants>(data)
         logger.info(
             "[OnParticipantListChanged] -> ConversationId: ${remoteConversationId}" +
