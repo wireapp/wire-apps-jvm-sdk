@@ -155,6 +155,11 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     }
 
     @Override
+    public void onCallingReceived(WireMessage.Calling callingMessage) {
+        super.onCallingReceived(callingMessage);
+    }
+
+    @Override
     public void onUserJoinedConversation(@NotNull QualifiedId conversationId, @NotNull List<ConversationMember> members) {
         logger.info("User(s) joined conversation. conversationId: {}, membersCount: {}", conversationId, members.size());
         members.forEach(member -> {

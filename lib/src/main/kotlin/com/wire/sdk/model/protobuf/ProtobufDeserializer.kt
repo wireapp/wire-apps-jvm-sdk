@@ -16,6 +16,7 @@
 
 package com.wire.sdk.model.protobuf
 
+import com.wire.crypto.ClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.utils.obfuscateId
@@ -42,6 +43,7 @@ object ProtobufDeserializer {
         genericMessage: GenericMessage,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        senderClient: ClientId,
         timestamp: Instant
     ): WireMessage =
         when {
@@ -131,6 +133,14 @@ object ProtobufDeserializer {
                 genericMessage = genericMessage,
                 conversationId = conversationId,
                 sender = sender
+            )
+
+            genericMessage.hasCalling() -> unpackCalling(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender,
+                senderClient = senderClient,
+                timestamp = timestamp
             )
 
             else -> WireMessage.Unknown
@@ -550,5 +560,21 @@ object ProtobufDeserializer {
             conversationId = conversationId,
             sender = sender,
             isHandUp = genericMessage.inCallHandRaise.isHandUp
+        )
+
+    private fun unpackCalling(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId,
+        senderClient: ClientId,
+        timestamp: Instant
+    ): WireMessage.Calling =
+        WireMessage.Calling(
+            id = UUID.fromString(genericMessage.messageId),
+            conversationId = conversationId,
+            sender = sender,
+            content = genericMessage.calling.content,
+            senderClient = senderClient,
+            timestamp = timestamp
         )
 }

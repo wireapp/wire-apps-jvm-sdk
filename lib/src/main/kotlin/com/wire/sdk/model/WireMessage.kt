@@ -16,6 +16,7 @@
 
 package com.wire.sdk.model
 
+import com.wire.crypto.ClientId
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.protobuf.MessageContentEncoder
 import com.wire.sdk.model.protobuf.MessageEncryptionAlgorithm
@@ -662,6 +663,16 @@ sealed interface WireMessage {
         override val conversationId: QualifiedId,
         override val sender: QualifiedId,
         val isHandUp: Boolean
+    ) : WireMessage
+
+    @JvmRecord
+    data class Calling(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId,
+        val content: String,
+        val senderClient: ClientId,
+        val timestamp: Instant
     ) : WireMessage
 
     data object Ignored : WireMessage {

@@ -16,6 +16,7 @@
 
 package com.wire.sdk.service
 
+import com.wire.crypto.ClientId
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
@@ -227,21 +228,26 @@ internal class EventsRouter internal constructor(
                     .getConversationById(event.qualifiedConversation)
                     .mlsGroupId
                 try {
-                    val message = cryptoClient.decryptMls(
+                    val decryptedMessage = cryptoClient.decryptMls(
                         mlsGroupId = mlsGroupId,
                         encryptedMessage = event.data
                     )
 
                     logger.debug("Decryption successful")
-                    if (message == null) {
-                        logger.debug("Decryption success but no message, probably epoch update")
+
+                    if (
+                        decryptedMessage.message == null ||
+                        decryptedMessage.senderClientId == null
+                    ) {
+                        logger.info("Decryption success but no message, probably epoch update")
                         return
                     }
 
                     forwardMessage(
-                        message = message,
+                        message = decryptedMessage.message!!,
                         conversationId = event.qualifiedConversation,
                         sender = event.qualifiedFrom,
+                        senderClient = decryptedMessage.senderClientId!!,
                         timestamp = event.time
                     )
                 } catch (exception: MlsException) {
@@ -318,6 +324,7 @@ internal class EventsRouter internal constructor(
         message: ByteArray,
         conversationId: QualifiedId,
         sender: QualifiedId,
+        senderClient: ClientId,
         timestamp: Instant
     ) {
         val genericMessage = GenericMessage.parseFrom(message)
@@ -325,6 +332,7 @@ internal class EventsRouter internal constructor(
             genericMessage = genericMessage,
             conversationId = conversationId,
             sender = sender,
+            senderClient = senderClient,
             timestamp = timestamp
         )
 
@@ -346,6 +354,9 @@ internal class EventsRouter internal constructor(
                         wireMessage
                     )
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
+                        wireMessage
+                    )
+                    is WireMessage.Calling -> wireEventsHandler.onCallingReceived(
                         wireMessage
                     )
                     is WireMessage.Ignored -> logger.debug("Ignored event received.")
@@ -372,6 +383,9 @@ internal class EventsRouter internal constructor(
                         wireMessage
                     )
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
+                        wireMessage
+                    )
+                    is WireMessage.Calling -> wireEventsHandler.onCallingReceived(
                         wireMessage
                     )
                     is WireMessage.Ignored -> logger.debug("Ignored event received.")
