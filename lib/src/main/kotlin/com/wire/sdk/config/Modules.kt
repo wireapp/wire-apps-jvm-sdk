@@ -139,7 +139,7 @@ val sdkModule =
 
         // Manager
         single {
-            WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get())
+            WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get(), get())
         }
     }
 
