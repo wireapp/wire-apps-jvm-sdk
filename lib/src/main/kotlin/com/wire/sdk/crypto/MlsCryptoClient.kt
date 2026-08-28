@@ -17,8 +17,8 @@ import com.wire.crypto.Welcome
 import com.wire.crypto.invoke
 import com.wire.crypto.toClientId
 import com.wire.crypto.toExternalSenderKey
+import com.wire.crypto.use
 import com.wire.sdk.config.IsolatedKoinContext
-import com.wire.sdk.crypto.MlsCryptoClient.Companion.create
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
@@ -65,7 +65,7 @@ internal class MlsCryptoClient private constructor(
     override suspend fun decryptMls(
         mlsGroupId: ConversationId,
         encryptedMessage: String
-    ): ByteArray? {
+    ): DecryptedMlsMessage {
         val encryptedMessageBytes: ByteArray = Base64.decode(encryptedMessage)
         val decryptedMessage =
             coreCryptoClient.transaction {
@@ -74,7 +74,14 @@ internal class MlsCryptoClient private constructor(
                     payload = encryptedMessageBytes
                 )
             }
-        return decryptedMessage.message
+        return decryptedMessage.use { dm ->
+            DecryptedMlsMessage(
+                message = dm.message,
+                senderClientId = dm.senderClientId
+                    ?.copyBytes()
+                    ?.toString(Charsets.UTF_8)
+            )
+        }
     }
 
     override suspend fun initializeProteusClient() =

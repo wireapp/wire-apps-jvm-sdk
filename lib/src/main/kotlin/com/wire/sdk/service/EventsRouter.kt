@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory
 
 // TODO This class is connected to too many services. Should keep only the concurrency and
 //  routing logic, and delegate the core crypto + backend operations to 1-2 other services.
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "TooManyFunctions")
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
     private val conversationService: ConversationService,
@@ -233,15 +233,24 @@ internal class EventsRouter internal constructor(
                     )
 
                     logger.debug("Decryption successful")
-                    if (message == null) {
+                    if (message.message == null || message.senderClientId == null) {
                         logger.debug("Decryption success but no message, probably epoch update")
                         return
                     }
 
+                    val sender = parseSenderClientId(message.senderClientId)
+                    if (sender != event.qualifiedFrom) {
+                        logger.error(
+                            "MLS message sender {} does not match event envelope sender {}",
+                            sender,
+                            event.qualifiedFrom
+                        )
+                    }
+
                     forwardMessage(
-                        message = message,
+                        message = message.message,
                         conversationId = event.qualifiedConversation,
-                        sender = event.qualifiedFrom,
+                        sender = sender,
                         timestamp = event.time
                     )
                 } catch (exception: MlsException) {
@@ -418,6 +427,17 @@ internal class EventsRouter internal constructor(
         } else {
             NON_CONVERSATION_EVENTS
         }
+    }
+
+    private fun parseSenderClientId(senderClientId: String): QualifiedId {
+        val clientIdParts = senderClientId.split(':')
+        val parts = clientIdParts[1]
+            .split('@')
+            .takeIf { it.size == 2 && it.all(String::isNotBlank) }
+            ?: throw IllegalArgumentException(
+                "Invalid senderClientId format: $senderClientId"
+            )
+        return QualifiedId(id = UUID.fromString(clientIdParts[0]), domain = parts[1])
     }
 
     private suspend fun handleWelcomeEvent(
