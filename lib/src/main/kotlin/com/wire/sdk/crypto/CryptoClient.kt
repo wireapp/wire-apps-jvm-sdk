@@ -36,7 +36,7 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun decryptMls(
         mlsGroupId: ConversationId,
         encryptedMessage: String
-    ): ByteArray?
+    ): DecryptedMlsMessage
 
     /**
      * Proteus Configuration

@@ -16,12 +16,17 @@
 
 package com.wire.sdk.service
 
+import com.wire.crypto.ConversationId
+import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.model.ConversationMember
+import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
@@ -29,6 +34,7 @@ import com.wire.sdk.model.http.conversation.Member
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
+import com.wire.sdk.utils.MockCoreCryptoClient
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -54,6 +60,63 @@ import kotlin.time.Clock
  * - Channel isolation prevents cross-conversation failures
  */
 class EventsRouterConcurrencyTest {
+    @Test
+    fun `MLS message sender comes from decrypted sender client ID`() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "wire.test")
+            val decryptedSender = QualifiedId(UUID.randomUUID(), "sender.wire.test")
+            val envelopeSender = QualifiedId(UUID.randomUUID(), "envelope.wire.test")
+            val mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
+            val conversation = ConversationEntity(
+                id = conversationId,
+                name = null,
+                teamId = null,
+                mlsGroupId = mlsGroupId,
+                type = ConversationEntity.Type.GROUP
+            )
+            val conversationService = mockk<ConversationService>()
+            val cryptoClient = mockk<CryptoClient>()
+            var receivedSender: QualifiedId? = null
+            val wireEventsHandler = object : WireEventsHandlerSuspending() {
+                override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
+                    receivedSender = wireMessage.sender
+                }
+            }
+
+            coEvery { conversationService.getConversationById(conversationId) } returns conversation
+            coEvery { cryptoClient.decryptMls(mlsGroupId, any()) } returns DecryptedMlsMessage(
+                message = MockCoreCryptoClient.GENERIC_TEXT_MESSAGE.toByteArray(),
+                senderClientId = "${decryptedSender.id}:client@${decryptedSender.domain}"
+            )
+
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val eventsRouter = createEventsRouter(
+                conversationService = conversationService,
+                cryptoClient = cryptoClient,
+                wireEventsHandler = wireEventsHandler,
+                dispatcher = testDispatcher
+            )
+
+            eventsRouter.route(
+                EventResponse(
+                    id = UUID.randomUUID().toString(),
+                    payload = listOf(
+                        EventContentDTO.Conversation.NewMLSMessageDTO(
+                            qualifiedConversation = conversationId,
+                            qualifiedFrom = envelopeSender,
+                            time = Clock.System.now(),
+                            data = "encrypted-message",
+                            subconversation = null
+                        )
+                    )
+                )
+            )
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(decryptedSender, receivedSender)
+            eventsRouter.close()
+        }
+
     @Test
     fun `events for same conversation are processed in order`() =
         runTest {
@@ -462,9 +525,9 @@ class EventsRouterConcurrencyTest {
         conversationsApiClient: ConversationsApiClient = mockk(relaxed = true),
         mlsApiClient: MlsApiClient = mockk(relaxed = true),
         cryptoClient: CryptoClient = mockk(relaxed = true),
+        wireEventsHandler: WireEventsHandler = object : WireEventsHandlerSuspending() {},
         dispatcher: CoroutineDispatcher = Dispatchers.Default
     ): EventsRouter {
-        val wireEventsHandler = object : WireEventsHandlerSuspending() {}
         val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
 
         return EventsRouter(

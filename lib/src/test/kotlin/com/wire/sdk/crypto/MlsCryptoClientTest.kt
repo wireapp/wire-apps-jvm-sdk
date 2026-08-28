@@ -160,7 +160,7 @@ class MlsCryptoClientTest {
             )
             bobClient.initializeMlsClient(
                 cryptoClientId = CryptoClientId(
-                    value = "bob_$bobUserId"
+                    value = "$bobUserId:bob-client@wire.test"
                 ),
                 mlsTransport = testMlsTransport
             )
@@ -172,7 +172,7 @@ class MlsCryptoClientTest {
             )
             aliceClient.initializeMlsClient(
                 cryptoClientId = CryptoClientId(
-                    value = "alice_$aliceUserId"
+                    value = "$aliceUserId:alice-client@wire.test"
                 ),
                 mlsTransport = testMlsTransport
             )
@@ -210,9 +210,10 @@ class MlsCryptoClientTest {
             val encryptedBase64Message = Base64.getEncoder().encodeToString(encryptedMessage)
 
             // Bob decrypts the message
-            val decrypted: ByteArray? = bobClient.decryptMls(mlsGroupId, encryptedBase64Message)
+            val decrypted = bobClient.decryptMls(mlsGroupId, encryptedBase64Message)
+            assertEquals("$aliceUserId:alice-client@wire.test", decrypted.senderClientId)
 
-            val genericMessage = GenericMessage.parseFrom(decrypted)
+            val genericMessage = GenericMessage.parseFrom(decrypted.message)
             val wireMessage = ProtobufDeserializer.processGenericMessage(
                 genericMessage = genericMessage,
                 conversationId = QualifiedId(

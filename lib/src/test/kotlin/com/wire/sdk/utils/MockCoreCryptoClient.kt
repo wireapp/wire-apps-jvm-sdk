@@ -30,6 +30,7 @@ import com.wire.crypto.Welcome
 import com.wire.crypto.invoke
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
@@ -89,7 +90,11 @@ internal class MockCoreCryptoClient private constructor(
     override suspend fun decryptMls(
         mlsGroupId: ConversationId,
         encryptedMessage: String
-    ): ByteArray = GENERIC_TEXT_MESSAGE.toByteArray()
+    ): DecryptedMlsMessage =
+        DecryptedMlsMessage(
+            message = GENERIC_TEXT_MESSAGE.toByteArray(),
+            senderClientId = DEFAULT_SENDER_CLIENT_ID
+        )
 
     // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
     override suspend fun processWelcomeMessage(welcome: Welcome): ConversationId =
@@ -197,6 +202,8 @@ internal class MockCoreCryptoClient private constructor(
 
         private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
         private const val KEYSTORE_NAME = "keystore"
+        private const val DEFAULT_SENDER_CLIENT_ID =
+            "00000000-0000-0000-0000-000000000001:mock-client@wire.test"
         val MLS_GROUP_ID = ConversationId(UUID.randomUUID().toString().toByteArray())
         val MLS_GROUP_ID_BASE64 = Base64.getEncoder().encodeToString(MLS_GROUP_ID.copyBytes())
         val GENERIC_TEXT_MESSAGE: GenericMessage = GenericMessage
