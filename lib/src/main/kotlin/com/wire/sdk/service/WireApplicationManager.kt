@@ -33,6 +33,7 @@ import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
+import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
@@ -62,7 +63,8 @@ class WireApplicationManager internal constructor(
     private val assetsApiClient: AssetsApiClient,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
-    private val conversationService: ConversationService
+    private val conversationService: ConversationService,
+    private val appStorage: AppStorage
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -682,4 +684,11 @@ class WireApplicationManager internal constructor(
             domain = domain,
             numberOfResults = numberOfResults
         )
+
+    /**
+     * Returns the device id of application
+     *
+     * Note: This reads from local storage and does not make any network request.
+     */
+    fun getDeviceId(): String? = appStorage.getDeviceId()
 }

@@ -41,6 +41,7 @@ import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.MlsTransportLastWelcome
+import com.wire.sdk.persistence.AppStorage
 import io.ktor.http.HttpStatusCode
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -358,6 +359,7 @@ class WireApplicationManagerTest {
 
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
             val teamStorage = mockk<TeamStorage>(relaxed = true)
+            val appStorage = mockk<AppStorage>(relaxed = true)
 
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
@@ -367,7 +369,8 @@ class WireApplicationManagerTest {
                 assetsApiClient = assetsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
-                conversationService = conversationService
+                conversationService = conversationService,
+                appStorage = appStorage
             )
 
             val originalMessage = WireMessage.Text.create(
@@ -435,6 +438,7 @@ class WireApplicationManagerTest {
 
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
             val teamStorage = mockk<TeamStorage>(relaxed = true)
+            val appStorage = mockk<AppStorage>(relaxed = true)
 
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
@@ -444,7 +448,8 @@ class WireApplicationManagerTest {
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
-                conversationService = conversationService
+                conversationService = conversationService,
+                appStorage = appStorage
             )
 
             val originalMessage = WireMessage.Text.create(
@@ -513,6 +518,7 @@ class WireApplicationManagerTest {
 
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
             val teamStorage = mockk<TeamStorage>(relaxed = true)
+            val appStorage = mockk<AppStorage>(relaxed = true)
 
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
@@ -522,7 +528,8 @@ class WireApplicationManagerTest {
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
-                conversationService = conversationService
+                conversationService = conversationService,
+                appStorage = appStorage
             )
 
             val originalMessage = WireMessage.Text.create(
@@ -586,6 +593,7 @@ class WireApplicationManagerTest {
 
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
             val teamStorage = mockk<TeamStorage>(relaxed = true)
+            val appStorage = mockk<AppStorage>(relaxed = true)
 
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
@@ -595,7 +603,8 @@ class WireApplicationManagerTest {
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
-                conversationService = conversationService
+                conversationService = conversationService,
+                appStorage = appStorage
             )
 
             val originalMessage = WireMessage.Text.create(
@@ -658,6 +667,7 @@ class WireApplicationManagerTest {
 
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
             val teamStorage = mockk<TeamStorage>(relaxed = true)
+            val appStorage = mockk<AppStorage>(relaxed = true)
 
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
@@ -667,7 +677,8 @@ class WireApplicationManagerTest {
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
-                conversationService = conversationService
+                conversationService = conversationService,
+                appStorage = appStorage
             )
 
             // Message already has its OWN expiry set, different from the conversation's timer
@@ -727,6 +738,7 @@ class WireApplicationManagerTest {
 
             val mlsFallbackStrategy = mockk<MlsFallbackStrategy>(relaxed = true)
             val teamStorage = mockk<TeamStorage>(relaxed = true)
+            val appStorage = mockk<AppStorage>(relaxed = true)
 
             val manager = WireApplicationManager(
                 teamStorage = teamStorage,
@@ -736,7 +748,8 @@ class WireApplicationManagerTest {
                 mlsApiClient = mlsApiClient,
                 cryptoClient = cryptoClient,
                 mlsFallbackStrategy = mlsFallbackStrategy,
-                conversationService = conversationService
+                conversationService = conversationService,
+                appStorage = appStorage
             )
 
             // Use Ping instead of Text to prove the override isn't Text-specific
@@ -793,7 +806,8 @@ class WireApplicationManagerTest {
                 assetsApiClient = mockk(relaxed = true),
                 cryptoClient = mockk(relaxed = true),
                 mlsFallbackStrategy = mockk(relaxed = true),
-                conversationService = mockk(relaxed = true)
+                conversationService = mockk(relaxed = true),
+                appStorage = mockk(relaxed = true)
             )
 
             // Act
@@ -828,7 +842,8 @@ class WireApplicationManagerTest {
                 assetsApiClient = mockk(relaxed = true),
                 cryptoClient = mockk(relaxed = true),
                 mlsFallbackStrategy = mockk(relaxed = true),
-                conversationService = mockk(relaxed = true)
+                conversationService = mockk(relaxed = true),
+                appStorage = mockk(relaxed = true)
             )
 
             val result = manager.searchUsersSuspending(
@@ -838,6 +853,30 @@ class WireApplicationManagerTest {
             )
 
             assertTrue(result.isEmpty())
+        }
+
+    @Test
+    fun `when device id is requested, should return the value from app storage`() =
+        runTest {
+            val appStorage = mockk<AppStorage> {
+                every { getDeviceId() } returns DEVICE_ID
+            }
+
+            val manager = WireApplicationManager(
+                teamStorage = mockk(relaxed = true),
+                backendClient = mockk(relaxed = true),
+                userService = mockk(relaxed = true),
+                mlsApiClient = mockk(relaxed = true),
+                assetsApiClient = mockk(relaxed = true),
+                cryptoClient = mockk(relaxed = true),
+                mlsFallbackStrategy = mockk(relaxed = true),
+                conversationService = mockk(relaxed = true),
+                appStorage = appStorage
+            )
+
+            val deviceId = manager.getDeviceId()
+
+            assertEquals(DEVICE_ID, deviceId)
         }
 
     private suspend fun generateUser2Packages(): List<KeyPackage> =
@@ -853,6 +892,7 @@ class WireApplicationManagerTest {
         }
 
     companion object {
+        private const val DEVICE_ID = "device-id-123"
         private val wireMockServer = WireMockServer(8086)
         private val testMlsTransport = MlsTransportLastWelcome()
         private lateinit var newPackages: List<KeyPackage>
