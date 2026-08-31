@@ -16,10 +16,13 @@
 
 package com.wire.sdk.sample.testcommand;
 
+import com.wire.sdk.exception.WireException;
 import com.wire.sdk.model.AssetResource;
 import com.wire.sdk.model.QualifiedId;
 import com.wire.sdk.model.WireMessage;
+import com.wire.sdk.model.WireUser;
 import com.wire.sdk.model.asset.AssetRetention;
+import com.wire.sdk.model.http.conversation.ConversationRole;
 import com.wire.sdk.service.WireApplicationManager;
 
 import kotlin.time.Clock;
@@ -31,15 +34,33 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 class TestCommandProcessor {
 
     private static final long EPHEMERAL_MSG_EXPIRE_MILLIS = 10_000L;
+    private static final long MESSAGE_UPDATE_DELAY_MILLIS = 3_000L;
 
     private final WireApplicationManager manager;
 
     TestCommandProcessor(WireApplicationManager applicationManager) {
         this.manager = applicationManager;
+    }
+
+    private void sendText(QualifiedId conversationId, String text) {
+        this.manager.sendMessage(WireMessage.Text.create(
+                conversationId,
+                text,
+                List.of(), List.of(), null));
+    }
+
+    private void sleep(long milliseconds) {
+        try {
+            Thread.sleep(milliseconds);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     void process(TestCommand testCommand, WireMessage.Text wireMessage) {
@@ -52,14 +73,22 @@ class TestCommandProcessor {
             case ADD_MEMBER_IN_CONVERSATION -> processAddMemberInConversation(wireMessage);
             case REMOVE_MEMBER_FROM_CONVERSATION ->
                     processRemoveMemberFromConversation(wireMessage);
-            case ASSET_IMAGE -> processAssetImage(wireMessage);
-            case ASSET_AUDIO -> processAssetAudio(wireMessage);
-            case ASSET_VIDEO -> processAssetVideo(wireMessage);
+            case UPDATE_MEMBER_ROLE -> processUpdateMemberRole(wireMessage);
+            case GET_USER_DATA -> processGetUserData(wireMessage);
+            case GET_USERS -> processGetUsers(wireMessage);
+            case GET_CONVERSATIONS -> processGetConversations(wireMessage);
+            case GET_CONVERSATION_MEMBERS -> processGetConversationMembers(wireMessage);
+            case SEND_ASSET_IMAGE -> processAssetImage(wireMessage);
+            case SEND_ASSET_AUDIO -> processAssetAudio(wireMessage);
+            case SEND_ASSET_VIDEO -> processAssetVideo(wireMessage);
             case ASSET_PDF_DOCUMENT -> replyWithSamplePDFDocument(wireMessage);
             case SEARCH_USER -> processSearchUser(wireMessage);
             case TEST_DELETED_MESSAGE -> processTestDeletedMessage(wireMessage);
+            case TEST_EDIT_TEXT -> processTestEditText(wireMessage);
+            case TEST_EDIT_COMPOSITE -> processTestEditComposite(wireMessage);
             case SEND_EPHEMERAL_TEXT -> processSendEphemeralText(wireMessage);
             case SEND_EPHEMERAL_PING -> processSendEphemeralPing(wireMessage);
+            case SEND_COMPOSITE_MESSAGE -> processSendCompositeMessage(wireMessage);
             case SEND_LOCATION_MESSAGE -> processSendLocationMessage(wireMessage);
             case SEND_EPHEMERAL_LOCATION_MESSAGE ->
                     processSendEphemeralLocationMessage(wireMessage);
@@ -67,7 +96,7 @@ class TestCommandProcessor {
     }
 
     private void processCreateOneToOneConversation(WireMessage.Text wireMessage) {
-        // Expected message: `create-one2one-conversation [USER_ID] [DOMAIN]
+        // Expected message: `create-onetoone-conversation [USER_ID] [DOMAIN]
         final var split = wireMessage.text().split(" ");
         final var userId = new QualifiedId(UUID.fromString(split[1]), split[2]);
         this.manager.createOneToOneConversation(userId);
@@ -142,6 +171,119 @@ class TestCommandProcessor {
                     members
             );
         }
+    }
+
+    private void processUpdateMemberRole(WireMessage.Text wireMessage) {
+        // Expected message: `update-member-role [USER_ID] [DOMAIN] [ROLE]`
+        final var split = wireMessage.text().split(" ");
+        if (split.length != 4) {
+            sendText(wireMessage.conversationId(),
+                    "⚠️ Usage: update-member-role [USER_ID] [DOMAIN] [ROLE]");
+            return;
+        }
+
+        final var newRole = ConversationRole.Companion.fromApi(split[3]);
+        if (newRole == ConversationRole.UNKNOWN) {
+            sendText(wireMessage.conversationId(),
+                    "⚠️ Unknown role '" + split[3] + "'. Expected 'wire_admin' or 'wire_member'.");
+            return;
+        }
+
+        final var userId = new QualifiedId(UUID.fromString(split[1]), split[2]);
+        this.manager.updateConversationMemberRole(
+                wireMessage.conversationId(),
+                userId,
+                newRole
+        );
+    }
+
+    private void processGetUserData(WireMessage.Text wireMessage) {
+        // Expected message: `get-user-data [USER_ID] [DOMAIN]`
+        final var split = wireMessage.text().split(" ");
+        if (split.length != 3) {
+            sendText(wireMessage.conversationId(),
+                    "⚠️ Usage: get-user-data [USER_ID] [DOMAIN]");
+            return;
+        }
+
+        final var userId = new QualifiedId(UUID.fromString(split[1]), split[2]);
+
+        try {
+            sendText(wireMessage.conversationId(), formatWireUser(this.manager.getUser(userId)));
+        } catch (WireException e) {
+            sendText(wireMessage.conversationId(),
+                    "❌ Could not get the user data: " + e.getMessage());
+        }
+    }
+
+    private void processGetUsers(WireMessage.Text wireMessage) {
+        // Expected message: `get-users [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
+        final var split = wireMessage.text().split(" ");
+        if (split.length < 3 || split.length % 2 == 0) {
+            sendText(wireMessage.conversationId(),
+                    "⚠️ Usage: get-users [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...");
+            return;
+        }
+
+        final var userDataList = new ArrayList<String>();
+
+        // Start at index 1, increment by 2 to capture pairs of UUID and Domain
+        for (int i = 1; i + 1 < split.length; i += 2) {
+            final var userId = new QualifiedId(UUID.fromString(split[i]), split[i + 1]);
+            try {
+                userDataList.add(formatWireUser(this.manager.getUser(userId)));
+            } catch (WireException e) {
+                userDataList.add("❌ Could not get the data of " + userId.toFullString()
+                        + ": " + e.getMessage());
+            }
+        }
+
+        sendText(wireMessage.conversationId(), String.join("\n\n", userDataList));
+    }
+
+    private String formatWireUser(WireUser user) {
+        return "👉 User data for " + user.id().id() + "@" + user.id().domain() + ":"
+                + "\n        Name: " + user.name()
+                + "\n        Email: " + (user.email() == null ? "N/A" : user.email())
+                + "\n        Handle: " + (user.handle() == null ? "N/A" : user.handle())
+                + "\n        Team: " + (user.teamId() == null ? "N/A" : user.teamId())
+                + "\n        Deleted: " + (user.deleted() != null && user.deleted());
+    }
+
+    private void processGetConversations(WireMessage.Text wireMessage) {
+        // Expected message: `get-conversations`
+        final var conversations = this.manager.getConversations();
+
+        final var conversationList = conversations.stream()
+                .map(conversation -> "- "
+                        + (conversation.name() == null ? "Unnamed" : conversation.name())
+                        + " (" + conversation.id().id() + "@" + conversation.id().domain() + ")")
+                .collect(Collectors.joining("\n"));
+
+        sendText(wireMessage.conversationId(),
+                "Conversations (" + conversations.size() + "):\n" + conversationList);
+    }
+
+    private void processGetConversationMembers(WireMessage.Text wireMessage) {
+        // Expected message: `get-conversation-members [CONVERSATION_ID] [DOMAIN]`
+        final var split = wireMessage.text().split(" ");
+        if (split.length != 3) {
+            sendText(wireMessage.conversationId(),
+                    "⚠️ Usage: get-conversation-members [CONVERSATION_ID] [DOMAIN]");
+            return;
+        }
+
+        final var conversationId = new QualifiedId(UUID.fromString(split[1]), split[2]);
+        final var members = this.manager.getConversationMembers(conversationId);
+
+        final var memberList = members.stream()
+                .map(member -> "- " + member.userId().id() + "@" + member.userId().domain()
+                        + " (" + member.role() + ")")
+                .collect(Collectors.joining("\n"));
+
+        sendText(wireMessage.conversationId(),
+                "Members in conversation " + conversationId.toFullString()
+                        + " (" + members.size() + "):\n" + memberList);
     }
 
     private void processAssetImage(WireMessage.Text wireMessage) {
@@ -320,16 +462,64 @@ class TestCommandProcessor {
 
         final var messageId = this.manager.sendMessage(message);
 
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+        sleep(MESSAGE_UPDATE_DELAY_MILLIS);
 
         this.manager.sendMessage(WireMessage.Deleted.create(
                 wireMessage.conversationId(),
                 messageId));
+    }
+
+    private void processTestEditText(WireMessage.Text wireMessage) {
+        // Expected message: `test-edit-text`
+        // Sends a text message and then edits it after 3 seconds.
+        final var messageId = this.manager.sendMessage(WireMessage.Text.create(
+                wireMessage.conversationId(),
+                "This message will be edited in 3 seconds",
+                List.of(), List.of(), null));
+
+        sleep(MESSAGE_UPDATE_DELAY_MILLIS);
+
+        this.manager.sendMessage(WireMessage.TextEdited.create(
+                messageId,
+                wireMessage.conversationId(),
+                "This message got edited",
+                List.of()));
+    }
+
+    private void processTestEditComposite(WireMessage.Text wireMessage) {
+        // Expected message: `test-edit-composite`
+        // Sends a composite message and then removes its buttons one by one, every 3 seconds.
+        final var buttons = new ArrayList<>(List.of(
+                new WireMessage.Button("Button item that will be removed in 6 seconds"),
+                new WireMessage.Button("Button item that will be removed in 3 seconds")
+        ));
+
+        var latestMessageId = this.manager.sendMessage(WireMessage.Composite.create(
+                wireMessage.conversationId(),
+                "Composite Title",
+                List.copyOf(buttons)));
+
+        while (!buttons.isEmpty()) {
+            sleep(MESSAGE_UPDATE_DELAY_MILLIS);
+            buttons.remove(buttons.size() - 1);
+
+            latestMessageId = this.manager.sendMessage(WireMessage.CompositeEdited.create(
+                    latestMessageId,
+                    wireMessage.conversationId(),
+                    "Composite Title",
+                    List.copyOf(buttons)));
+        }
+    }
+
+    private void processSendCompositeMessage(WireMessage.Text wireMessage) {
+        // Expected message: `send-composite-message`
+        this.manager.sendMessage(WireMessage.Composite.create(
+                wireMessage.conversationId(),
+                "Composite Title",
+                List.of(
+                        new WireMessage.Button("Button-001"),
+                        new WireMessage.Button("Button-002")
+                )));
     }
 
     private void processSendEphemeralText(WireMessage.Text wireMessage) {

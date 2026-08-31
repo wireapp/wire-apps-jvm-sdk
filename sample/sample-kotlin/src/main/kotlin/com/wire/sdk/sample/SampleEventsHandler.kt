@@ -22,6 +22,7 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireMessage.Asset.AssetMetadata
+import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.http.conversation.ConversationRole
 import kotlinx.coroutines.delay
@@ -42,6 +43,31 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         if (isRemoveMembersFromConversation(text = wireMessage.text)) {
             processRemoveMembersFromConversation(wireMessage = wireMessage)
+            return
+        }
+
+        if (isUpdateMemberRole(text = wireMessage.text)) {
+            processUpdateMemberRole(wireMessage = wireMessage)
+            return
+        }
+
+        if (isGetUserData(text = wireMessage.text)) {
+            processGetUserData(wireMessage = wireMessage)
+            return
+        }
+
+        if (isGetUsers(text = wireMessage.text)) {
+            processGetUsers(wireMessage = wireMessage)
+            return
+        }
+
+        if (isGetConversations(text = wireMessage.text)) {
+            processGetConversations(wireMessage = wireMessage)
+            return
+        }
+
+        if (isGetConversationMembers(text = wireMessage.text)) {
+            processGetConversationMembers(wireMessage = wireMessage)
             return
         }
 
@@ -70,18 +96,18 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             return
         }
 
-        if (isAssetImage(text = wireMessage.text)) {
-            processAssetImage(wireMessage = wireMessage)
+        if (isSendAssetImage(text = wireMessage.text)) {
+            processSendAssetImage(wireMessage = wireMessage)
             return
         }
 
-        if (isAssetAudio(text = wireMessage.text)) {
-            processAssetAudio(wireMessage = wireMessage)
+        if (isSendAssetAudio(text = wireMessage.text)) {
+            processSendAssetAudio(wireMessage = wireMessage)
             return
         }
 
-        if (isAssetVideo(text = wireMessage.text)) {
-            processAssetVideo(wireMessage = wireMessage)
+        if (isSendAssetVideo(text = wireMessage.text)) {
+            processSendAssetVideo(wireMessage = wireMessage)
             return
         }
 
@@ -97,6 +123,21 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         if (isTestDeletedMessage(text = wireMessage.text)) {
             processTestDeletedMessage(wireMessage = wireMessage)
+            return
+        }
+
+        if (isTestEditText(text = wireMessage.text)) {
+            processTestEditText(wireMessage = wireMessage)
+            return
+        }
+
+        if (isTestEditComposite(text = wireMessage.text)) {
+            processTestEditComposite(wireMessage = wireMessage)
+            return
+        }
+
+        if (isSendCompositeMessage(text = wireMessage.text)) {
+            processSendCompositeMessage(wireMessage = wireMessage)
             return
         }
 
@@ -231,8 +272,23 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     private fun isRemoveMembersFromConversation(text: String): Boolean =
         text.startsWith("remove-members-from-conversation")
 
+    private fun isUpdateMemberRole(text: String): Boolean =
+        text.startsWith("update-member-role")
+
+    private fun isGetUserData(text: String): Boolean =
+        text.startsWith("get-user-data")
+
+    private fun isGetUsers(text: String): Boolean =
+        text.startsWith("get-users")
+
+    private fun isGetConversations(text: String): Boolean =
+        text.startsWith("get-conversations")
+
+    private fun isGetConversationMembers(text: String): Boolean =
+        text.startsWith("get-conversation-members")
+
     private fun isCreateOneToOneConversation(text: String): Boolean =
-        text.startsWith("create-one2one-conversation")
+        text.startsWith("create-onetoone-conversation")
 
     private fun isCreateGroupConversation(text: String): Boolean =
         text.startsWith("create-group-conversation")
@@ -246,14 +302,14 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     private fun isCreateChannelConversation(text: String): Boolean =
         text.startsWith("create-channel-conversation")
 
-    private fun isAssetImage(text: String): Boolean =
-        text.startsWith("asset-image")
+    private fun isSendAssetImage(text: String): Boolean =
+        text.startsWith("send-asset-image")
 
-    private fun isAssetAudio(text: String): Boolean =
-        text.startsWith("asset-audio")
+    private fun isSendAssetAudio(text: String): Boolean =
+        text.startsWith("send-asset-audio")
 
-    private fun isAssetVideo(text: String): Boolean =
-        text.startsWith("asset-video")
+    private fun isSendAssetVideo(text: String): Boolean =
+        text.startsWith("send-asset-video")
 
     private fun isAssetPDFDocumentTestMessage(text: String): Boolean =
         text.startsWith("asset-document-pdf")
@@ -263,6 +319,15 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     private fun isTestDeletedMessage(text: String): Boolean =
         text.startsWith("test-deleted-message")
+
+    private fun isTestEditText(text: String): Boolean =
+        text.startsWith("test-edit-text")
+
+    private fun isTestEditComposite(text: String): Boolean =
+        text.startsWith("test-edit-composite")
+
+    private fun isSendCompositeMessage(text: String): Boolean =
+        text.startsWith("send-composite-message")
 
     private fun isSendEphemeralText(text: String): Boolean =
         text.startsWith("send-ephemeral-text")
@@ -312,8 +377,113 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         }
     }
 
+    private suspend fun processUpdateMemberRole(wireMessage: WireMessage.Text) {
+        // Expected message: `update-member-role [USER_ID] [DOMAIN] [ROLE]`
+        val split = wireMessage.text.split(" ")
+        if (split.size != 4) {
+            sendText(wireMessage, "⚠️ Usage: update-member-role [USER_ID] [DOMAIN] [ROLE]")
+            return
+        }
+
+        val newRole = ConversationRole.fromApi(split[3])
+        if (newRole == ConversationRole.UNKNOWN) {
+            sendText(
+                wireMessage,
+                "⚠️ Unknown role '${split[3]}'. Expected 'wire_admin' or 'wire_member'."
+            )
+            return
+        }
+
+        manager.updateConversationMemberRoleSuspending(
+            conversationId = wireMessage.conversationId,
+            userId = QualifiedId(id = UUID.fromString(split[1]), domain = split[2]),
+            newRole = newRole
+        )
+    }
+
+    private suspend fun processGetUserData(wireMessage: WireMessage.Text) {
+        // Expected message: `get-user-data [USER_ID] [DOMAIN]`
+        val split = wireMessage.text.split(" ")
+        if (split.size != 3) {
+            sendText(wireMessage, "⚠️ Usage: get-user-data [USER_ID] [DOMAIN]")
+            return
+        }
+
+        val userId = QualifiedId(id = UUID.fromString(split[1]), domain = split[2])
+        sendText(wireMessage, formatWireUser(manager.getUserSuspending(userId)))
+    }
+
+    private suspend fun processGetUsers(wireMessage: WireMessage.Text) {
+        // Expected message: `get-users [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
+        val split = wireMessage.text.split(" ")
+        if (split.size < 3 || split.size % 2 == 0) {
+            sendText(wireMessage, "⚠️ Usage: get-users [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...")
+            return
+        }
+
+        // The SDK has no bulk getter, so the users are fetched one by one
+        val userIds = split.drop(1)
+            .chunked(2)
+            .filter { it.size == 2 }
+            .map { (id, domain) -> QualifiedId(id = UUID.fromString(id), domain = domain) }
+
+        val userDataList = userIds.map { userId -> formatWireUser(manager.getUserSuspending(userId)) }
+
+        sendText(wireMessage, userDataList.joinToString("\n\n"))
+    }
+
+    private fun formatWireUser(user: WireUser): String =
+        """
+        👉 User data for ${user.id.toFullString()}:
+                Name: ${user.name}
+                Email: ${user.email ?: "N/A"}
+                Handle: ${user.handle ?: "N/A"}
+                Team: ${user.teamId ?: "N/A"}
+                Deleted: ${user.deleted ?: false}
+        """.trimIndent()
+
+    private suspend fun processGetConversations(wireMessage: WireMessage.Text) {
+        // Expected message: `get-conversations`
+        val conversations = manager.getConversations()
+        val conversationList = conversations.joinToString("\n") { conversation ->
+            "- ${conversation.name ?: "Unnamed"} (${conversation.id.toFullString()})"
+        }
+
+        sendText(wireMessage, "Conversations (${conversations.size}):\n$conversationList")
+    }
+
+    private suspend fun processGetConversationMembers(wireMessage: WireMessage.Text) {
+        // Expected message: `get-conversation-members [CONVERSATION_ID] [DOMAIN]`
+        val split = wireMessage.text.split(" ")
+        if (split.size != 3) {
+            sendText(wireMessage, "⚠️ Usage: get-conversation-members [CONVERSATION_ID] [DOMAIN]")
+            return
+        }
+
+        val conversationId = QualifiedId(id = UUID.fromString(split[1]), domain = split[2])
+        val members = manager.getConversationMembers(conversationId)
+        val memberList = members.joinToString("\n") { member ->
+            "- ${member.userId.toFullString()} (${member.role})"
+        }
+
+        sendText(
+            wireMessage,
+            "Members in conversation ${conversationId.toFullString()} " +
+                "(${members.size}):\n$memberList"
+        )
+    }
+
+    private suspend fun sendText(wireMessage: WireMessage.Text, text: String) {
+        manager.sendMessageSuspending(
+            message = WireMessage.Text.create(
+                conversationId = wireMessage.conversationId,
+                text = text
+            )
+        )
+    }
+
     private suspend fun processCreateOneToOneConversation(wireMessage: WireMessage.Text) {
-        // Expected message: `create-one2one-conversation [USER_ID] [DOMAIN]
+        // Expected message: `create-onetoone-conversation [USER_ID] [DOMAIN]
         val split = wireMessage.text.split(" ")
         val one2oneUser = QualifiedId(
             id = UUID.fromString(split[1]),
@@ -380,7 +550,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
-    private suspend fun processAssetImage(wireMessage: WireMessage.Text) {
+    private suspend fun processSendAssetImage(wireMessage: WireMessage.Text) {
         val resourcePath = javaClass.classLoader.getResource("banana-icon.png")?.path
             ?: throw IllegalStateException("Test resource 'banana-icon.png' not found")
         val asset = File(resourcePath)
@@ -395,7 +565,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
-    private suspend fun processAssetAudio(wireMessage: WireMessage.Text) {
+    private suspend fun processSendAssetAudio(wireMessage: WireMessage.Text) {
         val resourcePath = javaClass.classLoader.getResource("sample_audio_6s.mp3")?.path
             ?: throw IllegalStateException("Test resource 'sample_audio_6s.mp3' not found")
         val asset = File(resourcePath)
@@ -411,7 +581,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
     }
 
-    private suspend fun processAssetVideo(wireMessage: WireMessage.Text) {
+    private suspend fun processSendAssetVideo(wireMessage: WireMessage.Text) {
         val resourcePath = javaClass.classLoader.getResource("sample_video_5s.mp4")?.path
             ?: throw IllegalStateException("Test resource 'sample_video_5s.mp4' not found")
         val asset = File(resourcePath)
@@ -503,12 +673,78 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         val messageId = manager.sendMessageSuspending(message = message)
 
-        delay(3000L)
+        delay(MESSAGE_UPDATE_DELAY_MILLIS)
 
         manager.sendMessageSuspending(
             message = WireMessage.Deleted.create(
                 conversationId = wireMessage.conversationId,
                 messageId = messageId
+            )
+        )
+    }
+
+    private suspend fun processTestEditText(wireMessage: WireMessage.Text) {
+        // Expected message: `test-edit-text`
+        // Sends a text message and then edits it after 3 seconds.
+        val messageId = manager.sendMessageSuspending(
+            message = WireMessage.Text.create(
+                conversationId = wireMessage.conversationId,
+                text = "This message will be edited in 3 seconds"
+            )
+        )
+
+        delay(MESSAGE_UPDATE_DELAY_MILLIS)
+
+        manager.sendMessageSuspending(
+            message = WireMessage.TextEdited.create(
+                replacingMessageId = messageId,
+                conversationId = wireMessage.conversationId,
+                text = "This message got edited"
+            )
+        )
+    }
+
+    private suspend fun processTestEditComposite(wireMessage: WireMessage.Text) {
+        // Expected message: `test-edit-composite`
+        // Sends a composite message and then removes its buttons one by one, every 3 seconds.
+        val buttons = mutableListOf(
+            WireMessage.Button(text = "Button item that will be removed in 6 seconds"),
+            WireMessage.Button(text = "Button item that will be removed in 3 seconds")
+        )
+
+        var latestMessageId = manager.sendMessageSuspending(
+            message = WireMessage.Composite.create(
+                conversationId = wireMessage.conversationId,
+                text = COMPOSITE_TITLE,
+                buttonList = buttons.toList()
+            )
+        )
+
+        while (buttons.isNotEmpty()) {
+            delay(MESSAGE_UPDATE_DELAY_MILLIS)
+            buttons.removeAt(buttons.lastIndex)
+
+            latestMessageId = manager.sendMessageSuspending(
+                message = WireMessage.CompositeEdited.create(
+                    replacingMessageId = latestMessageId,
+                    conversationId = wireMessage.conversationId,
+                    text = COMPOSITE_TITLE,
+                    buttonList = buttons.toList()
+                )
+            )
+        }
+    }
+
+    private suspend fun processSendCompositeMessage(wireMessage: WireMessage.Text) {
+        // Expected message: `send-composite-message`
+        manager.sendMessageSuspending(
+            message = WireMessage.Composite.create(
+                conversationId = wireMessage.conversationId,
+                text = COMPOSITE_TITLE,
+                buttonList = listOf(
+                    WireMessage.Button(text = "Button-001"),
+                    WireMessage.Button(text = "Button-002")
+                )
             )
         )
     }
@@ -563,5 +799,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     private companion object {
         private const val EPHEMERAL_MSG_EXPIRE_MILLIS = 10_000L
+        private const val MESSAGE_UPDATE_DELAY_MILLIS = 3_000L
+        private const val COMPOSITE_TITLE = "Composite Title"
     }
 }
