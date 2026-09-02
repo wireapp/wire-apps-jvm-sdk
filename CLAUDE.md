@@ -50,7 +50,7 @@ Wire Apps JVM SDK - An SDK for building Wire third-party applications in Kotlin/
 ### Core Components
 
 **WireAppSdk** (`lib/src/main/kotlin/com/wire/sdk/WireAppSdk.kt`)
-- Main entry point. Initialize with applicationId, apiToken, apiHost, cryptographyStoragePassword (must be 32 chars), and a WireEventsHandler implementation.
+- Main entry point. Initialize with apiToken, apiHost, cryptographyStoragePassword (must be 32 chars), and a WireEventsHandler implementation.
 - `startListening()` starts WebSocket connection in background thread
 - `stopListening()` shuts down the connection
 - `getApplicationManager()` returns WireApplicationManager for API operations

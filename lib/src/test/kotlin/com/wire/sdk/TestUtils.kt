@@ -189,7 +189,6 @@ object TestUtils {
 
     fun setupSdk(eventsHandler: WireEventsHandler) {
         WireAppSdk(
-            applicationId = APPLICATION_ID,
             apiToken = API_TOKEN,
             apiHost = API_HOST,
             cryptographyStorageKey = CRYPTOGRAPHY_STORAGE_KEY,
@@ -205,7 +204,6 @@ object TestUtils {
         return ConversationMemberSelf(qualifiedId, conversationRole)
     }
 
-    val APPLICATION_ID = UUID.randomUUID()
     private const val API_TOKEN = "dummyToken"
     private const val API_HOST = "http://localhost:8086"
     val CRYPTOGRAPHY_STORAGE_KEY = "myDummyPasswordOfRandom32BytesCH".toByteArray()

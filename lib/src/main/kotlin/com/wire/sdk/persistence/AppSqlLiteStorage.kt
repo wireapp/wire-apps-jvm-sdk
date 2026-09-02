@@ -20,15 +20,21 @@ import com.wire.sdk.App
 import com.wire.sdk.AppQueries
 import com.wire.sdk.AppsSdkDatabase
 import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AppData
+import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.TeamId
 import com.wire.sdk.utils.AESDecrypt
 import com.wire.sdk.utils.AESEncrypt
 import java.util.Base64
+import java.util.UUID
 
 private const val DEVICE_ID = "device_id"
 private const val BACKEND_COOKIE = "backend_cookie"
 private const val SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
 private const val LAST_NOTIFICATION_ID = "last_notification_id"
+private const val APPLICATION_QUALIFIED_ID = "application_qualified_id"
+private const val APPLICATION_TEAM_ID = "application_team_id"
 
 @Suppress("TooManyFunctions")
 class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
@@ -59,6 +65,46 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     override fun saveDeviceId(deviceId: String) = save(DEVICE_ID, deviceId)
 
     override fun deleteDeviceId() = delete(DEVICE_ID)
+
+    override fun getApplicationQualifiedId(): QualifiedId {
+        val applicationQualifiedId = runCatching {
+            getByKey(APPLICATION_QUALIFIED_ID).value
+        }.getOrNull()
+
+        if (applicationQualifiedId.isNullOrBlank()) {
+            throw WireException.InvalidParameter("No Application QualifiedId found")
+        }
+
+        return QualifiedId.fromFullString(applicationQualifiedId)
+    }
+
+    override fun saveApplicationQualified(applicationQualified: QualifiedId) =
+        save(APPLICATION_QUALIFIED_ID, applicationQualified.toFullString())
+
+    override fun hasApplicationQualifiedId(): Boolean =
+        runCatching {
+            getByKey(APPLICATION_QUALIFIED_ID).value
+        }.getOrNull() != null
+
+    override fun getApplicationTeamId(): TeamId {
+        val applicationTeamId = runCatching {
+            getByKey(APPLICATION_TEAM_ID).value
+        }.getOrNull()
+
+        if (applicationTeamId.isNullOrBlank()) {
+            throw WireException.InvalidParameter("No Application TeamId found")
+        }
+
+        return TeamId(UUID.fromString(applicationTeamId))
+    }
+
+    override fun saveApplicationTeamId(applicationTeamId: TeamId) =
+        save(APPLICATION_TEAM_ID, applicationTeamId.value.toString())
+
+    override fun hasApplicationTeamId(): Boolean =
+        runCatching {
+            getByKey(APPLICATION_TEAM_ID).value
+        }.getOrNull() != null
 
     override fun getBackendCookie(): String? =
         runCatching {

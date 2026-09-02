@@ -33,4 +33,11 @@ data class QualifiedId(
     override fun toString(): String = "${id.obfuscateId()}@$domain" // Avoid accidental logging
 
     fun toFullString(): String = "$id@$domain"
+
+    companion object {
+        fun fromFullString(value: String): QualifiedId {
+            val (id, domain) = value.split("@", limit = 2)
+            return QualifiedId(id = UUID.fromString(id), domain = domain)
+        }
+    }
 }
