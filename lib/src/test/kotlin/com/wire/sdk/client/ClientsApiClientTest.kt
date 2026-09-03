@@ -17,6 +17,7 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.model.CryptoClientId
+import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -71,9 +72,11 @@ class ClientsApiClientTest {
 
             api.updateClientWithMlsPublicKey(
                 CryptoClientId.create(
-                    UUID.randomUUID(),
-                    UUID.randomUUID().toString(),
-                    "example.com"
+                    applicationQualifiedId = QualifiedId(
+                        id = UUID.randomUUID(),
+                        domain = "example.com"
+                    ),
+                    deviceId = UUID.randomUUID().toString()
                 ),
                 com.wire.sdk.model.http.MlsPublicKeys()
             )

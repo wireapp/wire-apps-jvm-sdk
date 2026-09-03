@@ -22,12 +22,18 @@ import com.github.tomakehurst.wiremock.client.WireMock.ok
 import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationMemberSelf
 import com.wire.sdk.model.http.conversation.ConversationRole
 import java.util.UUID
 
 object TestUtils {
     const val TEST_API_VERSION = "v15"
+    val APPLICATION_QUALIFIED_ID = QualifiedId(
+        id = UUID.fromString("b82c3381-37b0-4545-b555-ca32a3a093d0"),
+        domain = "staging.zinfra.io"
+    )
+    val APPLICATION_TEAM_ID = TeamId(UUID.fromString("86fdb92f-76b8-4548-8f21-6e3fd3f5f449"))
 
     fun setupWireMockStubs(wireMockServer: WireMockServer) {
         wireMockServer.stubFor(
@@ -174,10 +180,10 @@ object TestUtils {
                     """
                         {
                           "qualified_id": {
-                            "domain": "staging.zinfra.io",
-                            "id": "b82c3381-37b0-4545-b555-ca32a3a093d0"
+                            "domain": "${APPLICATION_QUALIFIED_ID.domain}",
+                            "id": "${APPLICATION_QUALIFIED_ID.id}"
                           },
-                          "team": "86fdb92f-76b8-4548-8f21-6e3fd3f5f449",
+                          "team": "${APPLICATION_TEAM_ID.value}",
                           "email": "sdk.user@wire.com",
                           "name": "SDK User"
                         }

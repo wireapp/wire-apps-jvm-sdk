@@ -14,7 +14,6 @@
  */
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import java.util.UUID
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -241,12 +240,19 @@ tasks {
     build {
         dependsOn(shadowJar)
     }
+}
 
-    /**
-     * Dummy environment variables for tests
-     */
-    test {
-        environment("WIRE_SDK_USER_ID", UUID.randomUUID().toString())
-        environment("WIRE_SDK_PASSWORD", "randomPassword")
-    }
+tasks.withType<Test> {
+    afterSuite(
+        KotlinClosure2<TestDescriptor, TestResult, Unit>({ desc, result ->
+            if (desc.parent == null) {
+                println(
+                    "Tests: ${result.testCount}, " +
+                        "Passed: ${result.successfulTestCount}, " +
+                        "Failed: ${result.failedTestCount}, " +
+                        "Skipped: ${result.skippedTestCount}"
+                )
+            }
+        })
+    )
 }
