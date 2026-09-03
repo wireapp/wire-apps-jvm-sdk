@@ -25,10 +25,8 @@ import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.OneToOneConversationsApiClient
-import com.wire.sdk.client.SelfApiClient
 import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
-import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient.Companion.toHexString
@@ -54,19 +52,13 @@ import com.wire.sdk.model.http.conversation.getRemovalKey
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.utils.obfuscateId
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import org.slf4j.LoggerFactory
-import java.util.UUID
 import kotlin.io.encoding.Base64
 
 @Suppress("TooManyFunctions", "LongParameterList", "LargeClass")
 internal class ConversationService internal constructor(
     private val backendClient: BackendClient,
     private val usersApiClient: UsersApiClient,
-    private val selfApiClient: SelfApiClient,
     private val conversationsApiClient: ConversationsApiClient,
     private val oneToOneConversationsApiClient: OneToOneConversationsApiClient,
     private val teamsApiClient: TeamsApiClient,
@@ -77,16 +69,17 @@ internal class ConversationService internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    private val selfTeamId: Deferred<UUID?> by lazy {
-        CoroutineScope(Dispatchers.IO).async {
-            selfApiClient.getSelfUser().teamId
-        }
+    private val appQualifiedId: QualifiedId by lazy {
+        appStorage.getApplicationQualifiedId()
     }
 
-    private suspend fun getSelfTeamId(): TeamId =
-        selfTeamId.await()
-            ?.let(::TeamId)
-            ?: throw WireException.MissingParameter("TeamId should not be empty or null.")
+    private val appTeamId: TeamId by lazy {
+        appStorage.getApplicationTeamId()
+    }
+
+    private fun getApplicationQualifiedId(): QualifiedId = appQualifiedId
+
+    private fun getApplicationTeamId(): TeamId = appTeamId
 
     /**
      * Creates a Group Conversation where currently the only admin is the App
@@ -101,11 +94,10 @@ internal class ConversationService internal constructor(
         name: String,
         userIds: List<QualifiedId>
     ): QualifiedId {
-        val teamId = getSelfTeamId()
         val conversationCreatedResponse = conversationsApiClient.createGroupConversation(
             createConversationRequest = CreateConversationRequest.createGroup(
                 name = name,
-                teamId = teamId
+                teamId = getApplicationTeamId()
             )
         )
 
@@ -135,11 +127,10 @@ internal class ConversationService internal constructor(
         userIds: List<QualifiedId>
     ): QualifiedId {
         try {
-            val teamId = getSelfTeamId()
             val conversationCreatedResponse = conversationsApiClient.createGroupConversation(
                 createConversationRequest = CreateConversationRequest.createChannel(
                     name = name,
-                    teamId = teamId
+                    teamId = getApplicationTeamId()
                 )
             )
 
@@ -238,7 +229,7 @@ internal class ConversationService internal constructor(
             externalSenders = publicKeys
         )
 
-        val users = userIds + listOf(IsolatedKoinContext.getApplicationUser())
+        val users = userIds + listOf(getApplicationQualifiedId())
 
         val claimedKeyPackagesResult = claimKeyPackages(
             userIds = users,
@@ -525,13 +516,12 @@ internal class ConversationService internal constructor(
         )
 
         requireAppIsInConversation(conversationId)
-        val appUser = IsolatedKoinContext.getApplicationUser()
-        conversationsApiClient.leaveConversation(appUser, conversationId)
+        conversationsApiClient.leaveConversation(getApplicationQualifiedId(), conversationId)
         deleteAllConversationDataFromLocalStorages(conversationId, conversation.mlsGroupId)
 
         logger.info(
             "App user left the conversation. user: {}, conversationId: {}",
-            appUser,
+            getApplicationQualifiedId(),
             conversationId
         )
     }
@@ -579,7 +569,7 @@ internal class ConversationService internal constructor(
     }
 
     private fun requireAppIsAdminInConversation(conversationId: QualifiedId) {
-        val appUserId = IsolatedKoinContext.getApplicationUser().id
+        val appUserId = getApplicationQualifiedId().id
 
         val isAppAdminInConversation = getStoredConversationMembers(conversationId).any {
             it.userId.id == appUserId && it.role == ConversationRole.ADMIN
@@ -597,7 +587,7 @@ internal class ConversationService internal constructor(
     }
 
     private fun requireAppIsInConversation(conversationId: QualifiedId) {
-        val appUserId = IsolatedKoinContext.getApplicationUser().id
+        val appUserId = getApplicationQualifiedId().id
         val isAppInConversation = getStoredConversationMembers(conversationId).any {
             it.userId.id == appUserId
         }
@@ -631,7 +621,7 @@ internal class ConversationService internal constructor(
         conversationId: QualifiedId,
         users: List<QualifiedId>
     ) {
-        val appUser = IsolatedKoinContext.getApplicationUser()
+        val appUser = getApplicationQualifiedId()
 
         if (appUser in users) {
             conversationStorage.getById(conversationId = conversationId)?.let {
@@ -811,9 +801,8 @@ internal class ConversationService internal constructor(
             logger.debug("Mapping {} clients for User: {}", clients.size, user.id)
             clients.map { client ->
                 CryptoClientId.create(
-                    appId = user.id,
-                    deviceId = client.id,
-                    userDomain = user.domain
+                    applicationQualifiedId = user,
+                    deviceId = client.id
                 )
             }
         }.also {

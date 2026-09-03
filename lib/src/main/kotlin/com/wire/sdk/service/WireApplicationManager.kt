@@ -68,6 +68,28 @@ class WireApplicationManager internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    private val appQualifiedId: QualifiedId by lazy {
+        appStorage.getApplicationQualifiedId()
+    }
+
+    private val appTeamId: TeamId by lazy {
+        appStorage.getApplicationTeamId()
+    }
+
+    /**
+     * Returns the App QualifiedId
+     * @throws [WireException.InvalidParameter] if called before client initialization
+     */
+    @Throws(WireException.InvalidParameter::class)
+    fun getApplicationQualifiedId(): QualifiedId = appQualifiedId
+
+    /**
+     * Returns the App TeamId
+     * @throws [WireException.InvalidParameter] if called before client initialization
+     */
+    @Throws(WireException.InvalidParameter::class)
+    fun getApplicationTeamId(): TeamId = appTeamId
+
     /**
      * Returns a list of all team IDs that have been registered with this application.
      */

@@ -41,7 +41,6 @@ fun main() {
     val secureKey = ByteArray(32) { 1 }
 
     val wireAppSdk = WireAppSdk(
-        applicationId = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID")),
         apiToken = System.getenv("WIRE_SDK_API_TOKEN"),
         apiHost = System.getenv("WIRE_SDK_API_HOST"),
         cryptographyStorageKey = secureKey,
@@ -60,13 +59,12 @@ fun main() {
     applicationManager.getConversations().forEach {
         logger.info("Conversation: $it")
     }
-    val backendConfig = applicationManager.getBackendConfiguration()
-    val selfUser = QualifiedId(
-        id = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID")),
-        domain = backendConfig.domain
-    )
-    logger.info(applicationManager.getUser(selfUser).toString())
-    logger.info("Wire backend domain: ${backendConfig.domain}")
+
+
+    val applicationQualifiedId = applicationManager.getApplicationQualifiedId()
+
+    logger.info(applicationManager.getUser(applicationQualifiedId).toString())
+    logger.info("Wire backend domain: ${applicationQualifiedId.domain}")
 
     // Use wireAppSdk.stopListening() to stop the SDK or just stop it with Ctrl+C/Cmd+C
 }

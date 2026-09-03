@@ -62,7 +62,7 @@ Within `lib/`, a few paths are especially important when making changes:
 ### Local runtime notes
 
 - The SDK creates and uses a repository-root `storage/` directory for SQLite state and cryptographic material.
-- If you switch backend environments or `applicationId`, a stale `storage/` directory can break local runs. Clean or move it when debugging environment-specific issues.
+- If you switch backend environments or application tokens, a stale `storage/` directory can break local runs. Clean or move it when debugging environment-specific issues.
 
 ## Architecture
 
@@ -79,7 +79,7 @@ Within `lib/`, a few paths are especially important when making changes:
 
 Operational details that matter when modifying these APIs:
 
-- `WireAppSdk` is initialized with `applicationId`, `apiToken`, `apiHost`, `cryptographyStoragePassword`, and a `WireEventsHandler` implementation.
+- `WireAppSdk` is initialized with `apiToken`, `apiHost`, `cryptographyStoragePassword`, and a `WireEventsHandler` implementation.
 - `cryptographyStoragePassword` must be 32 characters.
 - `WireAppSdk.startListening()` starts the WebSocket listener in a background thread.
 - `WireAppSdk.stopListening()` stops the listener.

@@ -21,14 +21,12 @@ import com.wire.sdk.model.QualifiedId;
 
 import java.util.Arrays;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * This example collects all user IDs from the conversations that the app is involved.
  * And then creates a new group conversation with those users as members.
  */
 public class CreateGroupConversationExample {
-    final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID"));
     final static String WIRE_API_TOKEN = System.getenv("WIRE_SDK_API_TOKEN");
     final static String WIRE_API_HOST = System.getenv("WIRE_SDK_API_HOST");
 
@@ -41,7 +39,7 @@ public class CreateGroupConversationExample {
     private void initApp() {
         byte[] secureKey = new byte[32];
         Arrays.fill(secureKey, (byte) 1);
-        app = new WireAppSdk(MY_APPLICATION_ID, WIRE_API_TOKEN, WIRE_API_HOST,
+        app = new WireAppSdk(WIRE_API_TOKEN, WIRE_API_HOST,
                 secureKey,
                 new NoOpWireEventsHandler()); // We use a no-op event handler since we don't need to react to any events in this example
         app.startListening();
