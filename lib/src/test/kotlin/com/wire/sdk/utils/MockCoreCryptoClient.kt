@@ -177,10 +177,6 @@ internal class MockCoreCryptoClient private constructor(
                 databaseKey = DatabaseKey(IsolatedKoinContext.getCryptographyStorageKey())
             )
 
-            // The real cryptoClient creation also sets this property. Keep the same
-            //  approach for consistency. This will change anyway when demo users are removed
-            IsolatedKoinContext.setBackendDomain("staging.zinfra.io")
-
             return MockCoreCryptoClient(
                 ciphersuite = ciphersuite,
                 coreCryptoClient = coreCryptoClient

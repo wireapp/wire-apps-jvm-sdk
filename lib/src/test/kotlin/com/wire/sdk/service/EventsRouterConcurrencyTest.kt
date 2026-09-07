@@ -17,6 +17,7 @@
 package com.wire.sdk.service
 
 import com.wire.crypto.ConversationId
+import com.wire.sdk.TestUtils
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.ConversationsApiClient
@@ -26,17 +27,20 @@ import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.Member
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
+import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.MockCoreCryptoClient
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +50,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.util.Collections
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Clock
@@ -60,6 +66,50 @@ import kotlin.time.Clock
  * - Channel isolation prevents cross-conversation failures
  */
 class EventsRouterConcurrencyTest {
+    @Test
+    fun `given team member join event, when routed, then qualify user with app domain`() =
+        runTest {
+            val joinedUserId = UUID.randomUUID()
+            val teamId = UUID.randomUUID()
+            var capturedUserId: QualifiedId? = null
+            var capturedTeamId: TeamId? = null
+            val latch = CountDownLatch(1)
+            val handler = object : WireEventsHandlerSuspending() {
+                override suspend fun onTeamMemberJoined(
+                    userId: QualifiedId,
+                    teamId: TeamId
+                ) {
+                    capturedUserId = userId
+                    capturedTeamId = teamId
+                    latch.countDown()
+                }
+            }
+            val router = createEventsRouter(wireEventsHandler = handler)
+
+            router.route(
+                EventResponse(
+                    id = UUID.randomUUID().toString(),
+                    payload = listOf(
+                        EventContentDTO.Team.MemberJoin(
+                            teamId = teamId,
+                            time = Clock.System.now(),
+                            data = EventContentDTO.TeamMemberIdData(
+                                nonQualifiedUserId = joinedUserId.toString()
+                            )
+                        )
+                    ),
+                    transient = true
+                )
+            )
+
+            assertTrue(latch.await(1, TimeUnit.SECONDS))
+            assertEquals(
+                QualifiedId(joinedUserId, TestUtils.APPLICATION_QUALIFIED_ID.domain),
+                capturedUserId
+            )
+            assertEquals(TeamId(teamId), capturedTeamId)
+        }
+
     @Test
     fun `MLS message sender comes from decrypted sender client ID`() =
         runTest {
@@ -521,6 +571,9 @@ class EventsRouterConcurrencyTest {
 
     private fun createEventsRouter(
         teamStorage: TeamStorage = mockk(relaxed = true),
+        appStorage: AppStorage = mockk {
+            every { getApplicationQualifiedId() } returns TestUtils.APPLICATION_QUALIFIED_ID
+        },
         conversationService: ConversationService = mockk(relaxed = true),
         conversationsApiClient: ConversationsApiClient = mockk(relaxed = true),
         mlsApiClient: MlsApiClient = mockk(relaxed = true),
@@ -532,6 +585,7 @@ class EventsRouterConcurrencyTest {
 
         return EventsRouter(
             teamStorage = teamStorage,
+            appStorage = appStorage,
             conversationService = conversationService,
             conversationsApiClient = conversationsApiClient,
             mlsApiClient = mlsApiClient,

@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.koin.dsl.module
-import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
@@ -42,7 +41,6 @@ class WireAppSdkTest {
         TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
         val wireAppSdk =
             WireAppSdk(
-                applicationId = APPLICATION_ID,
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStorageKey = TestUtils.CRYPTOGRAPHY_STORAGE_KEY,
@@ -77,7 +75,6 @@ class WireAppSdkTest {
 
         val wireAppSdk =
             WireAppSdk(
-                applicationId = APPLICATION_ID,
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStorageKey = TestUtils.CRYPTOGRAPHY_STORAGE_KEY,
@@ -98,7 +95,6 @@ class WireAppSdkTest {
 
             // Create the SDK instance
             val wireAppSdk = WireAppSdk(
-                applicationId = APPLICATION_ID,
                 apiToken = API_TOKEN,
                 apiHost = API_HOST,
                 cryptographyStorageKey = TestUtils.CRYPTOGRAPHY_STORAGE_KEY,
@@ -148,7 +144,6 @@ class WireAppSdkTest {
         }
 
     companion object {
-        private val APPLICATION_ID = UUID.randomUUID()
         private const val API_TOKEN = "dummyToken"
         private const val API_HOST = "http://localhost:8086"
 

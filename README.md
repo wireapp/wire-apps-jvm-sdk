@@ -71,5 +71,5 @@ dependencies {
 
 ## Troubleshooting
 
-If you have started using the SDK targeting one Wire environment or you have switched `applicationId`,
+If you have started using the SDK targeting one Wire environment or you have switched Api Token (apiToken),
 and later you want to switch to another, you may need to move/delete the `storage` directory to have a clean start.

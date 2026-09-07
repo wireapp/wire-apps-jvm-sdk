@@ -53,6 +53,13 @@ class SelfApiClientTest {
         }
 
     @Test
+    fun `given qualifiedId in response, when getSelfUser, then qualifiedId deserialized`() =
+        runTest {
+            val result = apiClient(SELF_RESPONSE_WITH_TEAM).getSelfUser()
+            assertEquals(SELF_QUALIFIED_ID, result.qualifiedId)
+        }
+
+    @Test
     fun `given null teamId in response, when getSelfUser, then teamId is null`() =
         runTest {
             val result = apiClient(SELF_RESPONSE_NO_TEAM).getSelfUser()
@@ -61,7 +68,29 @@ class SelfApiClientTest {
 
     companion object {
         private val TEAM_ID = UUID.randomUUID()
-        private val SELF_RESPONSE_WITH_TEAM = """{ "team": "$TEAM_ID" }"""
-        private val SELF_RESPONSE_NO_TEAM = """{ "team": null }"""
+        private val SELF_QUALIFIED_ID = com.wire.sdk.model.QualifiedId(
+            id = UUID.randomUUID(),
+            domain = "wire.example.com"
+        )
+        private val SELF_RESPONSE_WITH_TEAM =
+            """
+                {
+                    "qualified_id": {
+                        "id": "${SELF_QUALIFIED_ID.id}",
+                        "domain": "${SELF_QUALIFIED_ID.domain}"
+                    },
+                    "team": "$TEAM_ID"
+                }
+            """.trimIndent()
+        private val SELF_RESPONSE_NO_TEAM =
+            """
+                {
+                    "qualified_id": {
+                        "id": "${SELF_QUALIFIED_ID.id}",
+                        "domain": "${SELF_QUALIFIED_ID.domain}"
+                    },
+                    "team": null
+                }
+            """.trimIndent()
     }
 }

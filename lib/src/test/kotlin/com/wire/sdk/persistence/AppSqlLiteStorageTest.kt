@@ -24,6 +24,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.util.UUID
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -43,6 +44,23 @@ class AppSqlLiteStorageTest {
             appStorage.saveBackendCookie(cookie)
             val secondCookie = appStorage.getBackendCookie()
             assertTrue { secondCookie == cookie }
+        }
+
+    @Test
+    fun givenApplicationData_thenQualifiedIdAndTeamIdArePersisted() =
+        runTest {
+            val eventsHandler = object : WireEventsHandlerSuspending() {}
+            TestUtils.setupSdk(eventsHandler)
+
+            val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
+
+            appStorage.saveApplicationQualified(TestUtils.APPLICATION_QUALIFIED_ID)
+            appStorage.saveApplicationTeamId(TestUtils.APPLICATION_TEAM_ID)
+
+            assertTrue(appStorage.hasApplicationQualifiedId())
+            assertTrue(appStorage.hasApplicationTeamId())
+            assertEquals(TestUtils.APPLICATION_QUALIFIED_ID, appStorage.getApplicationQualifiedId())
+            assertEquals(TestUtils.APPLICATION_TEAM_ID, appStorage.getApplicationTeamId())
         }
 
     companion object {

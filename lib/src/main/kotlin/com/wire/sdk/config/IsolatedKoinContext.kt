@@ -15,19 +15,14 @@
 
 package com.wire.sdk.config
 
-import com.wire.sdk.model.QualifiedId
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
 import org.koin.dsl.koinApplication
 import org.koin.fileProperties
-import java.util.UUID
 
 @Suppress("TooManyFunctions")
 internal object IsolatedKoinContext {
     private var _koinApp: KoinApplication? = null
-
-    @Volatile
-    private var _applicationUser: QualifiedId? = null
 
     val koinApp: KoinApplication
         get() = _koinApp ?: error("Koin not started")
@@ -44,33 +39,12 @@ internal object IsolatedKoinContext {
             modules(sdkModule)
             fileProperties("/koin-sdk.properties")
         }
-
-        clearCachedApplicationUser()
     }
 
     fun stop() {
         _koinApp?.close()
         _koinApp = null
-        clearCachedApplicationUser()
     }
-
-    fun setApplicationId(value: UUID) {
-        this.koinApp.koin.setProperty(APPLICATION_ID, value)
-        clearCachedApplicationUser()
-    }
-
-    fun getApplicationUser(): QualifiedId =
-        _applicationUser ?: synchronized(this) {
-            _applicationUser ?: run {
-                val id = checkNotNull(koinApp.koin.getProperty<UUID>(APPLICATION_ID)) {
-                    "App ID is not set in Koin properties"
-                }
-                val domain = checkNotNull(koinApp.koin.getProperty<String>(BACKEND_DOMAIN)) {
-                    "Wire Backend domain is not set in Koin properties"
-                }
-                QualifiedId(id = id, domain = domain).also { _applicationUser = it }
-            }
-        }
 
     fun setApiHost(value: String) {
         this.koinApp.koin.setProperty(API_HOST, value)
@@ -90,25 +64,9 @@ internal object IsolatedKoinContext {
             "Cryptography Storage Key is not set in Koin properties"
         }
 
-    fun getBackendDomain(): String =
-        checkNotNull(this.koinApp.koin.getProperty(BACKEND_DOMAIN)) {
-            "Backend domain is not set in Koin properties"
-        }
-
-    fun setBackendDomain(value: String) {
-        this.koinApp.koin.setProperty(BACKEND_DOMAIN, value)
-        clearCachedApplicationUser()
-    }
-
-    private fun clearCachedApplicationUser() {
-        _applicationUser = null
-    }
-
     /**
      * Property Constants
      */
-    private const val APPLICATION_ID = "APPLICATION_ID"
     private const val API_HOST = "API_HOST"
     private const val CRYPTOGRAPHY_STORAGE_KEY = "CRYPTOGRAPHY_STORAGE_KEY"
-    private const val BACKEND_DOMAIN = "BACKEND_DOMAIN"
 }

@@ -16,6 +16,7 @@
 
 package com.wire.sdk.model.http.user
 
+import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.utils.UUIDSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -23,6 +24,8 @@ import java.util.UUID
 
 @Serializable
 data class SelfUserResponse(
+    @SerialName("qualified_id")
+    val qualifiedId: QualifiedId,
     @Serializable(with = UUIDSerializer::class)
     @SerialName("team")
     val teamId: UUID?

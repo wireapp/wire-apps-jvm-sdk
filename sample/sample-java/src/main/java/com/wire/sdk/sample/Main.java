@@ -22,13 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.UUID;
 
 public class Main {
 
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    final static UUID MY_APPLICATION_ID = UUID.fromString(System.getenv("WIRE_SDK_APPLICATION_ID"));
     final static String WIRE_API_TOKEN = System.getenv("WIRE_SDK_API_TOKEN");
     final static String WIRE_API_HOST = System.getenv("WIRE_SDK_API_HOST");
 
@@ -50,7 +48,6 @@ public class Main {
         Arrays.fill(secureKey, (byte) 1);
 
         return new WireAppSdk(
-            MY_APPLICATION_ID,
             WIRE_API_TOKEN,
             WIRE_API_HOST,
             secureKey,

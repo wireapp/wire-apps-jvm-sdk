@@ -24,7 +24,6 @@ import com.wire.crypto.toWelcome
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationMember
@@ -47,6 +46,7 @@ import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.persistence.AppStorage
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineDispatcher
@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory
 @Suppress("LongParameterList", "TooManyFunctions")
 internal class EventsRouter internal constructor(
     private val teamStorage: TeamStorage,
+    private val appStorage: AppStorage,
     private val conversationService: ConversationService,
     private val conversationsApiClient: ConversationsApiClient,
     private val mlsApiClient: MlsApiClient,
@@ -73,6 +74,12 @@ internal class EventsRouter internal constructor(
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : AutoCloseable {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private val appQualifiedId: QualifiedId by lazy {
+        appStorage.getApplicationQualifiedId()
+    }
+
+    fun getApplicationQualifiedId(): QualifiedId = appQualifiedId
 
     /**
      * Coroutine scope for running events of different conversation concurrently and
@@ -290,7 +297,7 @@ internal class EventsRouter internal constructor(
             is EventContentDTO.Team.MemberJoin -> {
                 val userId = QualifiedId(
                     id = UUID.fromString(event.data.nonQualifiedUserId),
-                    domain = IsolatedKoinContext.getBackendDomain()
+                    domain = getApplicationQualifiedId().domain
                 )
                 val teamId = TeamId(event.teamId)
                 logger.info("Team member join: teamId={}, userId={}", teamId, userId)

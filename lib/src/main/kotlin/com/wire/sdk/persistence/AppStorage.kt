@@ -16,6 +16,8 @@
 package com.wire.sdk.persistence
 
 import com.wire.sdk.model.AppData
+import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.TeamId
 
 @Suppress("TooManyFunctions")
 interface AppStorage {
@@ -38,6 +40,18 @@ interface AppStorage {
     fun saveDeviceId(deviceId: String)
 
     fun deleteDeviceId()
+
+    fun getApplicationQualifiedId(): QualifiedId
+
+    fun saveApplicationQualified(applicationQualified: QualifiedId)
+
+    fun hasApplicationQualifiedId(): Boolean
+
+    fun getApplicationTeamId(): TeamId
+
+    fun saveApplicationTeamId(applicationTeamId: TeamId)
+
+    fun hasApplicationTeamId(): Boolean
 
     fun getBackendCookie(): String?
 

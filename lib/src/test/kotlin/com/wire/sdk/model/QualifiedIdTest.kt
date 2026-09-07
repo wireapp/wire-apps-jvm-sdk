@@ -89,6 +89,13 @@ class QualifiedIdTest {
         assertEquals("$uuid1@$domainA", result)
     }
 
+    @Test
+    fun `fromFullString should parse full id and domain`() {
+        val result = QualifiedId.fromFullString("$uuid1@$domainA")
+
+        assertEquals(QualifiedId(uuid1, domainA), result)
+    }
+
     // --- Serialization ---
 
     @Test

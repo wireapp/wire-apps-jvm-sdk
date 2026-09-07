@@ -27,7 +27,6 @@ import org.koin.dsl.module
 import com.wire.sdk.utils.obfuscateId
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -42,7 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Example usage:
  * ```kotlin
  * val sdk = WireAppSdk(
- *     applicationId = UUID.fromString("your-app-id"),
  *     apiToken = "your-api-token",
  *     apiHost = "https://prod-nginz-https.wire.com",
  *     cryptographyStorageKey = yourSecureKey, // 32 bytes
@@ -60,7 +58,6 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - HTTP client calls to the Wire backend API
  * - Local storage for conversation and team data
  *
- * @property applicationId The unique identifier for your Wire application
  * @property apiToken The API token for authenticating with the Wire backend
  * @property apiHost The Wire backend API host URL (e.g., "https://prod-nginz-https.wire.com")
  * @property cryptographyStorageKey A 32-byte key used to encrypt the local cryptographic storage.
@@ -71,7 +68,6 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @throws IllegalArgumentException if [cryptographyStorageKey] is not exactly 32 bytes
  */
 class WireAppSdk(
-    applicationId: UUID,
     apiToken: String,
     apiHost: String,
     cryptographyStorageKey: ByteArray,
@@ -93,7 +89,6 @@ class WireAppSdk(
         initializeStorageDirectory()
 
         IsolatedKoinContext.start()
-        IsolatedKoinContext.setApplicationId(applicationId)
         IsolatedKoinContext.setApiHost(apiHost)
         IsolatedKoinContext.setCryptographyStorageKey(cryptographyStorageKey.copyOf())
 

@@ -54,6 +54,7 @@ import com.wire.sdk.service.UserService
 import com.wire.sdk.service.WireApplicationManager
 import com.wire.sdk.service.WireTeamEventsListener
 import com.wire.sdk.service.conversation.ConversationService
+import com.wire.sdk.service.self.SelfService
 import com.wire.sdk.utils.KtxSerializer
 import com.wire.sdk.utils.mls
 import com.wire.sdk.utils.obfuscateClientId
@@ -107,15 +108,16 @@ val sdkModule =
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get(), get()) } onClose
+        single { EventsRouter(get(), get(), get(), get(), get(), get(), get(), get()) } onClose
             { it?.close() }
         single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost(), get())
         } onClose { it?.close() }
+        single { SelfService(get(), get()) }
         single<CryptoClient> {
             runBlocking {
-                getOrInitCryptoClient(get(), get(), get(), get(), get())
+                getOrInitCryptoClient(get(), get(), get(), get(), get(), get())
             }
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get(), get(), get()) }
@@ -123,7 +125,6 @@ val sdkModule =
         // Services
         single {
             ConversationService(
-                get(),
                 get(),
                 get(),
                 get(),
@@ -291,36 +292,34 @@ private fun initializeDatabase(dbUrl: String): SqlDriver {
  *
  * The following times the SDK is started, the client will be loaded from the storage.
  */
-@Suppress("LongMethod")
+@Suppress("LongMethod", "LongParameterList")
 internal suspend fun getOrInitCryptoClient(
     backendClient: BackendClient,
     clientsApiClient: ClientsApiClient,
     mlsApiClient: MlsApiClient,
+    selfService: SelfService,
     appStorage: AppStorage,
     mlsTransport: MlsTransport
 ): CryptoClient {
     val mlsCipherSuiteCode = backendClient.getApplicationFeatures()
         .mlsFeatureResponse.mlsFeatureConfigResponse.defaultCipherSuite
 
-    // Fetch and store the backend domain from the api-version endpoint
-    val backendDomain = backendClient.getAvailableApiVersions().domain
-    IsolatedKoinContext.setBackendDomain(backendDomain)
-    logger.info("Retrieved Wire backend domain: $backendDomain")
-
-    val appId = IsolatedKoinContext.getApplicationUser().id
+    // Fetch and store the application QualifiedId
+    selfService.fetchAndSaveApplicationData()
+    val applicationQualifiedId = appStorage.getApplicationQualifiedId()
+    logger.info("Retrieved Wire backend domain: ${applicationQualifiedId.domain}")
 
     val storedDeviceId = appStorage.getDeviceId()
 
     return if (storedDeviceId != null) {
         logger.info("Loading MLS Client for: ${storedDeviceId.obfuscateClientId()}")
         val cryptoClient = MlsCryptoClient.create(
-            appId = appId,
+            appId = applicationQualifiedId.id,
             ciphersuiteCode = mlsCipherSuiteCode
         )
         val cryptoClientId = CryptoClientId.create(
-            appId = appId,
-            deviceId = storedDeviceId,
-            userDomain = backendDomain
+            applicationQualifiedId = applicationQualifiedId,
+            deviceId = storedDeviceId
         )
         // App has a client, load MLS client
         cryptoClient.initializeMlsClient(
@@ -336,11 +335,11 @@ internal suspend fun getOrInitCryptoClient(
         // No registered client: either a fresh install, or a previous client was invalidated
         // (invalid-credentials) and its deviceId cleared. Wipe any stale keystore so CoreCrypto
         // starts from a clean state. Safe here as no CoreCrypto client has the keystore open yet.
-        val wiped = MlsCryptoClient.deleteClientStorage(appId)
+        val wiped = MlsCryptoClient.deleteClientStorage(applicationQualifiedId.id)
         logger.info("No registered client found, cleared any stale keystore (success={})", wiped)
 
         val cryptoClient = MlsCryptoClient.create(
-            appId = appId,
+            appId = applicationQualifiedId.id,
             ciphersuiteCode = mlsCipherSuiteCode
         )
         cryptoClient.initializeProteusClient()
@@ -364,15 +363,14 @@ internal suspend fun getOrInitCryptoClient(
 
         val deviceId = clientResponse.id
         val cryptoClientId = CryptoClientId.create(
-            appId = appId,
-            deviceId = deviceId,
-            userDomain = backendDomain
+            applicationQualifiedId = applicationQualifiedId,
+            deviceId = deviceId
         )
         appStorage.saveDeviceId(deviceId = deviceId)
 
         logger.info(
             "Initializing MLS Client for {} on device: {}",
-            appId.obfuscateId(),
+            applicationQualifiedId.id.obfuscateId(),
             deviceId.obfuscateClientId()
         )
         cryptoClient.initializeMlsClient(

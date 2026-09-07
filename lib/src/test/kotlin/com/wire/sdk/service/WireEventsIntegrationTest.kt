@@ -37,6 +37,7 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.Member
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.model.http.conversation.MemberLeaveEventData
+import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.utils.MockCoreCryptoClient
 import kotlinx.coroutines.delay
@@ -112,6 +113,9 @@ class WireEventsIntegrationTest {
 
             // Create SDK with our custom handler
             TestUtils.setupSdk(customHandler)
+            val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
+            appStorage.saveApplicationQualified(TestUtils.APPLICATION_QUALIFIED_ID)
+            appStorage.saveApplicationTeamId(TEAM_ID)
 
             // Load Koin Modules
             val mockCoreCryptoClient = MockCoreCryptoClient.create(
@@ -240,10 +244,7 @@ class WireEventsIntegrationTest {
                                 time = EXPECTED_NEW_CONVERSATION_VALUE,
                                 data = MemberLeaveEventData(
                                     users = listOf(
-                                        QualifiedId(
-                                            id = TestUtils.APPLICATION_ID,
-                                            domain = "staging.zinfra.io"
-                                        )
+                                        TestUtils.APPLICATION_QUALIFIED_ID
                                     ),
                                     reason = "deletion"
                                 )

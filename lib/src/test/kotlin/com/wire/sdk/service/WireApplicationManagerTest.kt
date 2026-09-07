@@ -54,12 +54,53 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.koin.core.error.InstanceCreationException
 import java.util.UUID
 import kotlin.io.encoding.Base64
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class WireApplicationManagerTest {
+    @Test
+    fun whenGettingApplicationQualifiedIdThenReturnStoredValue() {
+        val appStorage = mockk<AppStorage> {
+            every { getApplicationQualifiedId() } returns TestUtils.APPLICATION_QUALIFIED_ID
+        }
+        val manager = WireApplicationManager(
+            teamStorage = mockk(),
+            backendClient = mockk(),
+            userService = mockk(),
+            mlsApiClient = mockk(),
+            assetsApiClient = mockk(),
+            cryptoClient = mockk(),
+            mlsFallbackStrategy = mockk(),
+            conversationService = mockk(),
+            appStorage = appStorage
+        )
+
+        assertEquals(TestUtils.APPLICATION_QUALIFIED_ID, manager.getApplicationQualifiedId())
+    }
+
+    @Test
+    fun whenGettingApplicationTeamIdThenReturnStoredValue() {
+        val appStorage = mockk<AppStorage> {
+            every { getApplicationTeamId() } returns TestUtils.APPLICATION_TEAM_ID
+        }
+        val manager = WireApplicationManager(
+            teamStorage = mockk(),
+            backendClient = mockk(),
+            userService = mockk(),
+            mlsApiClient = mockk(),
+            assetsApiClient = mockk(),
+            cryptoClient = mockk(),
+            mlsFallbackStrategy = mockk(),
+            conversationService = mockk(),
+            appStorage = appStorage
+        )
+
+        assertEquals(TestUtils.APPLICATION_TEAM_ID, manager.getApplicationTeamId())
+    }
+
     @Test
     fun whenCreatingGroupConversationSuccessfullyThenReturnsConversationIdAndUpdateMemberRole() =
         runTest {
@@ -311,19 +352,11 @@ class WireApplicationManagerTest {
                 )
             )
 
-            val manager = IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
-
             // then
-            assertThrows<WireException.MissingParameter> {
-                // when
-                manager.createChannelConversation(
-                    name = CONVERSATION_NAME,
-                    userIds = listOf(
-                        USER_1,
-                        USER_2
-                    )
-                )
+            val exception = assertThrows<InstanceCreationException> {
+                IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
             }
+            assertTrue(exception.hasCause<WireException.InvalidParameter>())
         }
 
     @Test
@@ -890,6 +923,9 @@ class WireApplicationManagerTest {
             )
             cryptoClientUser2.mlsGenerateKeyPackages(10U)
         }
+
+    private inline fun <reified T : Throwable> Throwable.hasCause(): Boolean =
+        generateSequence(this) { it.cause }.any { it is T }
 
     companion object {
         private const val DEVICE_ID = "device-id-123"
