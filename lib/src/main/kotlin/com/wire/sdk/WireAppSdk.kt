@@ -117,12 +117,15 @@ class WireAppSdk(
     }
 
     /**
-     * Stores the startup parameter API token and guards persisted storage from being reused with another app.
+     * Stores the startup parameter API token and guards persisted storage from being reused with
+     * another app.
      *
-     * The SDK keeps the original startup token separately from the backend cookie because the cookie
-     * can be refreshed during normal SDK operation. If a later startup token differs from the stored
-     * startup token, it is only accepted when its userId still matches the app id persisted in storage.
+     * The SDK keeps the original startup token separately from the backend cookie
+     * because the cookie can be refreshed during normal SDK operation.
+     * If a later startup token differs from the stored startup token, it is only accepted
+     * when its userId still matches the app id persisted in storage.
      */
+    @Suppress("NestedBlockDepth")
     private fun storeApiTokenForCurrentApp(apiToken: String) {
         val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
 
@@ -137,13 +140,14 @@ class WireAppSdk(
         } else {
             logger.info(
                 "API token found in AppStorage. Comparing received " +
-                    "apiToken:${apiToken.obfuscateId()} against storedApiToken:${storedApiToken.obfuscateId()}"
+                    "apiToken:${apiToken.obfuscateId()} against " +
+                    "storedApiToken:${storedApiToken.obfuscateId()}"
             )
 
             if (apiToken != storedApiToken) {
                 this.logger.info(
-                    "API token does not match stored API token. Comparing received API token userId " +
-                            "against stored App userId."
+                    "API token does not match stored API token. " +
+                        "Comparing received API token userId against stored App userId."
                 )
 
                 val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
@@ -157,7 +161,10 @@ class WireAppSdk(
                             """.trimIndent()
                         )
                     } else {
-                        logger.info("Received API token userId matches stored App userId. Saving API token into AppStorage.")
+                        logger.info(
+                            "Received API token userId matches stored App userId. " +
+                                "Saving API token into AppStorage."
+                        )
                         appStorage.saveApiToken(apiToken)
                         appStorage.saveBackendCookie(apiToken)
                         logger.info(
