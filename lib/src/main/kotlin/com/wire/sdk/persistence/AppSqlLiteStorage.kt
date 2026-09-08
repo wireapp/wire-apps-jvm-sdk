@@ -31,6 +31,7 @@ import java.util.UUID
 
 private const val DEVICE_ID = "device_id"
 private const val BACKEND_COOKIE = "backend_cookie"
+private const val API_TOKEN = "api_token"
 private const val SHOULD_REJOIN_CONVERSATIONS = "should_rejoin_conversations"
 private const val LAST_NOTIFICATION_ID = "last_notification_id"
 private const val APPLICATION_QUALIFIED_ID = "application_qualified_id"
@@ -105,6 +106,19 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
         runCatching {
             getByKey(APPLICATION_TEAM_ID).value
         }.getOrNull() != null
+
+    override fun getApiToken(): String? =
+        runCatching {
+            val encryptedBytes = Base64.getDecoder().decode(getByKey(API_TOKEN).value)
+            val key = IsolatedKoinContext.getCryptographyStorageKey()
+            AESDecrypt.decryptData(encryptedBytes, key).toString(Charsets.UTF_8)
+        }.getOrNull()
+
+    override fun saveApiToken(apiToken: String) {
+        val key = IsolatedKoinContext.getCryptographyStorageKey()
+        val encryptedBytes = AESEncrypt.encryptData(apiToken.toByteArray(Charsets.UTF_8), key)
+        save(API_TOKEN, Base64.getEncoder().encodeToString(encryptedBytes))
+    }
 
     override fun getBackendCookie(): String? =
         runCatching {

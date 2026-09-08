@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,16 +14,15 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.model
+package com.wire.sdk.utils
 
-import com.wire.sdk.utils.obfuscateId
 import java.util.UUID
 
-@JvmInline
-value class TeamId(val value: UUID) {
-    override fun toString(): String = value.obfuscateId()
-
-    fun isEqualTo(otherTeamId: TeamId): Boolean {
-        return this.value.toString() == otherTeamId.value.toString()
+object ApiTokenUtils {
+    fun extractUserId(token: String): UUID? {
+        return Regex("""u=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})""")
+            .find(token)
+            ?.groupValues?.get(1)
+            ?.let { UUID.fromString(it) }
     }
 }

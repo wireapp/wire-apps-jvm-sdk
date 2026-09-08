@@ -34,6 +34,14 @@ data class QualifiedId(
 
     fun toFullString(): String = "$id@$domain"
 
+    fun isEqualTo(otherQualifiedId: QualifiedId): Boolean {
+        return this.toFullString() == otherQualifiedId.toFullString()
+    }
+
+    fun isEqualTo(otherId: UUID): Boolean {
+        return this.id == otherId
+    }
+
     companion object {
         fun fromFullString(value: String): QualifiedId {
             val (id, domain) = value.split("@", limit = 2)

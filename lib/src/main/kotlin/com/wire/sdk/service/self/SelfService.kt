@@ -50,7 +50,7 @@ internal class SelfService(
         }
 
         val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
-        if (storedApplicationQualifiedId.toFullString() != applicationQualifiedId.toFullString()) {
+        if (!storedApplicationQualifiedId.isEqualTo(applicationQualifiedId)) {
             throw WireException.UnknownError(
                 """
                     Stored application QualifiedId $storedApplicationQualifiedId does not match fetched self QualifiedId $applicationQualifiedId. Clear SDK storage before using a token for another app.
@@ -72,7 +72,7 @@ internal class SelfService(
         }
 
         val storedApplicationTeamId = appStorage.getApplicationTeamId()
-        if (storedApplicationTeamId.value.toString() != applicationTeamId.value.toString()) {
+        if (!storedApplicationTeamId.isEqualTo(applicationTeamId)) {
             throw WireException.UnknownError(
                 """
                     Stored application TeamId $storedApplicationTeamId does not match fetched self TeamId $applicationTeamId. Clear SDK storage before using a token for another app.

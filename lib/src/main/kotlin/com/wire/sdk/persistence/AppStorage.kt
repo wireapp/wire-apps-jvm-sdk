@@ -53,6 +53,10 @@ interface AppStorage {
 
     fun hasApplicationTeamId(): Boolean
 
+    fun getApiToken(): String?
+
+    fun saveApiToken(apiToken: String)
+
     fun getBackendCookie(): String?
 
     fun saveBackendCookie(cookie: String)
