@@ -175,6 +175,22 @@ class WireAppSdkTest {
     }
 
     @Test
+    fun `given legacy cookie, when sdk starts, then token and cookie are replaced`() {
+        val replacementToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = "XYZ"
+        )
+
+        createWireAppSdk(apiToken = replacementToken)
+
+        verify(exactly = 1) {
+            appStorage.saveApiToken(replacementToken)
+            appStorage.saveBackendCookie(replacementToken)
+        }
+    }
+
+    @Test
     fun `given matching startup token, when sdk starts, then nothing is saved`() {
         val appStorage = mockAppStorage(
             storedApiToken = "ABC",

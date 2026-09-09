@@ -130,13 +130,20 @@ class WireAppSdk(
         val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
 
         val storedApiToken = appStorage.getApiToken()
-        if (storedApiToken == null) {
+        val storedBackendCookie = appStorage.getBackendCookie()
+        if (storedApiToken == null && storedBackendCookie == null) {
             logger.info(
                 "No API Token found. Storing API token in AppStorage. " +
                     "apiToken:${apiToken.obfuscateId()}"
             )
             appStorage.saveApiToken(apiToken)
             logger.info("API token is stored in AppStorage. apiToken:${apiToken.obfuscateId()}")
+        } else if (storedApiToken == null) {
+            logger.info(
+                "No API token found, but backend cookie exists. " +
+                    "Migrating received API token into AppStorage."
+            )
+            validateAndReplaceApiToken(apiToken, appStorage)
         } else {
             logger.info(
                 "API token found in AppStorage. Comparing received " +
@@ -145,40 +152,47 @@ class WireAppSdk(
             )
 
             if (apiToken != storedApiToken) {
-                logger.info(
-                    "API token does not match stored API token. " +
-                        "Comparing received API token userId against stored App userId."
-                )
-
-                val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
-                val extractedUserId = ApiTokenUtils.extractUserId(apiToken)
-
-                extractedUserId?.let { tokenUserId ->
-                    if (!storedApplicationQualifiedId.hasSameUserId(tokenUserId)) {
-                        throw WireException.UnknownError(
-                            """
-                                Stored application QualifiedId $storedApplicationQualifiedId does not match App QualifiedId ${tokenUserId.obfuscateId()} retrieved from the API token. Clear SDK storage before using a token for another app.
-                            """.trimIndent()
-                        )
-                    } else {
-                        logger.info(
-                            "Received API token userId matches stored App userId. " +
-                                "Saving API token into AppStorage."
-                        )
-                        appStorage.saveApiToken(apiToken)
-                        appStorage.saveBackendCookie(apiToken)
-                        logger.info(
-                            "Received API token is stored in AppStorage. " +
-                                "apiToken:${apiToken.obfuscateId()}"
-                        )
-                    }
-                } ?: throw WireException.UnknownError(
-                    "Received API token doesn't contain a valid userId."
-                )
+                validateAndReplaceApiToken(apiToken, appStorage)
             } else {
                 logger.info("Received API token is the same as the one stored in AppStorage.")
             }
         }
+    }
+
+    private fun validateAndReplaceApiToken(
+        apiToken: String,
+        appStorage: AppStorage
+    ) {
+        logger.info(
+            "API token does not match stored API token. " +
+                "Comparing received API token userId against stored App userId."
+        )
+
+        val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
+        val extractedUserId = ApiTokenUtils.extractUserId(apiToken)
+
+        extractedUserId?.let { tokenUserId ->
+            if (!storedApplicationQualifiedId.hasSameUserId(tokenUserId)) {
+                throw WireException.UnknownError(
+                    """
+                        Stored application QualifiedId $storedApplicationQualifiedId does not match App QualifiedId ${tokenUserId.obfuscateId()} retrieved from the API token. Clear SDK storage before using a token for another app.
+                    """.trimIndent()
+                )
+            } else {
+                logger.info(
+                    "Received API token userId matches stored App userId. " +
+                        "Saving API token into AppStorage."
+                )
+                appStorage.saveApiToken(apiToken)
+                appStorage.saveBackendCookie(apiToken)
+                logger.info(
+                    "Received API token is stored in AppStorage. " +
+                        "apiToken:${apiToken.obfuscateId()}"
+                )
+            }
+        } ?: throw WireException.UnknownError(
+            "Received API token doesn't contain a valid userId."
+        )
     }
 
     /**
