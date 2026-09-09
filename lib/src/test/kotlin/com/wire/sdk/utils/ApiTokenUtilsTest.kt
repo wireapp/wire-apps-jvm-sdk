@@ -33,8 +33,28 @@ class ApiTokenUtilsTest {
     }
 
     @Test
+    fun `given token with uppercase user id, when extracting user id, then return uuid`() {
+        val userId = UUID.fromString("b82c3381-37b0-4545-b555-ca32a3a093d0")
+        val token = "zuid=token;u=${userId.toString().uppercase()};wire_app=true"
+
+        val result = ApiTokenUtils.extractUserId(token)
+
+        assertEquals(userId, result)
+    }
+
+    @Test
     fun `given token without user id, when extracting user id, then return null`() {
         val token = "zuid=token;wire_app=true"
+
+        val result = ApiTokenUtils.extractUserId(token)
+
+        assertNull(result)
+    }
+
+    @Test
+    fun `given user id inside another parameter name, then return null`() {
+        val userId = UUID.fromString("b82c3381-37b0-4545-b555-ca32a3a093d0")
+        val token = "zuid=token;zauth_u=$userId;wire_app=true"
 
         val result = ApiTokenUtils.extractUserId(token)
 

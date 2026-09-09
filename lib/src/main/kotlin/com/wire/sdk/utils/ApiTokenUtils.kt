@@ -19,9 +19,13 @@ package com.wire.sdk.utils
 import java.util.UUID
 
 object ApiTokenUtils {
+    private val userIdRegex = Regex(
+        """(?:^|[;&.,\s])u=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})""",
+        RegexOption.IGNORE_CASE
+    )
+
     fun extractUserId(token: String): UUID? {
-        return Regex("""u=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})""")
-            .find(token)
+        return userIdRegex.find(token)
             ?.groupValues?.get(1)
             ?.let { UUID.fromString(it) }
     }
