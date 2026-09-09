@@ -60,12 +60,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - HTTP client calls to the Wire backend API
  * - Local storage for conversation and team data
  *
- * @property apiToken The API token for authenticating with the Wire backend
- * @property apiHost The Wire backend API host URL (e.g., "https://prod-nginz-https.wire.com")
- * @property cryptographyStorageKey A 32-byte key used to encrypt the local cryptographic storage.
+ * @param apiToken The API token for authenticating with the Wire backend
+ * @param apiHost The Wire backend API host URL (e.g., "https://prod-nginz-https.wire.com")
+ * @param cryptographyStorageKey A 32-byte key used to encrypt the local cryptographic storage.
  *                                   This key must be consistent across restarts.
  *                                   It is advisable to use a secure random 256 bits key.
- * @property wireEventsHandler An implementation of [WireEventsHandler] to receive and process
+ * @param wireEventsHandler An implementation of [WireEventsHandler] to receive and process
  *                              incoming Wire events (messages, assets, etc.)
  * @throws IllegalArgumentException if [cryptographyStorageKey] is not exactly 32 bytes
  */

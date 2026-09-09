@@ -45,6 +45,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration.Companion.milliseconds
 
 class WireAppSdkTest {
     @AfterEach
@@ -137,8 +138,8 @@ class WireAppSdkTest {
             coEvery { mockEventsListener.connect() } coAnswers {
                 callCount++
                 when (callCount) {
-                    1 -> delay(100)
-                    2 -> delay(100)
+                    1 -> delay(100.milliseconds)
+                    2 -> delay(100.milliseconds)
                     else -> {
                         latch.countDown()
                         throw InterruptedException("Simulated network error")
