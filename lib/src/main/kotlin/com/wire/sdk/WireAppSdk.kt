@@ -145,7 +145,7 @@ class WireAppSdk(
             )
 
             if (apiToken != storedApiToken) {
-                this.logger.info(
+                logger.info(
                     "API token does not match stored API token. " +
                         "Comparing received API token userId against stored App userId."
                 )
@@ -173,12 +173,10 @@ class WireAppSdk(
                         )
                     }
                 } ?: throw WireException.UnknownError(
-                    """
-                        Received API token doesn't 
-                    """.trimIndent()
+                    "Received API token doesn't contain a valid userId."
                 )
             } else {
-                this.logger.info("Received API token is the same as the one stored in AppStorage.")
+                logger.info("Received API token is the same as the one stored in AppStorage.")
             }
         }
     }
@@ -192,15 +190,13 @@ class WireAppSdk(
         val existingCookie = appStorage.getBackendCookie()
         if (existingCookie == null) {
             logger.info(
-                "No Backend Cookie found. Storing Backend Cookie in AppStorage. " +
-                    "cookie:${apiToken.obfuscateId()}"
+                "No API token found. Storing API token in AppStorage. " +
+                    "apiToken:${apiToken.obfuscateId()}"
             )
             appStorage.saveBackendCookie(apiToken)
-            logger.info("Backend Cookie is stored in AppStorage. cookie:${apiToken.obfuscateId()}")
+            logger.info("API token is stored in AppStorage. apiToken:${apiToken.obfuscateId()}")
         } else {
-            logger.info(
-                "Backend Cookie already stored in AppStorage (initial apiToken or a refresh)"
-            )
+            logger.info("API token already stored in AppStorage (initial apiToken or a refresh)")
         }
     }
 

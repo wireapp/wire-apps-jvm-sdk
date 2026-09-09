@@ -107,31 +107,13 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
             getByKey(APPLICATION_TEAM_ID).value
         }.getOrNull() != null
 
-    override fun getApiToken(): String? =
-        runCatching {
-            val encryptedBytes = Base64.getDecoder().decode(getByKey(API_TOKEN).value)
-            val key = IsolatedKoinContext.getCryptographyStorageKey()
-            AESDecrypt.decryptData(encryptedBytes, key).toString(Charsets.UTF_8)
-        }.getOrNull()
+    override fun getApiToken(): String? = getEncrypted(API_TOKEN)
 
-    override fun saveApiToken(apiToken: String) {
-        val key = IsolatedKoinContext.getCryptographyStorageKey()
-        val encryptedBytes = AESEncrypt.encryptData(apiToken.toByteArray(Charsets.UTF_8), key)
-        save(API_TOKEN, Base64.getEncoder().encodeToString(encryptedBytes))
-    }
+    override fun saveApiToken(apiToken: String) = saveEncrypted(API_TOKEN, apiToken)
 
-    override fun getBackendCookie(): String? =
-        runCatching {
-            val encryptedBytes = Base64.getDecoder().decode(getByKey(BACKEND_COOKIE).value)
-            val key = IsolatedKoinContext.getCryptographyStorageKey()
-            AESDecrypt.decryptData(encryptedBytes, key).toString(Charsets.UTF_8)
-        }.getOrNull()
+    override fun getBackendCookie(): String? = getEncrypted(BACKEND_COOKIE)
 
-    override fun saveBackendCookie(cookie: String) {
-        val key = IsolatedKoinContext.getCryptographyStorageKey()
-        val encryptedBytes = AESEncrypt.encryptData(cookie.toByteArray(Charsets.UTF_8), key)
-        save(BACKEND_COOKIE, Base64.getEncoder().encodeToString(encryptedBytes))
-    }
+    override fun saveBackendCookie(cookie: String) = saveEncrypted(BACKEND_COOKIE, cookie)
 
     override fun deleteBackendCookie() = delete(BACKEND_COOKIE)
 
@@ -150,6 +132,25 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
 
     override fun setLastNotificationId(lastNotificationId: String) =
         save(LAST_NOTIFICATION_ID, lastNotificationId)
+
+    private fun getEncrypted(key: String): String? =
+        runCatching {
+            val encryptedBytes = Base64.getDecoder().decode(getByKey(key).value)
+            val cryptographyStorageKey = IsolatedKoinContext.getCryptographyStorageKey()
+            AESDecrypt.decryptData(encryptedBytes, cryptographyStorageKey).toString(Charsets.UTF_8)
+        }.getOrNull()
+
+    private fun saveEncrypted(
+        key: String,
+        value: String
+    ) {
+        val cryptographyStorageKey = IsolatedKoinContext.getCryptographyStorageKey()
+        val encryptedBytes = AESEncrypt.encryptData(
+            value.toByteArray(Charsets.UTF_8),
+            cryptographyStorageKey
+        )
+        save(key, Base64.getEncoder().encodeToString(encryptedBytes))
+    }
 
     private fun appMapper(app: App) =
         AppData(
