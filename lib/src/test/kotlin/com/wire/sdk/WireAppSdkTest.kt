@@ -23,7 +23,6 @@ import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.service.WireTeamEventsListener
-import com.wire.sdk.utils.obfuscateId
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -230,8 +229,9 @@ class WireAppSdkTest {
 
     @Test
     fun `given startup token for another app, when sdk starts, then user must clear storage`() {
-        val userId = UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
-        val replacementToken = apiTokenForUser(userId)
+        val replacementToken = apiTokenForUser(
+            UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
+        )
         val appStorage = mockAppStorage(
             storedApiToken = "ABC",
             storedBackendCookie = "XYZ"
@@ -240,16 +240,10 @@ class WireAppSdkTest {
             appStorage.getApplicationQualifiedId()
         } returns TestUtils.APPLICATION_QUALIFIED_ID
 
-        val exception = assertFailsWith<WireException.UnknownError> {
+        assertFailsWith<WireException.InvalidParameter> {
             createWireAppSdk(apiToken = replacementToken)
         }
 
-        assertEquals(
-            "Stored application QualifiedId ${TestUtils.APPLICATION_QUALIFIED_ID} " +
-                "does not match App QualifiedId ${userId.obfuscateId()} " +
-                "retrieved from the API token. Clear SDK storage before using a token for another app.",
-            exception.message
-        )
         verify(exactly = 0) {
             appStorage.saveApiToken(any())
             appStorage.saveBackendCookie(any())
@@ -266,7 +260,7 @@ class WireAppSdkTest {
             appStorage.getApplicationQualifiedId()
         } returns TestUtils.APPLICATION_QUALIFIED_ID
 
-        assertFailsWith<WireException.UnknownError> {
+        assertFailsWith<WireException.InvalidParameter> {
             createWireAppSdk(apiToken = "DEF")
         }
 
