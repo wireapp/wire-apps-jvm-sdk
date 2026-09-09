@@ -25,7 +25,7 @@ class ApiTokenUtilsTest {
     @Test
     fun `given token with user id, when extracting user id, then return uuid`() {
         val userId = UUID.fromString("b82c3381-37b0-4545-b555-ca32a3a093d0")
-        val token = "zuid=token;u=$userId;wire_app=true"
+        val token = tokenWithUserId(userId)
 
         val result = ApiTokenUtils.extractUserId(token)
 
@@ -35,7 +35,7 @@ class ApiTokenUtilsTest {
     @Test
     fun `given token with uppercase user id, when extracting user id, then return uuid`() {
         val userId = UUID.fromString("b82c3381-37b0-4545-b555-ca32a3a093d0")
-        val token = "zuid=token;u=${userId.toString().uppercase()};wire_app=true"
+        val token = tokenWithUserId(userId.toString().uppercase())
 
         val result = ApiTokenUtils.extractUserId(token)
 
@@ -44,7 +44,7 @@ class ApiTokenUtilsTest {
 
     @Test
     fun `given token without user id, when extracting user id, then return null`() {
-        val token = "zuid=token;wire_app=true"
+        val token = "signature.v=1.k=1.d=1792763405.t=u.l=.r=33da446"
 
         val result = ApiTokenUtils.extractUserId(token)
 
@@ -54,7 +54,7 @@ class ApiTokenUtilsTest {
     @Test
     fun `given user id inside another parameter name, then return null`() {
         val userId = UUID.fromString("b82c3381-37b0-4545-b555-ca32a3a093d0")
-        val token = "zuid=token;zauth_u=$userId;wire_app=true"
+        val token = "signature.v=1.k=1.d=1792763405.t=u.l=.zauth_u=$userId.r=33da446"
 
         val result = ApiTokenUtils.extractUserId(token)
 
@@ -63,10 +63,15 @@ class ApiTokenUtilsTest {
 
     @Test
     fun `given token with malformed user id, when extracting user id, then return null`() {
-        val token = "zuid=token;u=not-a-uuid;wire_app=true"
+        val token = "signature.v=1.k=1.d=1792763405.t=u.l=.u=not-a-uuid.r=33da446"
 
         val result = ApiTokenUtils.extractUserId(token)
 
         assertNull(result)
     }
+
+    private fun tokenWithUserId(userId: UUID): String = tokenWithUserId(userId.toString())
+
+    private fun tokenWithUserId(userId: String): String =
+        "signature.v=1.k=1.d=1792763405.t=u.l=.u=$userId.r=33da446"
 }

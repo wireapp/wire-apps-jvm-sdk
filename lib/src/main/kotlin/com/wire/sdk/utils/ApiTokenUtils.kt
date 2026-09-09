@@ -20,7 +20,7 @@ import java.util.UUID
 
 object ApiTokenUtils {
     private val userIdRegex = Regex(
-        """(?:^|[;&.,\s])u=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})""",
+        """(?:^|\.)u=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\.|$)""",
         RegexOption.IGNORE_CASE
     )
 

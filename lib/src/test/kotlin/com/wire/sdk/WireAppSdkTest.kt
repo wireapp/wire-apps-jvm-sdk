@@ -304,8 +304,9 @@ class WireAppSdkTest {
 
     // Real zauth tokens are signed dot-separated values, as documented in
     // https://github.com/wireapp/wire-server/blob/develop/libs/zauth/README.md.
-    // These tests only need a token-shaped string with the u=<UUID> segment parsed by the SDK.
-    private fun apiTokenForUser(userId: UUID): String = "zuid=token;u=$userId;wire_app=true"
+    // These tests only need a token-shaped string with the dot-delimited u=<UUID> segment parsed by the SDK.
+    private fun apiTokenForUser(userId: UUID): String =
+        "signature.v=1.k=1.d=1792763405.t=u.l=.u=$userId.r=33da446"
 
     companion object {
         private const val API_TOKEN = "dummyToken"
