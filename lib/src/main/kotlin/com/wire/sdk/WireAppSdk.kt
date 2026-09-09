@@ -154,7 +154,7 @@ class WireAppSdk(
                 val extractedUserId = ApiTokenUtils.extractUserId(apiToken)
 
                 extractedUserId?.let { tokenUserId ->
-                    if (!storedApplicationQualifiedId.isEqualTo(tokenUserId)) {
+                    if (!storedApplicationQualifiedId.hasSameUserId(tokenUserId)) {
                         throw WireException.UnknownError(
                             """
                                 Stored application QualifiedId $storedApplicationQualifiedId does not match App QualifiedId ${tokenUserId.obfuscateId()} retrieved from the API token. Clear SDK storage before using a token for another app.

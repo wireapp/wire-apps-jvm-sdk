@@ -97,33 +97,17 @@ class QualifiedIdTest {
     }
 
     @Test
-    fun `isEqualTo should return true for matching qualified id`() {
+    fun `hasSameUserId should return true for matching uuid`() {
         val qualifiedId = QualifiedId(uuid1, domainA)
-        val otherQualifiedId = QualifiedId(uuid1, domainA)
 
-        assertTrue(qualifiedId.isEqualTo(otherQualifiedId))
+        assertTrue(qualifiedId.hasSameUserId(uuid1))
     }
 
     @Test
-    fun `isEqualTo should return false for qualified id with different domain`() {
-        val qualifiedId = QualifiedId(uuid1, domainA)
-        val otherQualifiedId = QualifiedId(uuid1, domainB)
-
-        assertFalse(qualifiedId.isEqualTo(otherQualifiedId))
-    }
-
-    @Test
-    fun `isEqualTo should return true for matching uuid`() {
+    fun `hasSameUserId should return false for different uuid`() {
         val qualifiedId = QualifiedId(uuid1, domainA)
 
-        assertTrue(qualifiedId.isEqualTo(uuid1))
-    }
-
-    @Test
-    fun `isEqualTo should return false for different uuid`() {
-        val qualifiedId = QualifiedId(uuid1, domainA)
-
-        assertFalse(qualifiedId.isEqualTo(uuid2))
+        assertFalse(qualifiedId.hasSameUserId(uuid2))
     }
 
     // --- Serialization ---

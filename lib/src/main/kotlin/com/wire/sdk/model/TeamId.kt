@@ -22,8 +22,4 @@ import java.util.UUID
 @JvmInline
 value class TeamId(val value: UUID) {
     override fun toString(): String = value.obfuscateId()
-
-    fun isEqualTo(otherTeamId: TeamId): Boolean {
-        return this.value.toString() == otherTeamId.value.toString()
-    }
 }

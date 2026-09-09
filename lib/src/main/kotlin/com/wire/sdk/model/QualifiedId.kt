@@ -34,11 +34,7 @@ data class QualifiedId(
 
     fun toFullString(): String = "$id@$domain"
 
-    fun isEqualTo(otherQualifiedId: QualifiedId): Boolean {
-        return this.toFullString() == otherQualifiedId.toFullString()
-    }
-
-    fun isEqualTo(otherId: UUID): Boolean {
+    fun hasSameUserId(otherId: UUID): Boolean {
         return this.id == otherId
     }
 
