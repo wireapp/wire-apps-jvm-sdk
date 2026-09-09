@@ -16,6 +16,7 @@
 
 package com.wire.sdk.service
 
+import com.wire.sdk.utils.parseMlsClientIdentity
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
@@ -25,6 +26,7 @@ import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
@@ -71,6 +73,7 @@ internal class EventsRouter internal constructor(
     private val wireEventsHandler: WireEventsHandler,
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
+    private val subconversationService: SubconversationService,
     dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : AutoCloseable {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -162,6 +165,7 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.DeleteConversation -> {
                 logger.info("Received event: ConversationDeleted, $event")
+                subconversationService.forgetParent(event.qualifiedConversation)
                 conversationService.processDeletedConversation(event.qualifiedConversation)
                 handlerScope.launch {
                     when (wireEventsHandler) {
@@ -200,6 +204,9 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.MemberLeave -> {
                 logger.info("Leaving event from: ${event.qualifiedConversation}")
+                if (getApplicationQualifiedId() in event.data.users) {
+                    subconversationService.forgetParent(event.qualifiedConversation)
+                }
                 conversationService.deleteMembers(
                     conversationId = event.qualifiedConversation,
                     users = event.data.users
@@ -230,6 +237,10 @@ internal class EventsRouter internal constructor(
             }
 
             is EventContentDTO.Conversation.NewMLSMessageDTO -> {
+                if (event.subconversation != null) {
+                    processConferenceMessage(event)
+                    return
+                }
                 val mlsGroupId = conversationService
                     .getConversationById(event.qualifiedConversation)
                     .mlsGroupId
@@ -240,25 +251,7 @@ internal class EventsRouter internal constructor(
                     )
 
                     logger.debug("Decryption successful")
-                    if (message == null) {
-                        logger.debug("Decryption success but no message, probably epoch update")
-                        return
-                    }
-
-                    if (message.sender != event.qualifiedFrom) {
-                        logger.error(
-                            "MLS message sender {} does not match event envelope sender {}",
-                            message.sender,
-                            event.qualifiedFrom
-                        )
-                    }
-
-                    forwardMessage(
-                        message = message.message,
-                        conversationId = event.qualifiedConversation,
-                        sender = message.sender,
-                        timestamp = event.time
-                    )
+                    forwardDecryptedMessages(message, event)
                 } catch (exception: MlsException) {
                     logger.warn("Message decryption failed, exception: ", exception)
                     mlsFallbackStrategy.verifyConversationOutOfSync(
@@ -283,6 +276,7 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.MlsReset -> {
                 logger.info("MLS reset event received for: ${event.qualifiedConversation}")
+                subconversationService.forgetParent(event.qualifiedConversation)
                 conversationService.resetMlsConversation(
                     conversationId = event.qualifiedConversation,
                     newGroupId = event.data.newGroupId
@@ -333,7 +327,8 @@ internal class EventsRouter internal constructor(
         message: ByteArray,
         conversationId: QualifiedId,
         sender: QualifiedId,
-        timestamp: Instant
+        timestamp: Instant,
+        senderClientId: String
     ) {
         val genericMessage = GenericMessage.parseFrom(message)
         val wireMessage = ProtobufDeserializer.processGenericMessage(
@@ -342,6 +337,11 @@ internal class EventsRouter internal constructor(
             sender = sender,
             timestamp = timestamp
         )
+
+        if (wireMessage is WireMessage.Calling) {
+            subconversationService.forwardCalling(wireMessage.copy(senderClientId = senderClientId))
+            return
+        }
 
         handlerScope.launch {
             when (wireEventsHandler) {
@@ -363,6 +363,7 @@ internal class EventsRouter internal constructor(
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
                         wireMessage
                     )
+                    is WireMessage.Calling -> Unit // Delivered by the ordered calling dispatcher.
                     is WireMessage.Ignored -> logger.debug("Ignored event received.")
                     is WireMessage.Unknown -> logger.debug("Unknown event received.")
                     is WireMessage.Composite -> logger.debug("Composite event received.")
@@ -389,6 +390,7 @@ internal class EventsRouter internal constructor(
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
                         wireMessage
                     )
+                    is WireMessage.Calling -> Unit // Delivered by the ordered calling dispatcher.
                     is WireMessage.Ignored -> logger.debug("Ignored event received.")
                     is WireMessage.Unknown -> logger.debug("Unknown event received.")
                     is WireMessage.Composite -> logger.debug("Composite event received.")
@@ -432,6 +434,41 @@ internal class EventsRouter internal constructor(
             event.qualifiedConversation.toFullString()
         } else {
             NON_CONVERSATION_EVENTS
+        }
+    }
+
+    private suspend fun processConferenceMessage(
+        event: EventContentDTO.Conversation.NewMLSMessageDTO
+    ) {
+        if (event.subconversation != "conference") return
+        try {
+            subconversationService.decrypt(
+                event.qualifiedConversation,
+                event.data
+            )?.let { forwardDecryptedMessages(it, event) }
+        } catch (exception: WireException) {
+            subconversationService.reportError(event.qualifiedConversation, exception)
+        }
+    }
+
+    private fun forwardDecryptedMessages(
+        message: DecryptedMlsMessage,
+        event: EventContentDTO.Conversation.NewMLSMessageDTO
+    ) {
+        (listOf(message) + message.bufferedMessages).forEach { decrypted ->
+            val payload = decrypted.message ?: return@forEach
+            val identity = decrypted.senderClientId ?: return@forEach
+            val (sender, clientId) = identity.parseMlsClientIdentity()
+            if (sender != event.qualifiedFrom) {
+                logger.error("MLS sender differs from the event envelope sender")
+            }
+            forwardMessage(
+                message = payload,
+                conversationId = event.qualifiedConversation,
+                sender = sender,
+                timestamp = event.time,
+                senderClientId = clientId
+            )
         }
     }
 

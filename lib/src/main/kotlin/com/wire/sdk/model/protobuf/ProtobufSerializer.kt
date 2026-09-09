@@ -65,6 +65,15 @@ object ProtobufSerializer {
             is WireMessage.Reaction -> packReaction(wireMessage, genericMessage)
             is WireMessage.InCallEmoji -> packInCallEmoji(wireMessage, genericMessage)
             is WireMessage.InCallHandRaise -> packInCallHandRaise(wireMessage, genericMessage)
+            is WireMessage.Calling -> genericMessage.setCalling(
+                Messages.Calling.newBuilder()
+                    .setContent(wireMessage.content)
+                    .setQualifiedConversationId(
+                        Messages.QualifiedConversationId.newBuilder()
+                            .setId(wireMessage.callConversationId.id.toString())
+                            .setDomain(wireMessage.callConversationId.domain)
+                    )
+            )
 
             is WireMessage.Ignored,
             is WireMessage.Unknown -> throw WireException.CryptographicSystemError(

@@ -19,6 +19,8 @@ package com.wire.sdk.crypto
 import com.wire.sdk.model.QualifiedId
 
 internal data class DecryptedMlsMessage(
-    val message: ByteArray,
-    val sender: QualifiedId
+    val message: ByteArray?,
+    val sender: QualifiedId,
+    val isActive: Boolean = true,
+    val bufferedMessages: List<DecryptedMlsMessage> = emptyList()
 )

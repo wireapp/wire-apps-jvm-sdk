@@ -39,6 +39,21 @@ internal fun String.toUTF16BEByteArray(): ByteArray = toByteArray(charset = Char
 
 internal fun ByteArray.toStringFromUtf16BE(): String = toString(charset = Charsets.UTF_16BE)
 
+/** Parses an MLS credential identity of the form `user UUID:device ID@domain`. */
+internal fun String.parseMlsClientIdentity(): Pair<QualifiedId, String> {
+    val separator = indexOf(':')
+    val domainSeparator = indexOf('@', separator + 1)
+    require(separator > 0 && domainSeparator > separator + 1) {
+        "Invalid MLS client identity"
+    }
+    require(domainSeparator < lastIndex) { "Missing MLS client domain" }
+    val userId = QualifiedId(
+        UUID.fromString(substring(0, separator)),
+        substring(domainSeparator + 1)
+    )
+    return userId to substring(separator + 1, domainSeparator)
+}
+
 /**
  * Converts a Long into a Byte Array Big Endian.
  */

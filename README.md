@@ -63,6 +63,12 @@ dependencies {
 </dependency>
 ```
 
+## Calling
+
+Apps can use their own AVS integration with the SDK's signaling, conference MLS membership,
+epoch callbacks, and calling HTTP operations. See [Calling integration](docs/calling.md)
+for the API and Java/Kotlin examples.
+
 ## Build the project
 
 ```shell

@@ -675,6 +675,7 @@ class EventsRouterConcurrencyTest {
             wireEventsHandler = wireEventsHandler,
             cryptoClient = cryptoClient,
             mlsFallbackStrategy = mlsFallbackStrategy,
+            subconversationService = mockk(relaxed = true),
             dispatcher = dispatcher
         )
     }

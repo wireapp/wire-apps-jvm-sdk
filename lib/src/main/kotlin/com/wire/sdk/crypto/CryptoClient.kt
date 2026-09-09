@@ -22,6 +22,8 @@ import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
 import com.wire.sdk.model.CryptoClientId
+import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 
@@ -106,6 +108,11 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun conversationEpoch(mlsGroupId: ConversationId): ULong
 
     suspend fun wipeConversation(mlsGroupId: ConversationId)
+
+    suspend fun getConferenceEpochInfo(
+        conversationId: QualifiedId,
+        mlsGroupId: ConversationId
+    ): SubconversationEpochInfo
 
     companion object {
         const val DEFAULT_KEYPACKAGE_COUNT = 100u

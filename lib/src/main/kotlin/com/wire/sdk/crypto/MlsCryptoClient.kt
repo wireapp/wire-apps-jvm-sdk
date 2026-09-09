@@ -18,12 +18,16 @@ import com.wire.crypto.Uuid
 import com.wire.crypto.Welcome
 import com.wire.crypto.open
 import com.wire.crypto.proteusLastResortPrekeyIdFfi
+import com.wire.crypto.use
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
+import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.utils.obfuscateId
+import com.wire.sdk.utils.parseMlsClientIdentity
 import com.wire.sdk.utils.toQualifiedId
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
@@ -81,11 +85,20 @@ internal class MlsCryptoClient private constructor(
                     payload = encryptedMessageBytes
                 )
             }
-
-        return when (decryptedMessage) {
-            is DecryptedMessage.Text -> DecryptedMlsMessage(
-                message = decryptedMessage.plaintext,
-                sender = decryptedMessage.senderClientId.toQualifiedId()
+        return decryptedMessage.use { dm ->
+            DecryptedMlsMessage(
+                message = dm.message,
+                senderClientId = dm.senderClientId
+                    ?.copyBytes()
+                    ?.toString(Charsets.UTF_8),
+                isActive = dm.isActive,
+                bufferedMessages = dm.bufferedMessages.orEmpty().map { buffered ->
+                    DecryptedMlsMessage(
+                        message = buffered.message,
+                        senderClientId = dm.senderClientId.toQualifiedId(),
+                        isActive = buffered.isActive
+                    )
+                }
             )
 
             is DecryptedMessage.Commit,
@@ -311,11 +324,38 @@ internal class MlsCryptoClient private constructor(
         }
     }
 
+    override suspend fun getConferenceEpochInfo(
+        conversationId: QualifiedId,
+        mlsGroupId: ConversationId
+    ): SubconversationEpochInfo =
+        coreCryptoClient.transaction { context ->
+            val epoch = context.conversationEpoch(mlsGroupId)
+            check(epoch <= Long.MAX_VALUE.toULong()) { "MLS epoch exceeds supported range" }
+            val members = context.getClientIds(mlsGroupId).map { client ->
+                client.use { it.copyBytes().decodeToString().parseMlsClientIdentity() }
+            }.groupBy({ it.first }, { it.second })
+            context.exportSecretKey(mlsGroupId, CALLING_SECRET_LENGTH).use { key ->
+                val bytes = key.copyBytes()
+                try {
+                    SubconversationEpochInfo(
+                        conversationId,
+                        Base64.encode(mlsGroupId.copyBytes()),
+                        epoch.toLong(),
+                        members,
+                        bytes
+                    )
+                } finally {
+                    bytes.fill(0)
+                }
+            }
+        }
+
     override fun close() {
         runBlocking { coreCryptoClient.close() }
     }
 
     companion object {
+        private const val CALLING_SECRET_LENGTH = 32u
         private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
         private const val KEYSTORE_NAME = "keystore"
         private const val CLIENT_STORAGE_ROOT = "storage/cryptography"

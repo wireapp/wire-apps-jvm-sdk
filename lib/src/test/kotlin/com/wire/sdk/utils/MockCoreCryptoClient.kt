@@ -44,6 +44,13 @@ internal class MockCoreCryptoClient private constructor(
     private var coreCryptoClient: CoreCrypto
 ) : CryptoClient {
     val conversationExist = mutableSetOf<ConversationId>()
+
+    override suspend fun getConferenceEpochInfo(
+        conversationId: com.wire.sdk.model.QualifiedId,
+        mlsGroupId: ConversationId
+    ): com.wire.sdk.model.calling.SubconversationEpochInfo =
+        error("Conference snapshots must be explicitly stubbed in calling tests")
+
     private var cryptoClientId: CryptoClientId? = null
 
     fun setCryptoClientId(cryptoClientId: CryptoClientId) {

@@ -41,6 +41,7 @@ internal object LoggingConfiguration {
 
     private val sensitiveQueryParams = setOf(
         "password",
+        "credential",
         "access_token",
         "conversation",
         "id",
@@ -52,6 +53,7 @@ internal object LoggingConfiguration {
         "id",
         "user",
         "password",
+        "credential",
         "team",
         "access_token",
         "creator_client",

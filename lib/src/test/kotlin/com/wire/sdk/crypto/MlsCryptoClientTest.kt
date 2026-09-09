@@ -33,6 +33,88 @@ class MlsCryptoClientTest {
     private val testMlsTransport = MlsTransportLastWelcome()
 
     @Test
+    fun conferenceKeysFollowMembershipAndEpochs() =
+        runBlocking {
+            var latestGroupInfo = byteArrayOf()
+            var latestCommit = byteArrayOf()
+            val transport = object : com.wire.crypto.MlsTransport by testMlsTransport {
+                override suspend fun sendCommitBundle(
+                    commitBundle: com.wire.crypto.CommitBundle
+                ): com.wire.crypto.MlsTransportResponse {
+                    // The backend strips the MLS version/wire-format header before storing GroupInfo.
+                    latestGroupInfo =
+                        commitBundle.groupInfo.payload.copyBytes().drop(4).toByteArray()
+                    latestCommit = commitBundle.commit.copyOf()
+                    return com.wire.crypto.MlsTransportResponse.Success
+                }
+            }
+            val alice = QualifiedId(UUID.randomUUID(), "wire.test")
+            val bob = QualifiedId(UUID.randomUUID(), "wire.test")
+            MlsCryptoClient.create(alice.id, 1).use { aliceClient ->
+                MlsCryptoClient.create(bob.id, 1).use { bobClient ->
+                    aliceClient.initializeMlsClient(
+                        CryptoClientId.create(alice, "alice"),
+                        transport
+                    )
+                    bobClient.initializeMlsClient(CryptoClientId.create(bob, "bob"), transport)
+                    val parent = ConversationId(UUID.randomUUID().toString().toByteArray())
+                    val child = ConversationId(UUID.randomUUID().toString().toByteArray())
+                    aliceClient.createConversation(
+                        parent,
+                        Base64.getDecoder().decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
+                    )
+                    // Alice represents the other client that has already initialized the call.
+                    aliceClient.createConversation(
+                        child,
+                        Base64.getDecoder().decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
+                    )
+                    aliceClient.updateKeyingMaterial(child)
+                    assertTrue(
+                        latestGroupInfo.isNotEmpty(),
+                        "Establishment must upload a group info"
+                    )
+                    assertEquals(1uL, aliceClient.conversationEpoch(child))
+                    assertEquals(
+                        child,
+                        bobClient.joinMlsConversationRequest(latestGroupInfo.toGroupInfo())
+                    )
+                    aliceClient.decryptMls(child, Base64.getEncoder().encodeToString(latestCommit))
+
+                    aliceClient.getConferenceEpochInfo(CONVERSATION_ID, child).use { aliceInfo ->
+                        bobClient.getConferenceEpochInfo(CONVERSATION_ID, child).use { bobInfo ->
+                            kotlin.test.assertContentEquals(
+                                aliceInfo.getSharedSecret(),
+                                bobInfo.getSharedSecret()
+                            )
+                            assertEquals(32, aliceInfo.getSharedSecret().size)
+                            assertEquals(
+                                mapOf(alice to listOf("alice"), bob to listOf("bob")),
+                                aliceInfo.members
+                            )
+                            assertEquals(aliceInfo.members, bobInfo.members)
+                            assertEquals(2, aliceInfo.epoch)
+                        }
+                    }
+
+                    aliceClient.removeClientsFromConversation(
+                        child,
+                        listOf(CryptoClientId.create(bob, "bob"))
+                    )
+                    val removal = bobClient.decryptMls(
+                        child,
+                        Base64.getEncoder().encodeToString(latestCommit)
+                    )
+                    assertFalse(removal.isActive)
+                    aliceClient.getConferenceEpochInfo(CONVERSATION_ID, child).use {
+                        assertEquals(mapOf(alice to listOf("alice")), it.members)
+                        assertEquals(3, it.epoch)
+                    }
+                    assertTrue(aliceClient.conversationExists(parent))
+                }
+            }
+        }
+
+    @Test
     fun whenCryptoStoragePasswordIsSet_thenClientWorks() {
         runBlocking {
             val userId = UUID.randomUUID()

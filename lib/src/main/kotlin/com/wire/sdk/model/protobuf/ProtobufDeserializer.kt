@@ -133,6 +133,21 @@ object ProtobufDeserializer {
                 sender = sender
             )
 
+            genericMessage.hasCalling() -> WireMessage.Calling(
+                id = UUID.fromString(genericMessage.messageId),
+                conversationId = conversationId,
+                sender = sender,
+                content = genericMessage.calling.content,
+                timestamp = timestamp,
+                callConversationId = if (genericMessage.calling.hasQualifiedConversationId()) {
+                    genericMessage.calling.qualifiedConversationId.let {
+                        QualifiedId(UUID.fromString(it.id), it.domain)
+                    }
+                } else {
+                    conversationId
+                }
+            )
+
             else -> WireMessage.Unknown
         }
 
