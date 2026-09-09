@@ -17,14 +17,16 @@
 package com.wire.sdk
 
 import com.wire.sdk.config.IsolatedKoinContext
+import com.wire.sdk.exception.WireException
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.service.WireApplicationManager
 import com.wire.sdk.service.WireTeamEventsListener
 import com.wire.sdk.service.conversation.ConversationService
+import com.wire.sdk.utils.ApiTokenUtils
+import com.wire.sdk.utils.obfuscateId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
-import com.wire.sdk.utils.obfuscateId
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
@@ -58,12 +60,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - HTTP client calls to the Wire backend API
  * - Local storage for conversation and team data
  *
- * @property apiToken The API token for authenticating with the Wire backend
- * @property apiHost The Wire backend API host URL (e.g., "https://prod-nginz-https.wire.com")
- * @property cryptographyStorageKey A 32-byte key used to encrypt the local cryptographic storage.
+ * @param apiToken The API token for authenticating with the Wire backend
+ * @param apiHost The Wire backend API host URL (e.g., "https://prod-nginz-https.wire.com")
+ * @param cryptographyStorageKey A 32-byte key used to encrypt the local cryptographic storage.
  *                                   This key must be consistent across restarts.
  *                                   It is advisable to use a secure random 256 bits key.
- * @property wireEventsHandler An implementation of [WireEventsHandler] to receive and process
+ * @param wireEventsHandler An implementation of [WireEventsHandler] to receive and process
  *                              incoming Wire events (messages, assets, etc.)
  * @throws IllegalArgumentException if [cryptographyStorageKey] is not exactly 32 bytes
  */
@@ -94,6 +96,7 @@ class WireAppSdk(
 
         initDynamicModules(wireEventsHandler)
 
+        storeApiTokenForCurrentApp(apiToken)
         storeCookieIfMissing(apiToken)
         // Register shutdown hook for graceful termination on SIGTERM/SIGINT
         Runtime.getRuntime().addShutdownHook(shutdownHook)
@@ -111,6 +114,84 @@ class WireAppSdk(
         } else {
             logger.info("Storage directory already exists: ${storageDirectory.absolutePath}")
         }
+    }
+
+    /**
+     * Stores the startup parameter API token and guards persisted storage from being reused with
+     * another app.
+     *
+     * The SDK keeps the original startup token separately from the backend cookie
+     * because the cookie can be refreshed during normal SDK operation.
+     * If a later startup token differs from the stored startup token, it is only accepted
+     * when its userId still matches the app id persisted in storage.
+     */
+    private fun storeApiTokenForCurrentApp(apiToken: String) {
+        val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
+
+        val storedApiToken = appStorage.getApiToken()
+        val storedBackendCookie = appStorage.getBackendCookie()
+        if (storedApiToken == null && storedBackendCookie == null) {
+            logger.info(
+                "No API Token found. Storing API token in AppStorage. " +
+                    "apiToken:${apiToken.obfuscateId()}"
+            )
+            appStorage.saveApiToken(apiToken)
+            logger.info("API token is stored in AppStorage. apiToken:${apiToken.obfuscateId()}")
+        } else if (storedApiToken == null) {
+            logger.info(
+                "No API token found, but backend cookie exists. " +
+                    "Migrating received API token into AppStorage."
+            )
+            validateAndReplaceApiToken(apiToken, appStorage)
+        } else {
+            logger.info(
+                "API token found in AppStorage. Comparing received " +
+                    "apiToken:${apiToken.obfuscateId()} against " +
+                    "storedApiToken:${storedApiToken.obfuscateId()}"
+            )
+
+            if (apiToken != storedApiToken) {
+                validateAndReplaceApiToken(apiToken, appStorage)
+            } else {
+                logger.info("Received API token is the same as the one stored in AppStorage.")
+            }
+        }
+    }
+
+    private fun validateAndReplaceApiToken(
+        apiToken: String,
+        appStorage: AppStorage
+    ) {
+        logger.info(
+            "API token does not match stored API token. " +
+                "Comparing received API token userId against stored App userId."
+        )
+
+        val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
+        val extractedUserId = ApiTokenUtils.extractUserId(apiToken)
+
+        extractedUserId?.let { tokenUserId ->
+            if (!storedApplicationQualifiedId.hasSameUserId(tokenUserId)) {
+                throw WireException.InvalidParameter(
+                    """
+                        Stored application QualifiedId $storedApplicationQualifiedId does not match App QualifiedId ${tokenUserId.obfuscateId()} retrieved from the API token. Clear SDK storage before using a token for another app.
+                    """.trimIndent()
+                )
+            } else {
+                logger.info(
+                    "Received API token userId matches stored App userId. " +
+                        "Saving API token into AppStorage."
+                )
+                appStorage.saveApiToken(apiToken)
+                appStorage.saveBackendCookie(apiToken)
+                logger.info(
+                    "Received API token is stored in AppStorage. " +
+                        "apiToken:${apiToken.obfuscateId()}"
+                )
+            }
+        } ?: throw WireException.InvalidParameter(
+            "Received API token doesn't contain a valid userId."
+        )
     }
 
     /**

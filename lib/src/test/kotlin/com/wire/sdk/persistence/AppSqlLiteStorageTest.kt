@@ -47,6 +47,23 @@ class AppSqlLiteStorageTest {
         }
 
     @Test
+    fun givenNewApiToken_thenAesDecryptionWorks() =
+        runTest {
+            val apiToken = UUID.randomUUID().toString()
+            val eventsHandler = object : WireEventsHandlerSuspending() {}
+            TestUtils.setupSdk(eventsHandler)
+
+            val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
+            val initApiToken = appStorage.getApiToken()
+            assertNotNull(initApiToken)
+            assertTrue { initApiToken != apiToken }
+
+            appStorage.saveApiToken(apiToken)
+            val secondApiToken = appStorage.getApiToken()
+            assertTrue { secondApiToken == apiToken }
+        }
+
+    @Test
     fun givenApplicationData_thenQualifiedIdAndTeamIdArePersisted() =
         runTest {
             val eventsHandler = object : WireEventsHandlerSuspending() {}

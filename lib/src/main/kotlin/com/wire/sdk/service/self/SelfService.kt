@@ -35,7 +35,7 @@ internal class SelfService(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     suspend fun fetchAndSaveApplicationData() {
-        this.logger.info("Fetching application QualifiedId")
+        logger.info("Fetching application QualifiedId")
         val applicationData = selfApiClient.getSelfUser()
 
         saveApplicationQualified(applicationData.qualifiedId)
@@ -44,13 +44,13 @@ internal class SelfService(
 
     private fun saveApplicationQualified(applicationQualifiedId: QualifiedId) {
         if (!appStorage.hasApplicationQualifiedId()) {
-            this.logger.info("Saving application QualifiedId: $applicationQualifiedId")
+            logger.info("Saving application QualifiedId: $applicationQualifiedId")
             appStorage.saveApplicationQualified(applicationQualifiedId)
             return
         }
 
         val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
-        if (storedApplicationQualifiedId.toFullString() != applicationQualifiedId.toFullString()) {
+        if (storedApplicationQualifiedId != applicationQualifiedId) {
             throw WireException.UnknownError(
                 """
                     Stored application QualifiedId $storedApplicationQualifiedId does not match fetched self QualifiedId $applicationQualifiedId. Clear SDK storage before using a token for another app.
@@ -58,7 +58,7 @@ internal class SelfService(
             )
         }
 
-        this.logger.info("Application QualifiedId already stored: $storedApplicationQualifiedId")
+        logger.info("Application QualifiedId already stored: $storedApplicationQualifiedId")
     }
 
     private fun saveApplicationTeamId(teamId: UUID?) {
@@ -66,13 +66,13 @@ internal class SelfService(
 
         val applicationTeamId = TeamId(teamId)
         if (!appStorage.hasApplicationTeamId()) {
-            this.logger.info("Saving application TeamId: $applicationTeamId")
+            logger.info("Saving application TeamId: $applicationTeamId")
             appStorage.saveApplicationTeamId(applicationTeamId)
             return
         }
 
         val storedApplicationTeamId = appStorage.getApplicationTeamId()
-        if (storedApplicationTeamId.value.toString() != applicationTeamId.value.toString()) {
+        if (storedApplicationTeamId != applicationTeamId) {
             throw WireException.UnknownError(
                 """
                     Stored application TeamId $storedApplicationTeamId does not match fetched self TeamId $applicationTeamId. Clear SDK storage before using a token for another app.
@@ -80,6 +80,6 @@ internal class SelfService(
             )
         }
 
-        this.logger.info("Application TeamId already stored: $storedApplicationTeamId")
+        logger.info("Application TeamId already stored: $storedApplicationTeamId")
     }
 }

@@ -96,6 +96,20 @@ class QualifiedIdTest {
         assertEquals(QualifiedId(uuid1, domainA), result)
     }
 
+    @Test
+    fun `hasSameUserId should return true for matching uuid`() {
+        val qualifiedId = QualifiedId(uuid1, domainA)
+
+        assertTrue(qualifiedId.hasSameUserId(uuid1))
+    }
+
+    @Test
+    fun `hasSameUserId should return false for different uuid`() {
+        val qualifiedId = QualifiedId(uuid1, domainA)
+
+        assertFalse(qualifiedId.hasSameUserId(uuid2))
+    }
+
     // --- Serialization ---
 
     @Test

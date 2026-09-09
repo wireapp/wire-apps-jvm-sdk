@@ -34,6 +34,10 @@ data class QualifiedId(
 
     fun toFullString(): String = "$id@$domain"
 
+    fun hasSameUserId(otherId: UUID): Boolean {
+        return this.id == otherId
+    }
+
     companion object {
         fun fromFullString(value: String): QualifiedId {
             val (id, domain) = value.split("@", limit = 2)
