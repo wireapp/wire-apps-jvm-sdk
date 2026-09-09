@@ -57,6 +57,8 @@ interface AppStorage {
 
     fun saveApiToken(apiToken: String)
 
+    fun deleteApiToken()
+
     fun getBackendCookie(): String?
 
     fun saveBackendCookie(cookie: String)

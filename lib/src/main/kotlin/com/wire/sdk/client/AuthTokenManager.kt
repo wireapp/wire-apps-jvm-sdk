@@ -85,8 +85,9 @@ class AuthTokenManager(private val appStorage: AppStorage) {
                 // that on the next restart the SDK registers a fresh client. The associated
                 // cryptography keystore is wiped at startup in getOrInitCryptoClient, which is the
                 // only point where no CoreCrypto client holds the keystore open.
-                logger.error("Removing current cookie and deviceId from storage")
+                logger.error("Removing current cookie, API token, and deviceId from storage")
                 appStorage.deleteBackendCookie()
+                appStorage.deleteApiToken()
                 appStorage.deleteDeviceId()
             }
             // TODO Can't recover from this, need to restart the app with a valid api token

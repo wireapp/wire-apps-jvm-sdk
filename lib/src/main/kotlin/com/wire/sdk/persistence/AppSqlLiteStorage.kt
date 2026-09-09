@@ -111,6 +111,8 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
 
     override fun saveApiToken(apiToken: String) = saveEncrypted(API_TOKEN, apiToken)
 
+    override fun deleteApiToken() = delete(API_TOKEN)
+
     override fun getBackendCookie(): String? = getEncrypted(BACKEND_COOKIE)
 
     override fun saveBackendCookie(cookie: String) = saveEncrypted(BACKEND_COOKIE, cookie)

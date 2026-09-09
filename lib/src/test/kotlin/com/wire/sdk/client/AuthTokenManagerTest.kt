@@ -44,11 +44,12 @@ class AuthTokenManagerTest {
         every { appStorage.getBackendCookie() } returns "cookie"
         every { appStorage.getDeviceId() } returns "device"
         justRun { appStorage.deleteBackendCookie() }
+        justRun { appStorage.deleteApiToken() }
         justRun { appStorage.deleteDeviceId() }
     }
 
     @Test
-    fun `when access returns invalid-credentials, then cookie and deviceId are deleted`() =
+    fun `when access returns invalid-credentials, then cookie, apiToken, and deviceId are deleted`() =
         runTest {
             stubAccess(label = "invalid-credentials")
             val authTokenManager = AuthTokenManager(appStorage)
@@ -58,6 +59,7 @@ class AuthTokenManagerTest {
             }
 
             verify(exactly = 1) { appStorage.deleteBackendCookie() }
+            verify(exactly = 1) { appStorage.deleteApiToken() }
             verify(exactly = 1) { appStorage.deleteDeviceId() }
         }
 
@@ -72,6 +74,7 @@ class AuthTokenManagerTest {
             }
 
             verify(exactly = 0) { appStorage.deleteBackendCookie() }
+            verify(exactly = 0) { appStorage.deleteApiToken() }
             verify(exactly = 0) { appStorage.deleteDeviceId() }
         }
 
