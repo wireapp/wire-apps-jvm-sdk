@@ -49,7 +49,7 @@ class AuthTokenManagerTest {
     }
 
     @Test
-    fun `when access returns invalid-credentials, then cookie, apiToken, and deviceId are deleted`() =
+    fun `when access returns invalid-credentials, then stored credentials are deleted`() =
         runTest {
             stubAccess(label = "invalid-credentials")
             val authTokenManager = AuthTokenManager(appStorage)
