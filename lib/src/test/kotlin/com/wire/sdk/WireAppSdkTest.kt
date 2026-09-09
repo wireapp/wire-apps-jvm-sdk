@@ -182,6 +182,9 @@ class WireAppSdkTest {
             storedApiToken = null,
             storedBackendCookie = "XYZ"
         )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
 
         createWireAppSdk(apiToken = replacementToken)
 
@@ -213,6 +216,9 @@ class WireAppSdkTest {
             storedApiToken = "ABC",
             storedBackendCookie = "XYZ"
         )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
 
         createWireAppSdk(apiToken = replacementToken)
 
@@ -230,6 +236,9 @@ class WireAppSdkTest {
             storedApiToken = "ABC",
             storedBackendCookie = "XYZ"
         )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
 
         val exception = assertFailsWith<WireException.UnknownError> {
             createWireAppSdk(apiToken = replacementToken)
@@ -253,6 +262,9 @@ class WireAppSdkTest {
             storedApiToken = "ABC",
             storedBackendCookie = "XYZ"
         )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
 
         assertFailsWith<WireException.UnknownError> {
             createWireAppSdk(apiToken = "DEF")
@@ -271,9 +283,6 @@ class WireAppSdkTest {
         val appStorage = mockk<AppStorage>()
         every { appStorage.getApiToken() } returns storedApiToken
         every { appStorage.getBackendCookie() } returns storedBackendCookie
-        every {
-            appStorage.getApplicationQualifiedId()
-        } returns TestUtils.APPLICATION_QUALIFIED_ID
         justRun { appStorage.saveApiToken(any()) }
         justRun { appStorage.saveBackendCookie(any()) }
 
@@ -299,6 +308,9 @@ class WireAppSdkTest {
             wireEventsHandler = object : WireEventsHandlerDefault() {}
         )
 
+    // Real zauth tokens are signed dot-separated values, as documented in
+    // https://github.com/wireapp/wire-server/blob/develop/libs/zauth/README.md.
+    // These tests only need a token-shaped string with the u=<UUID> segment parsed by the SDK.
     private fun apiTokenForUser(userId: UUID): String = "zuid=token;u=$userId;wire_app=true"
 
     companion object {

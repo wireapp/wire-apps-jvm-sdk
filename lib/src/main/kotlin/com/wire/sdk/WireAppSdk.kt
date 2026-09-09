@@ -125,7 +125,6 @@ class WireAppSdk(
      * If a later startup token differs from the stored startup token, it is only accepted
      * when its userId still matches the app id persisted in storage.
      */
-    @Suppress("NestedBlockDepth")
     private fun storeApiTokenForCurrentApp(apiToken: String) {
         val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
 
@@ -173,7 +172,7 @@ class WireAppSdk(
 
         extractedUserId?.let { tokenUserId ->
             if (!storedApplicationQualifiedId.hasSameUserId(tokenUserId)) {
-                throw WireException.UnknownError(
+                throw WireException.InvalidParameter(
                     """
                         Stored application QualifiedId $storedApplicationQualifiedId does not match App QualifiedId ${tokenUserId.obfuscateId()} retrieved from the API token. Clear SDK storage before using a token for another app.
                     """.trimIndent()
@@ -190,7 +189,7 @@ class WireAppSdk(
                         "apiToken:${apiToken.obfuscateId()}"
                 )
             }
-        } ?: throw WireException.UnknownError(
+        } ?: throw WireException.InvalidParameter(
             "Received API token doesn't contain a valid userId."
         )
     }
