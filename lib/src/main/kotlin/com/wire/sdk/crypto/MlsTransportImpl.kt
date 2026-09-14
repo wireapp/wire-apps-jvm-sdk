@@ -21,22 +21,14 @@ import com.wire.crypto.HistorySecret
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.MlsTransportData
 import com.wire.sdk.client.MlsApiClient
-import com.wire.sdk.exception.WireException
-import org.slf4j.LoggerFactory
 
 internal class MlsTransportImpl(private val mlsApiClient: MlsApiClient) : MlsTransport {
-    private val logger = LoggerFactory.getLogger(this::class.java)
-
     override suspend fun sendCommitBundle(commitBundle: CommitBundle) {
-        try {
-            mlsApiClient.uploadCommitBundle(
-                commitBundle = parseBundleIntoSingleByteArray(
-                    bundle = commitBundle
-                )
+        mlsApiClient.uploadCommitBundle(
+            commitBundle = parseBundleIntoSingleByteArray(
+                bundle = commitBundle
             )
-        } catch (exception: WireException) {
-            logger.warn("Could not upload Commit Bundle. ${exception.message}")
-        }
+        )
     }
 
     /**

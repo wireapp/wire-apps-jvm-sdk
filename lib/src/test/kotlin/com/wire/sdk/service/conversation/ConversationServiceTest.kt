@@ -57,7 +57,6 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import java.io.File
 import java.util.UUID
@@ -1257,12 +1256,17 @@ class ConversationServiceTest {
                 coEvery { getClientsByUserId(CONVERSATION_MEMBER_1) } returns listOf(client1)
             }
 
-            val capturedClients = slot<List<CryptoClientId>>()
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
                     removeClientsFromConversation(
                         CONVERSATION_MLS_GROUP_ID,
-                        capture(capturedClients)
+                        listOf(
+                            CryptoClientId.create(
+                                userId = CONVERSATION_MEMBER_1.id.toString(),
+                                deviceId = client1.id,
+                                userDomain = CONVERSATION_MEMBER_1.domain
+                            )
+                        )
                     )
                 } throws MlsException.Other("Failed to remove members")
             }
@@ -1289,18 +1293,15 @@ class ConversationServiceTest {
             coVerify(exactly = 1) {
                 cryptoClient.removeClientsFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
-                    clientIds = any()
+                    clientIds = listOf(
+                        CryptoClientId.create(
+                            userId = CONVERSATION_MEMBER_1.id.toString(),
+                            deviceId = client1.id,
+                            userDomain = CONVERSATION_MEMBER_1.domain
+                        )
+                    )
                 )
             }
-            assertEquals(listOf(client1.id), capturedClients.captured.map { it.deviceId })
-            assertEquals(
-                listOf(CONVERSATION_MEMBER_1.id.toString()),
-                capturedClients.captured.map { it.userId }
-            )
-            assertEquals(
-                listOf(CONVERSATION_MEMBER_1.domain),
-                capturedClients.captured.map { it.userDomain }
-            )
             verify(exactly = 0) {
                 conversationStorage.deleteMembers(
                     conversationId = CONVERSATION_ID,
@@ -1343,12 +1344,27 @@ class ConversationServiceTest {
                 } returns listOf(client1, client2, client3)
             }
 
-            val capturedClients = slot<List<CryptoClientId>>()
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
                     removeClientsFromConversation(
                         mlsGroupId = CONVERSATION_MLS_GROUP_ID,
-                        clientIds = capture(lst = capturedClients)
+                        clientIds = listOf(
+                            CryptoClientId.create(
+                                userId = CONVERSATION_MEMBER_1.id.toString(),
+                                deviceId = client1.id,
+                                userDomain = CONVERSATION_MEMBER_1.domain
+                            ),
+                            CryptoClientId.create(
+                                userId = CONVERSATION_MEMBER_1.id.toString(),
+                                deviceId = client2.id,
+                                userDomain = CONVERSATION_MEMBER_1.domain
+                            ),
+                            CryptoClientId.create(
+                                userId = CONVERSATION_MEMBER_1.id.toString(),
+                                deviceId = client3.id,
+                                userDomain = CONVERSATION_MEMBER_1.domain
+                            )
+                        )
                     )
                 } returns Unit
             }
@@ -1367,25 +1383,27 @@ class ConversationServiceTest {
 
             service.removeMembersFromConversation(CONVERSATION_ID, membersToRemove)
 
-            assertEquals(3, capturedClients.captured.size)
-            assertEquals(
-                listOf(client1.id, client2.id, client3.id),
-                capturedClients.captured.map { it.deviceId }
-            )
-            assertEquals(
-                List(3) { CONVERSATION_MEMBER_1.id.toString() },
-                capturedClients.captured.map { it.userId }
-            )
-            assertEquals(
-                List(3) { CONVERSATION_MEMBER_1.domain },
-                capturedClients.captured.map { it.userDomain }
-            )
-
             coVerify(exactly = 1) {
                 usersApiClient.getClientsByUserId(CONVERSATION_MEMBER_1)
                 cryptoClient.removeClientsFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
-                    clientIds = any()
+                    clientIds = listOf(
+                        CryptoClientId.create(
+                            userId = CONVERSATION_MEMBER_1.id.toString(),
+                            deviceId = client1.id,
+                            userDomain = CONVERSATION_MEMBER_1.domain
+                        ),
+                        CryptoClientId.create(
+                            userId = CONVERSATION_MEMBER_1.id.toString(),
+                            deviceId = client2.id,
+                            userDomain = CONVERSATION_MEMBER_1.domain
+                        ),
+                        CryptoClientId.create(
+                            userId = CONVERSATION_MEMBER_1.id.toString(),
+                            deviceId = client3.id,
+                            userDomain = CONVERSATION_MEMBER_1.domain
+                        )
+                    )
                 )
             }
             verify(exactly = 1) {
