@@ -20,30 +20,22 @@ import com.wire.crypto.CommitBundle
 import com.wire.crypto.HistorySecret
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.MlsTransportData
-import com.wire.crypto.MlsTransportResponse
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.exception.WireException
+import org.slf4j.LoggerFactory
 
 internal class MlsTransportImpl(private val mlsApiClient: MlsApiClient) : MlsTransport {
-    override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
+    override suspend fun sendCommitBundle(commitBundle: CommitBundle) {
         try {
             mlsApiClient.uploadCommitBundle(
                 commitBundle = parseBundleIntoSingleByteArray(
                     bundle = commitBundle
                 )
             )
-            return MlsTransportResponse.Success
-        } catch (ex: WireException) {
-            return MlsTransportResponse.Abort(ex.message ?: "Unknown Backend error occurred")
-        }
-    }
-
-    override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse {
-        try {
-            mlsApiClient.sendMessage(mlsMessage)
-            return MlsTransportResponse.Success
-        } catch (ex: WireException) {
-            return MlsTransportResponse.Abort(ex.message ?: "Unknown Backend error occurred")
+        } catch (exception: WireException) {
+            logger.warn("Could not upload Commit Bundle. ${exception.message}")
         }
     }
 
@@ -56,8 +48,8 @@ internal class MlsTransportImpl(private val mlsApiClient: MlsApiClient) : MlsTra
      */
     private fun parseBundleIntoSingleByteArray(bundle: CommitBundle): ByteArray {
         return bundle.commit +
-            bundle.groupInfo.payload.copyBytes() +
-            (bundle.welcome?.copyBytes() ?: ByteArray(0))
+            bundle.groupInfo.payload +
+            (bundle.welcome?.serialize() ?: ByteArray(0))
     }
 
     override suspend fun prepareForTransport(historySecret: HistorySecret): MlsTransportData {

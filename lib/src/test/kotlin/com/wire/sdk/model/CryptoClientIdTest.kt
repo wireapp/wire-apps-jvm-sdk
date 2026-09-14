@@ -8,24 +8,33 @@ import kotlin.test.Test
 class CryptoClientIdTest {
     @Test
     fun `test serialization and deserialization of ClientId`() {
-        val cryptoClientId = CryptoClientId("test-client-id")
+        val cryptoClientId = CryptoClientId.create(
+            userId = UUID.randomUUID().toString(),
+            deviceId = "0001",
+            userDomain = "wire.example.com"
+        )
         val json = KtxSerializer.json.encodeToString(cryptoClientId)
         val deserializedCryptoClientId = KtxSerializer.json.decodeFromString<CryptoClientId>(json)
 
-        assertEquals(cryptoClientId, deserializedCryptoClientId)
+        assertEquals(cryptoClientId.userId, deserializedCryptoClientId.userId)
+        assertEquals(cryptoClientId.deviceId, deserializedCryptoClientId.deviceId)
+        assertEquals(cryptoClientId.userDomain, deserializedCryptoClientId.userDomain)
     }
 
     @Test
-    fun `create builds client id from qualified id and device id`() {
+    fun `create builds client id from user id, device id, and domain`() {
         val appId = UUID.randomUUID()
-        val qualifiedId = QualifiedId(appId, "wire.example.com")
         val deviceId = "device-123"
+        val userDomain = "wire.example.com"
 
         val cryptoClientId = CryptoClientId.create(
-            applicationQualifiedId = qualifiedId,
-            deviceId = deviceId
+            userId = appId.toString(),
+            deviceId = deviceId,
+            userDomain = userDomain
         )
 
-        assertEquals("$appId:$deviceId@wire.example.com", cryptoClientId.value)
+        assertEquals(appId.toString(), cryptoClientId.userId)
+        assertEquals(deviceId, cryptoClientId.deviceId)
+        assertEquals(userDomain, cryptoClientId.userDomain)
     }
 }

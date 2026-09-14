@@ -17,8 +17,8 @@
 package com.wire.sdk.model.http.client
 
 data class PreKeyCrypto(
-    val id: Int,
+    val id: UShort,
     val encodedData: String
 )
 
-fun PreKeyCrypto.toApi(): PreKeyRequest = PreKeyRequest(id, encodedData)
+fun PreKeyCrypto.toApi(): PreKeyRequest = PreKeyRequest(id.toInt(), encodedData)

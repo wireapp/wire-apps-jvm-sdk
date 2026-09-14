@@ -1,29 +1,30 @@
 package com.wire.sdk.crypto
 
-import com.wire.crypto.CUSTOM_CONFIGURATION_DEFAULT
-import com.wire.crypto.Ciphersuite
+import com.wire.crypto.CipherSuite
 import com.wire.crypto.ClientId
-import com.wire.crypto.ConversationConfiguration
 import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCrypto
-import com.wire.crypto.CoreCryptoClient
-import com.wire.crypto.CoreCryptoContext
-import com.wire.crypto.CredentialType
+import com.wire.crypto.Credential
+import com.wire.crypto.CredentialRef
+import com.wire.crypto.Database
 import com.wire.crypto.DatabaseKey
+import com.wire.crypto.DecryptedMessage
+import com.wire.crypto.DeviceId
+import com.wire.crypto.ExternalSender
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsTransport
+import com.wire.crypto.Uuid
 import com.wire.crypto.Welcome
-import com.wire.crypto.invoke
-import com.wire.crypto.toClientId
-import com.wire.crypto.toExternalSenderKey
-import com.wire.crypto.use
+import com.wire.crypto.open
+import com.wire.crypto.proteusLastResortPrekeyIdFfi
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.utils.obfuscateId
+import com.wire.sdk.utils.toQualifiedId
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -36,15 +37,21 @@ import kotlin.io.encoding.Base64
  * Internal use only, use the factory function [create] to create a new instance.
  */
 internal class MlsCryptoClient private constructor(
-    private val ciphersuite: Ciphersuite,
-    private var coreCryptoClient: CoreCryptoClient
+    private val cipherSuite: CipherSuite,
+    private var coreCryptoClient: CoreCrypto
 ) : CryptoClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private var cryptoClientId: CryptoClientId? = null
+    private var credential: CredentialRef? = null
 
     private fun setCryptoClientId(cryptoClientId: CryptoClientId) {
         this@MlsCryptoClient.cryptoClientId = cryptoClientId
     }
+
+    private fun credentialOrThrow(): CredentialRef =
+        credential ?: throw WireException.CryptographicSystemError(
+            "MLS client has not been initialized."
+        )
 
     override fun getCryptoClientId(): CryptoClientId? = cryptoClientId
 
@@ -65,7 +72,7 @@ internal class MlsCryptoClient private constructor(
     override suspend fun decryptMls(
         mlsGroupId: ConversationId,
         encryptedMessage: String
-    ): DecryptedMlsMessage {
+    ): DecryptedMlsMessage? {
         val encryptedMessageBytes: ByteArray = Base64.decode(encryptedMessage)
         val decryptedMessage =
             coreCryptoClient.transaction {
@@ -74,14 +81,15 @@ internal class MlsCryptoClient private constructor(
                     payload = encryptedMessageBytes
                 )
             }
-        return decryptedMessage.use { dm ->
-            DecryptedMlsMessage(
-                message = dm.message,
-                senderClientId = dm.senderClientId
-                    ?.copyBytes()
-                    ?.toString(Charsets.UTF_8)
+
+        if (decryptedMessage is DecryptedMessage.Text) {
+            return DecryptedMlsMessage(
+                message = decryptedMessage.plaintext,
+                senderClientId = decryptedMessage.senderClientId.toQualifiedId()
             )
         }
+
+        return null
     }
 
     override suspend fun initializeProteusClient() =
@@ -89,94 +97,104 @@ internal class MlsCryptoClient private constructor(
             it.proteusInit()
         }
 
+    @Suppress("MagicNumber")
     override suspend fun generateProteusPreKeys(
         from: Int,
         count: Int
     ): List<PreKeyCrypto> =
         coreCryptoClient.transaction { crypto ->
             from.until(from + count).map {
-                val pkb = crypto.proteusNewPrekey(it.toUShort())
-                PreKeyCrypto(it, Base64.encode(pkb))
+                val preKeyId = (it and 0xffff).toUShort()
+                val preKeyValue = crypto.proteusNewPrekey(preKeyId)
+                PreKeyCrypto(preKeyId, Base64.encode(preKeyValue))
             }
         }
 
     override suspend fun generateProteusLastPreKey(): PreKeyCrypto =
         coreCryptoClient.transaction { context ->
-            val id = context.proteusLastResortPrekeyId()
-            val pkb = context.proteusLastResortPrekey()
-            PreKeyCrypto(id.toInt(), Base64.encode(pkb))
+            val proteusLastPreKeyId = proteusLastResortPrekeyIdFfi()
+            val proteusLastPreKeyValue = context.proteusLastResortPrekey()
+
+            PreKeyCrypto(proteusLastPreKeyId, Base64.encode(proteusLastPreKeyValue))
         }
 
     override suspend fun initializeMlsClient(
         cryptoClientId: CryptoClientId,
         mlsTransport: MlsTransport
     ) {
+        val clientId = ClientId(
+            userId = Uuid(cryptoClientId.userId),
+            deviceId = DeviceId.fromHexString(cryptoClientId.deviceId),
+            domain = cryptoClientId.userDomain
+        )
+
         coreCryptoClient.transaction {
             it.mlsInit(
-                clientId = cryptoClientId.value.toClientId(),
-                ciphersuites = listOf(ciphersuite),
-                nbKeyPackage = null
+                clientId = clientId,
+                transport = mlsTransport
             )
-        }
 
-        coreCryptoClient.provideTransport(mlsTransport)
+            val credentials = coreCryptoClient.getCredentials()
+            if (credentials.isEmpty()) {
+                logger.info("Creating CoreCrypto Credential")
+                val credential = Credential.basic(cipherSuite, clientId)
+                this.credential = it.addCredential(credential)
+            } else {
+                this.logger.info("Loading CoreCrypto Credential")
+                this.credential = credentials[0]
+            }
+        }
 
         setCryptoClientId(cryptoClientId = cryptoClientId)
     }
 
     override suspend fun mlsGetPublicKey(): MlsPublicKeys {
-        val key =
-            coreCryptoClient.transaction {
-                it.clientPublicKey(
-                    ciphersuite = ciphersuite,
-                    credentialType = getCredentialType(it)
-                )
-            }
+        val key = coreCryptoClient.publicKey(credentialOrThrow())
         val encodedKey = Base64.encode(key)
-        return when (ciphersuite) {
-            Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256 -> {
+
+        return when (cipherSuite) {
+            CipherSuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256 -> {
                 MlsPublicKeys(ecdsaSecp256r1Sha256 = encodedKey)
             }
 
-            Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384 -> {
+            CipherSuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384 -> {
                 MlsPublicKeys(ecdsaSecp384r1Sha384 = encodedKey)
             }
 
-            Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521 -> {
+            CipherSuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521 -> {
                 MlsPublicKeys(ecdsaSecp521r1Sha512 = encodedKey)
             }
 
-            Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519,
-            Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519 -> {
+            CipherSuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519,
+            CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519 -> {
                 MlsPublicKeys(ed25519 = encodedKey)
             }
 
-            Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448,
-            Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448 -> {
+            CipherSuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448,
+            CipherSuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448 -> {
                 throw WireException.CryptographicSystemError("Unsupported ciphersuite")
             }
         }
     }
 
     override suspend fun mlsGenerateKeyPackages(packageCount: UInt): List<KeyPackage> {
-        return coreCryptoClient.transaction {
-            val mlsCredentialType = getCredentialType(it)
-            it.clientKeypackages(
-                amountRequested = packageCount,
-                ciphersuite = ciphersuite,
-                credentialType = mlsCredentialType
-            )
+        return coreCryptoClient.transaction { context ->
+            val credential = credentialOrThrow()
+            val keyPackages = mutableListOf<KeyPackage>()
+            repeat(packageCount.toInt()) {
+                val keyPackage = context.generateKeyPackage(credential)
+                keyPackages.add(keyPackage)
+            }
+            keyPackages
         }
     }
 
-    override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): ConversationId {
+    override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo) {
         return coreCryptoClient.transaction {
-            val mlsCredentialType = getCredentialType(it)
             it.joinByExternalCommit(
                 groupInfo = groupInfo,
-                credentialType = mlsCredentialType,
-                customConfiguration = CUSTOM_CONFIGURATION_DEFAULT
-            ).id
+                credentialRef = credentialOrThrow()
+            )
         }
     }
 
@@ -191,16 +209,13 @@ internal class MlsCryptoClient private constructor(
         externalSenders: ByteArray
     ) {
         return coreCryptoClient.transaction {
-            val mlsCredentialType = getCredentialType(it)
+            val credential = credentialOrThrow()
             it.createConversation(
                 conversationId = mlsGroupId,
-                creatorCredentialType = mlsCredentialType,
-                config = ConversationConfiguration(
-                    ciphersuite = ciphersuite,
-                    externalSenders = listOf(
-                        externalSenders.toExternalSenderKey()
-                    ),
-                    custom = CUSTOM_CONFIGURATION_DEFAULT
+                credentialRef = credential,
+                externalSender = ExternalSender.parse(
+                    key = externalSenders,
+                    signatureScheme = credential.signatureScheme()
                 )
             )
         }
@@ -233,7 +248,11 @@ internal class MlsCryptoClient private constructor(
             it.removeClientsFromConversation(
                 conversationId = mlsGroupId,
                 clients = clientIds.map { client ->
-                    ClientId(client.value.toByteArray())
+                    ClientId(
+                        userId = Uuid(client.userId),
+                        deviceId = DeviceId.fromHexString(client.deviceId),
+                        domain = client.userDomain
+                    )
                 }
             )
 
@@ -241,25 +260,19 @@ internal class MlsCryptoClient private constructor(
         }
     }
 
-    override suspend fun processWelcomeMessage(welcome: Welcome): ConversationId {
-        val welcomeBundle = coreCryptoClient.transaction {
-            it.processWelcomeMessage(
-                welcomeMessage = welcome,
-                customConfiguration = CUSTOM_CONFIGURATION_DEFAULT
-            )
+    override suspend fun processWelcomeMessage(welcome: Welcome) {
+        coreCryptoClient.transaction {
+            it.processWelcomeMessage(welcomeMessage = welcome)
         }
-        return welcomeBundle.id
     }
 
     override suspend fun hasTooFewKeyPackageCount(): Boolean {
         val packageCount = coreCryptoClient.transaction {
-            val mlsCredentialType = getCredentialType(it)
-            it.clientValidKeypackagesCount(
-                ciphersuite = ciphersuite,
-                credentialType = mlsCredentialType
-            )
+            it.getKeyPackages().size
         }
-        return packageCount < CryptoClient.DEFAULT_KEYPACKAGE_COUNT / 2u
+
+        // TODO(alexandre): maybe remove the `u`?
+        return packageCount < (CryptoClient.DEFAULT_KEYPACKAGE_COUNT / 2u).toInt()
     }
 
     override suspend fun conversationExists(mlsGroupId: ConversationId): Boolean =
@@ -285,9 +298,6 @@ internal class MlsCryptoClient private constructor(
             )
         }
     }
-
-    private suspend fun getCredentialType(context: CoreCryptoContext): CredentialType =
-        if (context.e2eiIsEnabled(ciphersuite)) CredentialType.X509 else CredentialType.BASIC
 
     override fun close() {
         runBlocking { coreCryptoClient.close() }
@@ -328,27 +338,29 @@ internal class MlsCryptoClient private constructor(
             clientDirectory.mkdirs()
 
             val coreCryptoClient = CoreCrypto.invoke(
-                keystore = keystorePath,
-                databaseKey = DatabaseKey(IsolatedKoinContext.getCryptographyStorageKey())
+                database = Database.open(
+                    location = keystorePath,
+                    key = DatabaseKey(IsolatedKoinContext.getCryptographyStorageKey())
+                )
             )
 
             return MlsCryptoClient(
-                ciphersuite = ciphersuite,
+                cipherSuite = ciphersuite,
                 coreCryptoClient = coreCryptoClient
             )
         }
 
-        fun getMlsCipherSuiteName(code: Int): Ciphersuite =
+        fun getMlsCipherSuiteName(code: Int): CipherSuite =
             when (code) {
                 DEFAULT_CIPHERSUITE_IDENTIFIER ->
-                    Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
-                2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
-                3 -> Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519
-                4 -> Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448
-                5 -> Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521
-                6 -> Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448
-                7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
-                else -> Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
+                    CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
+                2 -> CipherSuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
+                3 -> CipherSuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519
+                4 -> CipherSuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448
+                5 -> CipherSuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521
+                6 -> CipherSuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448
+                7 -> CipherSuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
+                else -> CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
             }
 
         @Suppress("MagicNumber")

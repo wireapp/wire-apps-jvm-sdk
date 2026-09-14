@@ -16,21 +16,19 @@
 
 package com.wire.sdk.model
 
-import com.wire.sdk.utils.obfuscateClientId
 import kotlinx.serialization.Serializable
 
-@JvmInline
 @Serializable
-value class CryptoClientId(val value: String) {
-    override fun toString(): String = value.obfuscateClientId()
-
+class CryptoClientId private constructor(
+    val userId: String,
+    val deviceId: String,
+    val userDomain: String
+) {
     companion object {
         fun create(
-            applicationQualifiedId: QualifiedId,
-            deviceId: String
-        ): CryptoClientId =
-            CryptoClientId(
-                value = "${applicationQualifiedId.id}:$deviceId@${applicationQualifiedId.domain}"
-            )
+            userId: String,
+            deviceId: String,
+            userDomain: String
+        ): CryptoClientId = CryptoClientId(userId, deviceId, userDomain)
     }
 }

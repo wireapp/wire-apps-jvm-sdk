@@ -16,7 +16,9 @@
 
 package com.wire.sdk.crypto
 
+import com.wire.sdk.model.QualifiedId
+
 internal data class DecryptedMlsMessage(
-    val message: ByteArray?,
-    val senderClientId: String?
+    val message: ByteArray,
+    val senderClientId: QualifiedId
 )

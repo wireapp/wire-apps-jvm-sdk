@@ -49,8 +49,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.slot
+import io.mockk.unmockkObject
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -61,6 +63,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class WireApplicationManagerTest {
+    @AfterEach
+    fun tearDownMocks() {
+        unmockkObject(ProtobufSerializer)
+    }
+
     @Test
     fun whenGettingApplicationQualifiedIdThenReturnStoredValue() {
         val appStorage = mockk<AppStorage> {
@@ -141,7 +148,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = Base64.encode(newPackages[0].copyBytes())
+                            keyPackage = Base64.encode(newPackages[0].serialize())
                         )
                     )
                 )
@@ -237,7 +244,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = Base64.encode(newPackages[1].copyBytes())
+                            keyPackage = Base64.encode(newPackages[1].serialize())
                         )
                     )
                 )
@@ -304,7 +311,7 @@ class WireApplicationManagerTest {
                     WireMock.okJson(
                         getDynamicKeyPackageClaimedUser(
                             userId = USER_2.id.toString(),
-                            keyPackage = Base64.encode(newPackages[2].copyBytes())
+                            keyPackage = Base64.encode(newPackages[2].serialize())
                         )
                     )
                 )
@@ -918,7 +925,11 @@ class WireApplicationManagerTest {
             ciphersuiteCode = 1
         ).use { cryptoClientUser2 ->
             cryptoClientUser2.initializeMlsClient(
-                cryptoClientId = CryptoClientId("user_${USER_2.id}"),
+                cryptoClientId = CryptoClientId.create(
+                    userId = USER_2.id.toString(),
+                    deviceId = "0001",
+                    userDomain = USER_2.domain
+                ),
                 mlsTransport = testMlsTransport
             )
             cryptoClientUser2.mlsGenerateKeyPackages(10U)

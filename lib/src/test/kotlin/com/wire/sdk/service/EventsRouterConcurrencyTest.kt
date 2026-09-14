@@ -17,26 +17,35 @@
 package com.wire.sdk.service
 
 import com.wire.crypto.ConversationId
+import com.wire.crypto.CoreCryptoException
+import com.wire.crypto.MlsException
 import com.wire.sdk.TestUtils
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.client.MlsApiClient
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
-import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.ConversationEntity
+import com.wire.sdk.crypto.MlsCryptoClient
+import com.wire.sdk.model.ConversationMember
+import com.wire.sdk.model.CryptoClientId
+import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
+import com.wire.sdk.model.http.conversation.ConversationMembers
+import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.Member
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
+import com.wire.sdk.utils.MlsTransportLastWelcome
 import com.wire.sdk.utils.MockCoreCryptoClient
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -48,6 +57,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
+import java.io.File
+import java.util.Base64
 import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
@@ -66,6 +77,79 @@ import kotlin.time.Clock
  * - Channel isolation prevents cross-conversation failures
  */
 class EventsRouterConcurrencyTest {
+    @Test
+    fun `orphan welcome fetches group info and joins by external commit`() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "wire.test")
+            val mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
+            val groupInfo = File("src/test/resources/groupInfo.bin").readBytes()
+            val conversationResponse = ConversationResponse(
+                id = conversationId,
+                teamId = null,
+                groupId = Base64.getEncoder().encodeToString(mlsGroupId.copyBytes()),
+                name = "Test Conversation",
+                epoch = 1L,
+                protocol = CryptoProtocol.MLS,
+                members = ConversationMembers(
+                    others = emptyList(),
+                    self = TestUtils.dummyConversationMemberSelf(ConversationRole.MEMBER)
+                ),
+                type = ConversationResponse.Type.GROUP
+            )
+            val conversationEntity = ConversationEntity(
+                id = conversationId,
+                name = "Test Conversation",
+                teamId = null,
+                mlsGroupId = mlsGroupId,
+                type = ConversationEntity.Type.GROUP
+            )
+            val conversationService = mockk<ConversationService> {
+                every {
+                    saveConversationWithMembers(conversationId, conversationResponse)
+                } returns (conversationEntity to emptyList())
+            }
+            val conversationsApiClient = mockk<ConversationsApiClient> {
+                coEvery { getConversationGroupInfo(conversationId) } returns groupInfo
+                coEvery { getConversation(conversationId) } returns conversationResponse
+            }
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery {
+                    processWelcomeMessage(any())
+                } throws CoreCryptoException.Mls(MlsException.OrphanWelcome())
+                coEvery { joinMlsConversationRequest(any()) } returns Unit
+                coEvery { hasTooFewKeyPackageCount() } returns false
+            }
+            val testDispatcher = StandardTestDispatcher(testScheduler)
+            val eventsRouter = createEventsRouter(
+                conversationService = conversationService,
+                conversationsApiClient = conversationsApiClient,
+                cryptoClient = cryptoClient,
+                dispatcher = testDispatcher
+            )
+
+            eventsRouter.route(
+                EventResponse(
+                    id = UUID.randomUUID().toString(),
+                    payload = listOf(
+                        EventContentDTO.Conversation.MlsWelcome(
+                            qualifiedConversation = conversationId,
+                            qualifiedFrom = QualifiedId(UUID.randomUUID(), "wire.test"),
+                            time = Clock.System.now(),
+                            data = generateWelcomeMessage()
+                        )
+                    )
+                )
+            )
+            testScheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) { cryptoClient.processWelcomeMessage(any()) }
+            coVerify(exactly = 1) {
+                conversationsApiClient.getConversationGroupInfo(conversationId)
+            }
+            coVerify(exactly = 1) { cryptoClient.joinMlsConversationRequest(any()) }
+            eventsRouter.close()
+        }
+
     @Test
     fun `given team member join event, when routed, then qualify user with app domain`() =
         runTest {
@@ -136,7 +220,7 @@ class EventsRouterConcurrencyTest {
             coEvery { conversationService.getConversationById(conversationId) } returns conversation
             coEvery { cryptoClient.decryptMls(mlsGroupId, any()) } returns DecryptedMlsMessage(
                 message = MockCoreCryptoClient.GENERIC_TEXT_MESSAGE.toByteArray(),
-                senderClientId = "${decryptedSender.id}:client@${decryptedSender.domain}"
+                senderClientId = decryptedSender
             )
 
             val testDispatcher = StandardTestDispatcher(testScheduler)
@@ -594,5 +678,54 @@ class EventsRouterConcurrencyTest {
             mlsFallbackStrategy = mlsFallbackStrategy,
             dispatcher = dispatcher
         )
+    }
+
+    private suspend fun generateWelcomeMessage(): String {
+        IsolatedKoinContext.start()
+        IsolatedKoinContext.setCryptographyStorageKey(TestUtils.CRYPTOGRAPHY_STORAGE_KEY)
+
+        val transport = MlsTransportLastWelcome()
+        val bobClient = MlsCryptoClient.create(
+            appId = UUID.randomUUID(),
+            ciphersuiteCode = 1
+        )
+        val aliceClient = MlsCryptoClient.create(
+            appId = UUID.randomUUID(),
+            ciphersuiteCode = 1
+        )
+
+        try {
+            bobClient.initializeMlsClient(
+                cryptoClientId = CryptoClientId.create(
+                    userId = UUID.randomUUID().toString(),
+                    deviceId = "0001",
+                    userDomain = "wire.com"
+                ),
+                mlsTransport = transport
+            )
+            aliceClient.initializeMlsClient(
+                cryptoClientId = CryptoClientId.create(
+                    userId = UUID.randomUUID().toString(),
+                    deviceId = "0002",
+                    userDomain = "wire.com"
+                ),
+                mlsTransport = transport
+            )
+            bobClient.createConversation(
+                mlsGroupId = MockCoreCryptoClient.MLS_GROUP_ID,
+                externalSenders = Base64.getDecoder()
+                    .decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
+            )
+            bobClient.addClientsToMlsConversation(
+                mlsGroupId = MockCoreCryptoClient.MLS_GROUP_ID,
+                keyPackages = aliceClient.mlsGenerateKeyPackages(1u)
+            )
+
+            return Base64.getEncoder().encodeToString(transport.getLastWelcome().serialize())
+        } finally {
+            bobClient.close()
+            aliceClient.close()
+            IsolatedKoinContext.stop()
+        }
     }
 }

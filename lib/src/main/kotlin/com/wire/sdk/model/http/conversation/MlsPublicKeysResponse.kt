@@ -16,7 +16,7 @@
 
 package com.wire.sdk.model.http.conversation
 
-import com.wire.crypto.Ciphersuite
+import com.wire.crypto.CipherSuite
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.http.MlsPublicKeys
 import kotlinx.serialization.SerialName
@@ -29,24 +29,24 @@ data class MlsPublicKeysResponse(
     val removal: MlsPublicKeys
 )
 
-fun MlsPublicKeysResponse.getRemovalKey(cipherSuite: Ciphersuite): ByteArray? {
+fun MlsPublicKeysResponse.getRemovalKey(cipherSuite: CipherSuite): ByteArray? {
     val key = when (cipherSuite) {
-        Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256 ->
+        CipherSuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256 ->
             this.removal.ecdsaSecp256r1Sha256
 
-        Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384 ->
+        CipherSuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384 ->
             this.removal.ecdsaSecp384r1Sha384
 
-        Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521 ->
+        CipherSuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521 ->
             this.removal.ecdsaSecp521r1Sha512
 
-        Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519,
-        Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519 ->
+        CipherSuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519,
+        CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519 ->
             this.removal.ed25519
 
-        Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448,
-        Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448 -> {
-            throw WireException.CryptographicSystemError("Unsupported ciphersuite")
+        CipherSuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448,
+        CipherSuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448 -> {
+            throw WireException.CryptographicSystemError("Unsupported CipherSuite")
         }
     }
 

@@ -36,7 +36,7 @@ internal interface CryptoClient : AutoCloseable {
     suspend fun decryptMls(
         mlsGroupId: ConversationId,
         encryptedMessage: String
-    ): DecryptedMlsMessage
+    ): DecryptedMlsMessage?
 
     /**
      * Proteus Configuration
@@ -67,7 +67,7 @@ internal interface CryptoClient : AutoCloseable {
     /**
      * Create a request to join an MLS conversation.
      */
-    suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): ConversationId
+    suspend fun joinMlsConversationRequest(groupInfo: GroupInfo)
 
     /**
      * Create an MLS conversation, adding the client as the first member.
@@ -97,7 +97,7 @@ internal interface CryptoClient : AutoCloseable {
     /**
      * Process an MLS welcome message, adding this client to a conversation, and return the groupId.
      */
-    suspend fun processWelcomeMessage(welcome: Welcome): ConversationId
+    suspend fun processWelcomeMessage(welcome: Welcome)
 
     suspend fun hasTooFewKeyPackageCount(): Boolean
 

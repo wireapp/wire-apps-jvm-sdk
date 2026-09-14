@@ -318,8 +318,9 @@ internal suspend fun getOrInitCryptoClient(
             ciphersuiteCode = mlsCipherSuiteCode
         )
         val cryptoClientId = CryptoClientId.create(
-            applicationQualifiedId = applicationQualifiedId,
-            deviceId = storedDeviceId
+            userId = applicationQualifiedId.id.toString(),
+            deviceId = storedDeviceId,
+            userDomain = applicationQualifiedId.domain
         )
         // App has a client, load MLS client
         cryptoClient.initializeMlsClient(
@@ -363,8 +364,9 @@ internal suspend fun getOrInitCryptoClient(
 
         val deviceId = clientResponse.id
         val cryptoClientId = CryptoClientId.create(
-            applicationQualifiedId = applicationQualifiedId,
-            deviceId = deviceId
+            userId = applicationQualifiedId.id.toString(),
+            deviceId = deviceId,
+            userDomain = applicationQualifiedId.domain
         )
         appStorage.saveDeviceId(deviceId = deviceId)
 
@@ -385,7 +387,7 @@ internal suspend fun getOrInitCryptoClient(
 
         mlsApiClient.uploadMlsKeyPackages(
             cryptoClientId = cryptoClientId,
-            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
+            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
         )
 
         appStorage.setShouldRejoinConversations(should = true)

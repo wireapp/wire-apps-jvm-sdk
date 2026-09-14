@@ -42,6 +42,7 @@ repositories {
 val ktorVersion = "3.5.2"
 val sqlDelightVersion = "2.3.2"
 val logbookVersion = "4.1.0"
+val coreCryptoVersion = "10.5.2"
 val ktorModules = listOf(
     "io.ktor:ktor-client-core",
     "io.ktor:ktor-client-cio",
@@ -85,7 +86,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-websockets:$ktorVersion")
-    implementation("com.wire:core-crypto-jvm:9.3.4")
+    implementation("com.wire:core-crypto-jvm:$coreCryptoVersion")
     implementation("app.cash.sqldelight:sqlite-driver:$sqlDelightVersion")
     implementation("app.cash.sqldelight:sqlite-3-24-dialect:$sqlDelightVersion")
     implementation("org.zalando:logbook-core:$logbookVersion")
