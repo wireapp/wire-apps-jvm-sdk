@@ -697,17 +697,15 @@ class EventsRouterConcurrencyTest {
         try {
             bobClient.initializeMlsClient(
                 cryptoClientId = CryptoClientId.create(
-                    userId = UUID.randomUUID().toString(),
-                    deviceId = "0001",
-                    userDomain = "wire.com"
+                    applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.com"),
+                    deviceId = "0001"
                 ),
                 mlsTransport = transport
             )
             aliceClient.initializeMlsClient(
                 cryptoClientId = CryptoClientId.create(
-                    userId = UUID.randomUUID().toString(),
-                    deviceId = "0002",
-                    userDomain = "wire.com"
+                    applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.com"),
+                    deviceId = "0002"
                 ),
                 mlsTransport = transport
             )

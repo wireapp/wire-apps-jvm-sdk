@@ -926,9 +926,8 @@ class WireApplicationManagerTest {
         ).use { cryptoClientUser2 ->
             cryptoClientUser2.initializeMlsClient(
                 cryptoClientId = CryptoClientId.create(
-                    userId = USER_2.id.toString(),
-                    deviceId = "0001",
-                    userDomain = USER_2.domain
+                    applicationQualifiedId = USER_2,
+                    deviceId = "0001"
                 ),
                 mlsTransport = testMlsTransport
             )

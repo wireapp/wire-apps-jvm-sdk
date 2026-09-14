@@ -32,9 +32,13 @@ data class CryptoClientId private constructor(
 
     companion object {
         fun create(
-            userId: String,
-            deviceId: String,
-            userDomain: String
-        ): CryptoClientId = CryptoClientId(userId, deviceId, userDomain)
+            applicationQualifiedId: QualifiedId,
+            deviceId: String
+        ): CryptoClientId =
+            CryptoClientId(
+                userId = applicationQualifiedId.id.toString(),
+                deviceId = deviceId,
+                userDomain = applicationQualifiedId.domain
+            )
     }
 }

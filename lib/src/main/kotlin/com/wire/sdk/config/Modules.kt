@@ -318,9 +318,8 @@ internal suspend fun getOrInitCryptoClient(
             ciphersuiteCode = mlsCipherSuiteCode
         )
         val cryptoClientId = CryptoClientId.create(
-            userId = applicationQualifiedId.id.toString(),
-            deviceId = storedDeviceId,
-            userDomain = applicationQualifiedId.domain
+            applicationQualifiedId = applicationQualifiedId,
+            deviceId = storedDeviceId
         )
         // App has a client, load MLS client
         cryptoClient.initializeMlsClient(
@@ -364,9 +363,8 @@ internal suspend fun getOrInitCryptoClient(
 
         val deviceId = clientResponse.id
         val cryptoClientId = CryptoClientId.create(
-            userId = applicationQualifiedId.id.toString(),
-            deviceId = deviceId,
-            userDomain = applicationQualifiedId.domain
+            applicationQualifiedId = applicationQualifiedId,
+            deviceId = deviceId
         )
         appStorage.saveDeviceId(deviceId = deviceId)
 

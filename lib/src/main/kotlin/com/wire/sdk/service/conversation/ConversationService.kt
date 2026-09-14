@@ -801,9 +801,8 @@ internal class ConversationService internal constructor(
             logger.debug("Mapping {} clients for User: {}", clients.size, user.id)
             clients.map { client ->
                 CryptoClientId.create(
-                    userId = user.id.toString(),
-                    deviceId = client.id,
-                    userDomain = user.domain
+                    applicationQualifiedId = user,
+                    deviceId = client.id
                 )
             }
         }.also {

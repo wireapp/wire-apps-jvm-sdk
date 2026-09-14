@@ -1262,9 +1262,8 @@ class ConversationServiceTest {
                         CONVERSATION_MLS_GROUP_ID,
                         listOf(
                             CryptoClientId.create(
-                                userId = CONVERSATION_MEMBER_1.id.toString(),
-                                deviceId = client1.id,
-                                userDomain = CONVERSATION_MEMBER_1.domain
+                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                                deviceId = client1.id
                             )
                         )
                     )
@@ -1295,9 +1294,8 @@ class ConversationServiceTest {
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(
                         CryptoClientId.create(
-                            userId = CONVERSATION_MEMBER_1.id.toString(),
-                            deviceId = client1.id,
-                            userDomain = CONVERSATION_MEMBER_1.domain
+                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            deviceId = client1.id
                         )
                     )
                 )
@@ -1350,19 +1348,16 @@ class ConversationServiceTest {
                         mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                         clientIds = listOf(
                             CryptoClientId.create(
-                                userId = CONVERSATION_MEMBER_1.id.toString(),
-                                deviceId = client1.id,
-                                userDomain = CONVERSATION_MEMBER_1.domain
+                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                                deviceId = client1.id
                             ),
                             CryptoClientId.create(
-                                userId = CONVERSATION_MEMBER_1.id.toString(),
-                                deviceId = client2.id,
-                                userDomain = CONVERSATION_MEMBER_1.domain
+                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                                deviceId = client2.id
                             ),
                             CryptoClientId.create(
-                                userId = CONVERSATION_MEMBER_1.id.toString(),
-                                deviceId = client3.id,
-                                userDomain = CONVERSATION_MEMBER_1.domain
+                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                                deviceId = client3.id
                             )
                         )
                     )
@@ -1389,19 +1384,16 @@ class ConversationServiceTest {
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(
                         CryptoClientId.create(
-                            userId = CONVERSATION_MEMBER_1.id.toString(),
-                            deviceId = client1.id,
-                            userDomain = CONVERSATION_MEMBER_1.domain
+                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            deviceId = client1.id
                         ),
                         CryptoClientId.create(
-                            userId = CONVERSATION_MEMBER_1.id.toString(),
-                            deviceId = client2.id,
-                            userDomain = CONVERSATION_MEMBER_1.domain
+                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            deviceId = client2.id
                         ),
                         CryptoClientId.create(
-                            userId = CONVERSATION_MEMBER_1.id.toString(),
-                            deviceId = client3.id,
-                            userDomain = CONVERSATION_MEMBER_1.domain
+                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            deviceId = client3.id
                         )
                     )
                 )
@@ -1960,9 +1952,11 @@ class ConversationServiceTest {
                     ).use { cryptoClient ->
                         cryptoClient.initializeMlsClient(
                             cryptoClientId = CryptoClientId.create(
-                                userId = UUID.randomUUID().toString(),
-                                deviceId = "0001",
-                                userDomain = BACKEND_DOMAIN
+                                applicationQualifiedId = QualifiedId(
+                                    UUID.randomUUID(),
+                                    BACKEND_DOMAIN
+                                ),
+                                deviceId = "0001"
                             ),
                             mlsTransport = MlsTransportLastWelcome()
                         )

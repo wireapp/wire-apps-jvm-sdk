@@ -11,9 +11,8 @@ class CryptoClientIdTest {
     @Test
     fun `test serialization and deserialization of ClientId`() {
         val cryptoClientId = CryptoClientId.create(
-            userId = UUID.randomUUID().toString(),
-            deviceId = "0001",
-            userDomain = "wire.example.com"
+            applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.example.com"),
+            deviceId = "0001"
         )
         val json = KtxSerializer.json.encodeToString(cryptoClientId)
         val deserializedCryptoClientId = KtxSerializer.json.decodeFromString<CryptoClientId>(json)
@@ -28,9 +27,8 @@ class CryptoClientIdTest {
         val userDomain = "wire.example.com"
 
         val cryptoClientId = CryptoClientId.create(
-            userId = appId.toString(),
-            deviceId = deviceId,
-            userDomain = userDomain
+            applicationQualifiedId = QualifiedId(appId, userDomain),
+            deviceId = deviceId
         )
 
         assertEquals(appId.toString(), cryptoClientId.userId)
@@ -41,9 +39,11 @@ class CryptoClientIdTest {
     @Test
     fun `toString obfuscates user id and device id`() {
         val cryptoClientId = CryptoClientId.create(
-            userId = "11111111-2222-3333-4444-555555555555",
-            deviceId = "abcdef123456",
-            userDomain = "wire.example.com"
+            applicationQualifiedId = QualifiedId(
+                UUID.fromString("11111111-2222-3333-4444-555555555555"),
+                "wire.example.com"
+            ),
+            deviceId = "abcdef123456"
         )
 
         val obfuscatedValue = cryptoClientId.toString()

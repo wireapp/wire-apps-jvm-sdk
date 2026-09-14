@@ -43,9 +43,8 @@ class MlsCryptoClientTest {
             )
             cryptoClient.initializeMlsClient(
                 cryptoClientId = CryptoClientId.create(
-                    userId = userId.toString(),
-                    deviceId = "0001",
-                    userDomain = "wire.test"
+                    applicationQualifiedId = QualifiedId(userId, "wire.test"),
+                    deviceId = "0001"
                 ),
                 mlsTransport = testMlsTransport
             )
@@ -141,9 +140,8 @@ class MlsCryptoClientTest {
             )
             mlsClient.initializeMlsClient(
                 cryptoClientId = CryptoClientId.create(
-                    userId = userId.toString(),
-                    deviceId = "0001",
-                    userDomain = "wire.test"
+                    applicationQualifiedId = QualifiedId(userId, "wire.test"),
+                    deviceId = "0001"
                 ),
                 mlsTransport = testMlsTransport
             )
@@ -166,9 +164,8 @@ class MlsCryptoClientTest {
             )
             bobClient.initializeMlsClient(
                 cryptoClientId = CryptoClientId.create(
-                    userId = bobUserId.toString(),
-                    deviceId = "b0b",
-                    userDomain = "wire.test"
+                    applicationQualifiedId = QualifiedId(bobUserId, "wire.test"),
+                    deviceId = "b0b"
                 ),
                 mlsTransport = testMlsTransport
             )
@@ -180,9 +177,8 @@ class MlsCryptoClientTest {
             )
             aliceClient.initializeMlsClient(
                 cryptoClientId = CryptoClientId.create(
-                    userId = aliceUserId.toString(),
-                    deviceId = "a11ce",
-                    userDomain = "wire.test"
+                    applicationQualifiedId = QualifiedId(aliceUserId, "wire.test"),
+                    deviceId = "a11ce"
                 ),
                 mlsTransport = testMlsTransport
             )
