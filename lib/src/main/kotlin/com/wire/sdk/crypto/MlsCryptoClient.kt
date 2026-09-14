@@ -271,7 +271,6 @@ internal class MlsCryptoClient private constructor(
             it.getKeyPackages().size
         }
 
-        // TODO(alexandre): maybe remove the `u`?
         return packageCount < (CryptoClient.DEFAULT_KEYPACKAGE_COUNT / 2u).toInt()
     }
 
