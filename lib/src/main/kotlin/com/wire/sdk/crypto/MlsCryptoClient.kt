@@ -82,14 +82,21 @@ internal class MlsCryptoClient private constructor(
                 )
             }
 
-        if (decryptedMessage is DecryptedMessage.Text) {
-            return DecryptedMlsMessage(
+        return when (decryptedMessage) {
+            is DecryptedMessage.Text -> DecryptedMlsMessage(
                 message = decryptedMessage.plaintext,
-                senderClientId = decryptedMessage.senderClientId.toQualifiedId()
+                sender = decryptedMessage.senderClientId.toQualifiedId()
             )
-        }
 
-        return null
+            is DecryptedMessage.Commit,
+            is DecryptedMessage.Proposal -> {
+                logger.debug(
+                    "Decryption successful but no application message. decryptedMessageType: {}",
+                    decryptedMessage::class.simpleName
+                )
+                null
+            }
+        }
     }
 
     override suspend fun initializeProteusClient() =
@@ -97,25 +104,31 @@ internal class MlsCryptoClient private constructor(
             it.proteusInit()
         }
 
-    @Suppress("MagicNumber")
     override suspend fun generateProteusPreKeys(
         from: Int,
         count: Int
-    ): List<PreKeyCrypto> =
-        coreCryptoClient.transaction { crypto ->
+    ): List<PreKeyCrypto> {
+        require(from >= 0) { "PreKey start index must be non-negative." }
+        require(count >= 0) { "PreKey count must be non-negative." }
+        require(from.toLong() + count.toLong() <= UShort.MAX_VALUE.toLong() + 1) {
+            "PreKey range must fit within UShort."
+        }
+
+        return coreCryptoClient.transaction { crypto ->
             from.until(from + count).map {
-                val preKeyId = (it and 0xffff).toUShort()
+                val preKeyId = it.toUShort()
                 val preKeyValue = crypto.proteusNewPrekey(preKeyId)
-                PreKeyCrypto(preKeyId, Base64.encode(preKeyValue))
+                PreKeyCrypto(it, Base64.encode(preKeyValue))
             }
         }
+    }
 
     override suspend fun generateProteusLastPreKey(): PreKeyCrypto =
         coreCryptoClient.transaction { context ->
             val proteusLastPreKeyId = proteusLastResortPrekeyIdFfi()
             val proteusLastPreKeyValue = context.proteusLastResortPrekey()
 
-            PreKeyCrypto(proteusLastPreKeyId, Base64.encode(proteusLastPreKeyValue))
+            PreKeyCrypto(proteusLastPreKeyId.toInt(), Base64.encode(proteusLastPreKeyValue))
         }
 
     override suspend fun initializeMlsClient(

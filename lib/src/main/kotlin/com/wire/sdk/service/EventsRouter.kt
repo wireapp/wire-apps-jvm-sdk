@@ -245,10 +245,10 @@ internal class EventsRouter internal constructor(
                         return
                     }
 
-                    if (message.senderClientId != event.qualifiedFrom) {
+                    if (message.sender != event.qualifiedFrom) {
                         logger.error(
                             "MLS message sender {} does not match event envelope sender {}",
-                            message.senderClientId,
+                            message.sender,
                             event.qualifiedFrom
                         )
                     }
@@ -256,7 +256,7 @@ internal class EventsRouter internal constructor(
                     forwardMessage(
                         message = message.message,
                         conversationId = event.qualifiedConversation,
-                        sender = message.senderClientId,
+                        sender = message.sender,
                         timestamp = event.time
                     )
                 } catch (exception: MlsException) {

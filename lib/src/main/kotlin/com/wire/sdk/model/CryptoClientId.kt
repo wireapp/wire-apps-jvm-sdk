@@ -22,7 +22,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @ConsistentCopyVisibility
-data class CryptoClientId private constructor(
+internal data class CryptoClientId private constructor(
     val userId: String,
     val deviceId: String,
     val userDomain: String

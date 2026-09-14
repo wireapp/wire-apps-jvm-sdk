@@ -64,7 +64,7 @@ internal class MockCoreCryptoClient private constructor(
         for (i in from..count) {
             preKeys.add(
                 PreKeyCrypto(
-                    id = i.toUShort(),
+                    id = i,
                     encodedData = "encoded_data_$i"
                 )
             )
@@ -75,7 +75,7 @@ internal class MockCoreCryptoClient private constructor(
 
     override suspend fun generateProteusLastPreKey(): PreKeyCrypto =
         PreKeyCrypto(
-            id = 0u,
+            id = 0,
             encodedData = "encoded_data_last_key"
         )
 
@@ -92,7 +92,7 @@ internal class MockCoreCryptoClient private constructor(
     ): DecryptedMlsMessage =
         DecryptedMlsMessage(
             message = GENERIC_TEXT_MESSAGE.toByteArray(),
-            senderClientId = DEFAULT_SENDER
+            sender = DEFAULT_SENDER
         )
 
     override suspend fun encryptMls(

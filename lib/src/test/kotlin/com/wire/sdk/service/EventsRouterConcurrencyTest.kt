@@ -220,7 +220,7 @@ class EventsRouterConcurrencyTest {
             coEvery { conversationService.getConversationById(conversationId) } returns conversation
             coEvery { cryptoClient.decryptMls(mlsGroupId, any()) } returns DecryptedMlsMessage(
                 message = MockCoreCryptoClient.GENERIC_TEXT_MESSAGE.toByteArray(),
-                senderClientId = decryptedSender
+                sender = decryptedSender
             )
 
             val testDispatcher = StandardTestDispatcher(testScheduler)

@@ -20,5 +20,5 @@ import com.wire.sdk.model.QualifiedId
 
 internal data class DecryptedMlsMessage(
     val message: ByteArray,
-    val senderClientId: QualifiedId
+    val sender: QualifiedId
 )

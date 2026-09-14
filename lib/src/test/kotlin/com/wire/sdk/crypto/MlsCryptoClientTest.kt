@@ -126,6 +126,23 @@ class MlsCryptoClientTest {
     }
 
     @Test
+    fun generateProteusPreKeysFailsWhenPreKeyIdsExceedUShortRange() {
+        runBlocking {
+            MlsCryptoClient.create(
+                appId = UUID.randomUUID(),
+                ciphersuiteCode = 1
+            ).use { cryptoClient ->
+                assertThrows<IllegalArgumentException> {
+                    cryptoClient.generateProteusPreKeys(
+                        from = UShort.MAX_VALUE.toInt(),
+                        count = 2
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
     fun testMlsClientCreateConversationAndEncryptMls() {
         runBlocking {
             // GroupInfo of a real conversation, stored in a binary test file
@@ -217,7 +234,7 @@ class MlsCryptoClientTest {
 
             // Bob decrypts the message
             val decrypted = requireNotNull(bobClient.decryptMls(mlsGroupId, encryptedBase64Message))
-            assertEquals(QualifiedId(aliceUserId, "wire.test"), decrypted.senderClientId)
+            assertEquals(QualifiedId(aliceUserId, "wire.test"), decrypted.sender)
 
             val genericMessage = GenericMessage.parseFrom(decrypted.message)
             val wireMessage = ProtobufDeserializer.processGenericMessage(
