@@ -4,7 +4,7 @@ import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsException
-import com.wire.crypto.toGroupInfo
+import com.wire.sdk.TestUtils
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.CryptoClientId
@@ -12,6 +12,7 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.protobuf.ProtobufDeserializer
 import com.wire.sdk.model.protobuf.ProtobufSerializer
+import com.wire.sdk.utils.MlsTestFixtures
 import com.wire.sdk.utils.MlsTransportLastWelcome
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import kotlinx.coroutines.runBlocking
@@ -19,8 +20,6 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.io.FileInputStream
-import java.io.InputStream
 import java.util.Base64
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -105,7 +104,7 @@ class MlsCryptoClientTest {
                     )
                 }
             } finally {
-                IsolatedKoinContext.setCryptographyStorageKey(TEST_STORAGE_PASSWORD.toByteArray())
+                IsolatedKoinContext.setCryptographyStorageKey(TestUtils.CRYPTOGRAPHY_STORAGE_KEY)
             }
         }
     }
@@ -113,15 +112,26 @@ class MlsCryptoClientTest {
     @Test
     fun whenMlsClientIsNotInitialized_thenCredentialDependentOperationsFailClearly() {
         runBlocking {
-            val cryptoClient = MlsCryptoClient.create(
+            MlsCryptoClient.create(
                 appId = UUID.randomUUID(),
                 ciphersuiteCode = 1
-            )
-
-            assertThrows<WireException.CryptographicSystemError> {
-                cryptoClient.mlsGetPublicKey()
+            ).use { cryptoClient ->
+                assertThrows<WireException.CryptographicSystemError> {
+                    cryptoClient.mlsGetPublicKey()
+                }
+                assertThrows<WireException.CryptographicSystemError> {
+                    cryptoClient.mlsGenerateKeyPackages()
+                }
+                assertThrows<WireException.CryptographicSystemError> {
+                    cryptoClient.createConversation(
+                        mlsGroupId = ConversationId(ByteArray(32)),
+                        externalSenders = ByteArray(32)
+                    )
+                }
+                assertThrows<WireException.CryptographicSystemError> {
+                    cryptoClient.joinMlsConversationRequest(MlsTestFixtures.groupInfo())
+                }
             }
-            cryptoClient.close()
         }
     }
 
@@ -143,11 +153,9 @@ class MlsCryptoClientTest {
     }
 
     @Test
-    fun testMlsClientCreateConversationAndEncryptMls() {
+    fun testJoinMlsConversationRequestSendsCommitBundle() {
         runBlocking {
-            // GroupInfo of a real conversation, stored in a binary test file
-            val inputStream: InputStream = FileInputStream("src/test/resources/groupInfo.bin")
-            val groupInfo = inputStream.readAllBytes().toGroupInfo()
+            val groupInfo = MlsTestFixtures.groupInfo()
 
             // Create a new client and join the conversation
             val userId = UUID.randomUUID()
@@ -269,15 +277,13 @@ class MlsCryptoClientTest {
         fun before() {
             // Testing that full UTF-8 is accepted on storage password
             IsolatedKoinContext.start()
-            IsolatedKoinContext.setCryptographyStorageKey(TEST_STORAGE_PASSWORD.toByteArray())
+            IsolatedKoinContext.setCryptographyStorageKey(TestUtils.CRYPTOGRAPHY_STORAGE_KEY)
         }
 
         val CONVERSATION_ID = QualifiedId(
             id = UUID.randomUUID(),
             domain = UUID.randomUUID().toString()
         )
-
-        private const val TEST_STORAGE_PASSWORD = "myDummyPasswordOfRandom32BytesCH"
 
         @JvmStatic
         @AfterAll

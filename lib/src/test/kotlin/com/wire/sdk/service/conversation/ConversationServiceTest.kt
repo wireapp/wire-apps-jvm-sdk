@@ -52,13 +52,13 @@ import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
+import com.wire.sdk.utils.MlsTestFixtures
 import com.wire.sdk.utils.MlsTransportLastWelcome
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -1919,7 +1919,7 @@ class ConversationServiceTest {
         val APP_QUALIFIED_ID = QualifiedId(APP_USER_ID, BACKEND_DOMAIN)
         val CONVERSATION_MEMBER_1 = QualifiedId(UUID.randomUUID(), BACKEND_DOMAIN)
         val CONVERSATION_MEMBER_2 = QualifiedId(UUID.randomUUID(), BACKEND_DOMAIN)
-        private val GROUP_INFO = File("src/test/resources/groupInfo.bin").readBytes()
+        private val GROUP_INFO = MlsTestFixtures.groupInfoBytes()
         private lateinit var serializedKeyPackage: ByteArray
 
         fun appStorageWithApplicationData(): AppStorage =

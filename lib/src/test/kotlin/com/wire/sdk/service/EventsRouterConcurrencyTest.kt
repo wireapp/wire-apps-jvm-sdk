@@ -28,9 +28,7 @@ import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.model.ConversationEntity
-import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.model.ConversationMember
-import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
@@ -45,7 +43,7 @@ import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
-import com.wire.sdk.utils.MlsTransportLastWelcome
+import com.wire.sdk.utils.MlsTestFixtures
 import com.wire.sdk.utils.MockCoreCryptoClient
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -56,8 +54,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.io.File
 import java.util.Base64
 import java.util.Collections
 import java.util.UUID
@@ -82,7 +81,7 @@ class EventsRouterConcurrencyTest {
         runTest {
             val conversationId = QualifiedId(UUID.randomUUID(), "wire.test")
             val mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
-            val groupInfo = File("src/test/resources/groupInfo.bin").readBytes()
+            val groupInfo = MlsTestFixtures.groupInfoBytes()
             val conversationResponse = ConversationResponse(
                 id = conversationId,
                 teamId = null,
@@ -680,49 +679,19 @@ class EventsRouterConcurrencyTest {
         )
     }
 
-    private suspend fun generateWelcomeMessage(): String {
-        IsolatedKoinContext.start()
-        IsolatedKoinContext.setCryptographyStorageKey(TestUtils.CRYPTOGRAPHY_STORAGE_KEY)
+    private suspend fun generateWelcomeMessage(): String = MlsTestFixtures.generateWelcomeMessage()
 
-        val transport = MlsTransportLastWelcome()
-        val bobClient = MlsCryptoClient.create(
-            appId = UUID.randomUUID(),
-            ciphersuiteCode = 1
-        )
-        val aliceClient = MlsCryptoClient.create(
-            appId = UUID.randomUUID(),
-            ciphersuiteCode = 1
-        )
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun beforeAll() {
+            IsolatedKoinContext.start()
+            IsolatedKoinContext.setCryptographyStorageKey(TestUtils.CRYPTOGRAPHY_STORAGE_KEY)
+        }
 
-        try {
-            bobClient.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.com"),
-                    deviceId = "0001"
-                ),
-                mlsTransport = transport
-            )
-            aliceClient.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.com"),
-                    deviceId = "0002"
-                ),
-                mlsTransport = transport
-            )
-            bobClient.createConversation(
-                mlsGroupId = MockCoreCryptoClient.MLS_GROUP_ID,
-                externalSenders = Base64.getDecoder()
-                    .decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
-            )
-            bobClient.addClientsToMlsConversation(
-                mlsGroupId = MockCoreCryptoClient.MLS_GROUP_ID,
-                keyPackages = aliceClient.mlsGenerateKeyPackages(1u)
-            )
-
-            return Base64.getEncoder().encodeToString(transport.getLastWelcome().serialize())
-        } finally {
-            bobClient.close()
-            aliceClient.close()
+        @JvmStatic
+        @AfterAll
+        fun afterAll() {
             IsolatedKoinContext.stop()
         }
     }

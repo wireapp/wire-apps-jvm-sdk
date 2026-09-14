@@ -23,10 +23,8 @@ import com.wire.sdk.TestUtils.TEST_API_VERSION
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
-import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.ConversationMember
-import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
@@ -41,7 +39,7 @@ import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.model.http.conversation.MemberLeaveEventData
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
-import com.wire.sdk.utils.MlsTransportLastWelcome
+import com.wire.sdk.utils.MlsTestFixtures
 import com.wire.sdk.utils.MockCoreCryptoClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -864,7 +862,7 @@ class WireEventsIntegrationTest {
             runBlocking {
                 IsolatedKoinContext.start()
                 IsolatedKoinContext.setCryptographyStorageKey(TestUtils.CRYPTOGRAPHY_STORAGE_KEY)
-                welcomeMessage = generateWelcomeMessage()
+                welcomeMessage = MlsTestFixtures.generateWelcomeMessage()
 
                 wireMockServer.start()
 
@@ -909,54 +907,11 @@ class WireEventsIntegrationTest {
                             WireMock.aResponse()
                                 .withStatus(200)
                                 .withHeader("Content-Type", "message/mls")
-                                .withBody(ByteArray(128) { 1 })
+                                .withBody(MlsTestFixtures.groupInfoBytes())
                         )
                 )
                 Unit
             }
-
-        private suspend fun generateWelcomeMessage(): String {
-            val transport = MlsTransportLastWelcome()
-            val bobClient = MlsCryptoClient.create(
-                appId = UUID.randomUUID(),
-                ciphersuiteCode = 1
-            )
-            val aliceClient = MlsCryptoClient.create(
-                appId = UUID.randomUUID(),
-                ciphersuiteCode = 1
-            )
-
-            try {
-                bobClient.initializeMlsClient(
-                    cryptoClientId = CryptoClientId.create(
-                        applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.com"),
-                        deviceId = "0001"
-                    ),
-                    mlsTransport = transport
-                )
-                aliceClient.initializeMlsClient(
-                    cryptoClientId = CryptoClientId.create(
-                        applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.com"),
-                        deviceId = "0002"
-                    ),
-                    mlsTransport = transport
-                )
-                bobClient.createConversation(
-                    mlsGroupId = MockCoreCryptoClient.MLS_GROUP_ID,
-                    externalSenders = Base64.getDecoder()
-                        .decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
-                )
-                bobClient.addClientsToMlsConversation(
-                    mlsGroupId = MockCoreCryptoClient.MLS_GROUP_ID,
-                    keyPackages = aliceClient.mlsGenerateKeyPackages(1u)
-                )
-
-                return Base64.getEncoder().encodeToString(transport.getLastWelcome().serialize())
-            } finally {
-                bobClient.close()
-                aliceClient.close()
-            }
-        }
 
         @JvmStatic
         @AfterAll

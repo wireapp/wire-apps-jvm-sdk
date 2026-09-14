@@ -26,10 +26,10 @@ import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationMembers
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.utils.MlsTestFixtures
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -156,7 +156,7 @@ class MlsFallbackStrategyTest {
             )
         private val TEAM_ID = TeamId(UUID.randomUUID())
         private val MLS_GROUP_ID = ConversationId(ByteArray(32) { 1 })
-        private val GROUP_INFO = File("src/test/resources/groupInfo.bin").readBytes()
+        private val GROUP_INFO = MlsTestFixtures.groupInfoBytes()
         private val CONVERSATION_RESPONSE = ConversationResponse(
             id = CONVERSATION_ID,
             teamId = TEAM_ID.value,
