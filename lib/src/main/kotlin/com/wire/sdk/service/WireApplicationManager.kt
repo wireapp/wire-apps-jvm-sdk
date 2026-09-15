@@ -17,6 +17,8 @@ package com.wire.sdk.service
 
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
+import com.wire.sdk.client.CallingApiClient
+import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -64,7 +66,9 @@ class WireApplicationManager internal constructor(
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService,
-    private val appStorage: AppStorage
+    private val appStorage: AppStorage,
+    private val callingApiClient: CallingApiClient,
+    private val subconversationService: SubconversationService
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -205,7 +209,16 @@ class WireApplicationManager internal constructor(
                         mlsGroupId = mlsGroupId,
                         conversationId = preparedMessage.conversationId
                     )
-                    mlsApiClient.sendMessage(mlsMessage = encryptedMessage)
+                    val currentGroupId = conversationService.getConversationById(
+                        preparedMessage.conversationId
+                    ).mlsGroupId
+                    val retriedMessage = cryptoClient.encryptMls(
+                        mlsGroupId = currentGroupId,
+                        message = ProtobufSerializer.toGenericMessageByteArray(preparedMessage)
+                    )
+                    mlsApiClient.sendMessage(mlsMessage = retriedMessage)
+                } else {
+                    throw exception
                 }
             }
         }
@@ -713,4 +726,37 @@ class WireApplicationManager internal constructor(
      * Note: This reads from local storage and does not make any network request.
      */
     fun getDeviceId(): String? = appStorage.getDeviceId()
+
+    /** Fetches calling configuration JSON to supply to the app's calling engine. */
+    @Throws(WireException::class)
+    fun getCallingConfiguration(): String = runBlocking { getCallingConfigurationSuspending() }
+
+    /** See [getCallingConfiguration]. */
+    suspend fun getCallingConfigurationSuspending(): String = callingApiClient.getConfiguration()
+
+    /**
+     * Joins the conversation's conference MLS group, initialized by another client.
+     * Fails if no initialized conference exists. Never creates a conference.
+     * Returns the initial key and members. Later changes arrive through the epoch callback.
+     * The app owns the returned snapshot and should close it after use.
+     */
+    @Throws(WireException::class)
+    fun joinSubconversation(conversationId: QualifiedId): SubconversationEpochInfo =
+        runBlocking { joinSubconversationSuspending(conversationId) }
+
+    /** See [joinSubconversation]. */
+    suspend fun joinSubconversationSuspending(
+        conversationId: QualifiedId
+    ): SubconversationEpochInfo = subconversationService.join(conversationId)
+
+    /**
+     * Requests removal of this device from the conference, preserving the parent conversation.
+     */
+    @Throws(WireException::class)
+    fun leaveSubconversation(conversationId: QualifiedId) =
+        runBlocking { leaveSubconversationSuspending(conversationId) }
+
+    /** See [leaveSubconversation]. */
+    suspend fun leaveSubconversationSuspending(conversationId: QualifiedId) =
+        subconversationService.leave(conversationId)
 }

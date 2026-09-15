@@ -664,6 +664,43 @@ sealed interface WireMessage {
         val isHandUp: Boolean
     ) : WireMessage
 
+    /**
+     * Opaque calling signaling for the app's calling engine. Received sender identities come
+     * from MLS credentials. [conversationId] is the transport conversation; [callConversationId]
+     * identifies the call, including signaling delivered through a self conversation.
+     */
+    @JvmRecord
+    data class Calling(
+        override val id: UUID,
+        override val conversationId: QualifiedId,
+        override val sender: QualifiedId,
+        val content: String,
+        val timestamp: Instant,
+        val senderClientId: String? = null,
+        val callConversationId: QualifiedId = conversationId
+    ) : WireMessage {
+        override fun toString(): String = "Calling(id=$id, conversationId=$conversationId)"
+
+        companion object {
+            /** Creates outgoing signaling. The SDK supplies the authenticated sender. */
+            @JvmStatic
+            @JvmOverloads
+            fun create(
+                conversationId: QualifiedId,
+                content: String,
+                callConversationId: QualifiedId = conversationId
+            ): Calling =
+                Calling(
+                    id = UUID.randomUUID(),
+                    conversationId = conversationId,
+                    sender = QualifiedId(UUID(0, 0), ""),
+                    content = content,
+                    timestamp = Clock.System.now(),
+                    callConversationId = callConversationId
+                )
+        }
+    }
+
     data object Ignored : WireMessage {
         override val id: UUID
             get() = throw WireException.InvalidParameter("Ignored message, no ID")

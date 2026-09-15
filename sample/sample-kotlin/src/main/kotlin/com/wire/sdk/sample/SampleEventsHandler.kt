@@ -17,20 +17,117 @@
 package com.wire.sdk.sample
 
 import com.wire.sdk.WireEventsHandlerSuspending
+import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.AssetResource
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireMessage.Asset.AssetMetadata
 import com.wire.sdk.model.asset.AssetRetention
+import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.service.WireApplicationManager
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
 import java.io.File
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import org.slf4j.LoggerFactory
+import kotlin.time.Duration.Companion.milliseconds
 
 class SampleEventsHandler : WireEventsHandlerSuspending() {
     private val logger = LoggerFactory.getLogger("SampleEventsHandler")
+    private val lastCallSessions = ConcurrentHashMap<QualifiedId, String>()
+
+    override suspend fun onCallingMessageReceived(message: WireMessage.Calling) {
+        logger.info("Received calling message {} for {}", message.id, message.callConversationId)
+        val sessionId = incomingCallSession(message.content) ?: return
+        val conversationId = message.callConversationId
+        if (lastCallSessions.put(conversationId, sessionId) == sessionId) return
+
+        // Keep the callback queue free for epoch updates. SDK shutdown cancels this child too.
+        CoroutineScope(currentCoroutineContext()).launch {
+            testIncomingCall(conversationId, manager)
+        }
+    }
+
+    override suspend fun onSubconversationEpochChanged(info: SubconversationEpochInfo) {
+        info.use {
+            logger.info(
+                "Conference epoch changed: conversation={}, epoch={}, users={}",
+                it.conversationId, it.epoch, it.members.size
+            )
+        }
+    }
+
+    override suspend fun onSubconversationLeft(conversationId: QualifiedId) {
+        logger.info("Left or removed from conference {}", conversationId)
+    }
+
+    override suspend fun onCallingError(conversationId: QualifiedId, error: WireException) {
+        logger.warn("Calling error for {}: {}", conversationId, error.javaClass.simpleName)
+    }
+
+    // A sample-only CONFSTART check, not an AVS signaling implementation.
+    internal fun incomingCallSession(content: String): String? {
+        val payload = runCatching { Json.parseToJsonElement(content) as? JsonObject }.getOrNull()
+            ?: return null
+        if ((payload["type"] as? JsonPrimitive)?.contentOrNull != "CONFSTART") return null
+        if ((payload["resp"] as? JsonPrimitive)?.booleanOrNull != false) return null
+        return (payload["sessid"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+    }
+
+    internal suspend fun testIncomingCall(
+        conversationId: QualifiedId,
+        callManager: WireApplicationManager
+    ) {
+        var joined = false
+        try {
+            callManager.joinSubconversationSuspending(conversationId).use { info ->
+                joined = true
+                logger.info(
+                    "Joined conference: conversation={}, epoch={}, users={}",
+                    conversationId, info.epoch, info.members.size
+                )
+            }
+            val config = callManager.getCallingConfigurationSuspending()
+            logger.info("Fetched calling configuration: {} characters", config.length)
+            logger.info("Waiting five seconds before leaving conference {}", conversationId)
+            delay(CALL_PARTICIPATION_MILLIS.milliseconds)
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: WireException) {
+            onCallingError(conversationId, exception)
+        } finally {
+            if (joined) {
+                // Also leave if configuration fetching fails or the SDK is stopped during the wait.
+                withContext(NonCancellable) {
+                    try {
+                        withTimeout(CALL_LEAVE_TIMEOUT_MILLIS.milliseconds) {
+                            callManager.leaveSubconversationSuspending(conversationId)
+                        }
+                        logger.info("Conference leave completed for {}", conversationId)
+                    } catch (_: TimeoutCancellationException) {
+                        logger.warn("Conference leave timed out for {}", conversationId)
+                    } catch (exception: WireException) {
+                        onCallingError(conversationId, exception)
+                    }
+                }
+            }
+        }
+    }
 
     override suspend fun onTextMessageReceived(wireMessage: WireMessage.Text) {
         logger.info("Received Text Message : $wireMessage")
@@ -189,7 +286,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         val ping = WireMessage.Ping.create(
             conversationId = pingMessage.conversationId
         )
-        delay(10000L)
+        delay(10000L.milliseconds)
         logger.info("Sending back Ping: $pingMessage")
         manager.sendMessageSuspending(message = ping)
     }
@@ -503,7 +600,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
         val messageId = manager.sendMessageSuspending(message = message)
 
-        delay(3000L)
+        delay(3000L.milliseconds)
 
         manager.sendMessageSuspending(
             message = WireMessage.Deleted.create(
@@ -562,6 +659,8 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     }
 
     private companion object {
+        private const val CALL_PARTICIPATION_MILLIS = 5_000L
+        private const val CALL_LEAVE_TIMEOUT_MILLIS = 10_000L
         private const val EPHEMERAL_MSG_EXPIRE_MILLIS = 10_000L
     }
 }

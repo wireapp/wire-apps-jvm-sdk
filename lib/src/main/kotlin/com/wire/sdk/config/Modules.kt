@@ -80,6 +80,8 @@ import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.koin.dsl.onClose
 import org.slf4j.LoggerFactory
+import com.wire.sdk.client.CallingApiClient
+import com.wire.sdk.service.SubconversationService
 import org.zalando.logbook.client.LogbookClient
 import org.zalando.logbook.common.ExperimentalLogbookKtorApi
 
@@ -108,8 +110,12 @@ val sdkModule =
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { EventsRouter(get(), get(), get(), get(), get(), get(), get(), get()) } onClose
+        single { CallingApiClient(get()) }
+        single { SubconversationService(get(), get(), get()) } onClose
             { it?.close() }
+        single {
+            EventsRouter(get(), get(), get(), get(), get(), get(), get(), get(), get())
+        } onClose { it?.close() }
         single<AuthTokenManager> { AuthTokenManager(get()) }
         single<HttpClient> {
             createHttpClient(IsolatedKoinContext.getApiHost(), get())
@@ -140,7 +146,19 @@ val sdkModule =
 
         // Manager
         single {
-            WireApplicationManager(get(), get(), get(), get(), get(), get(), get(), get(), get())
+            WireApplicationManager(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
         }
     }
 
@@ -229,8 +247,7 @@ internal fun createHttpClient(
  *
  * Reads the current `PRAGMA user_version` from the existing database and compares it
  * against the latest schema version. If the database is behind, runs all missing
- * migrations in order via [AppsSdkDatabase.Schema.migrate] and updates `user_version`
- * afterwards.
+ * migrations.
  *
  * This approach handles three cases safely:
  * - Fresh install: runs all .sqm files to create the latest schema from scratch.
@@ -384,7 +401,6 @@ internal suspend fun getOrInitCryptoClient(
         )
 
         mlsApiClient.uploadMlsKeyPackages(
-            cryptoClientId = cryptoClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
         )
 

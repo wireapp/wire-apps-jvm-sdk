@@ -17,7 +17,6 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.exception.WireException
-import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.MlsKeyPackageRequest
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
@@ -62,10 +61,7 @@ internal class MlsApiClient(
         }.body<ClaimedKeyPackageList>()
     }
 
-    suspend fun uploadMlsKeyPackages(
-        cryptoClientId: CryptoClientId,
-        mlsKeyPackages: List<ByteArray>
-    ) {
+    suspend fun uploadMlsKeyPackages(mlsKeyPackages: List<ByteArray>) {
         val mlsKeyPackageRequest =
             MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
         try {
@@ -76,9 +72,9 @@ internal class MlsApiClient(
                 contentType(ContentType.Application.Json)
             }
         } catch (ex: WireException.ClientError) {
-            logger.info("MLS public key already set for user: $cryptoClientId", ex)
+            logger.info("MLS public key already set for user", ex)
         }
-        logger.info("Updated client with mls key packages for client: $cryptoClientId")
+        logger.info("Updated client with mls key packages for client")
     }
 
     suspend fun uploadCommitBundle(commitBundle: ByteArray) {

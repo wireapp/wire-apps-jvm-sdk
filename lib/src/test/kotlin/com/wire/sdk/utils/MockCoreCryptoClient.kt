@@ -26,15 +26,16 @@ import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
 import com.wire.crypto.open
+import com.wire.integrations.protobuf.messages.Messages
+import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
+import com.wire.sdk.crypto.MlsClientIdentity
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
-import com.wire.integrations.protobuf.messages.Messages
-import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.io.File
 import java.util.Base64
 import java.util.UUID
@@ -44,13 +45,12 @@ internal class MockCoreCryptoClient private constructor(
     private var coreCryptoClient: CoreCrypto
 ) : CryptoClient {
     val conversationExist = mutableSetOf<ConversationId>()
-    private var cryptoClientId: CryptoClientId? = null
 
-    fun setCryptoClientId(cryptoClientId: CryptoClientId) {
-        this.cryptoClientId = cryptoClientId
-    }
-
-    override fun getCryptoClientId(): CryptoClientId? = cryptoClientId
+    override suspend fun getConferenceEpochInfo(
+        conversationId: com.wire.sdk.model.QualifiedId,
+        mlsGroupId: ConversationId
+    ): com.wire.sdk.model.calling.SubconversationEpochInfo =
+        error("Conference snapshots must be explicitly stubbed in calling tests")
 
     override suspend fun initializeProteusClient() {
         // Do nothing
@@ -92,7 +92,7 @@ internal class MockCoreCryptoClient private constructor(
     ): DecryptedMlsMessage =
         DecryptedMlsMessage(
             message = GENERIC_TEXT_MESSAGE.toByteArray(),
-            sender = DEFAULT_SENDER
+            sender = MlsClientIdentity(DEFAULT_SENDER, "1")
         )
 
     override suspend fun encryptMls(

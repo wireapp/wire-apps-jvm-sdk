@@ -4,6 +4,7 @@ import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsException
+import com.wire.crypto.toGroupInfo
 import com.wire.sdk.TestUtils
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
@@ -31,6 +32,106 @@ import kotlin.time.Instant
 
 class MlsCryptoClientTest {
     private val testMlsTransport = MlsTransportLastWelcome()
+
+    @Test
+    fun conferenceKeysFollowMembershipAndEpochs() =
+        runBlocking {
+            var latestGroupInfo = byteArrayOf()
+            var latestCommit = byteArrayOf()
+            val transport = object : com.wire.crypto.MlsTransport by testMlsTransport {
+                override suspend fun sendCommitBundle(commitBundle: com.wire.crypto.CommitBundle) {
+                    // The backend strips the MLS version/wire-format header before storing GroupInfo.
+                    latestGroupInfo =
+                        commitBundle.groupInfo.payload.drop(4).toByteArray()
+                    latestCommit = commitBundle.commit.copyOf()
+                }
+            }
+            val alice = QualifiedId(UUID.randomUUID(), "wire.test")
+            val bob = QualifiedId(UUID.randomUUID(), "wire.test")
+            MlsCryptoClient.create(alice.id, 1).use { aliceClient ->
+                MlsCryptoClient.create(bob.id, 1).use { bobClient ->
+                    aliceClient.initializeMlsClient(
+                        CryptoClientId.create(alice, "a11ce"),
+                        transport
+                    )
+                    bobClient.initializeMlsClient(CryptoClientId.create(bob, "b0b"), transport)
+                    val parent = ConversationId(UUID.randomUUID().toString().toByteArray())
+                    val child = ConversationId(UUID.randomUUID().toString().toByteArray())
+                    aliceClient.createConversation(
+                        parent,
+                        Base64.getDecoder().decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
+                    )
+                    // Alice represents the other client that has already initialized the call.
+                    aliceClient.createConversation(
+                        child,
+                        Base64.getDecoder().decode("3AEFMpXsnJ28RcyA7CIRuaDL7L0vGmKaGjD206SANZw=")
+                    )
+                    aliceClient.updateKeyingMaterial(child)
+                    assertTrue(
+                        latestGroupInfo.isNotEmpty(),
+                        "Establishment must upload a group info"
+                    )
+                    assertEquals(1uL, aliceClient.conversationEpoch(child))
+                    bobClient.joinMlsConversationRequest(latestGroupInfo.toGroupInfo())
+                    assertTrue(bobClient.conversationExists(child))
+                    aliceClient.decryptMls(child, Base64.getEncoder().encodeToString(latestCommit))
+
+                    aliceClient.getConferenceEpochInfo(CONVERSATION_ID, child).use { aliceInfo ->
+                        bobClient.getConferenceEpochInfo(CONVERSATION_ID, child).use { bobInfo ->
+                            kotlin.test.assertContentEquals(
+                                aliceInfo.getSharedSecret(),
+                                bobInfo.getSharedSecret()
+                            )
+                            assertEquals(32, aliceInfo.getSharedSecret().size)
+                            assertEquals(
+                                mapOf(alice to listOf("a11ce"), bob to listOf("b0b")),
+                                aliceInfo.members
+                            )
+                            assertEquals(aliceInfo.members, bobInfo.members)
+                            assertEquals(2, aliceInfo.epoch)
+                        }
+                    }
+
+                    // A message can arrive before the commit that creates its epoch.
+                    aliceClient.updateKeyingMaterial(child)
+                    val calling = WireMessage.Calling.create(CONVERSATION_ID, "calling payload")
+                    val ciphertext = aliceClient.encryptMls(
+                        child,
+                        ProtobufSerializer.toGenericMessageByteArray(calling)
+                    )
+                    assertThrows<CoreCryptoException.Mls> {
+                        bobClient.decryptMls(child, Base64.getEncoder().encodeToString(ciphertext))
+                    }.also { assertTrue(it.mlsError is MlsException.BufferedFutureMessage) }
+                    val epochUpdate = bobClient.decryptMls(
+                        child,
+                        Base64.getEncoder().encodeToString(latestCommit)
+                    )
+                    assertTrue(epochUpdate.isActive)
+                    val buffered = epochUpdate.bufferedMessages.single()
+                    assertEquals(MlsClientIdentity(alice, "a11ce"), buffered.sender)
+                    assertEquals(
+                        calling.content,
+                        GenericMessage.parseFrom(buffered.message).calling.content
+                    )
+
+                    aliceClient.removeClientsFromConversation(
+                        child,
+                        listOf(CryptoClientId.create(bob, "b0b"))
+                    )
+                    val removal = bobClient.decryptMls(
+                        child,
+                        Base64.getEncoder().encodeToString(latestCommit)
+                    )
+                    assertFalse(removal.isActive)
+                    assertFalse(bobClient.conversationExists(child))
+                    aliceClient.getConferenceEpochInfo(CONVERSATION_ID, child).use {
+                        assertEquals(mapOf(alice to listOf("a11ce")), it.members)
+                        assertEquals(4, it.epoch)
+                    }
+                    assertTrue(aliceClient.conversationExists(parent))
+                }
+            }
+        }
 
     @Test
     fun whenCryptoStoragePasswordIsSet_thenClientWorks() {
@@ -242,7 +343,10 @@ class MlsCryptoClientTest {
 
             // Bob decrypts the message
             val decrypted = requireNotNull(bobClient.decryptMls(mlsGroupId, encryptedBase64Message))
-            assertEquals(QualifiedId(aliceUserId, "wire.test"), decrypted.sender)
+            assertEquals(
+                MlsClientIdentity(QualifiedId(aliceUserId, "wire.test"), "a11ce"),
+                decrypted.sender
+            )
 
             val genericMessage = GenericMessage.parseFrom(decrypted.message)
             val wireMessage = ProtobufDeserializer.processGenericMessage(
@@ -258,7 +362,7 @@ class MlsCryptoClientTest {
                 timestamp = Instant.DISTANT_PAST
             )
 
-            assertEquals((wireMessage as WireMessage.Text).text, plainMessage)
+            assertEquals(plainMessage, (wireMessage as WireMessage.Text).text)
 
             assertThrows<CoreCryptoException.Mls> {
                 bobClient.decryptMls(mlsGroupId, encryptedBase64Message)

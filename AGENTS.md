@@ -88,6 +88,37 @@ Operational details that matter when modifying these APIs:
 - `WireEventsHandler` consumers typically extend `WireEventsHandlerDefault` or `WireEventsHandlerSuspending` rather than implementing lower-level behavior directly.
 - Event handlers can use their `manager` property to send follow-up actions and responses.
 
+### Calling
+
+- The SDK receives calling signaling and joins conferences initialized by other clients.
+  It applies incoming MLS updates but never creates conferences, renews their epochs, or commits
+  pending proposals. An explicit join still sends the MLS external commit required for membership.
+  The app owns AVS and media.
+- Send opaque signaling with `WireMessage.Calling.create` and the existing manager send methods.
+  Receive it through `onCallingMessageReceived` on either event-handler variant.
+- Decrypted MLS application messages carry an `MlsClientIdentity` sender containing `userId`
+  and `deviceId`. Decode both from CoreCrypto's structured identity, including buffered messages.
+- `WireApplicationManager` exposes calling configuration and conference join/leave.
+  Each operation has blocking and suspending variants. Joining returns the initial epoch snapshot;
+  subsequent snapshots arrive through `onSubconversationEpochChanged`, with no separate getter.
+- Calling uses only the `conference` subconversation. `SubconversationService` caches its group ID
+  in memory and can recover it from backend group metadata plus persisted CoreCrypto state.
+  There is no SQLDelight subconversation table and receiving events never implicitly joins a call.
+- Parent deletion, removal, and reset do not clear conference state. Separate incoming conference
+  removal commits make CoreCrypto delete the group; the SDK then clears its mapping and emits
+  `onSubconversationLeft`. Explicit leave requests also retain the mapping until that commit.
+- `SubconversationService` returns decryption results and epoch snapshots without invoking app
+  handlers. `EventsRouter.processConferenceMessage` delivers conference callbacks after service
+  locks and crypto transactions have ended.
+- Epoch snapshots contain secret key material. Consumers own snapshots and close them after use.
+  Snapshot members are a `Map<QualifiedId, List<String>>` of users to device IDs.
+  Epoch, left, and calling-error callbacks accompany the calling-message callback.
+- The app owns SFT HTTP requests and forwards their responses to AVS. The SDK returns the
+  backend calling configuration unchanged and does not expose an SFT client.
+- See `docs/calling.md` and the Java/Kotlin `CallingExample` classes for app integration.
+- The default Kotlin `SampleEventsHandler` logs calling callbacks and tests incoming `CONFSTART`
+  sessions by joining, fetching config, waiting five seconds, and leaving. It does not run AVS.
+
 ### Internal layering
 
 The `lib` module is structured in clear layers:
