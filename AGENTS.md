@@ -96,6 +96,8 @@ Operational details that matter when modifying these APIs:
   The app owns AVS and media.
 - Send opaque signaling with `WireMessage.Calling.create` and the existing manager send methods.
   Receive it through `onCallingMessageReceived` on either event-handler variant.
+- Decrypted MLS application messages carry an `MlsClientIdentity` sender containing `userId`
+  and `deviceId`. Decode both from CoreCrypto's structured identity, including buffered messages.
 - `WireApplicationManager` exposes calling configuration and conference join/leave.
   Each operation has blocking and suspending variants. Joining returns the initial epoch snapshot;
   subsequent snapshots arrive through `onSubconversationEpochChanged`, with no separate getter.

@@ -16,7 +16,6 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.persistence.AppStorage
 import io.ktor.http.HttpMethod
@@ -93,7 +92,7 @@ class MlsApiClientTest {
         runTest {
             var capturedPath: String? = null
             mlsClient { capturedPath = it.url.encodedPath }
-                .uploadMlsKeyPackages(CRYPTO_CLIENT_ID, listOf(byteArrayOf(0x01)))
+                .uploadMlsKeyPackages(listOf(byteArrayOf(0x01)))
             assertEquals("/mls/key-packages/self/$DEVICE_ID", capturedPath)
         }
 
@@ -102,7 +101,7 @@ class MlsApiClientTest {
         runTest {
             var capturedMethod: HttpMethod? = null
             mlsClient { capturedMethod = it.method }
-                .uploadMlsKeyPackages(CRYPTO_CLIENT_ID, listOf(byteArrayOf(0x01)))
+                .uploadMlsKeyPackages(listOf(byteArrayOf(0x01)))
             assertEquals(HttpMethod.Post, capturedMethod)
         }
 
@@ -148,11 +147,6 @@ class MlsApiClientTest {
         private val USER_ID = QualifiedId(
             id = UUID.randomUUID(),
             domain = "example.com"
-        )
-
-        private val CRYPTO_CLIENT_ID = CryptoClientId.create(
-            applicationQualifiedId = USER_ID,
-            deviceId = DEVICE_ID
         )
 
         private val appStorage = mockk<AppStorage> {

@@ -19,6 +19,8 @@
 package com.wire.sdk.utils
 
 import com.wire.crypto.ClientId
+import com.wire.crypto.use
+import com.wire.sdk.crypto.MlsClientIdentity
 import com.wire.sdk.model.QualifiedId
 import java.util.UUID
 
@@ -38,21 +40,6 @@ private fun String.obfuscateId(lastChar: Int): String =
 internal fun String.toUTF16BEByteArray(): ByteArray = toByteArray(charset = Charsets.UTF_16BE)
 
 internal fun ByteArray.toStringFromUtf16BE(): String = toString(charset = Charsets.UTF_16BE)
-
-/** Parses an MLS credential identity of the form `user UUID:device ID@domain`. */
-internal fun String.parseMlsClientIdentity(): Pair<QualifiedId, String> {
-    val separator = indexOf(':')
-    val domainSeparator = indexOf('@', separator + 1)
-    require(separator > 0 && domainSeparator > separator + 1) {
-        "Invalid MLS client identity"
-    }
-    require(domainSeparator < lastIndex) { "Missing MLS client domain" }
-    val userId = QualifiedId(
-        UUID.fromString(substring(0, separator)),
-        substring(domainSeparator + 1)
-    )
-    return userId to substring(separator + 1, domainSeparator)
-}
 
 /**
  * Converts a Long into a Byte Array Big Endian.
@@ -78,16 +65,11 @@ internal fun ByteArray.toInternalHexString(): String {
     }
 }
 
-/**
- * CoreCrypto
- */
-
-internal fun ClientId.toQualifiedId(): QualifiedId {
-    val deserializedClientId = this.deserialize()
-    val javaId = UUID.fromString(deserializedClientId.userId.toString())
-
-    return QualifiedId(
-        id = javaId,
-        domain = deserializedClientId.domain
-    )
-}
+/** Decodes the user and device components of CoreCrypto's structured client identity. */
+internal fun ClientId.toMlsClientIdentity(): MlsClientIdentity =
+    deserialize().use { client ->
+        MlsClientIdentity(
+            userId = QualifiedId(UUID.fromString(client.userId.toString()), client.domain),
+            deviceId = client.deviceId.toU64().toString(radix = 16)
+        )
+    }

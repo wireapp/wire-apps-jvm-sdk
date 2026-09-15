@@ -23,6 +23,7 @@ import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.CallingApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
+import com.wire.sdk.crypto.MlsClientIdentity
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.QualifiedId
@@ -141,7 +142,7 @@ class CallingEventsTest {
                 val outgoing = WireMessage.Calling.create(id, content)
                 coEvery { crypto.decryptMls(group, "encrypted") } returns DecryptedMlsMessage(
                     ProtobufSerializer.toGenericMessageByteArray(outgoing),
-                    "${sender.id}:device-123@${sender.domain}"
+                    sender = MlsClientIdentity(sender, "device-123")
                 )
                 SubconversationService(
                     mockk(),
@@ -217,7 +218,7 @@ class CallingEventsTest {
                         bufferedMessages = listOf(
                             DecryptedMlsMessage(
                                 ProtobufSerializer.toGenericMessageByteArray(message),
-                                "${sender.id}:device@${sender.domain}"
+                                sender = MlsClientIdentity(sender, "device")
                             )
                         )
                     )

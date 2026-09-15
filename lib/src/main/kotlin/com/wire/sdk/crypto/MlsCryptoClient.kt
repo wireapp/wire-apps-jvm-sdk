@@ -1,9 +1,11 @@
 package com.wire.sdk.crypto
 
+import com.wire.crypto.BufferedDecryptedMessage
 import com.wire.crypto.CipherSuite
 import com.wire.crypto.ClientId
 import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCrypto
+import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.Credential
 import com.wire.crypto.CredentialRef
 import com.wire.crypto.Database
@@ -14,6 +16,7 @@ import com.wire.crypto.ExternalSender
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.KeyPackage
 import com.wire.crypto.MlsTransport
+import com.wire.crypto.MlsException
 import com.wire.crypto.Uuid
 import com.wire.crypto.Welcome
 import com.wire.crypto.open
@@ -27,8 +30,7 @@ import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.utils.obfuscateId
-import com.wire.sdk.utils.parseMlsClientIdentity
-import com.wire.sdk.utils.toQualifiedId
+import com.wire.sdk.utils.toMlsClientIdentity
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -45,19 +47,12 @@ internal class MlsCryptoClient private constructor(
     private var coreCryptoClient: CoreCrypto
 ) : CryptoClient {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private var cryptoClientId: CryptoClientId? = null
     private var credential: CredentialRef? = null
-
-    private fun setCryptoClientId(cryptoClientId: CryptoClientId) {
-        this@MlsCryptoClient.cryptoClientId = cryptoClientId
-    }
 
     private fun credentialOrThrow(): CredentialRef =
         credential ?: throw WireException.CryptographicSystemError(
             "MLS client has not been initialized."
         )
-
-    override fun getCryptoClientId(): CryptoClientId? = cryptoClientId
 
     override suspend fun encryptMls(
         mlsGroupId: ConversationId,
@@ -76,38 +71,56 @@ internal class MlsCryptoClient private constructor(
     override suspend fun decryptMls(
         mlsGroupId: ConversationId,
         encryptedMessage: String
-    ): DecryptedMlsMessage? {
+    ): DecryptedMlsMessage {
         val encryptedMessageBytes: ByteArray = Base64.decode(encryptedMessage)
         val decryptedMessage =
+            // Wrapping the exception in Result and then rethrowing seems pointless, but
+            // if we throw directly, the failing transaction will remove the buffered messages.
+            // Instead, we throw the error here, but core-crypto still keeps the buffered messages.
             coreCryptoClient.transaction {
-                it.decryptMessage(
-                    conversationId = mlsGroupId,
-                    payload = encryptedMessageBytes
-                )
-            }
-        return decryptedMessage.use { dm ->
-            DecryptedMlsMessage(
-                message = dm.message,
-                senderClientId = dm.senderClientId
-                    ?.copyBytes()
-                    ?.toString(Charsets.UTF_8),
-                isActive = dm.isActive,
-                bufferedMessages = dm.bufferedMessages.orEmpty().map { buffered ->
-                    DecryptedMlsMessage(
-                        message = buffered.message,
-                        senderClientId = dm.senderClientId.toQualifiedId(),
-                        isActive = buffered.isActive
+                try {
+                    Result.success(
+                        it.decryptMessage(
+                            conversationId = mlsGroupId,
+                            payload = encryptedMessageBytes
+                        )
                     )
+                } catch (exception: CoreCryptoException.Mls) {
+                    when (exception.mlsError) {
+                        // Throwing here would roll back the message CoreCrypto just buffered.
+                        is MlsException.BufferedFutureMessage,
+                        is MlsException.BufferedCommit -> Result.failure(exception)
+                        else -> throw exception
+                    }
                 }
-            )
-
-            is DecryptedMessage.Commit,
-            is DecryptedMessage.Proposal -> {
-                logger.debug(
-                    "Decryption successful but no application message. decryptedMessageType: {}",
-                    decryptedMessage::class.simpleName
+            }.getOrThrow()
+        return decryptedMessage.use { dm ->
+            when (dm) {
+                is DecryptedMessage.Text -> DecryptedMlsMessage(
+                    message = dm.plaintext,
+                    sender = dm.senderClientId.toMlsClientIdentity()
                 )
-                null
+                is DecryptedMessage.Commit -> DecryptedMlsMessage(
+                    message = null,
+                    sender = null,
+                    isActive = dm.isActive,
+                    bufferedMessages = dm.bufferedMessages.orEmpty().map { buffered ->
+                        when (buffered) {
+                            is BufferedDecryptedMessage.Text ->
+                                DecryptedMlsMessage(
+                                    message = buffered.plaintext,
+                                    sender = buffered.senderClientId.toMlsClientIdentity()
+                                )
+                            is BufferedDecryptedMessage.Commit -> DecryptedMlsMessage(
+                                message = null,
+                                sender = null,
+                                isActive = buffered.isActive
+                            )
+                            is BufferedDecryptedMessage.Proposal -> DecryptedMlsMessage(null, null)
+                        }
+                    }
+                )
+                is DecryptedMessage.Proposal -> DecryptedMlsMessage(null, null)
             }
         }
     }
@@ -170,8 +183,6 @@ internal class MlsCryptoClient private constructor(
                 this.credential = credentials[0]
             }
         }
-
-        setCryptoClientId(cryptoClientId = cryptoClientId)
     }
 
     override suspend fun mlsGetPublicKey(): MlsPublicKeys {
@@ -332,8 +343,8 @@ internal class MlsCryptoClient private constructor(
             val epoch = context.conversationEpoch(mlsGroupId)
             check(epoch <= Long.MAX_VALUE.toULong()) { "MLS epoch exceeds supported range" }
             val members = context.getClientIds(mlsGroupId).map { client ->
-                client.use { it.copyBytes().decodeToString().parseMlsClientIdentity() }
-            }.groupBy({ it.first }, { it.second })
+                client.use { it.toMlsClientIdentity() }
+            }.groupBy({ it.userId }, { it.deviceId })
             context.exportSecretKey(mlsGroupId, CALLING_SECRET_LENGTH).use { key ->
                 val bytes = key.copyBytes()
                 try {
@@ -376,7 +387,7 @@ internal class MlsCryptoClient private constructor(
          */
         fun deleteClientStorage(appId: UUID): Boolean {
             val directory = clientStorageDirectory(appId)
-            return if (directory.exists()) directory.deleteRecursively() else true
+            return !directory.exists() || directory.deleteRecursively()
         }
 
         suspend fun create(

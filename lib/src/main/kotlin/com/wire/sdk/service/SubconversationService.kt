@@ -112,7 +112,7 @@ internal class SubconversationService(
                 ?: restore(conversationId, api.getConference(conversationId))
                 ?: return@catch null
             val decrypted = try {
-                crypto.decryptMls(conference.groupId, data)
+                crypto.decryptMls(conference.groupId, data) ?: return@catch null
             } catch (exception: CoreCryptoException.Mls) {
                 if (exception.mlsError.isConsumed()) return@catch null
                 throw exception

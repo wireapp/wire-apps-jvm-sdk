@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,10 +16,10 @@
 
 package com.wire.sdk.crypto
 
-internal data class DecryptedMlsMessage(
-    val message: ByteArray?,
-    // Commits and proposals have no application-message sender.
-    val sender: MlsClientIdentity?,
-    val isActive: Boolean = true,
-    val bufferedMessages: List<DecryptedMlsMessage> = emptyList()
+import com.wire.sdk.model.QualifiedId
+
+/** Identifies a user's device in an MLS group. */
+internal data class MlsClientIdentity(
+    val userId: QualifiedId,
+    val deviceId: String
 )

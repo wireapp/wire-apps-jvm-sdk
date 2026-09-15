@@ -28,6 +28,7 @@ import com.wire.sdk.model.StandardError
 import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.http.conversation.SubconversationResponse
 import com.wire.sdk.persistence.AppStorage
+import com.wire.sdk.utils.MlsTestFixtures
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -70,7 +71,7 @@ class SubconversationServiceTest {
 
         init {
             coEvery { api.getConference(id) } answers { remote }
-            coEvery { api.getGroupInfo(id) } returns byteArrayOf(5)
+            coEvery { api.getGroupInfo(id) } returns MlsTestFixtures.groupInfoBytes()
             coEvery { api.leaveConference(id) } answers {
                 remote = remote.copy(members = emptyList())
             }
@@ -90,7 +91,6 @@ class SubconversationServiceTest {
             coEvery { crypto.joinMlsConversationRequest(any()) } answers {
                 exists = true
                 epoch = remote.epoch.toLong() + 1
-                group
             }
         }
 

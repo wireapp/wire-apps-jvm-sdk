@@ -401,7 +401,6 @@ internal suspend fun getOrInitCryptoClient(
         )
 
         mlsApiClient.uploadMlsKeyPackages(
-            cryptoClientId = cryptoClientId,
             mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
         )
 

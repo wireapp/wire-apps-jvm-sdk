@@ -16,43 +16,43 @@
 
 package com.wire.sdk.utils
 
-import com.wire.sdk.model.CryptoClientId
+import com.wire.crypto.ClientId
+import com.wire.crypto.DeviceId
+import com.wire.crypto.Uuid
+import com.wire.sdk.crypto.MlsClientIdentity
 import com.wire.sdk.model.QualifiedId
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import org.junit.jupiter.api.Test
 
 class MlsClientIdentityTest {
     private val user = QualifiedId(UUID.randomUUID(), "wire.test")
 
     @Test
-    fun `parses the identity produced by CryptoClientId`() {
-        val identity = CryptoClientId.create(user, "device-123").value
-        assertEquals(user to "device-123", identity.parseMlsClientIdentity())
+    fun `decodes the user and device from a structured client identity`() {
+        assertEquals(MlsClientIdentity(user, "a11ce"), identity("a11ce"))
     }
 
     @Test
     fun `preserves different devices for the same user`() {
-        val identities = listOf("device-1", "device-2").map {
-            CryptoClientId.create(user, it).value.parseMlsClientIdentity()
-        }
-        assertEquals(listOf(user to "device-1", user to "device-2"), identities)
+        val identities = listOf("a11ce", "b0b").map { identity(it) }
+        assertEquals(
+            listOf(MlsClientIdentity(user, "a11ce"), MlsClientIdentity(user, "b0b")),
+            identities
+        )
     }
 
     @Test
-    fun `rejects missing user device or domain and invalid user IDs`() {
-        val invalidIdentities = listOf(
-            "",
-            ":device@wire.test",
-            "${user.id}@wire.test",
-            "${user.id}:@wire.test",
-            "${user.id}:device",
-            "${user.id}:device@",
-            "invalid-user:device@wire.test"
-        )
-        invalidIdentities.forEach {
-            assertFailsWith<IllegalArgumentException> { it.parseMlsClientIdentity() }
-        }
+    fun `device IDs use unsigned lowercase hex without padding`() {
+        assertEquals(MlsClientIdentity(user, "0"), identity("0"))
+        assertEquals(MlsClientIdentity(user, "a11ce"), identity("00000000000A11CE"))
+        assertEquals(MlsClientIdentity(user, "ffffffffffffffff"), identity("ffffffffffffffff"))
     }
+
+    private fun identity(device: String): MlsClientIdentity =
+        Uuid(user.id.toString()).use { userId ->
+            DeviceId.fromHexString(device).use { deviceId ->
+                ClientId(userId, deviceId, user.domain).use { it.toMlsClientIdentity() }
+            }
+        }
 }

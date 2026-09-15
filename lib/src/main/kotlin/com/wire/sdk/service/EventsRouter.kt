@@ -16,7 +16,6 @@
 
 package com.wire.sdk.service
 
-import com.wire.sdk.utils.parseMlsClientIdentity
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MlsException
 import com.wire.crypto.Welcome
@@ -27,6 +26,7 @@ import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
+import com.wire.sdk.crypto.MlsClientIdentity
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
@@ -247,7 +247,7 @@ internal class EventsRouter internal constructor(
                     )
 
                     logger.debug("Decryption successful")
-                    forwardDecryptedMessages(message, event)
+                    message?.let { forwardDecryptedMessages(it, event) }
                 } catch (exception: MlsException) {
                     logger.warn("Message decryption failed, exception: ", exception)
                     mlsFallbackStrategy.verifyConversationOutOfSync(
@@ -321,15 +321,14 @@ internal class EventsRouter internal constructor(
     private fun forwardMessage(
         message: ByteArray,
         conversationId: QualifiedId,
-        sender: QualifiedId,
-        timestamp: Instant,
-        senderClientId: String
+        sender: MlsClientIdentity,
+        timestamp: Instant
     ) {
         val genericMessage = GenericMessage.parseFrom(message)
         val wireMessage = ProtobufDeserializer.processGenericMessage(
             genericMessage = genericMessage,
             conversationId = conversationId,
-            sender = sender,
+            sender = sender.userId,
             timestamp = timestamp
         )
 
@@ -354,7 +353,7 @@ internal class EventsRouter internal constructor(
                         wireMessage
                     )
                     is WireMessage.Calling -> wireEventsHandler.onCallingMessageReceived(
-                        wireMessage.copy(senderClientId = senderClientId)
+                        wireMessage.copy(senderClientId = sender.deviceId)
                     )
                     is WireMessage.Ignored -> logger.debug("Ignored event received.")
                     is WireMessage.Unknown -> logger.debug("Unknown event received.")
@@ -383,7 +382,7 @@ internal class EventsRouter internal constructor(
                         wireMessage
                     )
                     is WireMessage.Calling -> wireEventsHandler.onCallingMessageReceived(
-                        wireMessage.copy(senderClientId = senderClientId)
+                        wireMessage.copy(senderClientId = sender.deviceId)
                     )
                     is WireMessage.Ignored -> logger.debug("Ignored event received.")
                     is WireMessage.Unknown -> logger.debug("Unknown event received.")
@@ -478,23 +477,25 @@ internal class EventsRouter internal constructor(
         forwardDecryptedMessages(result.message, event)
     }
 
+    /**
+     * Forward the message (and any buffered messages) to the appropriate handler.
+     * If the decrypted message is a commit or a proposal, it will be ignored.
+     */
     private fun forwardDecryptedMessages(
         message: DecryptedMlsMessage,
         event: EventContentDTO.Conversation.NewMLSMessageDTO
     ) {
         (listOf(message) + message.bufferedMessages).forEach { decrypted ->
             val payload = decrypted.message ?: return@forEach
-            val identity = decrypted.senderClientId ?: return@forEach
-            val (sender, clientId) = identity.parseMlsClientIdentity()
-            if (sender != event.qualifiedFrom) {
+            val sender = decrypted.sender ?: return@forEach
+            if (sender.userId != event.qualifiedFrom) {
                 logger.error("MLS sender differs from the event envelope sender")
             }
             forwardMessage(
                 message = payload,
                 conversationId = event.qualifiedConversation,
                 sender = sender,
-                timestamp = event.time,
-                senderClientId = clientId
+                timestamp = event.time
             )
         }
     }
@@ -514,13 +515,9 @@ internal class EventsRouter internal constructor(
         )
 
         if (cryptoClient.hasTooFewKeyPackageCount()) {
-            cryptoClient.getCryptoClientId()?.let { cryptoClientId ->
-                mlsApiClient.uploadMlsKeyPackages(
-                    cryptoClientId = cryptoClientId,
-                    mlsKeyPackages =
-                        cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
-                )
-            }
+            mlsApiClient.uploadMlsKeyPackages(
+                cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
+            )
         }
 
         val conversationModel = Conversation.fromEntity(conversationEntity)
