@@ -150,7 +150,10 @@ class MlsApiClientTest {
             domain = "example.com"
         )
 
-        private val CRYPTO_CLIENT_ID = CryptoClientId("client-id-123")
+        private val CRYPTO_CLIENT_ID = CryptoClientId.create(
+            applicationQualifiedId = USER_ID,
+            deviceId = DEVICE_ID
+        )
 
         private val appStorage = mockk<AppStorage> {
             every { getDeviceId() } returns DEVICE_ID

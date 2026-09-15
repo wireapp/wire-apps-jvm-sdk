@@ -17,11 +17,10 @@
 package com.wire.sdk.utils
 
 import com.wire.crypto.MlsTransport
-import com.wire.crypto.Welcome
 import com.wire.crypto.CommitBundle
 import com.wire.crypto.HistorySecret
 import com.wire.crypto.MlsTransportData
-import com.wire.crypto.MlsTransportResponse
+import com.wire.crypto.Welcome
 
 /**
  * A simple implementation of [MlsTransport] that stores the last welcome message,
@@ -29,20 +28,20 @@ import com.wire.crypto.MlsTransportResponse
  */
 class MlsTransportLastWelcome : MlsTransport {
     private var groupWelcomeMap: Welcome? = null
+    private var lastCommitBundle: CommitBundle? = null
 
-    override suspend fun sendCommitBundle(commitBundle: CommitBundle): MlsTransportResponse {
+    override suspend fun sendCommitBundle(commitBundle: CommitBundle) {
+        lastCommitBundle = commitBundle
         commitBundle.welcome?.let {
             groupWelcomeMap = it
         }
-
-        return MlsTransportResponse.Success
     }
-
-    override suspend fun sendMessage(mlsMessage: ByteArray): MlsTransportResponse =
-        MlsTransportResponse.Success
 
     fun getLastWelcome(): Welcome =
         groupWelcomeMap ?: throw IllegalArgumentException("No welcome for group")
+
+    fun getLastCommitBundle(): CommitBundle =
+        lastCommitBundle ?: throw IllegalArgumentException("No commit bundle")
 
     override suspend fun prepareForTransport(historySecret: HistorySecret): MlsTransportData {
         TODO("Not yet implemented")

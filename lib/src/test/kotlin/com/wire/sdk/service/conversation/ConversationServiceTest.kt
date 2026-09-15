@@ -25,7 +25,9 @@ import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.client.OneToOneConversationsApiClient
 import com.wire.sdk.client.TeamsApiClient
 import com.wire.sdk.client.UsersApiClient
+import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
+import com.wire.sdk.crypto.MlsCryptoClient
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
@@ -50,13 +52,15 @@ import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
+import com.wire.sdk.utils.MlsTestFixtures
+import com.wire.sdk.utils.MlsTransportLastWelcome
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import java.util.UUID
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -210,14 +214,14 @@ class ConversationServiceTest {
 
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)
-                } returns CONVERSATION_MLS_GROUP_ID.copyBytes()
+                } returns GROUP_INFO
             }
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery { conversationExists(CONVERSATION_MLS_GROUP_ID) } returns false
                 coEvery {
                     joinMlsConversationRequest(any())
-                } returns CONVERSATION_MLS_GROUP_ID
+                } returns Unit
             }
             val conversationStorage = mockk<ConversationStorage> {
                 every { save(any()) } returns Unit
@@ -933,15 +937,8 @@ class ConversationServiceTest {
                 type = ConversationEntity.Type.GROUP
             )
 
-            val keyPackage1 = KeyPackage(
-                clientID = UUID.randomUUID().toString(),
-                domain = BACKEND_DOMAIN,
-                keyPackage = Base64.encode(UUID.randomUUID().toString().toByteArray()),
-                keyPackageRef = UUID.randomUUID().toString(),
-                userId = successMember.id.toString()
-            )
             val claimResult = ClaimedKeyPackageList(
-                keyPackages = listOf(keyPackage1)
+                keyPackages = listOf(createDummyKeyPackage(successMember))
             )
 
             val conversationStorage = mockk<ConversationStorage> {
@@ -1261,7 +1258,15 @@ class ConversationServiceTest {
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
-                    removeClientsFromConversation(CONVERSATION_MLS_GROUP_ID, any())
+                    removeClientsFromConversation(
+                        CONVERSATION_MLS_GROUP_ID,
+                        listOf(
+                            CryptoClientId.create(
+                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                                deviceId = client1.id
+                            )
+                        )
+                    )
                 } throws MlsException.Other("Failed to remove members")
             }
 
@@ -1287,12 +1292,12 @@ class ConversationServiceTest {
             coVerify(exactly = 1) {
                 cryptoClient.removeClientsFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
-                    clientIds = listOf(client1).map { client ->
+                    clientIds = listOf(
                         CryptoClientId.create(
                             applicationQualifiedId = CONVERSATION_MEMBER_1,
-                            deviceId = client.id
+                            deviceId = client1.id
                         )
-                    }
+                    )
                 )
             }
             verify(exactly = 0) {
@@ -1337,12 +1342,24 @@ class ConversationServiceTest {
                 } returns listOf(client1, client2, client3)
             }
 
-            val capturedClients = slot<List<CryptoClientId>>()
             val cryptoClient = mockk<CryptoClient> {
                 coEvery {
                     removeClientsFromConversation(
                         mlsGroupId = CONVERSATION_MLS_GROUP_ID,
-                        clientIds = capture(lst = capturedClients)
+                        clientIds = listOf(
+                            CryptoClientId.create(
+                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                                deviceId = client1.id
+                            ),
+                            CryptoClientId.create(
+                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                                deviceId = client2.id
+                            ),
+                            CryptoClientId.create(
+                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                                deviceId = client3.id
+                            )
+                        )
                     )
                 } returns Unit
             }
@@ -1361,18 +1378,24 @@ class ConversationServiceTest {
 
             service.removeMembersFromConversation(CONVERSATION_ID, membersToRemove)
 
-            assertEquals(3, capturedClients.captured.size)
-
             coVerify(exactly = 1) {
                 usersApiClient.getClientsByUserId(CONVERSATION_MEMBER_1)
                 cryptoClient.removeClientsFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
-                    clientIds = listOf(client1, client2, client3).map { client ->
+                    clientIds = listOf(
                         CryptoClientId.create(
                             applicationQualifiedId = CONVERSATION_MEMBER_1,
-                            deviceId = client.id
+                            deviceId = client1.id
+                        ),
+                        CryptoClientId.create(
+                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            deviceId = client2.id
+                        ),
+                        CryptoClientId.create(
+                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            deviceId = client3.id
                         )
-                    }
+                    )
                 )
             }
             verify(exactly = 1) {
@@ -1602,12 +1625,12 @@ class ConversationServiceTest {
 
                 coEvery {
                     getConversationGroupInfo(conversationId = CONVERSATION_ID)
-                } returns CONVERSATION_MLS_GROUP_ID.copyBytes()
+                } returns GROUP_INFO
             }
 
             val cryptoClient = mockk<CryptoClient> {
                 coEvery { conversationExists(CONVERSATION_MLS_GROUP_ID) } returns false
-                coEvery { joinMlsConversationRequest(any()) } returns CONVERSATION_MLS_GROUP_ID
+                coEvery { joinMlsConversationRequest(any()) } returns Unit
             }
             val conversationStorage = mockk<ConversationStorage> {
                 every { save(any()) } returns Unit
@@ -1896,6 +1919,8 @@ class ConversationServiceTest {
         val APP_QUALIFIED_ID = QualifiedId(APP_USER_ID, BACKEND_DOMAIN)
         val CONVERSATION_MEMBER_1 = QualifiedId(UUID.randomUUID(), BACKEND_DOMAIN)
         val CONVERSATION_MEMBER_2 = QualifiedId(UUID.randomUUID(), BACKEND_DOMAIN)
+        private val GROUP_INFO = MlsTestFixtures.groupInfoBytes()
+        private lateinit var serializedKeyPackage: ByteArray
 
         fun appStorageWithApplicationData(): AppStorage =
             mockk {
@@ -1907,13 +1932,40 @@ class ConversationServiceTest {
             KeyPackage(
                 clientID = UUID.randomUUID().toString(),
                 domain = BACKEND_DOMAIN,
-                keyPackage = Base64.encode(UUID.randomUUID().toString().toByteArray()),
+                keyPackage = Base64.encode(serializedKeyPackage),
                 keyPackageRef = UUID.randomUUID().toString(),
                 userId = userId.id.toString()
             )
 
         @JvmStatic
         @BeforeAll
-        fun setUp() = Unit
+        fun setUp() =
+            runBlocking {
+                IsolatedKoinContext.start()
+                try {
+                    IsolatedKoinContext.setCryptographyStorageKey(
+                        TestUtils.CRYPTOGRAPHY_STORAGE_KEY
+                    )
+                    MlsCryptoClient.create(
+                        appId = UUID.randomUUID(),
+                        ciphersuiteCode = 1
+                    ).use { cryptoClient ->
+                        cryptoClient.initializeMlsClient(
+                            cryptoClientId = CryptoClientId.create(
+                                applicationQualifiedId = QualifiedId(
+                                    UUID.randomUUID(),
+                                    BACKEND_DOMAIN
+                                ),
+                                deviceId = "0001"
+                            ),
+                            mlsTransport = MlsTransportLastWelcome()
+                        )
+                        serializedKeyPackage =
+                            cryptoClient.mlsGenerateKeyPackages(1u).single().serialize()
+                    }
+                } finally {
+                    IsolatedKoinContext.stop()
+                }
+            }
     }
 }
