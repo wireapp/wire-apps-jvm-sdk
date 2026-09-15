@@ -20,70 +20,49 @@ import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
-import com.wire.sdk.WireEventsHandler
-import com.wire.sdk.WireEventsHandlerDefault
-import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.CallingApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.QualifiedId
-import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.http.conversation.SubconversationResponse
 import com.wire.sdk.persistence.AppStorage
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.encoding.Base64
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.onFailure
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import org.slf4j.LoggerFactory
 
 /**
  * Joins the single "conference" child group and applies incoming MLS updates.
  * Other clients initialize conferences and commit proposals. CoreCrypto persists MLS state;
- * the backend supplies the group ID and membership when this process has no cached mapping.
+ * the backend supplies the group ID when this process has no cached mapping.
  */
 @Suppress("TooManyFunctions")
 internal class SubconversationService(
     private val api: CallingApiClient,
     private val crypto: CryptoClient,
-    private val appStorage: AppStorage,
-    private val handler: WireEventsHandler,
-    dispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val appStorage: AppStorage
 ) : AutoCloseable {
+    /** The caller owns [epochInfo] and must deliver it to the app or close it. */
+    data class DecryptionResult(
+        val message: DecryptedMlsMessage,
+        val epochInfo: SubconversationEpochInfo? = null,
+        val hasLeft: Boolean = false
+    )
+
     private class Conference(val groupId: ConversationId) {
         var lastEpoch: Long? = null
     }
 
-    private class Callback(
-        val discard: () -> Unit,
-        val action: suspend () -> Unit
-    )
-
-    private val logger = LoggerFactory.getLogger(this::class.java)
-    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val conferences = ConcurrentHashMap<QualifiedId, Conference>()
-    private val locks = ConcurrentHashMap<QualifiedId, Mutex>()
-    private val callbacks = ConcurrentHashMap<QualifiedId, Channel<Callback>>()
 
     suspend fun join(conversationId: QualifiedId): SubconversationEpochInfo =
-        operation {
-            lock(conversationId).withLock {
-                val remote = api.getConference(conversationId)
-                joinRemote(conversationId, remote)
-                val conference = conferences.getValue(conversationId)
-                snapshot(conversationId, conference).also { conference.lastEpoch = it.epoch }
+        catch {
+            val remote = api.getConference(conversationId)
+            joinRemote(conversationId, remote)
+            val conference = conferences.getValue(conversationId)
+            getSubconversationEpoch(conversationId, conference).also {
+                conference.lastEpoch = it.epoch
             }
         }
 
@@ -108,161 +87,79 @@ internal class SubconversationService(
         val previous = conferences[id]
         if (previous?.groupId != groupId) {
             conferences[id] = Conference(groupId)
-            if (previous != null && crypto.conversationExists(previous.groupId)) {
-                crypto.wipeConversation(previous.groupId)
-            }
         }
     }
 
     suspend fun leave(conversationId: QualifiedId) =
-        operation {
-            lock(conversationId).withLock {
-                val conference = conferences[conversationId] ?: restore(conversationId)
-                // Check remote membership so repeat leaves and restart recovery are safe.
-                if (api.getConference(conversationId).hasSelf()) api.leaveConference(conversationId)
-                if (conference != null) forget(conversationId, conference)
-            }
+        catch {
+            val remote = api.getConference(conversationId)
+            if (conferences[conversationId] == null) restore(conversationId, remote)
+            // Check remote membership so repeat leaves and restart recovery are safe.
+            if (remote.hasSelf()) api.leaveConference(conversationId)
+            // Keep the mapping until CoreCrypto applies the conference removal commit.
         }
 
-    /** Unknown/non-member conferences are consumed without implicitly joining the call. */
+    /**
+     * Get subconversation conference either from cache or the backend, and decrypt the message.
+     * If the conference is not found, return null.
+     */
     suspend fun decrypt(
         conversationId: QualifiedId,
         data: String
-    ): DecryptedMlsMessage? =
-        operation {
-            lock(conversationId).withLock {
-                val conference = conferences[conversationId] ?: restore(conversationId)
-                    ?: return@withLock null
-                val decrypted = try {
-                    crypto.decryptMls(conference.groupId, data)
-                } catch (exception: CoreCryptoException.Mls) {
-                    if (exception.mlsError.isConsumed()) return@withLock null
-                    reconcile(conversationId, conference)
-                    throw exception
-                } catch (exception: MlsException) {
-                    if (exception.isConsumed()) return@withLock null
-                    reconcile(conversationId, conference)
-                    throw exception
-                }
-                val messages = listOf(decrypted) + decrypted.bufferedMessages
-                if (messages.any { !it.isActive }) {
-                    forget(conversationId, conference)
-                } else {
-                    publishEpoch(conversationId, conference)
-                }
-                decrypted
+    ): DecryptionResult? =
+        catch {
+            val conference = conferences[conversationId]
+                ?: restore(conversationId, api.getConference(conversationId))
+                ?: return@catch null
+            val decrypted = try {
+                crypto.decryptMls(conference.groupId, data)
+            } catch (exception: CoreCryptoException.Mls) {
+                if (exception.mlsError.isConsumed()) return@catch null
+                throw exception
+            } catch (exception: MlsException) {
+                if (exception.isConsumed()) return@catch null
+                throw exception
+            }
+            val messages = listOf(decrypted) + decrypted.bufferedMessages
+            if (messages.any { !it.isActive }) {
+                // CoreCrypto already deleted the group while applying the removal commit.
+                val removed = conferences.remove(conversationId, conference)
+                DecryptionResult(decrypted, hasLeft = removed)
+            } else {
+                DecryptionResult(decrypted, getEpochUpdate(conversationId, conference))
             }
         }
 
-    /** Parent deletion, reset or removal also ends the app's conference participation. */
-    suspend fun forgetParent(conversationId: QualifiedId) =
-        operation {
-            lock(conversationId).withLock {
-                conferences[conversationId]?.let { forget(conversationId, it) }
-            }
-        }
-
-    fun forwardCalling(message: WireMessage.Calling) {
-        dispatch(message.conversationId) {
-            when (handler) {
-                is WireEventsHandlerDefault -> handler.onCallingMessageReceived(message)
-                is WireEventsHandlerSuspending -> handler.onCallingMessageReceived(message)
-            }
-        }
-    }
-
-    fun reportError(
-        conversationId: QualifiedId,
-        error: WireException
-    ) {
-        dispatch(conversationId) {
-            when (handler) {
-                is WireEventsHandlerDefault -> handler.onCallingError(conversationId, error)
-                is WireEventsHandlerSuspending -> handler.onCallingError(conversationId, error)
-            }
-        }
-    }
-
-    private suspend fun restore(id: QualifiedId): Conference? {
-        val remote = api.getConference(id)
+    private suspend fun restore(
+        id: QualifiedId,
+        remote: SubconversationResponse
+    ): Conference? {
         val groupId = ConversationId(Base64.decode(remote.groupId))
-        if (remote.epoch == 0uL ||
-            !remote.hasSelf() ||
-            !crypto.conversationExists(groupId)
-        ) {
-            return null
-        }
+        // Backend membership can already exclude us while the removal commit is still pending.
+        if (!crypto.conversationExists(groupId)) return null
         return Conference(groupId).also { conferences[id] = it }
     }
 
     private fun SubconversationResponse.hasSelf(): Boolean =
         members.any { it.matches(appStorage.getApplicationQualifiedId(), appStorage.getDeviceId()) }
 
-    private suspend fun reconcile(
-        id: QualifiedId,
-        conference: Conference
-    ) {
-        val remote = try {
-            api.getConference(id)
-        } catch (exception: WireException.ClientError) {
-            if (exception.response.code != HTTP_NOT_FOUND) throw exception
-            forget(id, conference)
-            return
-        }
-        if (remote.epoch == 0uL ||
-            !remote.hasSelf() ||
-            remote.groupId != Base64.encode(conference.groupId.copyBytes())
-        ) {
-            forget(id, conference)
-        }
-    }
-
-    private suspend fun forget(
-        id: QualifiedId,
-        conference: Conference
-    ) {
-        if (crypto.conversationExists(conference.groupId)) {
-            crypto.wipeConversation(conference.groupId)
-        }
-        conferences.remove(id, conference)
-        dispatch(id) {
-            when (handler) {
-                is WireEventsHandlerDefault -> handler.onSubconversationLeft(id)
-                is WireEventsHandlerSuspending -> handler.onSubconversationLeft(id)
-            }
-        }
-    }
-
-    private suspend fun snapshot(
+    private suspend fun getSubconversationEpoch(
         id: QualifiedId,
         conference: Conference
     ): SubconversationEpochInfo = crypto.getConferenceEpochInfo(id, conference.groupId)
 
-    @Suppress("TooGenericExceptionCaught")
-    private suspend fun publishEpoch(
+    private suspend fun getEpochUpdate(
         id: QualifiedId,
         conference: Conference
-    ) {
-        val info = snapshot(id, conference)
+    ): SubconversationEpochInfo? {
+        val info = getSubconversationEpoch(id, conference)
         if (info.epoch == conference.lastEpoch) {
             info.close()
-            return
+            return null
         }
         conference.lastEpoch = info.epoch
-        dispatch(id, discard = info::close) {
-            try {
-                when (handler) {
-                    is WireEventsHandlerDefault -> handler.onSubconversationEpochChanged(info)
-                    is WireEventsHandlerSuspending -> handler.onSubconversationEpochChanged(info)
-                }
-            } catch (exception: Exception) {
-                info.close()
-                throw exception
-            }
-        }
+        return info
     }
-
-    private fun lock(id: QualifiedId): Mutex = locks.computeIfAbsent(id) { Mutex() }
 
     private fun MlsException.isConsumed(): Boolean =
         this is MlsException.DuplicateMessage ||
@@ -273,36 +170,8 @@ internal class SubconversationService(
             this is MlsException.StaleCommit ||
             this is MlsException.MessageEpochTooOld
 
-    // Enqueue without holding up crypto work. App callbacks can call the manager themselves.
     @Suppress("TooGenericExceptionCaught")
-    private fun dispatch(
-        id: QualifiedId,
-        discard: () -> Unit = {},
-        action: suspend () -> Unit
-    ) {
-        callbacks.computeIfAbsent(id) {
-            Channel<Callback>(
-                Channel.UNLIMITED,
-                onUndeliveredElement = { it.discard() }
-            ).also { channel ->
-                scope.launch {
-                    for (callback in channel) {
-                        try {
-                            callback.action()
-                        } catch (exception: CancellationException) {
-                            currentCoroutineContext().ensureActive()
-                            logger.warn("Calling event handler cancelled for {}", id, exception)
-                        } catch (exception: Exception) {
-                            logger.error("Calling event handler failed for {}", id, exception)
-                        }
-                    }
-                }
-            }
-        }.trySend(Callback(discard, action)).onFailure { discard() }
-    }
-
-    @Suppress("TooGenericExceptionCaught")
-    private suspend fun <T> operation(action: suspend () -> T): T =
+    private suspend fun <T> catch(action: suspend () -> T): T =
         try {
             action()
         } catch (exception: CancellationException) {
@@ -318,14 +187,6 @@ internal class SubconversationService(
         }
 
     override fun close() {
-        scope.cancel()
-        callbacks.values.forEach { it.cancel() }
         conferences.clear()
-        callbacks.clear()
-        locks.clear()
-    }
-
-    private companion object {
-        const val HTTP_NOT_FOUND = 404
     }
 }

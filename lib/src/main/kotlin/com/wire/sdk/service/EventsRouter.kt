@@ -165,7 +165,6 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.DeleteConversation -> {
                 logger.info("Received event: ConversationDeleted, $event")
-                subconversationService.forgetParent(event.qualifiedConversation)
                 conversationService.processDeletedConversation(event.qualifiedConversation)
                 handlerScope.launch {
                     when (wireEventsHandler) {
@@ -204,9 +203,6 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.MemberLeave -> {
                 logger.info("Leaving event from: ${event.qualifiedConversation}")
-                if (getApplicationQualifiedId() in event.data.users) {
-                    subconversationService.forgetParent(event.qualifiedConversation)
-                }
                 conversationService.deleteMembers(
                     conversationId = event.qualifiedConversation,
                     users = event.data.users
@@ -276,7 +272,6 @@ internal class EventsRouter internal constructor(
 
             is EventContentDTO.Conversation.MlsReset -> {
                 logger.info("MLS reset event received for: ${event.qualifiedConversation}")
-                subconversationService.forgetParent(event.qualifiedConversation)
                 conversationService.resetMlsConversation(
                     conversationId = event.qualifiedConversation,
                     newGroupId = event.data.newGroupId
@@ -338,11 +333,6 @@ internal class EventsRouter internal constructor(
             timestamp = timestamp
         )
 
-        if (wireMessage is WireMessage.Calling) {
-            subconversationService.forwardCalling(wireMessage.copy(senderClientId = senderClientId))
-            return
-        }
-
         handlerScope.launch {
             when (wireEventsHandler) {
                 is WireEventsHandlerDefault -> when (wireMessage) {
@@ -363,7 +353,9 @@ internal class EventsRouter internal constructor(
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
                         wireMessage
                     )
-                    is WireMessage.Calling -> Unit // Delivered by the ordered calling dispatcher.
+                    is WireMessage.Calling -> wireEventsHandler.onCallingMessageReceived(
+                        wireMessage.copy(senderClientId = senderClientId)
+                    )
                     is WireMessage.Ignored -> logger.debug("Ignored event received.")
                     is WireMessage.Unknown -> logger.debug("Unknown event received.")
                     is WireMessage.Composite -> logger.debug("Composite event received.")
@@ -390,7 +382,9 @@ internal class EventsRouter internal constructor(
                     is WireMessage.InCallHandRaise -> wireEventsHandler.onInCallHandRaiseReceived(
                         wireMessage
                     )
-                    is WireMessage.Calling -> Unit // Delivered by the ordered calling dispatcher.
+                    is WireMessage.Calling -> wireEventsHandler.onCallingMessageReceived(
+                        wireMessage.copy(senderClientId = senderClientId)
+                    )
                     is WireMessage.Ignored -> logger.debug("Ignored event received.")
                     is WireMessage.Unknown -> logger.debug("Unknown event received.")
                     is WireMessage.Composite -> logger.debug("Composite event received.")
@@ -437,18 +431,51 @@ internal class EventsRouter internal constructor(
         }
     }
 
+    /**
+     * Specifically decrypt and handle audio/video conferences (as MLS subconversations).
+     * Send over the specific clientId as sender, forward epoch updates and subconversation leave.
+     */
     private suspend fun processConferenceMessage(
         event: EventContentDTO.Conversation.NewMLSMessageDTO
     ) {
         if (event.subconversation != "conference") return
-        try {
+        val result = try {
             subconversationService.decrypt(
                 event.qualifiedConversation,
                 event.data
-            )?.let { forwardDecryptedMessages(it, event) }
+            )
         } catch (exception: WireException) {
-            subconversationService.reportError(event.qualifiedConversation, exception)
+            when (wireEventsHandler) {
+                is WireEventsHandlerDefault -> wireEventsHandler.onCallingError(
+                    event.qualifiedConversation,
+                    exception
+                )
+                is WireEventsHandlerSuspending -> wireEventsHandler.onCallingError(
+                    event.qualifiedConversation,
+                    exception
+                )
+            }
+            null
+        } ?: return
+
+        if (result.hasLeft) {
+            when (wireEventsHandler) {
+                is WireEventsHandlerDefault ->
+                    wireEventsHandler.onSubconversationLeft(event.qualifiedConversation)
+                is WireEventsHandlerSuspending ->
+                    wireEventsHandler.onSubconversationLeft(event.qualifiedConversation)
+            }
         }
+        result.epochInfo?.use { info ->
+            when (wireEventsHandler) {
+                is WireEventsHandlerDefault ->
+                    wireEventsHandler.onSubconversationEpochChanged(info)
+                is WireEventsHandlerSuspending ->
+                    wireEventsHandler.onSubconversationEpochChanged(info)
+            }
+        }
+
+        forwardDecryptedMessages(result.message, event)
     }
 
     private fun forwardDecryptedMessages(

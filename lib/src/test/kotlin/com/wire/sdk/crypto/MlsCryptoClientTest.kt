@@ -105,6 +105,7 @@ class MlsCryptoClientTest {
                         Base64.getEncoder().encodeToString(latestCommit)
                     )
                     assertFalse(removal.isActive)
+                    assertFalse(bobClient.conversationExists(child))
                     aliceClient.getConferenceEpochInfo(CONVERSATION_ID, child).use {
                         assertEquals(mapOf(alice to listOf("alice")), it.members)
                         assertEquals(3, it.epoch)
@@ -340,7 +341,7 @@ class MlsCryptoClientTest {
                 timestamp = Instant.DISTANT_PAST
             )
 
-            assertEquals((wireMessage as WireMessage.Text).text, plainMessage)
+            assertEquals(plainMessage, (wireMessage as WireMessage.Text).text)
 
             assertThrows<CoreCryptoException.Mls> {
                 bobClient.decryptMls(mlsGroupId, encryptedBase64Message)

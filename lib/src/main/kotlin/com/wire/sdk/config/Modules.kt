@@ -111,7 +111,7 @@ val sdkModule =
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
         single { CallingApiClient(get()) }
-        single { SubconversationService(get(), get(), get(), get()) } onClose
+        single { SubconversationService(get(), get(), get()) } onClose
             { it?.close() }
         single {
             EventsRouter(get(), get(), get(), get(), get(), get(), get(), get(), get())
@@ -247,8 +247,7 @@ internal fun createHttpClient(
  *
  * Reads the current `PRAGMA user_version` from the existing database and compares it
  * against the latest schema version. If the database is behind, runs all missing
- * migrations in order via [AppsSdkDatabase.Schema.migrate] and updates `user_version`
- * afterwards.
+ * migrations.
  *
  * This approach handles three cases safely:
  * - Fresh install: runs all .sqm files to create the latest schema from scratch.

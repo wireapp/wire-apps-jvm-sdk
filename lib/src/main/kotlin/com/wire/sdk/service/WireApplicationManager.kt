@@ -577,7 +577,6 @@ class WireApplicationManager internal constructor(
         conversationService.deleteConversation(
             conversationId = conversationId
         )
-        subconversationService.forgetParent(conversationId)
     }
 
     /**
@@ -601,7 +600,6 @@ class WireApplicationManager internal constructor(
         conversationService.leaveConversation(
             conversationId = conversationId
         )
-        subconversationService.forgetParent(conversationId)
     }
 
     /**
@@ -751,7 +749,9 @@ class WireApplicationManager internal constructor(
         conversationId: QualifiedId
     ): SubconversationEpochInfo = subconversationService.join(conversationId)
 
-    /** Leaves this device's conference membership, preserving the parent conversation. */
+    /**
+     * Requests removal of this device from the conference, preserving the parent conversation.
+     */
     @Throws(WireException::class)
     fun leaveSubconversation(conversationId: QualifiedId) =
         runBlocking { leaveSubconversationSuspending(conversationId) }

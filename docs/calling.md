@@ -43,7 +43,7 @@ are on `WireApplicationManager` and have a corresponding `Suspending` variant.
 | Method | Behavior |
 |---|---|
 | `joinSubconversation(id)` | Join an existing conference and return its initial epoch snapshot |
-| `leaveSubconversation(id)` | Leave this device's conference membership |
+| `leaveSubconversation(id)` | Request removal of this device from the conference |
 
 Feed the result of joining to AVS before starting media. A repeated join checks backend state
 and reuses valid membership. An initial snapshot is returned by the join method; subsequent
@@ -77,12 +77,14 @@ manager.joinSubconversationSuspending(conversationId).use { info ->
 Override these additional callbacks as needed:
 
 - `onSubconversationEpochChanged(info)` for later key/member changes.
-- `onSubconversationLeft(conversationId)` after local departure, removal, or parent invalidation.
+- `onSubconversationLeft(conversationId)` when a conference MLS commit removes this device.
 - `onCallingError(conversationId, error)` for asynchronous MLS processing failures.
 
-Calling and epoch callbacks are serialized per transport conversation and run outside crypto
-transactions. They may call manager methods. Keep callbacks short; hand media processing to
-your app's own execution context. The default epoch callback closes unused snapshots.
+The event router invokes conference epoch, departure, and error callbacks while processing
+each conversation's events, outside service locks and crypto transactions. They may call
+manager methods. Keep callbacks short because they delay later events in that conversation.
+Calling messages use the normal message-dispatch path. The default epoch callback closes
+unused snapshots.
 
 The SDK passes incoming proposals and commits to CoreCrypto, but never schedules or sends
 pending-proposal commits and does not rotate conference keys. Other clients must commit
@@ -91,11 +93,20 @@ membership changes. Applied commits trigger epoch updates or, when this device i
 participant's call has ended. Call-ending signaling is also forwarded to the app unchanged.
 Future-epoch messages buffered by CoreCrypto are delivered when the corresponding commit arrives.
 
+Parent removal and deletion generate separate backend removal proposals for each affected
+conference. Other clients commit them. The SDK keeps the conference mapping until its removal
+commit arrives; parent events do not wipe conference keys or trigger `onSubconversationLeft`.
+CoreCrypto deletes the group when it applies that commit, and the SDK clears the mapping.
+An explicit leave also waits for this commit before emitting the callback; completion of the
+leave method only confirms the backend request succeeded.
+
 ## Restart and cleanup
 
 The SDK caches the conference group ID in memory. On demand, it recovers the ID from the
-backend and checks both device membership and local CoreCrypto state. This needs no additional
-database table. It never joins a call solely because it receives a conference event.
+backend and checks local CoreCrypto state. Backend membership may already exclude this device
+while its removal commit is pending, so it is not used to reject that commit. This needs no
+additional database table. It never joins a call solely because it receives a conference event.
+Recovery after a process restart requires the backend to still provide the conference group ID.
 
 After an app restart, explicitly join if you want to resume participation and obtain the current
 keys. Missing local crypto state requires an explicit join. The app remains responsible for
@@ -103,7 +114,8 @@ deciding whether to resume its media engine. Leaving a call does not leave the p
 Decryption errors do not trigger an automatic rejoin. The SDK reports them to the app, which
 can explicitly join again if it wants to recover participation.
 SDK shutdown stops background work but does not issue a remote leave; call the leave method
-before shutdown when that is your intended behavior.
+when that is your intended behavior, and keep listening until `onSubconversationLeft` before
+shutting down if you want the removal commit applied locally.
 
 ## Engine HTTP requests
 
@@ -124,6 +136,15 @@ and must not be forwarded to SFT. Native callback contexts and request correlati
 your app.
 
 ## Compilable examples
+
+The default Kotlin `SampleEventsHandler` logs calling messages, epoch changes, departures,
+and calling errors. On a `CONFSTART` request with a session ID, it joins the existing conference,
+fetches calling configuration, waits five seconds, and leaves. Repeated announcements for the
+same session do not restart the test. The wait does not block epoch callbacks, and the sample
+closes snapshots without logging keys or configuration contents. A failed configuration fetch
+still attempts to leave. This checks SDK/backend operations only; it does not answer through AVS
+or establish media. Run `./gradlew :sample-kotlin:run` with the usual sample environment variables,
+then start a conference call from another Wire client in a conversation containing the app.
 
 - [Kotlin adapter](../sample/sample-kotlin/src/main/kotlin/com/wire/sdk/sample/CallingExample.kt)
 - [Java adapter](../sample/sample-java/src/main/java/com/wire/sdk/sample/examples/callbacks/CallingExample.java)

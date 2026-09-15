@@ -50,7 +50,7 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
         info.close()
     }
 
-    /** The app left, was removed from, or lost its conference MLS membership. */
+    /** User removed from subconversation, including after an explicit leave request. */
     open fun onSubconversationLeft(conversationId: QualifiedId) {}
 
     /** Processing an incoming conference MLS update failed. */
