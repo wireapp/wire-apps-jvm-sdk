@@ -16,22 +16,21 @@
 
 package com.wire.sdk.utils
 
-import com.wire.crypto.Ciphersuite
+import com.wire.crypto.CipherSuite
 import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCrypto
-import com.wire.crypto.CoreCryptoClient
-import com.wire.crypto.CoreCryptoException
+import com.wire.crypto.Database
 import com.wire.crypto.DatabaseKey
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.KeyPackage
-import com.wire.crypto.MlsException
 import com.wire.crypto.MlsTransport
 import com.wire.crypto.Welcome
-import com.wire.crypto.invoke
+import com.wire.crypto.open
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.model.CryptoClientId
+import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.integrations.protobuf.messages.Messages
@@ -41,8 +40,8 @@ import java.util.Base64
 import java.util.UUID
 
 internal class MockCoreCryptoClient private constructor(
-    private val ciphersuite: Ciphersuite,
-    private var coreCryptoClient: CoreCryptoClient
+    private val cipherSuite: CipherSuite,
+    private var coreCryptoClient: CoreCrypto
 ) : CryptoClient {
     val conversationExist = mutableSetOf<ConversationId>()
     private var cryptoClientId: CryptoClientId? = null
@@ -93,16 +92,8 @@ internal class MockCoreCryptoClient private constructor(
     ): DecryptedMlsMessage =
         DecryptedMlsMessage(
             message = GENERIC_TEXT_MESSAGE.toByteArray(),
-            senderClientId = DEFAULT_SENDER_CLIENT_ID
+            sender = DEFAULT_SENDER
         )
-
-    // Throw OrphanWelcome, testing the fallback to createJoinMlsConversationRequest
-    override suspend fun processWelcomeMessage(welcome: Welcome): ConversationId =
-        throw CoreCryptoException.Mls(MlsException.OrphanWelcome())
-
-    // Mock joining the conversation, assume the backend accepts the invitation
-    override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo): ConversationId =
-        MLS_GROUP_ID
 
     override suspend fun encryptMls(
         mlsGroupId: ConversationId,
@@ -116,6 +107,10 @@ internal class MockCoreCryptoClient private constructor(
     }
 
     override suspend fun mlsGenerateKeyPackages(packageCount: UInt): List<KeyPackage> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun joinMlsConversationRequest(groupInfo: GroupInfo) {
         TODO("Not yet implemented")
     }
 
@@ -161,45 +156,53 @@ internal class MockCoreCryptoClient private constructor(
         TODO("Not yet implemented")
     }
 
+    override suspend fun processWelcomeMessage(welcome: Welcome) {
+        // Do nothing
+    }
+
     companion object {
         suspend fun create(
             userId: String,
-            ciphersuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
+            cipherSuiteCode: Int = DEFAULT_CIPHERSUITE_IDENTIFIER
         ): MockCoreCryptoClient {
             val clientDirectoryPath = "storage/cryptography/$userId"
             val keystorePath = "$clientDirectoryPath/$KEYSTORE_NAME"
-            val ciphersuite = getMlsCipherSuiteName(ciphersuiteCode)
+            val ciphersuite = getMlsCipherSuiteName(cipherSuiteCode)
 
             File(clientDirectoryPath).mkdirs()
 
             val coreCryptoClient = CoreCrypto.invoke(
-                keystore = keystorePath,
-                databaseKey = DatabaseKey(IsolatedKoinContext.getCryptographyStorageKey())
+                database = Database.open(
+                    location = keystorePath,
+                    key = DatabaseKey(IsolatedKoinContext.getCryptographyStorageKey())
+                )
             )
 
             return MockCoreCryptoClient(
-                ciphersuite = ciphersuite,
+                cipherSuite = ciphersuite,
                 coreCryptoClient = coreCryptoClient
             )
         }
 
-        fun getMlsCipherSuiteName(code: Int): Ciphersuite =
+        fun getMlsCipherSuiteName(code: Int): CipherSuite =
             when (code) {
                 DEFAULT_CIPHERSUITE_IDENTIFIER ->
-                    Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
-                2 -> Ciphersuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
-                3 -> Ciphersuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519
-                4 -> Ciphersuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448
-                5 -> Ciphersuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521
-                6 -> Ciphersuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448
-                7 -> Ciphersuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
-                else -> Ciphersuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
+                    CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
+                2 -> CipherSuite.MLS_128_DHKEMP256_AES128GCM_SHA256_P256
+                3 -> CipherSuite.MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_ED25519
+                4 -> CipherSuite.MLS_256_DHKEMX448_AES256GCM_SHA512_ED448
+                5 -> CipherSuite.MLS_256_DHKEMP521_AES256GCM_SHA512_P521
+                6 -> CipherSuite.MLS_256_DHKEMX448_CHACHA20POLY1305_SHA512_ED448
+                7 -> CipherSuite.MLS_256_DHKEMP384_AES256GCM_SHA384_P384
+                else -> CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
             }
 
         private const val DEFAULT_CIPHERSUITE_IDENTIFIER = 1
         private const val KEYSTORE_NAME = "keystore"
-        private const val DEFAULT_SENDER_CLIENT_ID =
-            "00000000-0000-0000-0000-000000000001:mock-client@wire.test"
+        private val DEFAULT_SENDER = QualifiedId(
+            id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+            domain = "wire.test"
+        )
         val MLS_GROUP_ID = ConversationId(UUID.randomUUID().toString().toByteArray())
         val MLS_GROUP_ID_BASE64 = Base64.getEncoder().encodeToString(MLS_GROUP_ID.copyBytes())
         val GENERIC_TEXT_MESSAGE: GenericMessage = GenericMessage

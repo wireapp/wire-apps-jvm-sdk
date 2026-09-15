@@ -240,16 +240,15 @@ internal class EventsRouter internal constructor(
                     )
 
                     logger.debug("Decryption successful")
-                    if (message.message == null || message.senderClientId == null) {
+                    if (message == null) {
                         logger.debug("Decryption success but no message, probably epoch update")
                         return
                     }
 
-                    val sender = parseSenderClientId(message.senderClientId)
-                    if (sender != event.qualifiedFrom) {
+                    if (message.sender != event.qualifiedFrom) {
                         logger.error(
                             "MLS message sender {} does not match event envelope sender {}",
-                            sender,
+                            message.sender,
                             event.qualifiedFrom
                         )
                     }
@@ -257,7 +256,7 @@ internal class EventsRouter internal constructor(
                     forwardMessage(
                         message = message.message,
                         conversationId = event.qualifiedConversation,
-                        sender = sender,
+                        sender = message.sender,
                         timestamp = event.time
                     )
                 } catch (exception: MlsException) {
@@ -436,17 +435,6 @@ internal class EventsRouter internal constructor(
         }
     }
 
-    private fun parseSenderClientId(senderClientId: String): QualifiedId {
-        val clientIdParts = senderClientId.split(':')
-        val parts = clientIdParts[1]
-            .split('@')
-            .takeIf { it.size == 2 && it.all(String::isNotBlank) }
-            ?: throw IllegalArgumentException(
-                "Invalid senderClientId format: $senderClientId"
-            )
-        return QualifiedId(id = UUID.fromString(clientIdParts[0]), domain = parts[1])
-    }
-
     private suspend fun handleWelcomeEvent(
         welcome: Welcome,
         qualifiedConversation: QualifiedId
@@ -466,7 +454,7 @@ internal class EventsRouter internal constructor(
                 mlsApiClient.uploadMlsKeyPackages(
                     cryptoClientId = cryptoClientId,
                     mlsKeyPackages =
-                        cryptoClient.mlsGenerateKeyPackages().map { it.copyBytes() }
+                        cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
                 )
             }
         }
@@ -497,15 +485,17 @@ internal class EventsRouter internal constructor(
     ) {
         try {
             cryptoClient.processWelcomeMessage(welcome)
-        } catch (ex: CoreCryptoException.Mls) {
-            if (ex.mlsError is MlsException.OrphanWelcome) {
+        } catch (exception: CoreCryptoException.Mls) {
+            if (exception.mlsError is MlsException.OrphanWelcome) {
                 logger.info("Cannot process welcome, ask to join the conversation")
                 val groupInfo =
                     conversationsApiClient.getConversationGroupInfo(qualifiedConversation)
                 cryptoClient.joinMlsConversationRequest(groupInfo.toGroupInfo())
             } else {
-                logger.error("Cannot process welcome -- ${ex.mlsError}", ex)
-                throw WireException.CryptographicSystemError("Cannot process welcome")
+                logger.error("Cannot process welcome message", exception)
+                throw WireException.CryptographicSystemError(
+                    "Cannot process welcome message"
+                )
             }
         }
     }

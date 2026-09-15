@@ -72,10 +72,7 @@ class ClientsApiClientTest {
 
             api.updateClientWithMlsPublicKey(
                 CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(
-                        id = UUID.randomUUID(),
-                        domain = "example.com"
-                    ),
+                    applicationQualifiedId = QualifiedId(UUID.randomUUID(), "example.com"),
                     deviceId = UUID.randomUUID().toString()
                 ),
                 com.wire.sdk.model.http.MlsPublicKeys()

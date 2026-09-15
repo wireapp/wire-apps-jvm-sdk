@@ -39,8 +39,10 @@ import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.model.http.conversation.MemberLeaveEventData
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
+import com.wire.sdk.utils.MlsTestFixtures
 import com.wire.sdk.utils.MockCoreCryptoClient
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -120,7 +122,7 @@ class WireEventsIntegrationTest {
             // Load Koin Modules
             val mockCoreCryptoClient = MockCoreCryptoClient.create(
                 userId = UUID.randomUUID().toString(),
-                ciphersuiteCode = 1
+                cipherSuiteCode = 1
             )
             IsolatedKoinContext.koin.loadModules(
                 listOf(
@@ -152,7 +154,7 @@ class WireEventsIntegrationTest {
                                 qualifiedConversation = conversationId,
                                 qualifiedFrom = USER_ID,
                                 time = EXPECTED_NEW_CONVERSATION_VALUE,
-                                data = "xyz"
+                                data = welcomeMessage
                             )
                         ),
                     transient = true
@@ -307,7 +309,7 @@ class WireEventsIntegrationTest {
             // Load Koin Modules
             val mockCoreCryptoClient = MockCoreCryptoClient.create(
                 userId = UUID.randomUUID().toString(),
-                ciphersuiteCode = 1
+                cipherSuiteCode = 1
             )
             IsolatedKoinContext.koin.loadModules(
                 listOf(
@@ -328,7 +330,7 @@ class WireEventsIntegrationTest {
                 eventResponse = NEW_CONVERSATION_EVENT
             )
             eventsRouter.route(
-                eventResponse = NEW_WELCOME_EVENT
+                eventResponse = newWelcomeEvent()
             )
 
             assertTrue(
@@ -404,7 +406,7 @@ class WireEventsIntegrationTest {
             // Load Koin Modules
             val mockCoreCryptoClient = MockCoreCryptoClient.create(
                 userId = UUID.randomUUID().toString(),
-                ciphersuiteCode = 1
+                cipherSuiteCode = 1
             )
             IsolatedKoinContext.koin.loadModules(
                 listOf(
@@ -427,7 +429,7 @@ class WireEventsIntegrationTest {
 
             // Route the welcome event - this should throw an exception during processing
             eventsRouter.route(
-                eventResponse = NEW_WELCOME_EVENT
+                eventResponse = newWelcomeEvent()
             )
 
             // Wait for processing to complete (or timeout)
@@ -726,7 +728,8 @@ class WireEventsIntegrationTest {
                     ),
                 transient = true
             )
-        private val NEW_WELCOME_EVENT =
+
+        private fun newWelcomeEvent() =
             EventResponse(
                 id = "event_id3",
                 payload =
@@ -735,11 +738,12 @@ class WireEventsIntegrationTest {
                             qualifiedConversation = CONVERSATION_ID,
                             qualifiedFrom = USER_ID,
                             time = EXPECTED_NEW_CONVERSATION_VALUE,
-                            data = "xyz"
+                            data = welcomeMessage
                         )
                     ),
                 transient = true
             )
+
         private val NEW_MLS_MESSAGE_EVENT =
             EventResponse(
                 id = "event_id4",
@@ -850,21 +854,25 @@ class WireEventsIntegrationTest {
             """.trimIndent()
 
         private val wireMockServer = WireMockServer(8086)
+        private lateinit var welcomeMessage: String
 
         @JvmStatic
         @BeforeAll
-        fun before() {
-            IsolatedKoinContext.start()
+        fun before() =
+            runBlocking {
+                IsolatedKoinContext.start()
+                IsolatedKoinContext.setCryptographyStorageKey(TestUtils.CRYPTOGRAPHY_STORAGE_KEY)
+                welcomeMessage = MlsTestFixtures.generateWelcomeMessage()
 
-            wireMockServer.start()
+                wireMockServer.start()
 
-            // Mock conversation fetching
-            val stubConvPath = "/$TEST_API_VERSION/conversations" +
-                "/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
-            wireMockServer.stubFor(
-                WireMock.get(WireMock.urlPathTemplate(stubConvPath)).willReturn(
-                    WireMock.okJson(
-                        """
+                // Mock conversation fetching
+                val stubConvPath = "/$TEST_API_VERSION/conversations" +
+                    "/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}"
+                wireMockServer.stubFor(
+                    WireMock.get(WireMock.urlPathTemplate(stubConvPath)).willReturn(
+                        WireMock.okJson(
+                            """
                         {
                             "qualified_id": {
                                 "id": "${CONVERSATION_ID.id}",
@@ -887,22 +895,23 @@ class WireEventsIntegrationTest {
                             "team": "${TEAM_ID.value}",
                             "protocol": "mls"
                         }
-                        """.trimIndent()
+                            """.trimIndent()
+                        )
                     )
                 )
-            )
-            val stubConvGroupInfoPath =
-                "/$TEST_API_VERSION/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
-            wireMockServer.stubFor(
-                WireMock.get(WireMock.urlPathTemplate(stubConvGroupInfoPath))
-                    .willReturn(
-                        WireMock.aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "message/mls")
-                            .withBody(ByteArray(128) { 1 })
-                    )
-            )
-        }
+                val stubConvGroupInfoPath =
+                    "/$TEST_API_VERSION/conversations/{CONVERSATION_DOMAIN}/{CONVERSATION_ID}/groupinfo"
+                wireMockServer.stubFor(
+                    WireMock.get(WireMock.urlPathTemplate(stubConvGroupInfoPath))
+                        .willReturn(
+                            WireMock.aResponse()
+                                .withStatus(200)
+                                .withHeader("Content-Type", "message/mls")
+                                .withBody(MlsTestFixtures.groupInfoBytes())
+                        )
+                )
+                Unit
+            }
 
         @JvmStatic
         @AfterAll

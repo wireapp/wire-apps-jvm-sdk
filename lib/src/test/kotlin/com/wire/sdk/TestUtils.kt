@@ -55,7 +55,7 @@ object TestUtils {
                 WireMock.okJson(
                     """
                     {
-                        "client_id": "dummyClientId",
+                        "client_id": "0001",
                         "app_type": "dummyAppType",
                         "app_command": "dummyAppCommand"
                     }
@@ -68,7 +68,7 @@ object TestUtils {
                 WireMock.okJson(
                     """
                     {
-                        "id": "dummyClientId"
+                        "id": "0001"
                     }
                     """.trimIndent()
                 )

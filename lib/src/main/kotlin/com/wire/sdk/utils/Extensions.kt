@@ -18,6 +18,8 @@
 
 package com.wire.sdk.utils
 
+import com.wire.crypto.ClientId
+import com.wire.sdk.model.QualifiedId
 import java.util.UUID
 
 private const val START_INDEX = 0
@@ -59,4 +61,18 @@ internal fun ByteArray.toInternalHexString(): String {
     return joinToString("") {
         (0xFF and it.toInt()).toString(16).padStart(2, '0')
     }
+}
+
+/**
+ * CoreCrypto
+ */
+
+internal fun ClientId.toQualifiedId(): QualifiedId {
+    val deserializedClientId = this.deserialize()
+    val javaId = UUID.fromString(deserializedClientId.userId.toString())
+
+    return QualifiedId(
+        id = javaId,
+        domain = deserializedClientId.domain
+    )
 }
