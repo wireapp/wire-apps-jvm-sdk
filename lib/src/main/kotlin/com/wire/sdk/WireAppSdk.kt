@@ -142,7 +142,12 @@ class WireAppSdk(
                 "No API token found, but backend cookie exists. " +
                     "Migrating received API token into AppStorage."
             )
-            validateAndReplaceApiToken(apiToken, appStorage)
+            validateApiTokenForStoredApp(apiToken, appStorage)
+            appStorage.saveApiToken(apiToken)
+            logger.info(
+                "Received API token is stored in AppStorage. " +
+                    "apiToken:${apiToken.obfuscateId()}"
+            )
         } else {
             logger.info(
                 "API token found in AppStorage. Comparing received " +
@@ -151,14 +156,20 @@ class WireAppSdk(
             )
 
             if (apiToken != storedApiToken) {
-                validateAndReplaceApiToken(apiToken, appStorage)
+                validateApiTokenForStoredApp(apiToken, appStorage)
+                appStorage.saveApiToken(apiToken)
+                appStorage.saveBackendCookie(apiToken)
+                logger.info(
+                    "Received API token and backend cookie are stored in AppStorage. " +
+                        "apiToken:${apiToken.obfuscateId()}"
+                )
             } else {
                 logger.info("Received API token is the same as the one stored in AppStorage.")
             }
         }
     }
 
-    private fun validateAndReplaceApiToken(
+    private fun validateApiTokenForStoredApp(
         apiToken: String,
         appStorage: AppStorage
     ) {
@@ -179,14 +190,7 @@ class WireAppSdk(
                 )
             } else {
                 logger.info(
-                    "Received API token userId matches stored App userId. " +
-                        "Saving API token into AppStorage."
-                )
-                appStorage.saveApiToken(apiToken)
-                appStorage.saveBackendCookie(apiToken)
-                logger.info(
-                    "Received API token is stored in AppStorage. " +
-                        "apiToken:${apiToken.obfuscateId()}"
+                    "Received API token userId matches stored App userId."
                 )
             }
         } ?: throw WireException.InvalidParameter(

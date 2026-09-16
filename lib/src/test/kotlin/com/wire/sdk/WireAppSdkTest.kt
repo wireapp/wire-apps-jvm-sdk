@@ -175,7 +175,7 @@ class WireAppSdkTest {
     }
 
     @Test
-    fun `given legacy cookie, when sdk starts, then token and cookie are replaced`() {
+    fun `given legacy cookie, when sdk starts, then token is stored and cookie is preserved`() {
         val replacementToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
         val appStorage = mockAppStorage(
             storedApiToken = null,
@@ -189,7 +189,52 @@ class WireAppSdkTest {
 
         verify(exactly = 1) {
             appStorage.saveApiToken(replacementToken)
-            appStorage.saveBackendCookie(replacementToken)
+        }
+        verify(exactly = 0) {
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given legacy cookie and token for another app, then storage is not replaced`() {
+        val replacementToken = apiTokenForUser(
+            UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
+        )
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = "XYZ"
+        )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = replacementToken)
+        }
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given legacy cookie and token without user id, then storage is not replaced`() {
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = "XYZ"
+        )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = "DEF")
+        }
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
         }
     }
 
