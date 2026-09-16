@@ -19,7 +19,7 @@ package com.wire.sdk.service
 import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MlsException
-import com.wire.sdk.client.CallingApiClient
+import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.exception.WireException
@@ -33,6 +33,10 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.io.encoding.Base64
 import kotlin.test.assertContentEquals
@@ -42,10 +46,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -54,7 +54,7 @@ class SubconversationServiceTest {
         val id = QualifiedId(UUID.randomUUID(), "wire.test")
         val self = QualifiedId(UUID.randomUUID(), "wire.test")
         val group = ConversationId(byteArrayOf(1, 2, 3))
-        val api = mockk<CallingApiClient>()
+        val api = mockk<ConversationsApiClient>()
         val crypto = mockk<CryptoClient>(relaxed = true)
         var epoch = 1L
         var exists = true

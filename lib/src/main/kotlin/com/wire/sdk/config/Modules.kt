@@ -80,7 +80,6 @@ import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.koin.dsl.onClose
 import org.slf4j.LoggerFactory
-import com.wire.sdk.client.CallingApiClient
 import com.wire.sdk.service.SubconversationService
 import org.zalando.logbook.client.LogbookClient
 import org.zalando.logbook.common.ExperimentalLogbookKtorApi
@@ -110,7 +109,6 @@ val sdkModule =
         single<MlsApiClient> { MlsApiClient(get(), get()) }
         single<MlsTransport> { MlsTransportImpl(get()) }
         single<MlsFallbackStrategy> { MlsFallbackStrategy(get(), get()) }
-        single { CallingApiClient(get()) }
         single { SubconversationService(get(), get(), get()) } onClose
             { it?.close() }
         single {
@@ -147,7 +145,6 @@ val sdkModule =
         // Manager
         single {
             WireApplicationManager(
-                get(),
                 get(),
                 get(),
                 get(),

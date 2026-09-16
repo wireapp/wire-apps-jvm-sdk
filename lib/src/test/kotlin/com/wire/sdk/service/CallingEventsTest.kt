@@ -17,10 +17,11 @@
 package com.wire.sdk.service
 
 import com.wire.crypto.ConversationId
+import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import com.wire.sdk.WireEventsHandler
 import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
-import com.wire.sdk.client.CallingApiClient
+import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.exception.WireException
@@ -37,25 +38,24 @@ import com.wire.sdk.model.protobuf.ProtobufDeserializer
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.service.conversation.ConversationService
-import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.io.encoding.Base64
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Clock
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CallingEventsTest {
@@ -362,7 +362,7 @@ class CallingEventsTest {
     @Test
     fun `epoch callback can leave the conference after service releases its lock`() =
         runTest {
-            val api = mockk<CallingApiClient>(relaxed = true)
+            val api = mockk<ConversationsApiClient>(relaxed = true)
             val crypto = mockk<CryptoClient>()
             val app = mockk<AppStorage> {
                 every { getApplicationQualifiedId() } returns sender
@@ -436,7 +436,7 @@ class CallingEventsTest {
                     SubconversationResponse.Member(sender.id.toString(), sender.domain, "device")
                 )
             )
-            val api = mockk<CallingApiClient>()
+            val api = mockk<ConversationsApiClient>()
             coEvery { api.getConference(id) } returns remote
             coEvery { crypto.conversationExists(group) } returns true
             coEvery { crypto.conversationEpoch(group) } returns 1u

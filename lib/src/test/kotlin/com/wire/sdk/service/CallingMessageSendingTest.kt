@@ -65,7 +65,6 @@ class CallingMessageSendingTest {
         fallback,
         conversations,
         mockk(),
-        mockk(),
         mockk()
     )
 

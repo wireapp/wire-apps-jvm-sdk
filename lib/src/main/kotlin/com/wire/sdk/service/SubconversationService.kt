@@ -20,7 +20,7 @@ import com.wire.crypto.ConversationId
 import com.wire.crypto.CoreCryptoException
 import com.wire.crypto.MlsException
 import com.wire.crypto.toGroupInfo
-import com.wire.sdk.client.CallingApiClient
+import com.wire.sdk.client.ConversationsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.exception.WireException
@@ -28,9 +28,9 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.http.conversation.SubconversationResponse
 import com.wire.sdk.persistence.AppStorage
+import kotlinx.coroutines.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.encoding.Base64
-import kotlinx.coroutines.CancellationException
 
 /**
  * Joins the single "conference" child group and applies incoming MLS updates.
@@ -39,7 +39,7 @@ import kotlinx.coroutines.CancellationException
  */
 @Suppress("TooManyFunctions")
 internal class SubconversationService(
-    private val apiClient: CallingApiClient,
+    private val apiClient: ConversationsApiClient,
     private val cryptoClient: CryptoClient,
     private val appStorage: AppStorage
 ) : AutoCloseable {
@@ -75,7 +75,7 @@ internal class SubconversationService(
                 "The conference has not been initialized by another client"
             )
         }
-        var groupId = ConversationId(Base64.decode(remote.groupId))
+        val groupId = ConversationId(Base64.decode(remote.groupId))
         val exists = cryptoClient.conversationExists(groupId)
         val alreadyJoined = remote.hasSelf() &&
             exists &&

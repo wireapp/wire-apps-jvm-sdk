@@ -17,8 +17,6 @@ package com.wire.sdk.service
 
 import com.wire.sdk.client.AssetsApiClient
 import com.wire.sdk.client.BackendClient
-import com.wire.sdk.client.CallingApiClient
-import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.exception.WireException
@@ -33,23 +31,24 @@ import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
+import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
-import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.protobuf.ProtobufSerializer
+import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.AESDecrypt
 import com.wire.sdk.utils.AESEncrypt
 import com.wire.sdk.utils.MAX_DATA_SIZE
-import java.io.ByteArrayInputStream
-import java.util.UUID
-import javax.imageio.ImageIO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+import java.util.UUID
+import javax.imageio.ImageIO
 
 /**
  * Allows fetching common data and interacting with each Team instance invited to the Application.
@@ -67,7 +66,6 @@ class WireApplicationManager internal constructor(
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService,
     private val appStorage: AppStorage,
-    private val callingApiClient: CallingApiClient,
     private val subconversationService: SubconversationService
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -732,7 +730,7 @@ class WireApplicationManager internal constructor(
     fun getCallingConfiguration(): String = runBlocking { getCallingConfigurationSuspending() }
 
     /** See [getCallingConfiguration]. */
-    suspend fun getCallingConfigurationSuspending(): String = callingApiClient.getConfiguration()
+    suspend fun getCallingConfigurationSuspending(): String = conversationService.getConfiguration()
 
     /**
      * Joins the conversation's conference MLS group, initialized by another client.

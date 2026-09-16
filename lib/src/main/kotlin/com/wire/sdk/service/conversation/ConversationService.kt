@@ -783,6 +783,8 @@ internal class ConversationService internal constructor(
         )
     }
 
+    suspend fun getConfiguration(): String = conversationsApiClient.getConfiguration()
+
     private suspend fun getClientsByUserIds(userIds: List<QualifiedId>): List<CryptoClientId> {
         val usersClients = if (userIds.size == 1) {
             val user = userIds.first()

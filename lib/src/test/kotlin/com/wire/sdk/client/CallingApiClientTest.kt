@@ -40,7 +40,7 @@ class CallingApiClientTest {
                 assertEquals(path, it.url.encodedPath)
                 assertEquals(HttpMethod.Get, it.method)
             }.use { backend ->
-                val result = CallingApiClient(backend).getConference(id)
+                val result = ConversationsApiClient(backend).getConference(id)
                 assertEquals(7uL, result.epoch)
                 assertEquals("AQID", result.groupId)
                 assertEquals("device", result.members.single().clientId)
@@ -56,7 +56,7 @@ class CallingApiClientTest {
             }.use { backend ->
                 assertContentEquals(
                     byteArrayOf(1, 2, 3),
-                    CallingApiClient(backend).getGroupInfo(id)
+                    ConversationsApiClient(backend).getGroupInfo(id)
                 )
             }
         }
@@ -68,7 +68,7 @@ class CallingApiClientTest {
                 assertEquals("$path/self", it.url.encodedPath)
                 assertEquals(HttpMethod.Delete, it.method)
             }.use { backend ->
-                CallingApiClient(backend).leaveConference(id)
+                ConversationsApiClient(backend).leaveConference(id)
             }
         }
 
@@ -81,7 +81,7 @@ class CallingApiClientTest {
             createMockHttpClient(config) {
                 assertEquals("/calls/config/v2", it.url.encodedPath)
             }.use { backend ->
-                assertEquals(config, CallingApiClient(backend).getConfiguration())
+                assertEquals(config, ConversationsApiClient(backend).getConfiguration())
             }
         }
 }

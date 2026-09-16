@@ -23,6 +23,7 @@ import com.wire.sdk.model.http.conversation.ConversationListPaginationConfig
 import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
+import com.wire.sdk.model.http.conversation.SubconversationResponse
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.utils.Mls
 import io.ktor.client.HttpClient
@@ -37,6 +38,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import org.slf4j.LoggerFactory
 
+@Suppress("TooManyFunctions")
 internal class ConversationsApiClient(private val httpClient: HttpClient) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val basePath = "conversations"
@@ -171,4 +173,27 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
             conversationId
         )
     }
+
+    suspend fun getConference(conversationId: QualifiedId): SubconversationResponse =
+        httpClient.get(
+            "/$basePath/${conversationId.domain}/${conversationId.id}/subconversations/" +
+                "conference"
+        ).body()
+
+    suspend fun getGroupInfo(conversationId: QualifiedId): ByteArray =
+        httpClient.get(
+            "/$basePath/${conversationId.domain}/${conversationId.id}/subconversations/" +
+                "conference/groupinfo"
+        ) {
+            accept(Mls)
+        }.body()
+
+    suspend fun leaveConference(conversationId: QualifiedId) {
+        httpClient.delete(
+            "/$basePath/${conversationId.domain}/${conversationId.id}/subconversations/" +
+                "conference/self"
+        )
+    }
+
+    suspend fun getConfiguration(): String = httpClient.get("/calls/config/v2").body()
 }

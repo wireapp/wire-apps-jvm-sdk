@@ -83,7 +83,6 @@ class WireApplicationManagerTest {
             mlsFallbackStrategy = mockk(),
             conversationService = mockk(),
             appStorage = appStorage,
-            callingApiClient = mockk(relaxed = true),
             subconversationService = mockk(relaxed = true)
         )
 
@@ -105,7 +104,6 @@ class WireApplicationManagerTest {
             mlsFallbackStrategy = mockk(),
             conversationService = mockk(),
             appStorage = appStorage,
-            callingApiClient = mockk(relaxed = true),
             subconversationService = mockk(relaxed = true)
         )
 
@@ -415,7 +413,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService,
                 appStorage = appStorage,
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
@@ -496,7 +493,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService,
                 appStorage = appStorage,
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
@@ -578,7 +574,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService,
                 appStorage = appStorage,
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
@@ -655,7 +650,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService,
                 appStorage = appStorage,
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
@@ -731,7 +725,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService,
                 appStorage = appStorage,
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
@@ -804,7 +797,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mlsFallbackStrategy,
                 conversationService = conversationService,
                 appStorage = appStorage,
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
@@ -864,7 +856,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mockk(relaxed = true),
                 conversationService = mockk(relaxed = true),
                 appStorage = mockk(relaxed = true),
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
@@ -902,7 +893,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mockk(relaxed = true),
                 conversationService = mockk(relaxed = true),
                 appStorage = mockk(relaxed = true),
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
@@ -932,7 +922,6 @@ class WireApplicationManagerTest {
                 mlsFallbackStrategy = mockk(relaxed = true),
                 conversationService = mockk(relaxed = true),
                 appStorage = appStorage,
-                callingApiClient = mockk(relaxed = true),
                 subconversationService = mockk(relaxed = true)
             )
 
