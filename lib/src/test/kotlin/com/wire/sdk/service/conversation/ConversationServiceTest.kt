@@ -1261,8 +1261,8 @@ class ConversationServiceTest {
                     removeClientsFromConversation(
                         CONVERSATION_MLS_GROUP_ID,
                         listOf(
-                            CryptoClientId.create(
-                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            CryptoClientId(
+                                userId = CONVERSATION_MEMBER_1,
                                 deviceId = client1.id
                             )
                         )
@@ -1293,8 +1293,8 @@ class ConversationServiceTest {
                 cryptoClient.removeClientsFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(
-                        CryptoClientId.create(
-                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                        CryptoClientId(
+                            userId = CONVERSATION_MEMBER_1,
                             deviceId = client1.id
                         )
                     )
@@ -1347,16 +1347,16 @@ class ConversationServiceTest {
                     removeClientsFromConversation(
                         mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                         clientIds = listOf(
-                            CryptoClientId.create(
-                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            CryptoClientId(
+                                userId = CONVERSATION_MEMBER_1,
                                 deviceId = client1.id
                             ),
-                            CryptoClientId.create(
-                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            CryptoClientId(
+                                userId = CONVERSATION_MEMBER_1,
                                 deviceId = client2.id
                             ),
-                            CryptoClientId.create(
-                                applicationQualifiedId = CONVERSATION_MEMBER_1,
+                            CryptoClientId(
+                                userId = CONVERSATION_MEMBER_1,
                                 deviceId = client3.id
                             )
                         )
@@ -1383,16 +1383,16 @@ class ConversationServiceTest {
                 cryptoClient.removeClientsFromConversation(
                     mlsGroupId = CONVERSATION_MLS_GROUP_ID,
                     clientIds = listOf(
-                        CryptoClientId.create(
-                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                        CryptoClientId(
+                            userId = CONVERSATION_MEMBER_1,
                             deviceId = client1.id
                         ),
-                        CryptoClientId.create(
-                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                        CryptoClientId(
+                            userId = CONVERSATION_MEMBER_1,
                             deviceId = client2.id
                         ),
-                        CryptoClientId.create(
-                            applicationQualifiedId = CONVERSATION_MEMBER_1,
+                        CryptoClientId(
+                            userId = CONVERSATION_MEMBER_1,
                             deviceId = client3.id
                         )
                     )
@@ -1951,8 +1951,8 @@ class ConversationServiceTest {
                         ciphersuiteCode = 1
                     ).use { cryptoClient ->
                         cryptoClient.initializeMlsClient(
-                            cryptoClientId = CryptoClientId.create(
-                                applicationQualifiedId = QualifiedId(
+                            cryptoClientId = CryptoClientId(
+                                userId = QualifiedId(
                                     UUID.randomUUID(),
                                     BACKEND_DOMAIN
                                 ),

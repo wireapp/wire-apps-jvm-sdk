@@ -45,20 +45,20 @@ public final class CallingExample extends WireEventsHandlerDefault {
     }
 
     @Override
-    public void onSubconversationEpochChanged(SubconversationEpochInfo info) {
+    public void onConferenceEpochChanged(SubconversationEpochInfo info) {
         try (info) {
             engine.updateEpoch(info);
         }
     }
 
     @Override
-    public void onSubconversationLeft(QualifiedId conversationId) {
+    public void onConferenceLeft(QualifiedId conversationId) {
         engine.left(conversationId);
     }
 
     /** Join an incoming call's existing conference before starting media in the engine. */
     public void joinCall(QualifiedId conversationId) throws WireException {
-        try (var info = getManager().joinSubconversation(conversationId)) {
+        try (var info = getManager().joinConference(conversationId)) {
             engine.updateEpoch(info);
         }
     }
@@ -68,6 +68,6 @@ public final class CallingExample extends WireEventsHandlerDefault {
     }
 
     public void leaveCall(QualifiedId conversationId) throws WireException {
-        getManager().leaveSubconversation(conversationId);
+        getManager().leaveConference(conversationId);
     }
 }

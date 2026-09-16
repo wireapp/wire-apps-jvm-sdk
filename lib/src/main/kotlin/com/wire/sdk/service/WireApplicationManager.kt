@@ -741,22 +741,21 @@ class WireApplicationManager internal constructor(
      * The app owns the returned snapshot and should close it after use.
      */
     @Throws(WireException::class)
-    fun joinSubconversation(conversationId: QualifiedId): SubconversationEpochInfo =
-        runBlocking { joinSubconversationSuspending(conversationId) }
+    fun joinConference(conversationId: QualifiedId): SubconversationEpochInfo =
+        runBlocking { joinConferenceSuspending(conversationId) }
 
-    /** See [joinSubconversation]. */
-    suspend fun joinSubconversationSuspending(
-        conversationId: QualifiedId
-    ): SubconversationEpochInfo = subconversationService.join(conversationId)
+    /** See [joinConference]. */
+    suspend fun joinConferenceSuspending(conversationId: QualifiedId): SubconversationEpochInfo =
+        subconversationService.join(conversationId)
 
     /**
      * Requests removal of this device from the conference, preserving the parent conversation.
      */
     @Throws(WireException::class)
-    fun leaveSubconversation(conversationId: QualifiedId) =
-        runBlocking { leaveSubconversationSuspending(conversationId) }
+    fun leaveConference(conversationId: QualifiedId) =
+        runBlocking { leaveConferenceSuspending(conversationId) }
 
-    /** See [leaveSubconversation]. */
-    suspend fun leaveSubconversationSuspending(conversationId: QualifiedId) =
+    /** See [leaveConference]. */
+    suspend fun leaveConferenceSuspending(conversationId: QualifiedId) =
         subconversationService.leave(conversationId)
 }

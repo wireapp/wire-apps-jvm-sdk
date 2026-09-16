@@ -20,7 +20,7 @@ package com.wire.sdk.utils
 
 import com.wire.crypto.ClientId
 import com.wire.crypto.use
-import com.wire.sdk.crypto.MlsClientIdentity
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import java.util.UUID
 
@@ -66,10 +66,13 @@ internal fun ByteArray.toInternalHexString(): String {
 }
 
 /** Decodes the user and device components of CoreCrypto's structured client identity. */
-internal fun ClientId.toMlsClientIdentity(): MlsClientIdentity =
+internal fun ClientId.toCryptoClientId(): CryptoClientId =
     deserialize().use { client ->
-        MlsClientIdentity(
-            userId = QualifiedId(UUID.fromString(client.userId.toString()), client.domain),
+        CryptoClientId(
+            userId = QualifiedId(
+                UUID.fromString(client.userId.toString()),
+                client.domain
+            ),
             deviceId = client.deviceId.toU64().toString(radix = 16)
         )
     }

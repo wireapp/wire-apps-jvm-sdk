@@ -800,8 +800,8 @@ internal class ConversationService internal constructor(
         return usersClients.flatMap { (user, clients) ->
             logger.debug("Mapping {} clients for User: {}", clients.size, user.id)
             clients.map { client ->
-                CryptoClientId.create(
-                    applicationQualifiedId = user,
+                CryptoClientId(
+                    userId = user,
                     deviceId = client.id
                 )
             }

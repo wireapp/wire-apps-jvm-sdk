@@ -46,12 +46,12 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
      * Receives conference key and member updates in order. The app owns this snapshot and
      * should close it after supplying its secret to the calling engine.
      */
-    open fun onSubconversationEpochChanged(info: SubconversationEpochInfo) {
+    open fun onConferenceEpochChanged(info: SubconversationEpochInfo) {
         info.close()
     }
 
-    /** User removed from subconversation, including after an explicit leave request. */
-    open fun onSubconversationLeft(conversationId: QualifiedId) {}
+    /** User removed from conference, including after an explicit leave request. */
+    open fun onConferenceLeft(conversationId: QualifiedId) {}
 
     /** Processing an incoming conference MLS update failed. */
     open fun onCallingError(

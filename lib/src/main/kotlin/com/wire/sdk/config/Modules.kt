@@ -334,8 +334,8 @@ internal suspend fun getOrInitCryptoClient(
             appId = applicationQualifiedId.id,
             ciphersuiteCode = mlsCipherSuiteCode
         )
-        val cryptoClientId = CryptoClientId.create(
-            applicationQualifiedId = applicationQualifiedId,
+        val cryptoClientId = CryptoClientId(
+            userId = applicationQualifiedId,
             deviceId = storedDeviceId
         )
         // App has a client, load MLS client
@@ -352,8 +352,7 @@ internal suspend fun getOrInitCryptoClient(
         // No registered client: either a fresh install, or a previous client was invalidated
         // (invalid-credentials) and its deviceId cleared. Wipe any stale keystore so CoreCrypto
         // starts from a clean state. Safe here as no CoreCrypto client has the keystore open yet.
-        val wiped = MlsCryptoClient.deleteClientStorage(applicationQualifiedId.id)
-        logger.info("No registered client found, cleared any stale keystore (success={})", wiped)
+        MlsCryptoClient.deleteClientStorage(applicationQualifiedId.id)
 
         val cryptoClient = MlsCryptoClient.create(
             appId = applicationQualifiedId.id,
@@ -379,8 +378,8 @@ internal suspend fun getOrInitCryptoClient(
         }
 
         val deviceId = clientResponse.id
-        val cryptoClientId = CryptoClientId.create(
-            applicationQualifiedId = applicationQualifiedId,
+        val cryptoClientId = CryptoClientId(
+            userId = applicationQualifiedId,
             deviceId = deviceId
         )
         appStorage.saveDeviceId(deviceId = deviceId)

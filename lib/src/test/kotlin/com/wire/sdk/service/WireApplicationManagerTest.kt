@@ -947,8 +947,8 @@ class WireApplicationManagerTest {
             ciphersuiteCode = 1
         ).use { cryptoClientUser2 ->
             cryptoClientUser2.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = USER_2,
+                cryptoClientId = CryptoClientId(
+                    userId = USER_2,
                     deviceId = "0001"
                 ),
                 mlsTransport = testMlsTransport

@@ -27,20 +27,20 @@ import io.ktor.client.request.get
 
 /** Authenticated Wire backend operations for calling configuration and conference membership. */
 internal class CallingApiClient(private val backendClient: HttpClient) {
+    private fun basePath(id: QualifiedId): String =
+        "/conversations/${id.domain}/${id.id}/subconversations/conference"
+
     suspend fun getConference(conversationId: QualifiedId): SubconversationResponse =
-        backendClient.get(conferencePath(conversationId)).body()
+        backendClient.get(basePath(conversationId)).body()
 
     suspend fun getGroupInfo(conversationId: QualifiedId): ByteArray =
-        backendClient.get("${conferencePath(conversationId)}/groupinfo") {
+        backendClient.get("${basePath(conversationId)}/groupinfo") {
             accept(Mls)
         }.body()
 
     suspend fun leaveConference(conversationId: QualifiedId) {
-        backendClient.delete("${conferencePath(conversationId)}/self")
+        backendClient.delete("${basePath(conversationId)}/self")
     }
 
     suspend fun getConfiguration(): String = backendClient.get("/calls/config/v2").body()
-
-    private fun conferencePath(id: QualifiedId): String =
-        "/conversations/${id.domain}/${id.id}/subconversations/conference"
 }

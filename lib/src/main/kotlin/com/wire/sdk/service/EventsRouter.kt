@@ -26,9 +26,9 @@ import com.wire.sdk.WireEventsHandlerDefault
 import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
-import com.wire.sdk.crypto.MlsClientIdentity
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationMember
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
@@ -321,7 +321,7 @@ internal class EventsRouter internal constructor(
     private fun forwardMessage(
         message: ByteArray,
         conversationId: QualifiedId,
-        sender: MlsClientIdentity,
+        sender: CryptoClientId,
         timestamp: Instant
     ) {
         val genericMessage = GenericMessage.parseFrom(message)
@@ -460,7 +460,7 @@ internal class EventsRouter internal constructor(
         if (result.hasLeft) {
             when (wireEventsHandler) {
                 is WireEventsHandlerDefault ->
-                    wireEventsHandler.onSubconversationLeft(event.qualifiedConversation)
+                    wireEventsHandler.onConferenceLeft(event.qualifiedConversation)
                 is WireEventsHandlerSuspending ->
                     wireEventsHandler.onSubconversationLeft(event.qualifiedConversation)
             }
@@ -468,7 +468,7 @@ internal class EventsRouter internal constructor(
         result.epochInfo?.use { info ->
             when (wireEventsHandler) {
                 is WireEventsHandlerDefault ->
-                    wireEventsHandler.onSubconversationEpochChanged(info)
+                    wireEventsHandler.onConferenceEpochChanged(info)
                 is WireEventsHandlerSuspending ->
                     wireEventsHandler.onSubconversationEpochChanged(info)
             }

@@ -48,15 +48,15 @@ internal object MlsTestFixtures {
 
         try {
             bobClient.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.com"),
+                cryptoClientId = CryptoClientId(
+                    userId = QualifiedId(UUID.randomUUID(), "wire.com"),
                     deviceId = "0001"
                 ),
                 mlsTransport = transport
             )
             aliceClient.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.com"),
+                cryptoClientId = CryptoClientId(
+                    userId = QualifiedId(UUID.randomUUID(), "wire.com"),
                     deviceId = "0002"
                 ),
                 mlsTransport = transport

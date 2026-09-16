@@ -51,10 +51,10 @@ class MlsCryptoClientTest {
             MlsCryptoClient.create(alice.id, 1).use { aliceClient ->
                 MlsCryptoClient.create(bob.id, 1).use { bobClient ->
                     aliceClient.initializeMlsClient(
-                        CryptoClientId.create(alice, "a11ce"),
+                        CryptoClientId(alice, "a11ce"),
                         transport
                     )
-                    bobClient.initializeMlsClient(CryptoClientId.create(bob, "b0b"), transport)
+                    bobClient.initializeMlsClient(CryptoClientId(bob, "b0b"), transport)
                     val parent = ConversationId(UUID.randomUUID().toString().toByteArray())
                     val child = ConversationId(UUID.randomUUID().toString().toByteArray())
                     aliceClient.createConversation(
@@ -108,7 +108,7 @@ class MlsCryptoClientTest {
                     )
                     assertTrue(epochUpdate.isActive)
                     val buffered = epochUpdate.bufferedMessages.single()
-                    assertEquals(MlsClientIdentity(alice, "a11ce"), buffered.sender)
+                    assertEquals(CryptoClientId(alice, "a11ce"), buffered.sender)
                     assertEquals(
                         calling.content,
                         GenericMessage.parseFrom(buffered.message).calling.content
@@ -116,7 +116,7 @@ class MlsCryptoClientTest {
 
                     aliceClient.removeClientsFromConversation(
                         child,
-                        listOf(CryptoClientId.create(bob, "b0b"))
+                        listOf(CryptoClientId(bob, "b0b"))
                     )
                     val removal = bobClient.decryptMls(
                         child,
@@ -142,8 +142,8 @@ class MlsCryptoClientTest {
                 ciphersuiteCode = 1
             )
             cryptoClient.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(userId, "wire.test"),
+                cryptoClientId = CryptoClientId(
+                    userId = QualifiedId(userId, "wire.test"),
                     deviceId = "0001"
                 ),
                 mlsTransport = testMlsTransport
@@ -168,18 +168,10 @@ class MlsCryptoClientTest {
             val directory = MlsCryptoClient.clientStorageDirectory(userId)
             assertTrue { directory.exists() }
 
-            val deleted = MlsCryptoClient.deleteClientStorage(userId)
+            MlsCryptoClient.deleteClientStorage(userId)
 
-            assertTrue { deleted }
             assertFalse { directory.exists() }
         }
-    }
-
-    @Test
-    fun deleteClientStorageReturnsTrueWhenDirectoryMissing() {
-        val userId = UUID.randomUUID()
-        assertFalse { MlsCryptoClient.clientStorageDirectory(userId).exists() }
-        assertTrue { MlsCryptoClient.deleteClientStorage(userId) }
     }
 
     @Test
@@ -265,8 +257,8 @@ class MlsCryptoClientTest {
                 ciphersuiteCode = 1
             )
             mlsClient.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(userId, "wire.test"),
+                cryptoClientId = CryptoClientId(
+                    userId = QualifiedId(userId, "wire.test"),
                     deviceId = "0001"
                 ),
                 mlsTransport = testMlsTransport
@@ -289,8 +281,8 @@ class MlsCryptoClientTest {
                 ciphersuiteCode = 1
             )
             bobClient.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(bobUserId, "wire.test"),
+                cryptoClientId = CryptoClientId(
+                    userId = QualifiedId(bobUserId, "wire.test"),
                     deviceId = "b0b"
                 ),
                 mlsTransport = testMlsTransport
@@ -302,8 +294,8 @@ class MlsCryptoClientTest {
                 ciphersuiteCode = 1
             )
             aliceClient.initializeMlsClient(
-                cryptoClientId = CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(aliceUserId, "wire.test"),
+                cryptoClientId = CryptoClientId(
+                    userId = QualifiedId(aliceUserId, "wire.test"),
                     deviceId = "a11ce"
                 ),
                 mlsTransport = testMlsTransport
@@ -344,7 +336,7 @@ class MlsCryptoClientTest {
             // Bob decrypts the message
             val decrypted = requireNotNull(bobClient.decryptMls(mlsGroupId, encryptedBase64Message))
             assertEquals(
-                MlsClientIdentity(QualifiedId(aliceUserId, "wire.test"), "a11ce"),
+                CryptoClientId(QualifiedId(aliceUserId, "wire.test"), "a11ce"),
                 decrypted.sender
             )
 

@@ -16,10 +16,12 @@
 
 package com.wire.sdk.crypto
 
+import com.wire.sdk.model.CryptoClientId
+
 internal data class DecryptedMlsMessage(
     val message: ByteArray?,
     // Commits and proposals have no application-message sender.
-    val sender: MlsClientIdentity?,
+    val sender: CryptoClientId?,
     val isActive: Boolean = true,
     val bufferedMessages: List<DecryptedMlsMessage> = emptyList()
 )

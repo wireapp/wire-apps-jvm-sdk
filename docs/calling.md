@@ -47,7 +47,7 @@ are on `WireApplicationManager` and have a corresponding `Suspending` variant.
 
 Feed the result of joining to AVS before starting media. A repeated join checks backend state
 and reuses valid membership. An initial snapshot is returned by the join method; subsequent
-changes arrive through `onSubconversationEpochChanged`.
+changes arrive through `onConferenceEpochChanged`.
 
 Joining requires a conference already initialized by another client. An absent or epoch-zero
 conference causes the join to fail. The SDK never creates it. The explicit join sends the MLS
@@ -89,13 +89,13 @@ unused snapshots.
 The SDK passes incoming proposals and commits to CoreCrypto, but never schedules or sends
 pending-proposal commits and does not rotate conference keys. Other clients must commit
 membership changes. Applied commits trigger epoch updates or, when this device is removed,
-`onSubconversationLeft`. This callback describes this device's departure, not proof that every
+`onConferenceLeft`. This callback describes this device's departure, not proof that every
 participant's call has ended. Call-ending signaling is also forwarded to the app unchanged.
 Future-epoch messages buffered by CoreCrypto are delivered when the corresponding commit arrives.
 
 Parent removal and deletion generate separate backend removal proposals for each affected
 conference. Other clients commit them. The SDK keeps the conference mapping until its removal
-commit arrives; parent events do not wipe conference keys or trigger `onSubconversationLeft`.
+commit arrives; parent events do not wipe conference keys or trigger `onConferenceLeft`.
 CoreCrypto deletes the group when it applies that commit, and the SDK clears the mapping.
 An explicit leave also waits for this commit before emitting the callback; completion of the
 leave method only confirms the backend request succeeded.
@@ -114,7 +114,7 @@ deciding whether to resume its media engine. Leaving a call does not leave the p
 Decryption errors do not trigger an automatic rejoin. The SDK reports them to the app, which
 can explicitly join again if it wants to recover participation.
 SDK shutdown stops background work but does not issue a remote leave; call the leave method
-when that is your intended behavior, and keep listening until `onSubconversationLeft` before
+when that is your intended behavior, and keep listening until `onConferenceLeft` before
 shutting down if you want the removal commit applied locally.
 
 ## Engine HTTP requests

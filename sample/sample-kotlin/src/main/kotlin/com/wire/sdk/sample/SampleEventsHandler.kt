@@ -95,7 +95,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
     ) {
         var joined = false
         try {
-            callManager.joinSubconversationSuspending(conversationId).use { info ->
+            callManager.joinConferenceSuspending(conversationId).use { info ->
                 joined = true
                 logger.info(
                     "Joined conference: conversation={}, epoch={}, users={}",
@@ -116,7 +116,7 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
                 withContext(NonCancellable) {
                     try {
                         withTimeout(CALL_LEAVE_TIMEOUT_MILLIS.milliseconds) {
-                            callManager.leaveSubconversationSuspending(conversationId)
+                            callManager.leaveConferenceSuspending(conversationId)
                         }
                         logger.info("Conference leave completed for {}", conversationId)
                     } catch (_: TimeoutCancellationException) {

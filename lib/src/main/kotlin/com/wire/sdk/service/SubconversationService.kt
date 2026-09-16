@@ -39,8 +39,8 @@ import kotlinx.coroutines.CancellationException
  */
 @Suppress("TooManyFunctions")
 internal class SubconversationService(
-    private val api: CallingApiClient,
-    private val crypto: CryptoClient,
+    private val apiClient: CallingApiClient,
+    private val cryptoClient: CryptoClient,
     private val appStorage: AppStorage
 ) : AutoCloseable {
     /** The caller owns [epochInfo] and must deliver it to the app or close it. */
@@ -58,7 +58,7 @@ internal class SubconversationService(
 
     suspend fun join(conversationId: QualifiedId): SubconversationEpochInfo =
         catch {
-            val remote = api.getConference(conversationId)
+            val remote = apiClient.getConference(conversationId)
             joinRemote(conversationId, remote)
             val conference = conferences.getValue(conversationId)
             getSubconversationEpoch(conversationId, conference).also {
@@ -76,13 +76,13 @@ internal class SubconversationService(
             )
         }
         var groupId = ConversationId(Base64.decode(remote.groupId))
-        val exists = crypto.conversationExists(groupId)
+        val exists = cryptoClient.conversationExists(groupId)
         val alreadyJoined = remote.hasSelf() &&
             exists &&
-            crypto.conversationEpoch(groupId) == remote.epoch
+            cryptoClient.conversationEpoch(groupId) == remote.epoch
         if (!alreadyJoined) {
             // Joining is the only conference commit the SDK initiates.
-            crypto.joinMlsConversationRequest(api.getGroupInfo(id).toGroupInfo())
+            cryptoClient.joinMlsConversationRequest(apiClient.getGroupInfo(id).toGroupInfo())
         }
         val previous = conferences[id]
         if (previous?.groupId != groupId) {
@@ -92,10 +92,10 @@ internal class SubconversationService(
 
     suspend fun leave(conversationId: QualifiedId) =
         catch {
-            val remote = api.getConference(conversationId)
+            val remote = apiClient.getConference(conversationId)
             if (conferences[conversationId] == null) restore(conversationId, remote)
             // Check remote membership so repeat leaves and restart recovery are safe.
-            if (remote.hasSelf()) api.leaveConference(conversationId)
+            if (remote.hasSelf()) apiClient.leaveConference(conversationId)
             // Keep the mapping until CoreCrypto applies the conference removal commit.
         }
 
@@ -109,10 +109,10 @@ internal class SubconversationService(
     ): DecryptionResult? =
         catch {
             val conference = conferences[conversationId]
-                ?: restore(conversationId, api.getConference(conversationId))
+                ?: restore(conversationId, apiClient.getConference(conversationId))
                 ?: return@catch null
             val decrypted = try {
-                crypto.decryptMls(conference.groupId, data) ?: return@catch null
+                cryptoClient.decryptMls(conference.groupId, data) ?: return@catch null
             } catch (exception: CoreCryptoException.Mls) {
                 if (exception.mlsError.isConsumed()) return@catch null
                 throw exception
@@ -136,7 +136,7 @@ internal class SubconversationService(
     ): Conference? {
         val groupId = ConversationId(Base64.decode(remote.groupId))
         // Backend membership can already exclude us while the removal commit is still pending.
-        if (!crypto.conversationExists(groupId)) return null
+        if (!cryptoClient.conversationExists(groupId)) return null
         return Conference(groupId).also { conferences[id] = it }
     }
 
@@ -146,7 +146,7 @@ internal class SubconversationService(
     private suspend fun getSubconversationEpoch(
         id: QualifiedId,
         conference: Conference
-    ): SubconversationEpochInfo = crypto.getConferenceEpochInfo(id, conference.groupId)
+    ): SubconversationEpochInfo = cryptoClient.getConferenceEpochInfo(id, conference.groupId)
 
     private suspend fun getEpochUpdate(
         id: QualifiedId,

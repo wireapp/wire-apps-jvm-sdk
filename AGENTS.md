@@ -96,17 +96,18 @@ Operational details that matter when modifying these APIs:
   The app owns AVS and media.
 - Send opaque signaling with `WireMessage.Calling.create` and the existing manager send methods.
   Receive it through `onCallingMessageReceived` on either event-handler variant.
-- Decrypted MLS application messages carry an `MlsClientIdentity` sender containing `userId`
-  and `deviceId`. Decode both from CoreCrypto's structured identity, including buffered messages.
+- Decrypted MLS application messages carry a `CryptoClientId` sender containing a `QualifiedId`
+  in `userId` and a string `deviceId`. Decode these from CoreCrypto's structured identity,
+  including buffered messages.
 - `WireApplicationManager` exposes calling configuration and conference join/leave.
   Each operation has blocking and suspending variants. Joining returns the initial epoch snapshot;
-  subsequent snapshots arrive through `onSubconversationEpochChanged`, with no separate getter.
+  subsequent snapshots arrive through `onConferenceEpochChanged`, with no separate getter.
 - Calling uses only the `conference` subconversation. `SubconversationService` caches its group ID
   in memory and can recover it from backend group metadata plus persisted CoreCrypto state.
   There is no SQLDelight subconversation table and receiving events never implicitly joins a call.
 - Parent deletion, removal, and reset do not clear conference state. Separate incoming conference
   removal commits make CoreCrypto delete the group; the SDK then clears its mapping and emits
-  `onSubconversationLeft`. Explicit leave requests also retain the mapping until that commit.
+  `onConferenceLeft`. Explicit leave requests also retain the mapping until that commit.
 - `SubconversationService` returns decryption results and epoch snapshots without invoking app
   handlers. `EventsRouter.processConferenceMessage` delivers conference callbacks after service
   locks and crypto transactions have ended.

@@ -21,24 +21,10 @@ import com.wire.sdk.utils.obfuscateId
 import kotlinx.serialization.Serializable
 
 @Serializable
-@ConsistentCopyVisibility
-internal data class CryptoClientId private constructor(
-    val userId: String,
-    val deviceId: String,
-    val userDomain: String
+internal data class CryptoClientId(
+    val userId: QualifiedId,
+    val deviceId: String
 ) {
     override fun toString(): String =
-        "${userId.obfuscateId()}:${deviceId.obfuscateClientId()}@$userDomain"
-
-    companion object {
-        fun create(
-            applicationQualifiedId: QualifiedId,
-            deviceId: String
-        ): CryptoClientId =
-            CryptoClientId(
-                userId = applicationQualifiedId.id.toString(),
-                deviceId = deviceId,
-                userDomain = applicationQualifiedId.domain
-            )
-    }
+        "${userId.id.obfuscateId()}:${deviceId.obfuscateClientId()}@${userId.domain}"
 }

@@ -30,7 +30,7 @@ import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 import com.wire.sdk.utils.obfuscateId
-import com.wire.sdk.utils.toMlsClientIdentity
+import com.wire.sdk.utils.toCryptoClientId
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -98,7 +98,7 @@ internal class MlsCryptoClient private constructor(
             when (dm) {
                 is DecryptedMessage.Text -> DecryptedMlsMessage(
                     message = dm.plaintext,
-                    sender = dm.senderClientId.toMlsClientIdentity()
+                    sender = dm.senderClientId.toCryptoClientId()
                 )
                 is DecryptedMessage.Commit -> DecryptedMlsMessage(
                     message = null,
@@ -109,7 +109,7 @@ internal class MlsCryptoClient private constructor(
                             is BufferedDecryptedMessage.Text ->
                                 DecryptedMlsMessage(
                                     message = buffered.plaintext,
-                                    sender = buffered.senderClientId.toMlsClientIdentity()
+                                    sender = buffered.senderClientId.toCryptoClientId()
                                 )
                             is BufferedDecryptedMessage.Commit -> DecryptedMlsMessage(
                                 message = null,
@@ -162,9 +162,9 @@ internal class MlsCryptoClient private constructor(
         mlsTransport: MlsTransport
     ) {
         val clientId = ClientId(
-            userId = Uuid(cryptoClientId.userId),
+            userId = Uuid(cryptoClientId.userId.id.toString()),
             deviceId = DeviceId.fromHexString(cryptoClientId.deviceId),
-            domain = cryptoClientId.userDomain
+            domain = cryptoClientId.userId.domain
         )
 
         coreCryptoClient.transaction {
@@ -286,9 +286,9 @@ internal class MlsCryptoClient private constructor(
                 conversationId = mlsGroupId,
                 clients = clientIds.map { client ->
                     ClientId(
-                        userId = Uuid(client.userId),
+                        userId = Uuid(client.userId.id.toString()),
                         deviceId = DeviceId.fromHexString(client.deviceId),
-                        domain = client.userDomain
+                        domain = client.userId.domain
                     )
                 }
             )
@@ -343,7 +343,7 @@ internal class MlsCryptoClient private constructor(
             val epoch = context.conversationEpoch(mlsGroupId)
             check(epoch <= Long.MAX_VALUE.toULong()) { "MLS epoch exceeds supported range" }
             val members = context.getClientIds(mlsGroupId).map { client ->
-                client.use { it.toMlsClientIdentity() }
+                client.use { it.toCryptoClientId() }
             }.groupBy({ it.userId }, { it.deviceId })
             context.exportSecretKey(mlsGroupId, CALLING_SECRET_LENGTH).use { key ->
                 val bytes = key.copyBytes()
@@ -382,12 +382,17 @@ internal class MlsCryptoClient private constructor(
          *
          * Must only be called while no CoreCrypto client holds the keystore open (e.g. at
          * startup before [create]); deleting an open keystore leads to undefined behaviour.
-         *
-         * @return true if the directory was absent or fully deleted, false if deletion failed.
          */
-        fun deleteClientStorage(appId: UUID): Boolean {
+        fun deleteClientStorage(appId: UUID) {
             val directory = clientStorageDirectory(appId)
-            return !directory.exists() || directory.deleteRecursively()
+            if (directory.exists()) {
+                val result = directory.deleteRecursively()
+                if (!result) {
+                    throw WireException.CryptographicSystemError(
+                        "Cannot access CoreCrypto keystore directory for app $appId"
+                    )
+                }
+            }
         }
 
         suspend fun create(

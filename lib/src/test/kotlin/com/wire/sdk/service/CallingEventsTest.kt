@@ -23,9 +23,9 @@ import com.wire.sdk.WireEventsHandlerSuspending
 import com.wire.sdk.client.CallingApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
-import com.wire.sdk.crypto.MlsClientIdentity
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.ConversationEntity
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.calling.SubconversationEpochInfo
@@ -142,7 +142,7 @@ class CallingEventsTest {
                 val outgoing = WireMessage.Calling.create(id, content)
                 coEvery { crypto.decryptMls(group, "encrypted") } returns DecryptedMlsMessage(
                     ProtobufSerializer.toGenericMessageByteArray(outgoing),
-                    sender = MlsClientIdentity(sender, "device-123")
+                    sender = CryptoClientId(sender, "device-123")
                 )
                 SubconversationService(
                     mockk(),
@@ -218,7 +218,7 @@ class CallingEventsTest {
                         bufferedMessages = listOf(
                             DecryptedMlsMessage(
                                 ProtobufSerializer.toGenericMessageByteArray(message),
-                                sender = MlsClientIdentity(sender, "device")
+                                sender = CryptoClientId(sender, "device")
                             )
                         )
                     )
@@ -297,8 +297,8 @@ class CallingEventsTest {
                         }
                         when (handler) {
                             is WireEventsHandlerDefault -> verify(exactly = 1) {
-                                handler.onSubconversationEpochChanged(info)
-                                handler.onSubconversationLeft(id)
+                                handler.onConferenceEpochChanged(info)
+                                handler.onConferenceLeft(id)
                                 handler.onCallingError(id, error)
                             }
                             is WireEventsHandlerSuspending -> coVerify(exactly = 1) {
@@ -320,7 +320,7 @@ class CallingEventsTest {
             val info = SubconversationEpochInfo(id, "group", 2, emptyMap(), ByteArray(32) { 1 })
             coEvery { service.decrypt(id, "encrypted") } returns
                 SubconversationService.DecryptionResult(DecryptedMlsMessage(null, null), info)
-            every { handler.onSubconversationEpochChanged(info) } throws
+            every { handler.onConferenceEpochChanged(info) } throws
                 WireException.UnknownError()
             conferenceRouter(
                 service,
@@ -329,7 +329,7 @@ class CallingEventsTest {
             ).use { router ->
                 router.route(EventResponse("epoch", listOf(event("conference"))))
                 runCurrent()
-                verify(exactly = 1) { handler.onSubconversationEpochChanged(info) }
+                verify(exactly = 1) { handler.onConferenceEpochChanged(info) }
                 verify(exactly = 0) { handler.onCallingError(any(), any()) }
                 assertContentEquals(ByteArray(32), info.getSharedSecret())
             }

@@ -46,7 +46,7 @@ class CallingExample(private val engine: Engine) : WireEventsHandlerSuspending()
 
     /** Join an incoming call's existing conference before starting media in the engine. */
     suspend fun joinCall(conversationId: QualifiedId) {
-        manager.joinSubconversationSuspending(conversationId).use { engine.updateEpoch(it) }
+        manager.joinConferenceSuspending(conversationId).use { engine.updateEpoch(it) }
     }
 
     /** Use from the engine's outbound signaling callback. */
@@ -55,6 +55,6 @@ class CallingExample(private val engine: Engine) : WireEventsHandlerSuspending()
     }
 
     suspend fun leaveCall(conversationId: QualifiedId) {
-        manager.leaveSubconversationSuspending(conversationId)
+        manager.leaveConferenceSuspending(conversationId)
     }
 }

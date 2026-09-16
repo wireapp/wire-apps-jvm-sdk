@@ -71,8 +71,8 @@ class ClientsApiClientTest {
             val api = ClientsApiClient(client, appStorage)
 
             api.updateClientWithMlsPublicKey(
-                CryptoClientId.create(
-                    applicationQualifiedId = QualifiedId(UUID.randomUUID(), "example.com"),
+                CryptoClientId(
+                    userId = QualifiedId(UUID.randomUUID(), "example.com"),
                     deviceId = UUID.randomUUID().toString()
                 ),
                 com.wire.sdk.model.http.MlsPublicKeys()

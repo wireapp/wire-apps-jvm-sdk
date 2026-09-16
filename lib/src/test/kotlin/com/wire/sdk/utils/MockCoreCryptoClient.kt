@@ -31,7 +31,6 @@ import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
-import com.wire.sdk.crypto.MlsClientIdentity
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.MlsPublicKeys
@@ -92,7 +91,7 @@ internal class MockCoreCryptoClient private constructor(
     ): DecryptedMlsMessage =
         DecryptedMlsMessage(
             message = GENERIC_TEXT_MESSAGE.toByteArray(),
-            sender = MlsClientIdentity(DEFAULT_SENDER, "1")
+            sender = CryptoClientId(DEFAULT_SENDER, "1")
         )
 
     override suspend fun encryptMls(
