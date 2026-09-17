@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,17 +14,27 @@
  * along with this program. If not, see http://www.gnu.org/licenses/.
  */
 
-package com.wire.sdk.model
+package com.wire.sdk.model.http.conversation
 
-import com.wire.sdk.utils.obfuscateClientId
-import com.wire.sdk.utils.obfuscateId
+import com.wire.sdk.model.QualifiedId
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class CryptoClientId(
-    val userId: QualifiedId,
-    val deviceId: String
+internal data class SubconversationResponse(
+    @SerialName("group_id") val groupId: String,
+    val epoch: ULong,
+    val members: List<Member>
 ) {
-    override fun toString(): String =
-        "${userId.id.obfuscateId()}:${deviceId.obfuscateClientId()}@${userId.domain}"
+    @Serializable
+    data class Member(
+        @SerialName("user_id") val userId: String,
+        val domain: String,
+        @SerialName("client_id") val clientId: String
+    ) {
+        fun matches(
+            user: QualifiedId,
+            deviceId: String?
+        ): Boolean = userId == user.id.toString() && domain == user.domain && clientId == deviceId
+    }
 }

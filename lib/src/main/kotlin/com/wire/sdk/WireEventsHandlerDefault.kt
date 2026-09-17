@@ -21,6 +21,8 @@ import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.WireMessage
+import com.wire.sdk.model.calling.SubconversationEpochInfo
+import com.wire.sdk.exception.WireException
 import org.slf4j.LoggerFactory
 
 /**
@@ -36,6 +38,26 @@ abstract class WireEventsHandlerDefault : WireEventsHandler() {
     open fun onTextMessageReceived(wireMessage: WireMessage.Text) {
         logger.debug("Received event: TextMessageReceived")
     }
+
+    /** Receives opaque signaling for the app's calling engine. */
+    open fun onCallingMessageReceived(message: WireMessage.Calling) {}
+
+    /**
+     * Receives conference key and member updates in order. The app owns this snapshot and
+     * should close it after supplying its secret to the calling engine.
+     */
+    open fun onConferenceEpochChanged(info: SubconversationEpochInfo) {
+        info.close()
+    }
+
+    /** User removed from conference, including after an explicit leave request. */
+    open fun onConferenceLeft(conversationId: QualifiedId) {}
+
+    /** Processing an incoming conference MLS update failed. */
+    open fun onCallingError(
+        conversationId: QualifiedId,
+        error: WireException
+    ) {}
 
     /**
      * The app has been added to a conversation.

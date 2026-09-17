@@ -783,6 +783,8 @@ internal class ConversationService internal constructor(
         )
     }
 
+    suspend fun getConfiguration(): String = conversationsApiClient.getConfiguration()
+
     private suspend fun getClientsByUserIds(userIds: List<QualifiedId>): List<CryptoClientId> {
         val usersClients = if (userIds.size == 1) {
             val user = userIds.first()
@@ -800,8 +802,8 @@ internal class ConversationService internal constructor(
         return usersClients.flatMap { (user, clients) ->
             logger.debug("Mapping {} clients for User: {}", clients.size, user.id)
             clients.map { client ->
-                CryptoClientId.create(
-                    applicationQualifiedId = user,
+                CryptoClientId(
+                    userId = user,
                     deviceId = client.id
                 )
             }

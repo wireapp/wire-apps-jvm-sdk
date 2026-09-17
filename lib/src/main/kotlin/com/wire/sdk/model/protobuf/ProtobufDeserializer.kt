@@ -133,8 +133,35 @@ object ProtobufDeserializer {
                 sender = sender
             )
 
+            genericMessage.hasCalling() -> unpackCalling(
+                genericMessage = genericMessage,
+                conversationId = conversationId,
+                sender = sender,
+                timestamp = timestamp
+            )
+
             else -> WireMessage.Unknown
         }
+
+    private fun unpackCalling(
+        genericMessage: GenericMessage,
+        conversationId: QualifiedId,
+        sender: QualifiedId,
+        timestamp: Instant
+    ) = WireMessage.Calling(
+        id = UUID.fromString(genericMessage.messageId),
+        conversationId = conversationId,
+        sender = sender,
+        content = genericMessage.calling.content,
+        timestamp = timestamp,
+        callConversationId = if (genericMessage.calling.hasQualifiedConversationId()) {
+            genericMessage.calling.qualifiedConversationId.let {
+                QualifiedId(UUID.fromString(it.id), it.domain)
+            }
+        } else {
+            conversationId
+        }
+    )
 
     private fun unpackText(
         genericMessage: GenericMessage,

@@ -31,23 +31,24 @@ import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.asset.AssetRetention
 import com.wire.sdk.model.asset.AssetUploadData
+import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
-import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.protobuf.ProtobufSerializer
+import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.AESDecrypt
 import com.wire.sdk.utils.AESEncrypt
 import com.wire.sdk.utils.MAX_DATA_SIZE
-import java.io.ByteArrayInputStream
-import java.util.UUID
-import javax.imageio.ImageIO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+import java.util.UUID
+import javax.imageio.ImageIO
 
 /**
  * Allows fetching common data and interacting with each Team instance invited to the Application.
@@ -64,7 +65,8 @@ class WireApplicationManager internal constructor(
     private val cryptoClient: CryptoClient,
     private val mlsFallbackStrategy: MlsFallbackStrategy,
     private val conversationService: ConversationService,
-    private val appStorage: AppStorage
+    private val appStorage: AppStorage,
+    private val subconversationService: SubconversationService
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -205,7 +207,16 @@ class WireApplicationManager internal constructor(
                         mlsGroupId = mlsGroupId,
                         conversationId = preparedMessage.conversationId
                     )
-                    mlsApiClient.sendMessage(mlsMessage = encryptedMessage)
+                    val currentGroupId = conversationService.getConversationById(
+                        preparedMessage.conversationId
+                    ).mlsGroupId
+                    val retriedMessage = cryptoClient.encryptMls(
+                        mlsGroupId = currentGroupId,
+                        message = ProtobufSerializer.toGenericMessageByteArray(preparedMessage)
+                    )
+                    mlsApiClient.sendMessage(mlsMessage = retriedMessage)
+                } else {
+                    throw exception
                 }
             }
         }
@@ -713,4 +724,36 @@ class WireApplicationManager internal constructor(
      * Note: This reads from local storage and does not make any network request.
      */
     fun getDeviceId(): String? = appStorage.getDeviceId()
+
+    /** Fetches calling configuration JSON to supply to the app's calling engine. */
+    @Throws(WireException::class)
+    fun getCallingConfiguration(): String = runBlocking { getCallingConfigurationSuspending() }
+
+    /** See [getCallingConfiguration]. */
+    suspend fun getCallingConfigurationSuspending(): String = conversationService.getConfiguration()
+
+    /**
+     * Joins the conversation's conference MLS group, initialized by another client.
+     * Fails if no initialized conference exists. Never creates a conference.
+     * Returns the initial key and members. Later changes arrive through the epoch callback.
+     * The app owns the returned snapshot and should close it after use.
+     */
+    @Throws(WireException::class)
+    fun joinConference(conversationId: QualifiedId): SubconversationEpochInfo =
+        runBlocking { joinConferenceSuspending(conversationId) }
+
+    /** See [joinConference]. */
+    suspend fun joinConferenceSuspending(conversationId: QualifiedId): SubconversationEpochInfo =
+        subconversationService.join(conversationId)
+
+    /**
+     * Requests removal of this device from the conference, preserving the parent conversation.
+     */
+    @Throws(WireException::class)
+    fun leaveConference(conversationId: QualifiedId) =
+        runBlocking { leaveConferenceSuspending(conversationId) }
+
+    /** See [leaveConference]. */
+    suspend fun leaveConferenceSuspending(conversationId: QualifiedId) =
+        subconversationService.leave(conversationId)
 }

@@ -29,6 +29,7 @@ import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
@@ -219,7 +220,7 @@ class EventsRouterConcurrencyTest {
             coEvery { conversationService.getConversationById(conversationId) } returns conversation
             coEvery { cryptoClient.decryptMls(mlsGroupId, any()) } returns DecryptedMlsMessage(
                 message = MockCoreCryptoClient.GENERIC_TEXT_MESSAGE.toByteArray(),
-                sender = decryptedSender
+                sender = CryptoClientId(decryptedSender, "1")
             )
 
             val testDispatcher = StandardTestDispatcher(testScheduler)
@@ -675,6 +676,7 @@ class EventsRouterConcurrencyTest {
             wireEventsHandler = wireEventsHandler,
             cryptoClient = cryptoClient,
             mlsFallbackStrategy = mlsFallbackStrategy,
+            subconversationService = mockk(relaxed = true),
             dispatcher = dispatcher
         )
     }

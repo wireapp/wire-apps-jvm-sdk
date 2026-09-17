@@ -10,8 +10,8 @@ import kotlin.test.Test
 class CryptoClientIdTest {
     @Test
     fun `test serialization and deserialization of ClientId`() {
-        val cryptoClientId = CryptoClientId.create(
-            applicationQualifiedId = QualifiedId(UUID.randomUUID(), "wire.example.com"),
+        val cryptoClientId = CryptoClientId(
+            userId = QualifiedId(UUID.randomUUID(), "wire.example.com"),
             deviceId = "0001"
         )
         val json = KtxSerializer.json.encodeToString(cryptoClientId)
@@ -21,25 +21,23 @@ class CryptoClientIdTest {
     }
 
     @Test
-    fun `create builds client id from user id, device id, and domain`() {
-        val appId = UUID.randomUUID()
+    fun `constructor preserves qualified user id and device id`() {
+        val userId = QualifiedId(UUID.randomUUID(), "wire.example.com")
         val deviceId = "device-123"
-        val userDomain = "wire.example.com"
 
-        val cryptoClientId = CryptoClientId.create(
-            applicationQualifiedId = QualifiedId(appId, userDomain),
+        val cryptoClientId = CryptoClientId(
+            userId = userId,
             deviceId = deviceId
         )
 
-        assertEquals(appId.toString(), cryptoClientId.userId)
+        assertEquals(userId, cryptoClientId.userId)
         assertEquals(deviceId, cryptoClientId.deviceId)
-        assertEquals(userDomain, cryptoClientId.userDomain)
     }
 
     @Test
     fun `toString obfuscates user id and device id`() {
-        val cryptoClientId = CryptoClientId.create(
-            applicationQualifiedId = QualifiedId(
+        val cryptoClientId = CryptoClientId(
+            userId = QualifiedId(
                 UUID.fromString("11111111-2222-3333-4444-555555555555"),
                 "wire.example.com"
             ),
@@ -49,8 +47,8 @@ class CryptoClientIdTest {
         val obfuscatedValue = cryptoClientId.toString()
 
         assertEquals("1111111***:abc***@wire.example.com", obfuscatedValue)
-        assertFalse(obfuscatedValue.contains(cryptoClientId.userId))
+        assertFalse(obfuscatedValue.contains(cryptoClientId.userId.id.toString()))
         assertFalse(obfuscatedValue.contains(cryptoClientId.deviceId))
-        assertTrue(obfuscatedValue.contains(cryptoClientId.userDomain))
+        assertTrue(obfuscatedValue.contains(cryptoClientId.userId.domain))
     }
 }

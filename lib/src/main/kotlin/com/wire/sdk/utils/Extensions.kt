@@ -19,6 +19,8 @@
 package com.wire.sdk.utils
 
 import com.wire.crypto.ClientId
+import com.wire.crypto.use
+import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import java.util.UUID
 
@@ -63,16 +65,14 @@ internal fun ByteArray.toInternalHexString(): String {
     }
 }
 
-/**
- * CoreCrypto
- */
-
-internal fun ClientId.toQualifiedId(): QualifiedId {
-    val deserializedClientId = this.deserialize()
-    val javaId = UUID.fromString(deserializedClientId.userId.toString())
-
-    return QualifiedId(
-        id = javaId,
-        domain = deserializedClientId.domain
-    )
-}
+/** Decodes the user and device components of CoreCrypto's structured client identity. */
+internal fun ClientId.toCryptoClientId(): CryptoClientId =
+    deserialize().use { client ->
+        CryptoClientId(
+            userId = QualifiedId(
+                UUID.fromString(client.userId.toString()),
+                client.domain
+            ),
+            deviceId = client.deviceId.toU64().toString(radix = 16)
+        )
+    }
