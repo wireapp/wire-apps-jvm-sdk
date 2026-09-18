@@ -16,26 +16,17 @@
 
 package com.wire.sdk.model
 
-import java.util.UUID
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-/**
- * Represents a Wire user exposed through the public SDK API.
- *
- * @property id The qualified user identity (UUID + domain).
- * @property name The display name of the user.
- * @property email The email address of the user.
- * @property handle The unique handle (username) of the user.
- * @property teamId The UUID of the team the user belongs to.
- * @property deleted Whether the user account has been deleted.
- * @property type The type of the user account, if returned by the backend.
- */
-@JvmRecord
-data class WireUser(
-    val id: QualifiedId,
-    val name: String,
-    val email: String?,
-    val handle: String?,
-    val teamId: UUID?,
-    val deleted: Boolean?,
-    val type: UserType?
-)
+@Serializable
+enum class UserType {
+    @SerialName("regular")
+    REGULAR,
+
+    @SerialName("app")
+    APP,
+
+    @SerialName("bot")
+    BOT
+}

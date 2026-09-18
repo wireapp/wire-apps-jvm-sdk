@@ -29,6 +29,7 @@ public enum TestCommand {
     ASSET_VIDEO("asset-video"),
     ASSET_PDF_DOCUMENT("asset-document-pdf"),
     SEARCH_USER("search-user"),
+    GET_USERS("get-users"),
     TEST_DELETED_MESSAGE("test-deleted-message"),
     SEND_EPHEMERAL_TEXT("send-ephemeral-text"),
     SEND_EPHEMERAL_PING("send-ephemeral-ping"),

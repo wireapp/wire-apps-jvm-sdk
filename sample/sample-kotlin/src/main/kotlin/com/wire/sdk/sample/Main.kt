@@ -63,7 +63,7 @@ fun main() {
 
     val applicationQualifiedId = applicationManager.getApplicationQualifiedId()
 
-    logger.info(applicationManager.getUser(applicationQualifiedId).toString())
+    logger.info(applicationManager.getUsers(listOf(applicationQualifiedId)).toString())
     logger.info("Wire backend domain: ${applicationQualifiedId.domain}")
 
     // Use wireAppSdk.stopListening() to stop the SDK or just stop it with Ctrl+C/Cmd+C

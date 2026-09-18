@@ -1755,7 +1755,7 @@ class ConversationServiceTest {
 
         assertEquals("${otherMember.id}@${otherMember.domain}", conversationEntity.name)
         // Verify no backend call was made to look up user data
-        coVerify(exactly = 0) { usersApiClient.getUserData(any()) }
+        coVerify(exactly = 0) { usersApiClient.getUsers(any()) }
     }
 
     @Test
