@@ -418,21 +418,25 @@ class WireApplicationManager internal constructor(
     }
 
     /**
-     * Get a Wire user's data
-     * Blocking method for Java interoperability
+     * Returns detailed information for the requested users.
+     *
+     * Users the backend could not fetch are omitted from the returned list. An empty input list
+     * returns an empty result without making a backend request.
+     *
+     * @param userIds Qualified IDs of the users to fetch.
+     * @return Detailed information for the users found by the backend.
+     * @throws WireException If the request fails.
      */
     @Throws(WireException::class)
-    fun getUser(userId: QualifiedId): WireUser =
+    fun getUsers(userIds: List<QualifiedId>): List<WireUser> =
         runBlocking {
-            getUserSuspending(userId)
+            getUsersSuspending(userIds)
         }
 
-    /**
-     * Get a Wire user's data
-     * Suspending method for Kotlin consumers
-     */
+    /** See [getUsers]. */
     @Throws(WireException::class)
-    suspend fun getUserSuspending(userId: QualifiedId): WireUser = userService.getUser(userId)
+    suspend fun getUsersSuspending(userIds: List<QualifiedId>): List<WireUser> =
+        userService.getUsers(userIds)
 
     /**
      * Creates a Group Conversation where currently the only admin is the App

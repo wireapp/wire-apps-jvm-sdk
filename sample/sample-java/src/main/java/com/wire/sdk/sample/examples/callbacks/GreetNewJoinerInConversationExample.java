@@ -37,14 +37,13 @@ public class GreetNewJoinerInConversationExample extends WireEventsHandlerDefaul
     @Override
     public void onUserJoinedConversation(@NotNull QualifiedId conversationId, @NotNull List<ConversationMember> members) {
         logger.info("User(s) joined conversation. conversationId: {}, membersCount: {}", conversationId, members.size());
-        members.forEach(member -> {
-            try {
-                final var name = getManager().getUser(member.userId()).name();
-                welcomeTheNewJoiner(conversationId, name);
-            } catch (WireException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try {
+            final var userIds = members.stream().map(ConversationMember::userId).toList();
+            getManager().getUsers(userIds)
+                    .forEach(user -> welcomeTheNewJoiner(conversationId, user.name()));
+        } catch (WireException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void welcomeTheNewJoiner(QualifiedId conversationId, String name) {

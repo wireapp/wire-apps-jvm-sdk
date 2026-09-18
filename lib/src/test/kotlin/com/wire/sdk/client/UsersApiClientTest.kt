@@ -17,6 +17,7 @@
 package com.wire.sdk.client
 
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.UserType
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -46,54 +47,60 @@ class UsersApiClientTest {
     )
 
     @Test
-    fun `given userId, when getUserData, then correct URL`() =
+    fun `given userIds, when getUsers, then correct URL`() =
         runTest {
             var capturedPath: String? = null
-            apiClient(FULL_USER_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
-                .getUserData(USER_ID)
-            assertEquals("/users/${USER_ID.domain}/${USER_ID.id}", capturedPath)
+            apiClient(LIST_USERS_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
+                .getUsers(listOf(USER_ID))
+            assertEquals("/list-users", capturedPath)
         }
 
     @Test
-    fun `given userId, when getUserData, then GET method`() =
+    fun `given userIds, when getUsers, then POST method`() =
         runTest {
             var capturedMethod: HttpMethod? = null
-            apiClient(FULL_USER_RESPONSE_JSON) { capturedMethod = it.method }
-                .getUserData(USER_ID)
-            assertEquals(HttpMethod.Get, capturedMethod)
+            apiClient(LIST_USERS_RESPONSE_JSON) { capturedMethod = it.method }
+                .getUsers(listOf(USER_ID))
+            assertEquals(HttpMethod.Post, capturedMethod)
         }
 
     @Test
-    fun `given full response, when getUserData, then fields deserialized`() =
+    fun `given userIds, when getUsers, then request body contains qualified ids`() =
         runTest {
-            val result = apiClient(FULL_USER_RESPONSE_JSON).getUserData(USER_ID)
-            assertEquals(USER_ID, result.id)
-            assertEquals(TEAM_UUID, result.teamId)
-            assertEquals("john@example.com", result.email)
-            assertEquals("John Doe", result.name)
-            assertEquals("johndoe", result.handle)
-            assertEquals(1L, result.accentId)
-            assertEquals(2, result.supportedProtocols.size)
-            assertEquals(false, result.deleted)
+            var capturedBody: String? = null
+            apiClient(LIST_USERS_RESPONSE_JSON) {
+                capturedBody = (it.body as TextContent).text
+            }.getUsers(listOf(USER_ID))
+
+            assertEquals(true, capturedBody?.contains("\"qualified_ids\""))
+            assertEquals(true, capturedBody?.contains(USER_ID.id.toString()))
         }
 
     @Test
-    fun `given minimal response, when getUserData, then nullables are null`() =
+    fun `given found users, when getUsers, then fields deserialized`() =
         runTest {
-            val result = apiClient(MINIMAL_USER_RESPONSE_JSON).getUserData(USER_ID)
-            assertEquals(USER_ID, result.id)
-            assertNull(result.teamId)
-            assertNull(result.email)
-            assertNull(result.handle)
-            assertNull(result.deleted)
-            assertEquals(1, result.supportedProtocols.size)
+            val result = apiClient(LIST_USERS_RESPONSE_JSON).getUsers(listOf(USER_ID))
+
+            assertEquals(1, result.found.size)
+            assertEquals(USER_ID, result.found.first().id)
+            assertEquals(UserType.REGULAR, result.found.first().type)
+            assertEquals(listOf(SECOND_USER_ID), result.failed)
         }
 
     @Test
-    fun `given 404, when getUserData, then exception thrown`() =
+    fun `given response without type or failed, when getUsers, then defaults are used`() =
+        runTest {
+            val result = apiClient(MINIMAL_LIST_USERS_RESPONSE_JSON).getUsers(listOf(USER_ID))
+
+            assertNull(result.found.first().type)
+            assertTrue(result.failed.isEmpty())
+        }
+
+    @Test
+    fun `given 500, when getUsers, then exception thrown`() =
         runTest {
             assertFailsWith<io.ktor.client.plugins.ResponseException> {
-                errorClient(HttpStatusCode.NotFound).getUserData(USER_ID)
+                errorClient(HttpStatusCode.InternalServerError).getUsers(listOf(USER_ID))
             }
         }
 
@@ -248,29 +255,50 @@ class UsersApiClientTest {
                 }
             )
 
-        private val FULL_USER_RESPONSE_JSON = """
+        private val LIST_USERS_RESPONSE_JSON = """
             {
-                "qualified_id": { "id": "${USER_ID.id}", "domain": "${USER_ID.domain}" },
-                "team": "$TEAM_UUID",
-                "email": "john@example.com",
-                "name": "John Doe",
-                "handle": "johndoe",
-                "accent_id": 1,
-                "supported_protocols": ["proteus", "mls"],
-                "deleted": false
+                "found": [
+                    {
+                        "qualified_id": {
+                            "id": "${USER_ID.id}",
+                            "domain": "${USER_ID.domain}"
+                        },
+                        "team": "$TEAM_UUID",
+                        "email": "john@example.com",
+                        "name": "John Doe",
+                        "handle": "johndoe",
+                        "accent_id": 1,
+                        "supported_protocols": ["proteus", "mls"],
+                        "deleted": false,
+                        "type": "regular"
+                    }
+                ],
+                "failed": [
+                    {
+                        "id": "${SECOND_USER_ID.id}",
+                        "domain": "${SECOND_USER_ID.domain}"
+                    }
+                ]
             }
         """.trimIndent()
 
-        private val MINIMAL_USER_RESPONSE_JSON = """
+        private val MINIMAL_LIST_USERS_RESPONSE_JSON = """
             {
-                "qualified_id": { "id": "${USER_ID.id}", "domain": "${USER_ID.domain}" },
-                "team": null,
-                "email": null,
-                "name": "John Doe",
-                "handle": null,
-                "accent_id": 1,
-                "supported_protocols": ["proteus"],
-                "deleted": null
+                "found": [
+                    {
+                        "qualified_id": {
+                            "id": "${USER_ID.id}",
+                            "domain": "${USER_ID.domain}"
+                        },
+                        "team": null,
+                        "email": null,
+                        "name": "John Doe",
+                        "handle": null,
+                        "accent_id": 1,
+                        "supported_protocols": ["proteus"],
+                        "deleted": null
+                    }
+                ]
             }
         """.trimIndent()
 

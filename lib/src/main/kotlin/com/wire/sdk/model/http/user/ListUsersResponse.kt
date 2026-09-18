@@ -1,6 +1,6 @@
 /*
  * Wire
- * Copyright (C) 2025 Wire Swiss GmbH
+ * Copyright (C) 2026 Wire Swiss GmbH
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,33 +16,12 @@
 
 package com.wire.sdk.model.http.user
 
-import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
-import com.wire.sdk.model.UserType
-import com.wire.sdk.utils.UUIDSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.util.UUID
 
 @Serializable
-data class UserResponse(
-    @SerialName("qualified_id")
-    val id: QualifiedId,
-    @Serializable(with = UUIDSerializer::class)
-    @SerialName("team")
-    val teamId: UUID?,
-    @SerialName("email")
-    val email: String?,
-    @SerialName("name")
-    val name: String,
-    @SerialName("handle")
-    val handle: String?,
-    @SerialName("accent_id")
-    val accentId: Long,
-    @SerialName("supported_protocols")
-    val supportedProtocols: List<CryptoProtocol>,
-    @SerialName("deleted")
-    val deleted: Boolean?,
-    @SerialName("type")
-    val type: UserType? = null
+data class ListUsersResponse(
+    @SerialName("found") val found: List<UserResponse>,
+    @SerialName("failed") val failed: List<QualifiedId> = emptyList()
 )
