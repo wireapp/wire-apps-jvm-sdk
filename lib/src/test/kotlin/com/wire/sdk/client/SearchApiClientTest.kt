@@ -16,6 +16,7 @@
 
 package com.wire.sdk.client
 
+import com.wire.sdk.model.UserType
 import io.ktor.http.HttpMethod
 import kotlinx.coroutines.test.runTest
 import java.util.UUID
@@ -175,6 +176,7 @@ class SearchApiClientTest {
             assertEquals(1, result.documents.size)
             assertEquals("Alice", result.documents.first().name)
             assertEquals("alice", result.documents.first().handle)
+            assertEquals(UserType.REGULAR, result.documents.first().type)
         }
 
     @Test

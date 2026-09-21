@@ -17,6 +17,7 @@
 package com.wire.sdk.model.http.search
 
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.UserType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -49,7 +50,7 @@ data class ContactDocument(
     @SerialName("accent_id")
     val accentId: Long?,
     @SerialName("type")
-    val type: String,
+    val type: UserType,
     @SerialName("team")
     val team: String?
 )
