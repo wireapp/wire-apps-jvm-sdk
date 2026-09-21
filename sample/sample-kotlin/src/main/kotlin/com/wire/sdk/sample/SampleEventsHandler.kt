@@ -192,6 +192,11 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             return
         }
 
+        if (isGetUsers(text = wireMessage.text)) {
+            processGetUsers(wireMessage = wireMessage)
+            return
+        }
+
         if (isTestDeletedMessage(text = wireMessage.text)) {
             processTestDeletedMessage(wireMessage = wireMessage)
             return
@@ -357,6 +362,9 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
 
     private fun isSearchUser(text: String): Boolean =
         text.startsWith("search-user")
+
+    private fun isGetUsers(text: String): Boolean =
+        text.startsWith("get-users")
 
     private fun isTestDeletedMessage(text: String): Boolean =
         text.startsWith("test-deleted-message")
@@ -569,6 +577,57 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             WireMessage.Text.create(
                 conversationId = wireMessage.conversationId,
                 text = sb.toString()
+            )
+        )
+    }
+
+    private suspend fun processGetUsers(wireMessage: WireMessage.Text) {
+        // Expected message: `get-users [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
+        val arguments = wireMessage.text.trim().split(Regex("\\s+")).drop(1)
+        val userIds = if (arguments.isNotEmpty() && arguments.size % 2 == 0) {
+            runCatching {
+                arguments.chunked(2).map { (id, domain) ->
+                    QualifiedId(id = UUID.fromString(id), domain = domain)
+                }
+            }.getOrNull()
+        } else {
+            null
+        }
+
+        if (userIds == null) {
+            manager.sendMessageSuspending(
+                WireMessage.Text.create(
+                    conversationId = wireMessage.conversationId,
+                    text = "Usage: get-users [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ..."
+                )
+            )
+            return
+        }
+
+        manager.sendMessageSuspending(
+            WireMessage.Text.create(
+                conversationId = wireMessage.conversationId,
+                text = "Processing get-users command..."
+            )
+        )
+
+        val users = manager.getUsersSuspending(userIds)
+        val response = users.joinToString(separator = "\n\n") { user ->
+            """
+            User data for ${user.id.id}@${user.id.domain}:
+            Name: ${user.name}
+            Email: ${user.email ?: "N/A"}
+            Handle: ${user.handle ?: "N/A"}
+            Team: ${user.teamId ?: "N/A"}
+            Type: ${user.type?.name?.lowercase() ?: "N/A"}
+            Deleted: ${user.deleted ?: false}
+            """.trimIndent()
+        }.ifEmpty { "No users found." }
+
+        manager.sendMessageSuspending(
+            WireMessage.Text.create(
+                conversationId = wireMessage.conversationId,
+                text = response
             )
         )
     }

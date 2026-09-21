@@ -20,9 +20,10 @@ import com.wire.sdk.client.SearchApiClient
 import com.wire.sdk.client.UsersApiClient
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
-import com.wire.sdk.model.WireUser
+import com.wire.sdk.model.UserType
 import com.wire.sdk.model.http.search.ContactDocument
 import com.wire.sdk.model.http.search.SearchContactsResponse
+import com.wire.sdk.model.http.user.ListUsersResponse
 import com.wire.sdk.model.http.user.UserResponse
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -50,7 +51,8 @@ class UserServiceTest {
         teamId: UUID? = this.teamId,
         accentId: Long = 3L,
         supportedProtocols: List<CryptoProtocol> = listOf(CryptoProtocol.PROTEUS),
-        deleted: Boolean? = false
+        deleted: Boolean? = false,
+        type: UserType? = UserType.REGULAR
     ) = UserResponse(
         id = id,
         name = name,
@@ -59,7 +61,8 @@ class UserServiceTest {
         teamId = teamId,
         accentId = accentId,
         supportedProtocols = supportedProtocols,
-        deleted = deleted
+        deleted = deleted,
+        type = type
     )
 
     private fun buildContactDocument(
@@ -79,164 +82,103 @@ class UserServiceTest {
     )
 
     // =========================================================================
-    // getUser
+    // getUsers
     // =========================================================================
 
     @Test
-    fun `getUser delegates to UsersApiClient with the given userId`() =
+    fun `getUsers delegates to UsersApiClient with the given userIds`() =
         runTest {
             val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(qualifiedId) } returns buildResponse()
+            coEvery { usersApiClient.getUsers(listOf(qualifiedId)) } returns
+                ListUsersResponse(found = listOf(buildResponse()))
             val service = UserService(usersApiClient, mockk(relaxed = true))
 
-            service.getUser(qualifiedId)
+            service.getUsers(listOf(qualifiedId))
 
-            coVerify(exactly = 1) { usersApiClient.getUserData(qualifiedId) }
+            coVerify(exactly = 1) { usersApiClient.getUsers(listOf(qualifiedId)) }
         }
 
     @Test
-    fun `getUser maps id correctly`() =
+    fun `getUsers maps found users`() =
         runTest {
             val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(id = qualifiedId)
+            coEvery { usersApiClient.getUsers(any()) } returns
+                ListUsersResponse(
+                    found = listOf(
+                        buildResponse(
+                            id = qualifiedId,
+                            name = "Bob",
+                            email = "bob@example.com",
+                            handle = "bob",
+                            teamId = teamId,
+                            deleted = true,
+                            type = UserType.BOT
+                        )
+                    )
+                )
             val service = UserService(usersApiClient, mockk(relaxed = true))
 
-            val user = service.getUser(qualifiedId)
+            val user = service.getUsers(listOf(qualifiedId)).single()
 
             assertEquals(qualifiedId, user.id)
-        }
-
-    @Test
-    fun `getUser maps name correctly`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(name = "Bob")
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
             assertEquals("Bob", user.name)
-        }
-
-    @Test
-    fun `getUser maps non-null email correctly`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns
-                buildResponse(email = "alice@example.com")
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
-            assertEquals("alice@example.com", user.email)
-        }
-
-    @Test
-    fun `getUser maps non-null handle correctly`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(handle = "alice")
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
-            assertEquals("alice", user.handle)
-        }
-
-    @Test
-    fun `getUser maps non-null teamId correctly`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(teamId = teamId)
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
+            assertEquals("bob@example.com", user.email)
+            assertEquals("bob", user.handle)
             assertEquals(teamId, user.teamId)
-        }
-
-    @Test
-    fun `getUser maps non-null deleted true correctly`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(deleted = true)
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
             assertEquals(true, user.deleted)
+            assertEquals(UserType.BOT, user.type)
         }
 
     @Test
-    fun `getUser maps non-null deleted false correctly`() =
+    fun `getUsers preserves nullable fields`() =
         runTest {
             val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(deleted = false)
+            coEvery { usersApiClient.getUsers(any()) } returns
+                ListUsersResponse(
+                    found = listOf(
+                        buildResponse(
+                            email = null,
+                            handle = null,
+                            teamId = null,
+                            deleted = null,
+                            type = null
+                        )
+                    )
+                )
             val service = UserService(usersApiClient, mockk(relaxed = true))
 
-            val user = service.getUser(qualifiedId)
-
-            assertEquals(false, user.deleted)
-        }
-
-    @Test
-    fun `getUser passes null email through as null`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(email = null)
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
+            val user = service.getUsers(listOf(qualifiedId)).single()
 
             assertNull(user.email)
-        }
-
-    @Test
-    fun `getUser passes null handle through as null`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(handle = null)
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
             assertNull(user.handle)
-        }
-
-    @Test
-    fun `getUser passes null teamId through as null`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(teamId = null)
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
             assertNull(user.teamId)
-        }
-
-    @Test
-    fun `getUser passes null deleted through as null`() =
-        runTest {
-            val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse(deleted = null)
-            val service = UserService(usersApiClient, mockk(relaxed = true))
-
-            val user = service.getUser(qualifiedId)
-
             assertNull(user.deleted)
+            assertNull(user.type)
         }
 
     @Test
-    fun `getUser returns a WireUser instance`() =
+    fun `getUsers returns only found users`() =
         runTest {
             val usersApiClient = mockk<UsersApiClient>()
-            coEvery { usersApiClient.getUserData(any()) } returns buildResponse()
+            coEvery { usersApiClient.getUsers(any()) } returns
+                ListUsersResponse(found = emptyList(), failed = listOf(qualifiedId))
             val service = UserService(usersApiClient, mockk(relaxed = true))
 
-            val user = service.getUser(qualifiedId)
+            val users = service.getUsers(listOf(qualifiedId))
 
-            assertTrue(user is WireUser)
+            assertTrue(users.isEmpty())
+        }
+
+    @Test
+    fun `getUsers returns empty list without backend call for empty input`() =
+        runTest {
+            val usersApiClient = mockk<UsersApiClient>()
+            val service = UserService(usersApiClient, mockk(relaxed = true))
+
+            val users = service.getUsers(emptyList())
+
+            assertTrue(users.isEmpty())
+            coVerify(exactly = 0) { usersApiClient.getUsers(any()) }
         }
 
     // =========================================================================

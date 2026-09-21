@@ -35,27 +35,22 @@ internal class UserService(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    /**
-     * Fetches the user data for the given [userId] and returns a [WireUser].
-     *
-     * Nullable fields in the backend response ([UserResponse.email], [UserResponse.handle],
-     * [UserResponse.teamId], [UserResponse.deleted]) are preserved as `null` in the
-     * returned [WireUser].
-     *
-     * @param userId The qualified ID of the user to fetch.
-     * @return A [WireUser] populated with the response data.
-     */
-    suspend fun getUser(userId: QualifiedId): WireUser {
-        logger.info("Fetching user: $userId")
-        return usersApiClient.getUserData(userId).toWireUser()
+    /** Fetches user data for the given [userIds]. */
+    suspend fun getUsers(userIds: List<QualifiedId>): List<WireUser> {
+        logger.info("Fetching ${userIds.size} users")
+        if (userIds.isEmpty()) return emptyList()
+
+        val response = usersApiClient.getUsers(userIds)
+        response.failed.forEach { logger.warn("Failed to fetch user: $it") }
+        return response.found.map { it.toWireUser() }
     }
 
     /**
      * Searches for users matching the given [query] on the specified [domain] and returns
      * a list of [WireUser] objects.
      *
-     * Fields not present in the search response ([WireUser.email],
-     * [WireUser.deleted]) are set to `null`.
+     * Fields not present in the search response ([WireUser.email], [WireUser.deleted],
+     * [WireUser.type]) are set to `null`.
      *
      * @param query The search string to match against user names and handles.
      * @param domain The domain to restrict the search to.
@@ -83,7 +78,8 @@ internal class UserService(
             email = email,
             handle = handle,
             teamId = teamId,
-            deleted = deleted
+            deleted = deleted,
+            type = type
         )
 
     private fun ContactDocument.toWireUser(): WireUser =
@@ -93,6 +89,7 @@ internal class UserService(
             email = null,
             handle = handle,
             teamId = team?.let { runCatching { UUID.fromString(it) }.getOrNull() },
-            deleted = null
+            deleted = null,
+            type = null
         )
 }

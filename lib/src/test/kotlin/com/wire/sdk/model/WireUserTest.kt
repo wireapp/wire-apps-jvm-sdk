@@ -33,14 +33,16 @@ class WireUserTest {
         email: String? = "alice@example.com",
         handle: String? = "alice",
         teamId: UUID? = this.teamId,
-        deleted: Boolean? = false
+        deleted: Boolean? = false,
+        type: UserType? = UserType.REGULAR
     ) = WireUser(
         id = id,
         name = name,
         email = email,
         handle = handle,
         teamId = teamId,
-        deleted = deleted
+        deleted = deleted,
+        type = type
     )
 
     // --- Construction ---
@@ -56,6 +58,7 @@ class WireUserTest {
         assertEquals("alice", user.handle)
         assertEquals(teamId, user.teamId)
         assertEquals(false, user.deleted)
+        assertEquals(UserType.REGULAR, user.type)
     }
 
     @Test
@@ -91,6 +94,13 @@ class WireUserTest {
         val user = buildUser(deleted = true)
 
         assertEquals(true, user.deleted)
+    }
+
+    @Test
+    fun `should allow null type`() {
+        val user = buildUser(type = null)
+
+        assertNull(user.type)
     }
 
     // --- Equality ---

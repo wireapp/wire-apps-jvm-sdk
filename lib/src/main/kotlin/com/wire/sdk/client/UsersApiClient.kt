@@ -19,8 +19,9 @@ package com.wire.sdk.client
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.http.user.ListClientsRequest
 import com.wire.sdk.model.http.user.ListClientsResponse
+import com.wire.sdk.model.http.user.ListUsersRequest
+import com.wire.sdk.model.http.user.ListUsersResponse
 import com.wire.sdk.model.http.user.UserClientResponse
-import com.wire.sdk.model.http.user.UserResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.accept
@@ -29,31 +30,17 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import org.slf4j.LoggerFactory
 import java.util.UUID
 import kotlin.collections.component1
 import kotlin.collections.component2
 
 internal class UsersApiClient(private val httpClient: HttpClient) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
-    private val basePath = "users"
-
-    /**
-     * Get User details
-     *
-     * @param [QualifiedId] The ID of the user to be requested
-     * @return [UserResponse]
-     */
-    suspend fun getUserData(userId: QualifiedId): UserResponse {
-        logger.info("Fetching user: $userId")
-        return httpClient.get(
-            "/$basePath/${userId.domain}/${userId.id}"
-        ).body<UserResponse>()
-    }
+    private val basePathUsers = "users"
+    private val basePathListUsers = "list-users"
 
     suspend fun getClientsByUserId(userId: QualifiedId): List<UserClientResponse> {
         val clients = httpClient
-            .get("/$basePath/${userId.domain}/${userId.id}/clients")
+            .get("/$basePathUsers/${userId.domain}/${userId.id}/clients")
             .body<List<UserClientResponse>>()
 
         return clients
@@ -62,7 +49,7 @@ internal class UsersApiClient(private val httpClient: HttpClient) {
     suspend fun getClientsByUserIds(
         userIds: List<QualifiedId>
     ): Map<QualifiedId, List<UserClientResponse>> {
-        val response = httpClient.post("/$basePath/list-clients") {
+        val response = httpClient.post("/$basePathUsers/list-clients") {
             setBody(ListClientsRequest(qualifiedUsers = userIds))
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
@@ -74,4 +61,14 @@ internal class UsersApiClient(private val httpClient: HttpClient) {
             }
         }.toMap()
     }
+
+    /**
+     * This endpoint uses [basePathListUsers] instead of the default [basePathUsers]
+     */
+    suspend fun getUsers(userIds: List<QualifiedId>): ListUsersResponse =
+        httpClient.post("/$basePathListUsers") {
+            setBody(ListUsersRequest(qualifiedIds = userIds))
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+        }.body<ListUsersResponse>()
 }

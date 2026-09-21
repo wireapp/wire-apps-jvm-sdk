@@ -34,6 +34,7 @@ import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.CryptoClientId
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
+import com.wire.sdk.model.UserType
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.http.conversation.ConversationRole
@@ -824,6 +825,42 @@ class WireApplicationManagerTest {
         }
 
     @Test
+    fun `when getUsers, then delegates to userService with user ids`() =
+        runTest {
+            val userIds = listOf(SEARCH_USER_QUALIFIED_ID)
+            val expectedUsers = listOf(
+                WireUser(
+                    id = SEARCH_USER_QUALIFIED_ID,
+                    name = SEARCH_USER_NAME,
+                    email = null,
+                    handle = SEARCH_USER_HANDLE,
+                    teamId = null,
+                    deleted = false,
+                    type = UserType.REGULAR
+                )
+            )
+            val userService = mockk<UserService>()
+            coEvery { userService.getUsers(userIds) } returns expectedUsers
+            val manager = WireApplicationManager(
+                teamStorage = mockk(relaxed = true),
+                backendClient = mockk(relaxed = true),
+                userService = userService,
+                mlsApiClient = mockk(relaxed = true),
+                assetsApiClient = mockk(relaxed = true),
+                cryptoClient = mockk(relaxed = true),
+                mlsFallbackStrategy = mockk(relaxed = true),
+                conversationService = mockk(relaxed = true),
+                appStorage = mockk(relaxed = true),
+                subconversationService = mockk(relaxed = true)
+            )
+
+            val result = manager.getUsersSuspending(userIds)
+
+            assertEquals(expectedUsers, result)
+            coVerify(exactly = 1) { userService.getUsers(userIds) }
+        }
+
+    @Test
     fun `when searchUsers, then delegates to userService with correct parameters`() =
         runTest {
             // Arrange
@@ -835,7 +872,8 @@ class WireApplicationManagerTest {
                     email = null,
                     handle = SEARCH_USER_HANDLE,
                     teamId = null,
-                    deleted = null
+                    deleted = null,
+                    type = null
                 )
             )
             coEvery {

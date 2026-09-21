@@ -16,9 +16,11 @@
 
 package com.wire.sdk.sample.testcommand;
 
+import com.wire.sdk.exception.WireException;
 import com.wire.sdk.model.AssetResource;
 import com.wire.sdk.model.QualifiedId;
 import com.wire.sdk.model.WireMessage;
+import com.wire.sdk.model.WireUser;
 import com.wire.sdk.model.asset.AssetRetention;
 import com.wire.sdk.service.WireApplicationManager;
 
@@ -30,6 +32,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 class TestCommandProcessor {
@@ -57,6 +60,7 @@ class TestCommandProcessor {
             case ASSET_VIDEO -> processAssetVideo(wireMessage);
             case ASSET_PDF_DOCUMENT -> replyWithSamplePDFDocument(wireMessage);
             case SEARCH_USER -> processSearchUser(wireMessage);
+            case GET_USERS -> processGetUsers(wireMessage);
             case TEST_DELETED_MESSAGE -> processTestDeletedMessage(wireMessage);
             case SEND_EPHEMERAL_TEXT -> processSendEphemeralText(wireMessage);
             case SEND_EPHEMERAL_PING -> processSendEphemeralPing(wireMessage);
@@ -307,6 +311,67 @@ class TestCommandProcessor {
         this.manager.sendMessage(WireMessage.Text.create(
                 wireMessage.conversationId(),
                 sb.toString(),
+                List.of(), List.of(), null));
+    }
+
+    private void processGetUsers(WireMessage.Text wireMessage) {
+        // Expected message: `get-users [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...`
+        final var split = wireMessage.text().trim().split("\\s+");
+        if (split.length < 3 || (split.length - 1) % 2 != 0) {
+            sendGetUsersUsage(wireMessage);
+            return;
+        }
+
+        final var userIds = new ArrayList<QualifiedId>();
+        try {
+            for (int i = 1; i < split.length; i += 2) {
+                userIds.add(new QualifiedId(UUID.fromString(split[i]), split[i + 1]));
+            }
+        } catch (IllegalArgumentException exception) {
+            sendGetUsersUsage(wireMessage);
+            return;
+        }
+
+        this.manager.sendMessage(WireMessage.Text.create(
+                wireMessage.conversationId(),
+                "Processing get-users command...",
+                List.of(), List.of(), null));
+
+        final List<WireUser> users;
+        try {
+            users = this.manager.getUsers(userIds);
+        } catch (WireException exception) {
+            throw new RuntimeException(exception);
+        }
+
+        final var response = new StringBuilder();
+        if (users.isEmpty()) {
+            response.append("No users found.");
+        } else {
+            for (final var user : users) {
+                response.append("User data for ")
+                        .append(user.id().id()).append("@").append(user.id().domain())
+                        .append(":\nName: ").append(user.name())
+                        .append("\nEmail: ").append(user.email() != null ? user.email() : "N/A")
+                        .append("\nHandle: ").append(user.handle() != null ? user.handle() : "N/A")
+                        .append("\nTeam: ").append(user.teamId() != null ? user.teamId() : "N/A")
+                        .append("\nType: ")
+                        .append(user.type() != null ? user.type().name().toLowerCase(Locale.ROOT) : "N/A")
+                        .append("\nDeleted: ").append(user.deleted() != null ? user.deleted() : false)
+                        .append("\n\n");
+            }
+        }
+
+        this.manager.sendMessage(WireMessage.Text.create(
+                wireMessage.conversationId(),
+                response.toString().trim(),
+                List.of(), List.of(), null));
+    }
+
+    private void sendGetUsersUsage(WireMessage.Text wireMessage) {
+        this.manager.sendMessage(WireMessage.Text.create(
+                wireMessage.conversationId(),
+                "Usage: get-users [USER_ID] [DOMAIN] [USER_ID] [DOMAIN] ...",
                 List.of(), List.of(), null));
     }
 
