@@ -70,7 +70,8 @@ class UserServiceTest {
         name: String = "Alice",
         handle: String? = "alice",
         qualifiedId: QualifiedId = this.qualifiedId,
-        team: String? = null
+        team: String? = null,
+        type: UserType = UserType.REGULAR
     ) = ContactDocument(
         accentId = null,
         handle = handle,
@@ -78,7 +79,7 @@ class UserServiceTest {
         name = name,
         qualifiedId = qualifiedId,
         team = team,
-        type = "regular"
+        type = type
     )
 
     // =========================================================================
@@ -241,6 +242,26 @@ class UserServiceTest {
 
             assertEquals("Bob", result.first().name)
             assertEquals("bob", result.first().handle)
+        }
+
+    @Test
+    fun `searchUsers maps user type`() =
+        runTest {
+            val usersApiClient = mockk<UsersApiClient>(relaxed = true)
+            val searchApiClient = mockk<SearchApiClient>()
+            coEvery { searchApiClient.searchUsers(any(), any(), any()) } returns
+                SearchContactsResponse(
+                    documents = listOf(buildContactDocument(type = UserType.APP))
+                )
+            val service = UserService(usersApiClient, searchApiClient)
+
+            val result = service.searchUsers(
+                query = "Alice",
+                domain = domain,
+                numberOfResults = null
+            )
+
+            assertEquals(UserType.APP, result.first().type)
         }
 
     @Test
