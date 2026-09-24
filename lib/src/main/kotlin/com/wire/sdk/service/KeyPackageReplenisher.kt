@@ -47,19 +47,21 @@ internal class KeyPackageReplenisher(
     private var replenishmentJob: Job? = null
 
     @Synchronized
-    fun start() {
-        if (replenishmentJob?.isActive == true) return
+    fun start(): Job {
+        replenishmentJob?.takeIf { it.isActive }?.let { return it }
 
-        replenishmentJob = scope.launch {
+        return scope.launch {
             while (isActive) {
                 replenishKeyPackagesIfNeeded()
                 delay(checkInterval)
             }
-        }
+        }.also { replenishmentJob = it }
     }
 
     @Synchronized
-    fun stop() {
+    fun stop(job: Job? = null) {
+        if (job != null && job !== replenishmentJob) return
+
         replenishmentJob?.cancel()
         replenishmentJob = null
     }
@@ -71,8 +73,9 @@ internal class KeyPackageReplenisher(
                 .toInt()
                 .toHexString()
             val keyPackageCount = mlsApiClient.getAvailableKeyPackageCount(cipherSuite).count
+            val refillThreshold = (CryptoClient.DEFAULT_KEYPACKAGE_COUNT / 2u).toInt()
 
-            if (keyPackageCount < KEY_PACKAGE_REFILL_THRESHOLD) {
+            if (keyPackageCount < refillThreshold) {
                 logger.info(
                     "Found {} available MLS key packages, replenishing with {} new packages",
                     keyPackageCount,
@@ -95,12 +98,11 @@ internal class KeyPackageReplenisher(
     }
 
     override fun close() {
+        stop()
         scope.cancel()
     }
 
     private companion object {
         val KEY_PACKAGE_COUNT_CHECK_INTERVAL = 24.hours
-        val KEY_PACKAGE_REFILL_THRESHOLD =
-            (CryptoClient.DEFAULT_KEYPACKAGE_COUNT / 2u).toInt()
     }
 }

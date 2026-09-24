@@ -32,6 +32,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import io.mockk.verify
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
@@ -43,6 +44,7 @@ import org.koin.dsl.module
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.milliseconds
@@ -124,6 +126,8 @@ class WireAppSdkTest {
 
             val mockEventsListener = mockk<WireTeamEventsListener>()
             val mockKeyPackageReplenisher = mockk<KeyPackageReplenisher>(relaxed = true)
+            val replenishmentJob = mockk<Job>(relaxed = true)
+            every { mockKeyPackageReplenisher.start() } returns replenishmentJob
             // Load our mock into Koin
             IsolatedKoinContext.koinApp.koin.loadModules(
                 listOf(
@@ -159,10 +163,79 @@ class WireAppSdkTest {
             // Verify connect was called the expected number of times
             coVerify(atLeast = 3) { mockEventsListener.connect() }
             verify(exactly = 1) { mockKeyPackageReplenisher.start() }
-            verify(timeout = 5_000, atLeast = 1) { mockKeyPackageReplenisher.stop() }
+            verify(timeout = 5_000, atLeast = 1) {
+                mockKeyPackageReplenisher.stop(replenishmentJob)
+            }
 
             wireAppSdk.stopListening()
         }
+
+    @Test
+    fun `listener and key package replenisher restart after stopping`() {
+        TestUtils.setupWireMockStubs(wireMockServer = wireMockServer)
+        val wireAppSdk = WireAppSdk(
+            apiToken = API_TOKEN,
+            apiHost = API_HOST,
+            cryptographyStorageKey = TestUtils.CRYPTOGRAPHY_STORAGE_KEY,
+            wireEventsHandler = object : WireEventsHandlerDefault() {}
+        )
+        val mockEventsListener = mockk<WireTeamEventsListener>()
+        val mockKeyPackageReplenisher = mockk<KeyPackageReplenisher>(relaxed = true)
+        val firstJob = mockk<Job>(relaxed = true)
+        val secondJob = mockk<Job>(relaxed = true)
+        every { mockKeyPackageReplenisher.start() } returnsMany listOf(firstJob, secondJob)
+        val connectionCount = AtomicInteger()
+        val shutdownCount = AtomicInteger()
+        val firstConnected = CountDownLatch(1)
+        val secondConnected = CountDownLatch(1)
+        val firstConnectionRelease = CountDownLatch(1)
+        val secondConnectionRelease = CountDownLatch(1)
+        coEvery { mockEventsListener.connect() } coAnswers {
+            when (connectionCount.incrementAndGet()) {
+                1 -> {
+                    firstConnected.countDown()
+                    firstConnectionRelease.await()
+                }
+                else -> {
+                    secondConnected.countDown()
+                    secondConnectionRelease.await()
+                }
+            }
+        }
+        coEvery { mockEventsListener.requestShutdown() } coAnswers {
+            when (shutdownCount.incrementAndGet()) {
+                1 -> firstConnectionRelease.countDown()
+                else -> secondConnectionRelease.countDown()
+            }
+        }
+        IsolatedKoinContext.koinApp.koin.loadModules(
+            listOf(
+                module {
+                    single { mockEventsListener }
+                    single { mockKeyPackageReplenisher }
+                }
+            )
+        )
+
+        try {
+            wireAppSdk.startListening()
+            assert(firstConnected.await(5, TimeUnit.SECONDS))
+            wireAppSdk.stopListening()
+
+            wireAppSdk.startListening()
+            assert(secondConnected.await(5, TimeUnit.SECONDS))
+            assert(wireAppSdk.isRunning())
+
+            verify(exactly = 2) { mockKeyPackageReplenisher.start() }
+            verify(atLeast = 1) { mockKeyPackageReplenisher.stop(firstJob) }
+        } finally {
+            firstConnectionRelease.countDown()
+            secondConnectionRelease.countDown()
+            wireAppSdk.stopListening()
+        }
+
+        verify(atLeast = 1) { mockKeyPackageReplenisher.stop(secondJob) }
+    }
 
     @Test
     fun `given fresh storage, when sdk starts, then constructor token is stored for both`() {

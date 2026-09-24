@@ -515,19 +515,19 @@ internal class EventsRouter internal constructor(
             conversationResponse = conversationResponse
         )
 
-        if (cryptoClient.hasTooFewKeyPackageCount()) {
-            try {
+        try {
+            if (cryptoClient.hasTooFewKeyPackageCount()) {
                 mlsApiClient.uploadMlsKeyPackages(
                     cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
                 )
-            } catch (exception: CancellationException) {
-                throw exception
-            } catch (exception: Exception) {
-                logger.error(
-                    "Failed to replenish MLS key packages after joining conversation",
-                    exception
-                )
             }
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            logger.error(
+                "Failed to replenish MLS key packages after joining conversation",
+                exception
+            )
         }
 
         val conversationModel = Conversation.fromEntity(conversationEntity)

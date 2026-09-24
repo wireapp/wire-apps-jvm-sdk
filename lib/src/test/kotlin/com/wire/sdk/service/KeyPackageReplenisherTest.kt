@@ -25,6 +25,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -32,12 +34,12 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.hours
 
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class KeyPackageReplenisherTest {
     @Test
     fun `when backend key package count is below threshold, then packages are replenished`() =
-        runTest {
-            val arrangement = Arrangement(this).withKeyPackageCount(49)
+        replenisherTest { arrangement ->
+            arrangement.withKeyPackageCount(REFILL_THRESHOLD - 1)
 
             arrangement.replenisher.start()
             runCurrent()
@@ -48,13 +50,12 @@ class KeyPackageReplenisherTest {
                 )
                 arrangement.mlsApiClient.uploadMlsKeyPackages(any())
             }
-            arrangement.replenisher.close()
         }
 
     @Test
     fun `when backend key package count is at threshold, then packages are not replenished`() =
-        runTest {
-            val arrangement = Arrangement(this).withKeyPackageCount(50)
+        replenisherTest { arrangement ->
+            arrangement.withKeyPackageCount(REFILL_THRESHOLD)
 
             arrangement.replenisher.start()
             runCurrent()
@@ -63,13 +64,12 @@ class KeyPackageReplenisherTest {
                 arrangement.cryptoClient.mlsGenerateKeyPackages(any())
                 arrangement.mlsApiClient.uploadMlsKeyPackages(any())
             }
-            arrangement.replenisher.close()
         }
 
     @Test
     fun `when replenisher starts, then it checks immediately and again after the interval`() =
-        runTest {
-            val arrangement = Arrangement(this).withKeyPackageCount(100)
+        replenisherTest { arrangement ->
+            arrangement.withKeyPackageCount(DEFAULT_KEY_PACKAGE_COUNT)
 
             arrangement.replenisher.start()
             runCurrent()
@@ -79,13 +79,12 @@ class KeyPackageReplenisherTest {
             coVerify(exactly = 2) {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             }
-            arrangement.replenisher.close()
         }
 
     @Test
     fun `when replenisher is started twice, then only one schedule is created`() =
-        runTest {
-            val arrangement = Arrangement(this).withKeyPackageCount(100)
+        replenisherTest { arrangement ->
+            arrangement.withKeyPackageCount(DEFAULT_KEY_PACKAGE_COUNT)
 
             arrangement.replenisher.start()
             arrangement.replenisher.start()
@@ -94,20 +93,18 @@ class KeyPackageReplenisherTest {
             coVerify(exactly = 1) {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             }
-            arrangement.replenisher.close()
         }
 
     @Test
     fun `when a check fails, then the next scheduled check still runs`() =
-        runTest {
-            val arrangement = Arrangement(this)
+        replenisherTest { arrangement ->
             var invocation = 0
             coEvery {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             } coAnswers {
                 invocation++
                 if (invocation == 1) throw IllegalStateException("Backend unavailable")
-                MlsKeyPackageCountResponse(100)
+                MlsKeyPackageCountResponse(DEFAULT_KEY_PACKAGE_COUNT)
             }
 
             arrangement.replenisher.start()
@@ -118,13 +115,12 @@ class KeyPackageReplenisherTest {
             coVerify(exactly = 2) {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             }
-            arrangement.replenisher.close()
         }
 
     @Test
     fun `when replenisher stops, then future checks are cancelled`() =
-        runTest {
-            val arrangement = Arrangement(this).withKeyPackageCount(100)
+        replenisherTest { arrangement ->
+            arrangement.withKeyPackageCount(DEFAULT_KEY_PACKAGE_COUNT)
 
             arrangement.replenisher.start()
             runCurrent()
@@ -135,10 +131,55 @@ class KeyPackageReplenisherTest {
             coVerify(exactly = 1) {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             }
-            arrangement.replenisher.close()
         }
 
-    private class Arrangement(testScope: kotlinx.coroutines.test.TestScope) {
+    @Test
+    fun `when replenisher restarts, then checks resume`() =
+        replenisherTest { arrangement ->
+            arrangement.withKeyPackageCount(DEFAULT_KEY_PACKAGE_COUNT)
+
+            val firstJob = arrangement.replenisher.start()
+            runCurrent()
+            arrangement.replenisher.stop(firstJob)
+            arrangement.replenisher.start()
+            runCurrent()
+
+            coVerify(exactly = 2) {
+                arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
+            }
+        }
+
+    @Test
+    fun `when stale job is stopped, then current schedule keeps running`() =
+        replenisherTest { arrangement ->
+            arrangement.withKeyPackageCount(DEFAULT_KEY_PACKAGE_COUNT)
+
+            val staleJob = arrangement.replenisher.start()
+            runCurrent()
+            arrangement.replenisher.stop(staleJob)
+            arrangement.replenisher.start()
+            runCurrent()
+
+            arrangement.replenisher.stop(staleJob)
+            advanceTimeBy(CHECK_INTERVAL)
+            runCurrent()
+
+            coVerify(exactly = 3) {
+                arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
+            }
+        }
+
+    private fun replenisherTest(block: suspend TestScope.(Arrangement) -> Unit) =
+        runTest {
+            val arrangement = Arrangement(this)
+            try {
+                block(arrangement)
+            } finally {
+                arrangement.replenisher.close()
+            }
+        }
+
+    private class Arrangement(testScope: TestScope) {
         val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
         val cryptoClient = mockk<CryptoClient> {
             every { cipherSuite } returns CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
@@ -170,5 +211,7 @@ class KeyPackageReplenisherTest {
     private companion object {
         val CHECK_INTERVAL = 24.hours
         const val CIPHER_SUITE = "0x0001"
+        val REFILL_THRESHOLD = (CryptoClient.DEFAULT_KEYPACKAGE_COUNT / 2u).toInt()
+        val DEFAULT_KEY_PACKAGE_COUNT = CryptoClient.DEFAULT_KEYPACKAGE_COUNT.toInt()
     }
 }
