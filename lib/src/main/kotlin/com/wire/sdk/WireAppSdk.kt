@@ -256,8 +256,8 @@ class WireAppSdk(
                     }
                 }
             } finally {
-                running.set(false)
                 keyPackageManager.stop()
+                running.set(false)
                 logger.info("WebSocket listener stopped")
             }
         }
