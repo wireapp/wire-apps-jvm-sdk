@@ -106,6 +106,42 @@ class MlsApiClientTest {
         }
 
     @Test
+    fun `when getAvailableKeyPackageCount, then correct URL`() =
+        runTest {
+            var capturedPath: String? = null
+            mlsClient(KEY_PACKAGE_COUNT_RESPONSE_JSON) { capturedPath = it.url.encodedPath }
+                .getAvailableKeyPackageCount(CIPHER_SUITE)
+            assertEquals("/mls/key-packages/self/$DEVICE_ID/count", capturedPath)
+        }
+
+    @Test
+    fun `when getAvailableKeyPackageCount, then GET method`() =
+        runTest {
+            var capturedMethod: HttpMethod? = null
+            mlsClient(KEY_PACKAGE_COUNT_RESPONSE_JSON) { capturedMethod = it.method }
+                .getAvailableKeyPackageCount(CIPHER_SUITE)
+            assertEquals(HttpMethod.Get, capturedMethod)
+        }
+
+    @Test
+    fun `when getAvailableKeyPackageCount, then ciphersuite query param set`() =
+        runTest {
+            var capturedParam: String? = null
+            mlsClient(KEY_PACKAGE_COUNT_RESPONSE_JSON) {
+                capturedParam = it.url.parameters["ciphersuite"]
+            }.getAvailableKeyPackageCount(CIPHER_SUITE)
+            assertEquals(CIPHER_SUITE, capturedParam)
+        }
+
+    @Test
+    fun `when getAvailableKeyPackageCount, then count is returned`() =
+        runTest {
+            val result = mlsClient(KEY_PACKAGE_COUNT_RESPONSE_JSON)
+                .getAvailableKeyPackageCount(CIPHER_SUITE)
+            assertEquals(42, result.count)
+        }
+
+    @Test
     fun `when uploadCommitBundle, then correct URL`() =
         runTest {
             var capturedPath: String? = null
@@ -143,6 +179,7 @@ class MlsApiClientTest {
 
     companion object {
         private const val DEVICE_ID = "device-id-123"
+        private const val CIPHER_SUITE = "0x0001"
 
         private val USER_ID = QualifiedId(
             id = UUID.randomUUID(),
@@ -175,6 +212,12 @@ class MlsApiClientTest {
                         "user": "${USER_ID.id}"
                     }
                 ]
+            }
+        """.trimIndent()
+
+        private val KEY_PACKAGE_COUNT_RESPONSE_JSON = """
+            {
+                "count": 42
             }
         """.trimIndent()
     }

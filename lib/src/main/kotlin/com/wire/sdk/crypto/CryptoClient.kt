@@ -16,6 +16,7 @@
 
 package com.wire.sdk.crypto
 
+import com.wire.crypto.CipherSuite
 import com.wire.crypto.ConversationId
 import com.wire.crypto.GroupInfo
 import com.wire.crypto.KeyPackage
@@ -28,6 +29,8 @@ import com.wire.sdk.model.http.MlsPublicKeys
 import com.wire.sdk.model.http.client.PreKeyCrypto
 
 internal interface CryptoClient : AutoCloseable {
+    val cipherSuite: CipherSuite
+
     suspend fun encryptMls(
         mlsGroupId: ConversationId,
         message: ByteArray

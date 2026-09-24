@@ -43,7 +43,7 @@ import kotlin.io.encoding.Base64
  * Internal use only, use the factory function [create] to create a new instance.
  */
 internal class MlsCryptoClient private constructor(
-    private val cipherSuite: CipherSuite,
+    override val cipherSuite: CipherSuite,
     private var coreCryptoClient: CoreCrypto
 ) : CryptoClient {
     private val logger = LoggerFactory.getLogger(this::class.java)

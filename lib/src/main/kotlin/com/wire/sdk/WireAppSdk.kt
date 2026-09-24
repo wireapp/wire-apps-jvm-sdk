@@ -19,19 +19,22 @@ package com.wire.sdk
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.persistence.AppStorage
+import com.wire.sdk.service.KeyPackageReplenisher
 import com.wire.sdk.service.WireApplicationManager
 import com.wire.sdk.service.WireTeamEventsListener
 import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.ApiTokenUtils
 import com.wire.sdk.utils.obfuscateId
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Main entry point for the Wire Apps SDK.
@@ -76,7 +79,7 @@ class WireAppSdk(
     wireEventsHandler: WireEventsHandler
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val running = AtomicBoolean(false)
+    private val activeListeningSession = AtomicReference<ListeningSession?>(null)
     private var executor = Executors.newSingleThreadExecutor()
     private var shutdownHook = Thread {
         logger.info("Shutdown hook triggered")
@@ -230,31 +233,45 @@ class WireAppSdk(
      */
     @Synchronized
     fun startListening() {
-        if (running.get()) {
+        if (activeListeningSession.get() != null) {
             logger.info("Wire Apps SDK is already running")
             return
         }
-        running.set(true)
+
+        val keyPackageReplenisher = IsolatedKoinContext.koinApp.koin.get<KeyPackageReplenisher>()
+        val listeningSession = ListeningSession(keyPackageReplenisher.start())
+        activeListeningSession.set(listeningSession)
 
         // Recreate executor if it was previously shut down
         if (executor.isShutdown) {
             executor = Executors.newSingleThreadExecutor()
         }
 
-        executor.execute {
-            try {
-                val eventsListener = IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
-                logger.info("Start listening to WebSocket events...")
-                // Connect and reconnect if connection closes and the listener function completes
-                while (running.get()) {
-                    runBlocking(Dispatchers.IO) {
-                        eventsListener.connect()
+        try {
+            executor.execute {
+                try {
+                    val eventsListener =
+                        IsolatedKoinContext.koinApp.koin.get<WireTeamEventsListener>()
+                    logger.info("Start listening to WebSocket events...")
+                    // Connect and reconnect if the connection closes and the listener function
+                    // completes.
+                    while (
+                        activeListeningSession.get() === listeningSession
+                    ) {
+                        runBlocking(Dispatchers.IO) {
+                            eventsListener.connect()
+                        }
                     }
+                } finally {
+                    keyPackageReplenisher.stop(listeningSession.replenishmentJob)
+                    activeListeningSession.compareAndSet(listeningSession, null)
+                    logger.info("WebSocket listener stopped")
                 }
-            } finally {
-                running.set(false)
-                logger.info("WebSocket listener stopped")
             }
+        } catch (exception: RejectedExecutionException) {
+            activeListeningSession.compareAndSet(listeningSession, null)
+            keyPackageReplenisher.stop(listeningSession.replenishmentJob)
+            throw exception
         }
 
         // After webSocket is started, check if there are broken conversations to rejoin
@@ -286,12 +303,14 @@ class WireAppSdk(
     @Synchronized
     @JvmOverloads
     fun stopListening(gracefulTimeoutMs: Long = DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT_MS) {
-        if (!running.get()) {
+        val listeningSession = activeListeningSession.getAndSet(null)
+        if (listeningSession == null) {
             logger.info("Wire Apps SDK is not running")
             return
         }
         logger.info("Wire Apps SDK initiating graceful shutdown")
-        running.set(false)
+        IsolatedKoinContext.koinApp.koin.get<KeyPackageReplenisher>()
+            .stop(listeningSession.replenishmentJob)
 
         // Close WebSocket gracefully to stop receiving new events
         runBlocking {
@@ -314,7 +333,7 @@ class WireAppSdk(
      * @return `true` if [startListening] has been called and the SDK is actively
      *         listening for events, `false` otherwise
      */
-    fun isRunning(): Boolean = running.get()
+    fun isRunning(): Boolean = activeListeningSession.get() != null
 
     /**
      * Returns the [WireApplicationManager] instance for interacting with the Wire backend.
@@ -358,6 +377,8 @@ class WireAppSdk(
 
         IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
     }
+
+    private data class ListeningSession(val replenishmentJob: Job)
 
     private companion object {
         const val CRYPTOGRAPHY_STORAGE_KEY_BYTES = 32

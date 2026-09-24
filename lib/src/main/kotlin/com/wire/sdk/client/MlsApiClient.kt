@@ -16,8 +16,8 @@
 
 package com.wire.sdk.client
 
-import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.QualifiedId
+import com.wire.sdk.model.http.MlsKeyPackageCountResponse
 import com.wire.sdk.model.http.MlsKeyPackageRequest
 import com.wire.sdk.model.http.conversation.ClaimedKeyPackageList
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
@@ -64,17 +64,22 @@ internal class MlsApiClient(
     suspend fun uploadMlsKeyPackages(mlsKeyPackages: List<ByteArray>) {
         val mlsKeyPackageRequest =
             MlsKeyPackageRequest(mlsKeyPackages.map { Base64.getEncoder().encodeToString(it) })
-        try {
-            httpClient.post(
-                "/$basePath/key-packages/self/${appStorage.getDeviceId()}"
-            ) {
-                setBody(mlsKeyPackageRequest)
-                contentType(ContentType.Application.Json)
-            }
-        } catch (ex: WireException.ClientError) {
-            logger.info("MLS public key already set for user", ex)
+        httpClient.post(
+            "/$basePath/key-packages/self/${appStorage.getDeviceId()}"
+        ) {
+            setBody(mlsKeyPackageRequest)
+            contentType(ContentType.Application.Json)
         }
-        logger.info("Updated client with mls key packages for client")
+        logger.info("Updated client with MLS key packages")
+    }
+
+    suspend fun getAvailableKeyPackageCount(cipherSuite: String): MlsKeyPackageCountResponse {
+        return httpClient.get(
+            "/$basePath/key-packages/self/${appStorage.getDeviceId()}/count"
+        ) {
+            parameter("ciphersuite", cipherSuite)
+            accept(ContentType.Application.Json)
+        }.body<MlsKeyPackageCountResponse>()
     }
 
     suspend fun uploadCommitBundle(commitBundle: ByteArray) {

@@ -49,6 +49,7 @@ import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.persistence.TeamSqlLiteStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.EventsRouter
+import com.wire.sdk.service.KeyPackageReplenisher
 import com.wire.sdk.service.MlsFallbackStrategy
 import com.wire.sdk.service.UserService
 import com.wire.sdk.service.WireApplicationManager
@@ -75,6 +76,7 @@ import io.ktor.client.request.header
 import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
@@ -125,6 +127,7 @@ val sdkModule =
             }
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get(), get(), get()) }
+        single { KeyPackageReplenisher(get(), get()) } onClose { it?.close() }
 
         // Services
         single {
@@ -396,11 +399,34 @@ internal suspend fun getOrInitCryptoClient(
             mlsPublicKeys = cryptoClient.mlsGetPublicKey()
         )
 
-        mlsApiClient.uploadMlsKeyPackages(
-            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
+        val mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
+        uploadInitialMlsKeyPackages(
+            mlsApiClient = mlsApiClient,
+            mlsKeyPackages = mlsKeyPackages
         )
 
         appStorage.setShouldRejoinConversations(should = true)
         cryptoClient
+    }
+}
+
+/**
+ * Initial key-package upload is recoverable because the scheduler checks and replenishes the
+ * backend inventory immediately after the SDK starts listening.
+ */
+@Suppress("TooGenericExceptionCaught")
+internal suspend fun uploadInitialMlsKeyPackages(
+    mlsApiClient: MlsApiClient,
+    mlsKeyPackages: List<ByteArray>
+) {
+    try {
+        mlsApiClient.uploadMlsKeyPackages(mlsKeyPackages)
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (exception: Exception) {
+        logger.error(
+            "Failed to upload initial MLS key packages; scheduled replenishment will retry",
+            exception
+        )
     }
 }

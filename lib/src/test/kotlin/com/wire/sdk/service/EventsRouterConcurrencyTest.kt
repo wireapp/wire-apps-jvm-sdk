@@ -27,6 +27,7 @@ import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
+import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.CryptoClientId
@@ -54,6 +55,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -148,6 +150,26 @@ class EventsRouterConcurrencyTest {
             }
             coVerify(exactly = 1) { cryptoClient.joinMlsConversationRequest(any()) }
             eventsRouter.close()
+        }
+
+    @Test
+    fun `welcome callback is delivered when key package count check fails`() =
+        runTest {
+            assertWelcomeCallbackDeliveredWhenReplenishmentFails { cryptoClient, _ ->
+                coEvery { cryptoClient.hasTooFewKeyPackageCount() } throws
+                    IllegalStateException("CoreCrypto unavailable")
+            }
+        }
+
+    @Test
+    fun `welcome callback is delivered when key package upload fails`() =
+        runTest {
+            assertWelcomeCallbackDeliveredWhenReplenishmentFails { cryptoClient, mlsApiClient ->
+                coEvery { cryptoClient.hasTooFewKeyPackageCount() } returns true
+                coEvery { cryptoClient.mlsGenerateKeyPackages(any()) } returns emptyList()
+                coEvery { mlsApiClient.uploadMlsKeyPackages(any()) } throws
+                    IllegalStateException("Backend unavailable")
+            }
         }
 
     @Test
@@ -652,6 +674,83 @@ class EventsRouterConcurrencyTest {
             )
         )
     )
+
+    private suspend fun TestScope.assertWelcomeCallbackDeliveredWhenReplenishmentFails(
+        configureFailure: (CryptoClient, MlsApiClient) -> Unit
+    ) {
+        val conversationId = QualifiedId(UUID.randomUUID(), "wire.test")
+        val groupId = Base64.getEncoder()
+            .encodeToString(UUID.randomUUID().toString().toByteArray())
+        val conversationResponse = ConversationResponse(
+            id = conversationId,
+            teamId = null,
+            groupId = groupId,
+            name = "Test Conversation",
+            epoch = 1L,
+            protocol = CryptoProtocol.MLS,
+            members = ConversationMembers(
+                others = emptyList(),
+                self = TestUtils.dummyConversationMemberSelf(ConversationRole.MEMBER)
+            ),
+            type = ConversationResponse.Type.GROUP
+        )
+        val conversationEntity = ConversationEntity(
+            id = conversationId,
+            name = conversationResponse.name,
+            teamId = null,
+            mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray()),
+            type = ConversationEntity.Type.GROUP
+        )
+        val conversationService = mockk<ConversationService> {
+            every {
+                saveConversationWithMembers(conversationId, conversationResponse)
+            } returns (conversationEntity to emptyList())
+        }
+        val conversationsApiClient = mockk<ConversationsApiClient> {
+            coEvery { getConversation(conversationId) } returns conversationResponse
+        }
+        val cryptoClient = mockk<CryptoClient>(relaxed = true)
+        val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
+        var callbackDelivered = false
+        val handler = object : WireEventsHandlerSuspending() {
+            override suspend fun onAppAddedToConversation(
+                conversation: Conversation,
+                members: List<ConversationMember>
+            ) {
+                callbackDelivered = true
+            }
+        }
+        configureFailure(cryptoClient, mlsApiClient)
+        val eventsRouter = createEventsRouter(
+            conversationService = conversationService,
+            conversationsApiClient = conversationsApiClient,
+            mlsApiClient = mlsApiClient,
+            cryptoClient = cryptoClient,
+            wireEventsHandler = handler,
+            dispatcher = StandardTestDispatcher(testScheduler)
+        )
+
+        try {
+            eventsRouter.route(
+                EventResponse(
+                    id = UUID.randomUUID().toString(),
+                    payload = listOf(
+                        EventContentDTO.Conversation.MlsWelcome(
+                            qualifiedConversation = conversationId,
+                            qualifiedFrom = QualifiedId(UUID.randomUUID(), "wire.test"),
+                            time = Clock.System.now(),
+                            data = generateWelcomeMessage()
+                        )
+                    )
+                )
+            )
+            testScheduler.advanceUntilIdle()
+
+            assertTrue(callbackDelivered)
+        } finally {
+            eventsRouter.close()
+        }
+    }
 
     private fun createEventsRouter(
         teamStorage: TeamStorage = mockk(relaxed = true),
