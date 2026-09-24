@@ -19,6 +19,7 @@ package com.wire.sdk
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.persistence.AppStorage
+import com.wire.sdk.service.KeyPackageManager
 import com.wire.sdk.service.WireApplicationManager
 import com.wire.sdk.service.WireTeamEventsListener
 import com.wire.sdk.service.conversation.ConversationService
@@ -234,7 +235,10 @@ class WireAppSdk(
             logger.info("Wire Apps SDK is already running")
             return
         }
+
+        val keyPackageManager = IsolatedKoinContext.koinApp.koin.get<KeyPackageManager>()
         running.set(true)
+        keyPackageManager.start()
 
         // Recreate executor if it was previously shut down
         if (executor.isShutdown) {
@@ -253,6 +257,7 @@ class WireAppSdk(
                 }
             } finally {
                 running.set(false)
+                keyPackageManager.stop()
                 logger.info("WebSocket listener stopped")
             }
         }
@@ -292,6 +297,7 @@ class WireAppSdk(
         }
         logger.info("Wire Apps SDK initiating graceful shutdown")
         running.set(false)
+        IsolatedKoinContext.koinApp.koin.get<KeyPackageManager>().stop()
 
         // Close WebSocket gracefully to stop receiving new events
         runBlocking {

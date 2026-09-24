@@ -500,6 +500,7 @@ internal class EventsRouter internal constructor(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun handleWelcomeEvent(
         welcome: Welcome,
         qualifiedConversation: QualifiedId
@@ -515,9 +516,18 @@ internal class EventsRouter internal constructor(
         )
 
         if (cryptoClient.hasTooFewKeyPackageCount()) {
-            mlsApiClient.uploadMlsKeyPackages(
-                cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
-            )
+            try {
+                mlsApiClient.uploadMlsKeyPackages(
+                    cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
+                )
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                logger.error(
+                    "Failed to replenish MLS key packages after joining conversation",
+                    exception
+                )
+            }
         }
 
         val conversationModel = Conversation.fromEntity(conversationEntity)

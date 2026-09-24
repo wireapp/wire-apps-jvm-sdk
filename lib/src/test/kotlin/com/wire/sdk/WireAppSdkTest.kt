@@ -22,6 +22,7 @@ import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.exception.WireException
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.persistence.AppStorage
+import com.wire.sdk.service.KeyPackageManager
 import com.wire.sdk.service.WireTeamEventsListener
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -122,11 +123,13 @@ class WireAppSdkTest {
             )
 
             val mockEventsListener = mockk<WireTeamEventsListener>()
+            val mockKeyPackageManager = mockk<KeyPackageManager>(relaxed = true)
             // Load our mock into Koin
             IsolatedKoinContext.koinApp.koin.loadModules(
                 listOf(
                     module {
                         single { mockEventsListener }
+                        single { mockKeyPackageManager }
                     }
                 )
             )
@@ -155,6 +158,8 @@ class WireAppSdkTest {
 
             // Verify connect was called the expected number of times
             coVerify(atLeast = 3) { mockEventsListener.connect() }
+            verify(exactly = 1) { mockKeyPackageManager.start() }
+            verify(timeout = 5_000, atLeast = 1) { mockKeyPackageManager.stop() }
 
             wireAppSdk.stopListening()
         }
