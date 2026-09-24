@@ -76,6 +76,7 @@ import io.ktor.client.request.header
 import io.ktor.http.encodedPath
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
@@ -398,11 +399,34 @@ internal suspend fun getOrInitCryptoClient(
             mlsPublicKeys = cryptoClient.mlsGetPublicKey()
         )
 
-        mlsApiClient.uploadMlsKeyPackages(
-            mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
+        val mlsKeyPackages = cryptoClient.mlsGenerateKeyPackages().map { it.serialize() }
+        uploadInitialMlsKeyPackages(
+            mlsApiClient = mlsApiClient,
+            mlsKeyPackages = mlsKeyPackages
         )
 
         appStorage.setShouldRejoinConversations(should = true)
         cryptoClient
+    }
+}
+
+/**
+ * Initial key-package upload is recoverable because the scheduler checks and replenishes the
+ * backend inventory immediately after the SDK starts listening.
+ */
+@Suppress("TooGenericExceptionCaught")
+internal suspend fun uploadInitialMlsKeyPackages(
+    mlsApiClient: MlsApiClient,
+    mlsKeyPackages: List<ByteArray>
+) {
+    try {
+        mlsApiClient.uploadMlsKeyPackages(mlsKeyPackages)
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (exception: Exception) {
+        logger.error(
+            "Failed to upload initial MLS key packages; scheduled replenishment will retry",
+            exception
+        )
     }
 }
