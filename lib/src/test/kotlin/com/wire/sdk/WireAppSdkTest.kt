@@ -230,7 +230,6 @@ class WireAppSdkTest {
             verify(atLeast = 1) { mockKeyPackageReplenisher.stop(firstJob) }
         } finally {
             firstConnectionRelease.countDown()
-            secondConnectionRelease.countDown()
             wireAppSdk.stopListening()
         }
 

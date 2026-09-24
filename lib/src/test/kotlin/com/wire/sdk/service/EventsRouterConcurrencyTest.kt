@@ -27,6 +27,7 @@ import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.config.IsolatedKoinContext
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.DecryptedMlsMessage
+import com.wire.sdk.model.Conversation
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.CryptoClientId
@@ -713,7 +714,7 @@ class EventsRouterConcurrencyTest {
         var callbackDelivered = false
         val handler = object : WireEventsHandlerSuspending() {
             override suspend fun onAppAddedToConversation(
-                conversation: com.wire.sdk.model.Conversation,
+                conversation: Conversation,
                 members: List<ConversationMember>
             ) {
                 callbackDelivered = true
