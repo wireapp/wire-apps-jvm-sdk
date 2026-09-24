@@ -16,15 +16,10 @@
 
 package com.wire.sdk.service
 
+import com.wire.crypto.CipherSuite
 import com.wire.crypto.KeyPackage
-import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.crypto.CryptoClient
-import com.wire.sdk.model.CryptoProtocol
-import com.wire.sdk.model.MlsStatus
-import com.wire.sdk.model.http.FeaturesResponse
-import com.wire.sdk.model.http.MlsFeatureConfigResponse
-import com.wire.sdk.model.http.MlsFeatureResponse
 import com.wire.sdk.model.http.MlsKeyPackageCountResponse
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -38,13 +33,13 @@ import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.hours
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class KeyPackageManagerTest {
+class KeyPackageReplenisherTest {
     @Test
     fun `when backend key package count is below threshold, then packages are replenished`() =
         runTest {
             val arrangement = Arrangement(this).withKeyPackageCount(49)
 
-            arrangement.manager.start()
+            arrangement.replenisher.start()
             runCurrent()
 
             coVerify(exactly = 1) {
@@ -53,7 +48,7 @@ class KeyPackageManagerTest {
                 )
                 arrangement.mlsApiClient.uploadMlsKeyPackages(any())
             }
-            arrangement.manager.close()
+            arrangement.replenisher.close()
         }
 
     @Test
@@ -61,22 +56,22 @@ class KeyPackageManagerTest {
         runTest {
             val arrangement = Arrangement(this).withKeyPackageCount(50)
 
-            arrangement.manager.start()
+            arrangement.replenisher.start()
             runCurrent()
 
             coVerify(exactly = 0) {
                 arrangement.cryptoClient.mlsGenerateKeyPackages(any())
                 arrangement.mlsApiClient.uploadMlsKeyPackages(any())
             }
-            arrangement.manager.close()
+            arrangement.replenisher.close()
         }
 
     @Test
-    fun `when manager starts, then it checks immediately and again after the interval`() =
+    fun `when replenisher starts, then it checks immediately and again after the interval`() =
         runTest {
             val arrangement = Arrangement(this).withKeyPackageCount(100)
 
-            arrangement.manager.start()
+            arrangement.replenisher.start()
             runCurrent()
             advanceTimeBy(CHECK_INTERVAL)
             runCurrent()
@@ -84,22 +79,22 @@ class KeyPackageManagerTest {
             coVerify(exactly = 2) {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             }
-            arrangement.manager.close()
+            arrangement.replenisher.close()
         }
 
     @Test
-    fun `when manager is started twice, then only one schedule is created`() =
+    fun `when replenisher is started twice, then only one schedule is created`() =
         runTest {
             val arrangement = Arrangement(this).withKeyPackageCount(100)
 
-            arrangement.manager.start()
-            arrangement.manager.start()
+            arrangement.replenisher.start()
+            arrangement.replenisher.start()
             runCurrent()
 
             coVerify(exactly = 1) {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             }
-            arrangement.manager.close()
+            arrangement.replenisher.close()
         }
 
     @Test
@@ -115,7 +110,7 @@ class KeyPackageManagerTest {
                 MlsKeyPackageCountResponse(100)
             }
 
-            arrangement.manager.start()
+            arrangement.replenisher.start()
             runCurrent()
             advanceTimeBy(CHECK_INTERVAL)
             runCurrent()
@@ -123,37 +118,35 @@ class KeyPackageManagerTest {
             coVerify(exactly = 2) {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             }
-            arrangement.manager.close()
+            arrangement.replenisher.close()
         }
 
     @Test
-    fun `when manager stops, then future checks are cancelled`() =
+    fun `when replenisher stops, then future checks are cancelled`() =
         runTest {
             val arrangement = Arrangement(this).withKeyPackageCount(100)
 
-            arrangement.manager.start()
+            arrangement.replenisher.start()
             runCurrent()
-            arrangement.manager.stop()
+            arrangement.replenisher.stop()
             advanceTimeBy(CHECK_INTERVAL)
             runCurrent()
 
             coVerify(exactly = 1) {
                 arrangement.mlsApiClient.getAvailableKeyPackageCount(CIPHER_SUITE)
             }
-            arrangement.manager.close()
+            arrangement.replenisher.close()
         }
 
     private class Arrangement(testScope: kotlinx.coroutines.test.TestScope) {
-        val backendClient = mockk<BackendClient> {
-            coEvery { getApplicationFeatures() } returns FEATURES_RESPONSE
-        }
         val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
-        val cryptoClient = mockk<CryptoClient>()
+        val cryptoClient = mockk<CryptoClient> {
+            every { cipherSuite } returns CipherSuite.MLS_128_DHKEMX25519_AES128GCM_SHA256_ED25519
+        }
         private val keyPackage = mockk<KeyPackage> {
             every { serialize() } returns byteArrayOf(0x01)
         }
-        val manager = KeyPackageManager(
-            backendClient = backendClient,
+        val replenisher = KeyPackageReplenisher(
             mlsApiClient = mlsApiClient,
             cryptoClient = cryptoClient,
             dispatcher = StandardTestDispatcher(testScope.testScheduler),
@@ -177,17 +170,5 @@ class KeyPackageManagerTest {
     private companion object {
         val CHECK_INTERVAL = 24.hours
         const val CIPHER_SUITE = "0x0001"
-
-        val FEATURES_RESPONSE = FeaturesResponse(
-            mlsFeatureResponse = MlsFeatureResponse(
-                mlsFeatureConfigResponse = MlsFeatureConfigResponse(
-                    allowedCipherSuites = listOf(1),
-                    defaultCipherSuite = 1,
-                    defaultProtocol = CryptoProtocol.MLS,
-                    supportedProtocols = listOf(CryptoProtocol.MLS)
-                ),
-                status = MlsStatus.ENABLED
-            )
-        )
     }
 }

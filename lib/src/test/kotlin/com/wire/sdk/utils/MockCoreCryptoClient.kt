@@ -40,7 +40,7 @@ import java.util.Base64
 import java.util.UUID
 
 internal class MockCoreCryptoClient private constructor(
-    private val cipherSuite: CipherSuite,
+    override val cipherSuite: CipherSuite,
     private var coreCryptoClient: CoreCrypto
 ) : CryptoClient {
     val conversationExist = mutableSetOf<ConversationId>()

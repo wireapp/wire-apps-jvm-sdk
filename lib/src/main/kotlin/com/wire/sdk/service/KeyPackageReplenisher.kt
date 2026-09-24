@@ -16,7 +16,6 @@
 
 package com.wire.sdk.service
 
-import com.wire.sdk.client.BackendClient
 import com.wire.sdk.client.MlsApiClient
 import com.wire.sdk.crypto.CryptoClient
 import com.wire.sdk.crypto.MlsCryptoClient.Companion.toHexString
@@ -37,8 +36,7 @@ import org.slf4j.LoggerFactory
 /**
  * Periodically checks the backend key-package inventory and replenishes it when needed.
  */
-internal class KeyPackageManager(
-    private val backendClient: BackendClient,
+internal class KeyPackageReplenisher(
     private val mlsApiClient: MlsApiClient,
     private val cryptoClient: CryptoClient,
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
@@ -69,10 +67,8 @@ internal class KeyPackageManager(
     @Suppress("TooGenericExceptionCaught")
     private suspend fun replenishKeyPackagesIfNeeded() {
         try {
-            val cipherSuite = backendClient.getApplicationFeatures()
-                .mlsFeatureResponse
-                .mlsFeatureConfigResponse
-                .defaultCipherSuite
+            val cipherSuite = cryptoClient.cipherSuite.value
+                .toInt()
                 .toHexString()
             val keyPackageCount = mlsApiClient.getAvailableKeyPackageCount(cipherSuite).count
 

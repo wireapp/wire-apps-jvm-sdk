@@ -49,7 +49,7 @@ import com.wire.sdk.persistence.ConversationStorage
 import com.wire.sdk.persistence.TeamSqlLiteStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.EventsRouter
-import com.wire.sdk.service.KeyPackageManager
+import com.wire.sdk.service.KeyPackageReplenisher
 import com.wire.sdk.service.MlsFallbackStrategy
 import com.wire.sdk.service.UserService
 import com.wire.sdk.service.WireApplicationManager
@@ -127,7 +127,7 @@ val sdkModule =
             }
         } onClose { it?.close() }
         single { WireTeamEventsListener(get(), get(), get(), get()) }
-        single { KeyPackageManager(get(), get(), get()) } onClose { it?.close() }
+        single { KeyPackageReplenisher(get(), get()) } onClose { it?.close() }
 
         // Services
         single {
