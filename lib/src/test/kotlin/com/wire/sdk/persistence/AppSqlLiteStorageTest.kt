@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -78,6 +79,18 @@ class AppSqlLiteStorageTest {
             assertTrue(appStorage.hasApplicationTeamId())
             assertEquals(TestUtils.APPLICATION_QUALIFIED_ID, appStorage.getApplicationQualifiedId())
             assertEquals(TestUtils.APPLICATION_TEAM_ID, appStorage.getApplicationTeamId())
+        }
+
+    @Test
+    fun givenBlankApplicationQualifiedId_thenApplicationQualifiedIdIsMissing() =
+        runTest {
+            val eventsHandler = object : WireEventsHandlerSuspending() {}
+            TestUtils.setupSdk(eventsHandler)
+
+            val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
+            appStorage.save("application_qualified_id", "")
+
+            assertFalse(appStorage.hasApplicationQualifiedId())
         }
 
     companion object {

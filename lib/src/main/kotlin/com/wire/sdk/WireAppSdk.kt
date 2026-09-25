@@ -72,6 +72,8 @@ import java.util.concurrent.atomic.AtomicReference
  * @param wireEventsHandler An implementation of [WireEventsHandler] to receive and process
  *                              incoming Wire events (messages, assets, etc.)
  * @throws IllegalArgumentException if [cryptographyStorageKey] is not exactly 32 bytes
+ * @throws WireException.InvalidParameter if [apiToken] has no valid user ID or belongs to another
+ * app than the identity persisted in SDK storage
  */
 class WireAppSdk(
     apiToken: String,
@@ -88,6 +90,11 @@ class WireAppSdk(
     }
 
     init {
+        val tokenUserId = ApiTokenUtils.extractUserId(apiToken)
+            ?: throw WireException.InvalidParameter(
+                "Received API token doesn't contain a valid userId."
+            )
+
         require(cryptographyStorageKey.size == CRYPTOGRAPHY_STORAGE_KEY_BYTES) {
             "cryptographyStorageKey must be exactly $CRYPTOGRAPHY_STORAGE_KEY_BYTES bytes long"
         }
@@ -100,7 +107,7 @@ class WireAppSdk(
 
         initDynamicModules(wireEventsHandler)
 
-        storeApiTokenForCurrentApp(apiToken)
+        storeApiTokenForCurrentApp(apiToken, tokenUserId)
         storeCookieIfMissing(apiToken)
         // Register shutdown hook for graceful termination on SIGTERM/SIGINT
         Runtime.getRuntime().addShutdownHook(shutdownHook)
@@ -126,26 +133,31 @@ class WireAppSdk(
      *
      * The SDK keeps the original startup token separately from the backend cookie
      * because the cookie can be refreshed during normal SDK operation.
-     * If a later startup token differs from the stored startup token, it is only accepted
-     * when its userId still matches the app id persisted in storage.
+     * The token is accepted only when its userId matches the stored application QualifiedId,
+     * or the stored backend cookie/API token while migrating storage without a QualifiedId.
      */
-    private fun storeApiTokenForCurrentApp(apiToken: String) {
+    private fun storeApiTokenForCurrentApp(
+        apiToken: String,
+        tokenUserId: UUID
+    ) {
         val appStorage = IsolatedKoinContext.koinApp.koin.get<AppStorage>()
 
         val storedApiToken = appStorage.getApiToken()
         val storedBackendCookie = appStorage.getBackendCookie()
-        val extractedUserId = extractUserIdOrThrow(apiToken)
-        val hasStoredIdentity = storedApiToken != null ||
-            storedBackendCookie != null ||
-            appStorage.hasApplicationQualifiedId()
+        val storedUserId = resolveStoredUserId(
+            appStorage,
+            storedApiToken,
+            storedBackendCookie
+        )
 
-        if (hasStoredIdentity) {
-            validateApiTokenForStoredApp(
-                extractedUserId,
-                storedApiToken,
-                storedBackendCookie,
-                appStorage
-            )
+        if (storedUserId != null) {
+            if (storedApiToken != null && apiToken != storedApiToken) {
+                logger.info(
+                    "Received API token differs from the stored API token. " +
+                        "Validating that both belong to the same application."
+                )
+            }
+            validateApiTokenForStoredApp(tokenUserId, storedUserId)
         }
 
         if (storedApiToken == null && storedBackendCookie == null) {
@@ -187,33 +199,8 @@ class WireAppSdk(
 
     private fun validateApiTokenForStoredApp(
         tokenUserId: UUID,
-        storedApiToken: String?,
-        storedBackendCookie: String?,
-        appStorage: AppStorage
+        storedUserId: UUID
     ) {
-        logger.info(
-            "API token does not match stored API token. " +
-                "Comparing received API token userId against stored App userId."
-        )
-
-        if (appStorage.hasApplicationQualifiedId()) {
-            val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
-            if (!storedApplicationQualifiedId.hasSameUserId(tokenUserId)) {
-                throw WireException.InvalidParameter(
-                    """
-                        Stored application QualifiedId $storedApplicationQualifiedId does not match App QualifiedId ${tokenUserId.obfuscateId()} retrieved from the API token. Clear SDK storage before using a token for another app.
-                    """.trimIndent()
-                )
-            } else {
-                logger.info(
-                    "Received API token userId matches stored App userId."
-                )
-            }
-            return
-        }
-
-        val storedUserId = getStoredUserId(storedApiToken, storedBackendCookie)
-
         if (storedUserId != tokenUserId) {
             throw WireException.InvalidParameter(
                 "Received API token userId does not match stored App userId. " +
@@ -221,7 +208,7 @@ class WireAppSdk(
             )
         }
 
-        logger.info("Received API token userId matches stored App userId.")
+        logger.info("Received API token belongs to the stored application.")
     }
 
     /**
@@ -409,18 +396,22 @@ class WireAppSdk(
     }
 }
 
-private fun extractUserIdOrThrow(apiToken: String): UUID =
-    ApiTokenUtils.extractUserId(apiToken)
-        ?: throw WireException.InvalidParameter(
-            "Received API token doesn't contain a valid userId."
-        )
-
-private fun getStoredUserId(
+private fun resolveStoredUserId(
+    appStorage: AppStorage,
     storedApiToken: String?,
     storedBackendCookie: String?
-): UUID =
-    listOfNotNull(storedBackendCookie, storedApiToken)
-        .firstNotNullOfOrNull(ApiTokenUtils::extractUserId)
-        ?: throw WireException.InvalidParameter(
-            "Stored credentials don't contain a valid userId."
-        )
+): UUID? =
+    if (appStorage.hasApplicationQualifiedId()) {
+        appStorage.getApplicationQualifiedId().id
+    } else {
+        val storedCredentials = listOfNotNull(storedBackendCookie, storedApiToken)
+        if (storedCredentials.isEmpty()) {
+            null
+        } else {
+            storedCredentials.firstNotNullOfOrNull(ApiTokenUtils::extractUserId)
+                ?: throw WireException.InvalidParameter(
+                    "Stored credentials don't contain a valid userId. " +
+                        "Clear SDK storage before using a new API token."
+                )
+        }
+    }

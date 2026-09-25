@@ -85,7 +85,7 @@ class AppSqlLiteStorage(db: AppsSdkDatabase) : AppStorage {
     override fun hasApplicationQualifiedId(): Boolean =
         runCatching {
             getByKey(APPLICATION_QUALIFIED_ID).value
-        }.getOrNull() != null
+        }.getOrNull().isNullOrBlank().not()
 
     override fun getApplicationTeamId(): TeamId {
         val applicationTeamId = runCatching {
