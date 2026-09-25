@@ -32,7 +32,6 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import io.mockk.verify
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
@@ -126,8 +125,6 @@ class WireAppSdkTest {
 
             val mockEventsListener = mockk<WireTeamEventsListener>()
             val mockKeyPackageReplenisher = mockk<KeyPackageReplenisher>(relaxed = true)
-            val replenishmentJob = mockk<Job>(relaxed = true)
-            every { mockKeyPackageReplenisher.start() } returns replenishmentJob
             // Load our mock into Koin
             IsolatedKoinContext.koinApp.koin.loadModules(
                 listOf(
@@ -164,7 +161,7 @@ class WireAppSdkTest {
             coVerify(atLeast = 3) { mockEventsListener.connect() }
             verify(exactly = 1) { mockKeyPackageReplenisher.start() }
             verify(timeout = 5_000, atLeast = 1) {
-                mockKeyPackageReplenisher.stop(replenishmentJob)
+                mockKeyPackageReplenisher.stop()
             }
 
             wireAppSdk.stopListening()
@@ -181,9 +178,6 @@ class WireAppSdkTest {
         )
         val mockEventsListener = mockk<WireTeamEventsListener>()
         val mockKeyPackageReplenisher = mockk<KeyPackageReplenisher>(relaxed = true)
-        val firstJob = mockk<Job>(relaxed = true)
-        val secondJob = mockk<Job>(relaxed = true)
-        every { mockKeyPackageReplenisher.start() } returnsMany listOf(firstJob, secondJob)
         val connectionCount = AtomicInteger()
         val shutdownCount = AtomicInteger()
         val firstConnected = CountDownLatch(1)
@@ -220,6 +214,9 @@ class WireAppSdkTest {
         try {
             wireAppSdk.startListening()
             assert(firstConnected.await(5, TimeUnit.SECONDS))
+            wireAppSdk.startListening()
+            verify(exactly = 1) { mockKeyPackageReplenisher.start() }
+            wireAppSdk.stopListening()
             wireAppSdk.stopListening()
 
             wireAppSdk.startListening()
@@ -227,27 +224,46 @@ class WireAppSdkTest {
             assert(wireAppSdk.isRunning())
 
             verify(exactly = 2) { mockKeyPackageReplenisher.start() }
-            verify(atLeast = 1) { mockKeyPackageReplenisher.stop(firstJob) }
+            verify(atLeast = 1) { mockKeyPackageReplenisher.stop() }
         } finally {
             firstConnectionRelease.countDown()
             wireAppSdk.stopListening()
         }
 
-        verify(atLeast = 1) { mockKeyPackageReplenisher.stop(secondJob) }
+        verify(atLeast = 2) { mockKeyPackageReplenisher.stop() }
     }
 
     @Test
     fun `given fresh storage, when sdk starts, then constructor token is stored for both`() {
+        val apiToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = null
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+
+        createWireAppSdk(apiToken = apiToken)
+
+        verify(exactly = 1) {
+            appStorage.saveApiToken(apiToken)
+            appStorage.saveBackendCookie(apiToken)
+        }
+    }
+
+    @Test
+    fun `given fresh storage and invalid token, when sdk starts, then token is not stored`() {
         val appStorage = mockAppStorage(
             storedApiToken = null,
             storedBackendCookie = null
         )
 
-        createWireAppSdk(apiToken = "")
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = "DEF")
+        }
 
-        verify(exactly = 1) {
-            appStorage.saveApiToken("")
-            appStorage.saveBackendCookie("")
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
         }
     }
 
@@ -268,6 +284,68 @@ class WireAppSdkTest {
             appStorage.saveApiToken(replacementToken)
         }
         verify(exactly = 0) {
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given legacy cookie without application id, when sdk starts, then token is migrated`() {
+        val replacementToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+        every {
+            appStorage.getApplicationQualifiedId()
+        } throws WireException.InvalidParameter("No Application QualifiedId found")
+
+        createWireAppSdk(apiToken = replacementToken)
+
+        verify(exactly = 0) {
+            appStorage.getApplicationQualifiedId()
+            appStorage.saveBackendCookie(any())
+        }
+        verify(exactly = 1) {
+            appStorage.saveApiToken(replacementToken)
+        }
+    }
+
+    @Test
+    fun `given legacy cookie without application id and invalid token, then token is not stored`() {
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = "DEF")
+        }
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given legacy cookie without app id and another app token, then token is not stored`() {
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+        val replacementToken = apiTokenForUser(
+            UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
+        )
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = replacementToken)
+        }
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
             appStorage.saveBackendCookie(any())
         }
     }
@@ -317,12 +395,39 @@ class WireAppSdkTest {
 
     @Test
     fun `given matching startup token, when sdk starts, then nothing is saved`() {
+        val apiToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
         val appStorage = mockAppStorage(
-            storedApiToken = "ABC",
+            storedApiToken = apiToken,
             storedBackendCookie = "XYZ"
         )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
 
-        createWireAppSdk(apiToken = "ABC")
+        createWireAppSdk(apiToken = apiToken)
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given stored token for another app, when sdk restarts, then token is rejected`() {
+        val anotherAppToken = apiTokenForUser(
+            UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
+        )
+        val appStorage = mockAppStorage(
+            storedApiToken = anotherAppToken,
+            storedBackendCookie = anotherAppToken
+        )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = anotherAppToken)
+        }
 
         verify(exactly = 0) {
             appStorage.saveApiToken(any())
@@ -392,6 +497,103 @@ class WireAppSdkTest {
         }
     }
 
+    @Test
+    fun `given matching token without cookie or app id, then only the cookie is stored`() {
+        val apiToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        val appStorage = mockAppStorage(
+            storedApiToken = apiToken,
+            storedBackendCookie = null
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+
+        createWireAppSdk(apiToken = apiToken)
+
+        verify(exactly = 0) { appStorage.saveApiToken(any()) }
+        verify(exactly = 1) { appStorage.saveBackendCookie(apiToken) }
+    }
+
+    @Test
+    fun `given invalid cookie without app id, then identity falls back to the stored token`() {
+        val storedApiToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        val replacementToken = storedApiToken.replace("r=33da446", "r=another")
+        val appStorage = mockAppStorage(
+            storedApiToken = storedApiToken,
+            storedBackendCookie = "invalid-cookie"
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+
+        createWireAppSdk(apiToken = replacementToken)
+
+        verify(exactly = 1) {
+            appStorage.saveApiToken(replacementToken)
+            appStorage.saveBackendCookie(replacementToken)
+        }
+    }
+
+    @Test
+    fun `given conflicting credentials without app id, then cookie identity takes precedence`() {
+        val apiToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        val appStorage = mockAppStorage(
+            storedApiToken = apiToken,
+            storedBackendCookie = apiTokenForUser(
+                UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
+            )
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = apiToken)
+        }
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given invalid stored credentials without app id, then storage is not replaced`() {
+        val appStorage = mockAppStorage(
+            storedApiToken = "invalid-token",
+            storedBackendCookie = "invalid-cookie"
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+
+        val exception = assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id))
+        }
+        assertEquals("Stored credentials don't contain a valid userId.", exception.message)
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given only a stored app id, then a token for another app is rejected`() {
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = null
+        )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(
+                apiToken = apiTokenForUser(
+                    UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
+                )
+            )
+        }
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
     private fun mockAppStorage(
         storedApiToken: String?,
         storedBackendCookie: String?
@@ -399,6 +601,7 @@ class WireAppSdkTest {
         val appStorage = mockk<AppStorage>()
         every { appStorage.getApiToken() } returns storedApiToken
         every { appStorage.getBackendCookie() } returns storedBackendCookie
+        every { appStorage.hasApplicationQualifiedId() } returns true
         justRun { appStorage.saveApiToken(any()) }
         justRun { appStorage.saveBackendCookie(any()) }
 
@@ -431,7 +634,8 @@ class WireAppSdkTest {
         "signature.v=1.k=1.d=1792763405.t=u.l=.u=$userId.r=33da446"
 
     companion object {
-        private const val API_TOKEN = "dummyToken"
+        private const val API_TOKEN =
+            "signature.v=1.k=1.d=1792763405.t=u.l=.u=b82c3381-37b0-4545-b555-ca32a3a093d0.r=33da446"
         private const val API_HOST = "http://localhost:8086"
 
         private val wireMockServer = WireMockServer(8086)

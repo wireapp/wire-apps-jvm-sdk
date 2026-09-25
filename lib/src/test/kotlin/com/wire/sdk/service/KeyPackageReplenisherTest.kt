@@ -138,9 +138,9 @@ class KeyPackageReplenisherTest {
         replenisherTest { arrangement ->
             arrangement.withKeyPackageCount(DEFAULT_KEY_PACKAGE_COUNT)
 
-            val firstJob = arrangement.replenisher.start()
+            arrangement.replenisher.start()
             runCurrent()
-            arrangement.replenisher.stop(firstJob)
+            arrangement.replenisher.stop()
             arrangement.replenisher.start()
             runCurrent()
 
@@ -150,17 +150,17 @@ class KeyPackageReplenisherTest {
         }
 
     @Test
-    fun `when stale job is stopped, then current schedule keeps running`() =
+    fun `when replenisher is stopped twice and restarted, then only the new schedule runs`() =
         replenisherTest { arrangement ->
             arrangement.withKeyPackageCount(DEFAULT_KEY_PACKAGE_COUNT)
 
-            val staleJob = arrangement.replenisher.start()
+            arrangement.replenisher.start()
             runCurrent()
-            arrangement.replenisher.stop(staleJob)
+            arrangement.replenisher.stop()
+            arrangement.replenisher.stop()
             arrangement.replenisher.start()
             runCurrent()
 
-            arrangement.replenisher.stop(staleJob)
             advanceTimeBy(CHECK_INTERVAL)
             runCurrent()
 

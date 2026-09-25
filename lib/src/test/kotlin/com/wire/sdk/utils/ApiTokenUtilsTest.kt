@@ -16,10 +16,11 @@
 
 package com.wire.sdk.utils
 
+import com.wire.sdk.exception.WireException
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
+import kotlin.test.assertFailsWith
 
 class ApiTokenUtilsTest {
     @Test
@@ -43,31 +44,32 @@ class ApiTokenUtilsTest {
     }
 
     @Test
-    fun `given token without user id, when extracting user id, then return null`() {
+    fun `given token without user id, when extracting user id, then throw invalid parameter`() {
         val token = "signature.v=1.k=1.d=1792763405.t=u.l=.r=33da446"
 
-        val result = ApiTokenUtils.extractUserId(token)
-
-        assertNull(result)
+        val exception = assertFailsWith<WireException.InvalidParameter> {
+            ApiTokenUtils.extractUserId(token)
+        }
+        assertEquals("Received API token doesn't contain a valid userId.", exception.message)
     }
 
     @Test
-    fun `given user id inside another parameter name, then return null`() {
+    fun `given user id inside another parameter name, then throw invalid parameter`() {
         val userId = UUID.fromString("b82c3381-37b0-4545-b555-ca32a3a093d0")
         val token = "signature.v=1.k=1.d=1792763405.t=u.l=.zauth_u=$userId.r=33da446"
 
-        val result = ApiTokenUtils.extractUserId(token)
-
-        assertNull(result)
+        assertFailsWith<WireException.InvalidParameter> {
+            ApiTokenUtils.extractUserId(token)
+        }
     }
 
     @Test
-    fun `given token with malformed user id, when extracting user id, then return null`() {
+    fun `given malformed user id, when extracting user id, then throw invalid parameter`() {
         val token = "signature.v=1.k=1.d=1792763405.t=u.l=.u=not-a-uuid.r=33da446"
 
-        val result = ApiTokenUtils.extractUserId(token)
-
-        assertNull(result)
+        assertFailsWith<WireException.InvalidParameter> {
+            ApiTokenUtils.extractUserId(token)
+        }
     }
 
     private fun tokenWithUserId(userId: UUID): String = tokenWithUserId(userId.toString())
