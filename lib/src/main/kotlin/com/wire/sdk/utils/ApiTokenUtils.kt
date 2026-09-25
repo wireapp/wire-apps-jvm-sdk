@@ -16,6 +16,7 @@
 
 package com.wire.sdk.utils
 
+import com.wire.sdk.exception.WireException
 import java.util.UUID
 
 object ApiTokenUtils {
@@ -24,9 +25,22 @@ object ApiTokenUtils {
         RegexOption.IGNORE_CASE
     )
 
-    fun extractUserId(token: String): UUID? {
-        return userIdRegex.find(token)
-            ?.groupValues?.get(1)
-            ?.let { UUID.fromString(it) }
-    }
+    /**
+     * Extracts the user ID from an API token.
+     *
+     * @throws WireException.InvalidParameter if the token contains no valid user ID.
+     */
+    fun extractUserId(token: String): UUID =
+        extractUserId(listOf(token), "Received API token doesn't contain a valid userId.")
+
+    /** Extracts the first valid user ID, trying credentials in the supplied order. */
+    internal fun extractUserId(
+        tokens: List<String>,
+        errorMessage: String
+    ): UUID =
+        tokens.firstNotNullOfOrNull { token ->
+            userIdRegex.find(token)
+                ?.groupValues?.get(1)
+                ?.let { UUID.fromString(it) }
+        } ?: throw WireException.InvalidParameter(errorMessage)
 }

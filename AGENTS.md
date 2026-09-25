@@ -212,6 +212,7 @@ Source files in this repository use the Wire GPL header. Preserve existing heade
 
 - Use SLF4J/logback conventions already present in the codebase.
 - Map backend and transport failures through the existing `WireException` types rather than inventing parallel error models.
+- `ApiTokenUtils.extractUserId` returns a non-null `UUID` and throws `WireException.InvalidParameter` if the token has no valid user ID.
 
 ## Testing Expectations
 

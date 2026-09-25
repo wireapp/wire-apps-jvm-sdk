@@ -47,21 +47,19 @@ internal class KeyPackageReplenisher(
     private var replenishmentJob: Job? = null
 
     @Synchronized
-    fun start(): Job {
-        replenishmentJob?.takeIf { it.isActive }?.let { return it }
+    fun start() {
+        if (replenishmentJob?.isActive == true) return
 
-        return scope.launch {
+        replenishmentJob = scope.launch {
             while (isActive) {
                 replenishKeyPackagesIfNeeded()
                 delay(checkInterval)
             }
-        }.also { replenishmentJob = it }
+        }
     }
 
     @Synchronized
-    fun stop(job: Job? = null) {
-        if (job != null && job !== replenishmentJob) return
-
+    fun stop() {
         replenishmentJob?.cancel()
         replenishmentJob = null
     }
