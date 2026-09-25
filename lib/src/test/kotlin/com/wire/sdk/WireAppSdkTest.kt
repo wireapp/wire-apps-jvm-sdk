@@ -238,16 +238,35 @@ class WireAppSdkTest {
 
     @Test
     fun `given fresh storage, when sdk starts, then constructor token is stored for both`() {
+        val apiToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = null
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+
+        createWireAppSdk(apiToken = apiToken)
+
+        verify(exactly = 1) {
+            appStorage.saveApiToken(apiToken)
+            appStorage.saveBackendCookie(apiToken)
+        }
+    }
+
+    @Test
+    fun `given fresh storage and invalid token, when sdk starts, then token is not stored`() {
         val appStorage = mockAppStorage(
             storedApiToken = null,
             storedBackendCookie = null
         )
 
-        createWireAppSdk(apiToken = "")
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = "DEF")
+        }
 
-        verify(exactly = 1) {
-            appStorage.saveApiToken("")
-            appStorage.saveBackendCookie("")
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
         }
     }
 
@@ -268,6 +287,68 @@ class WireAppSdkTest {
             appStorage.saveApiToken(replacementToken)
         }
         verify(exactly = 0) {
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given legacy cookie without application id, when sdk starts, then token is migrated`() {
+        val replacementToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+        every {
+            appStorage.getApplicationQualifiedId()
+        } throws WireException.InvalidParameter("No Application QualifiedId found")
+
+        createWireAppSdk(apiToken = replacementToken)
+
+        verify(exactly = 0) {
+            appStorage.getApplicationQualifiedId()
+            appStorage.saveBackendCookie(any())
+        }
+        verify(exactly = 1) {
+            appStorage.saveApiToken(replacementToken)
+        }
+    }
+
+    @Test
+    fun `given legacy cookie without application id and invalid token, then token is not stored`() {
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = "DEF")
+        }
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given legacy cookie without app id and another app token, then token is not stored`() {
+        val appStorage = mockAppStorage(
+            storedApiToken = null,
+            storedBackendCookie = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
+        )
+        every { appStorage.hasApplicationQualifiedId() } returns false
+        val replacementToken = apiTokenForUser(
+            UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
+        )
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = replacementToken)
+        }
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
             appStorage.saveBackendCookie(any())
         }
     }
@@ -317,12 +398,39 @@ class WireAppSdkTest {
 
     @Test
     fun `given matching startup token, when sdk starts, then nothing is saved`() {
+        val apiToken = apiTokenForUser(TestUtils.APPLICATION_QUALIFIED_ID.id)
         val appStorage = mockAppStorage(
-            storedApiToken = "ABC",
+            storedApiToken = apiToken,
             storedBackendCookie = "XYZ"
         )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
 
-        createWireAppSdk(apiToken = "ABC")
+        createWireAppSdk(apiToken = apiToken)
+
+        verify(exactly = 0) {
+            appStorage.saveApiToken(any())
+            appStorage.saveBackendCookie(any())
+        }
+    }
+
+    @Test
+    fun `given stored token for another app, when sdk restarts, then token is rejected`() {
+        val anotherAppToken = apiTokenForUser(
+            UUID.fromString("b05e077d-7d5e-4f3f-b36c-30a0d18718a4")
+        )
+        val appStorage = mockAppStorage(
+            storedApiToken = anotherAppToken,
+            storedBackendCookie = anotherAppToken
+        )
+        every {
+            appStorage.getApplicationQualifiedId()
+        } returns TestUtils.APPLICATION_QUALIFIED_ID
+
+        assertFailsWith<WireException.InvalidParameter> {
+            createWireAppSdk(apiToken = anotherAppToken)
+        }
 
         verify(exactly = 0) {
             appStorage.saveApiToken(any())
@@ -399,6 +507,7 @@ class WireAppSdkTest {
         val appStorage = mockk<AppStorage>()
         every { appStorage.getApiToken() } returns storedApiToken
         every { appStorage.getBackendCookie() } returns storedBackendCookie
+        every { appStorage.hasApplicationQualifiedId() } returns true
         justRun { appStorage.saveApiToken(any()) }
         justRun { appStorage.saveBackendCookie(any()) }
 
@@ -431,7 +540,8 @@ class WireAppSdkTest {
         "signature.v=1.k=1.d=1792763405.t=u.l=.u=$userId.r=33da446"
 
     companion object {
-        private const val API_TOKEN = "dummyToken"
+        private const val API_TOKEN =
+            "signature.v=1.k=1.d=1792763405.t=u.l=.u=b82c3381-37b0-4545-b555-ca32a3a093d0.r=33da446"
         private const val API_HOST = "http://localhost:8086"
 
         private val wireMockServer = WireMockServer(8086)

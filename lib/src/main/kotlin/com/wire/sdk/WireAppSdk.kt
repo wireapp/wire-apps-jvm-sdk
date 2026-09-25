@@ -31,6 +31,7 @@ import kotlinx.coroutines.runBlocking
 import org.koin.dsl.module
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
@@ -133,6 +134,20 @@ class WireAppSdk(
 
         val storedApiToken = appStorage.getApiToken()
         val storedBackendCookie = appStorage.getBackendCookie()
+        val extractedUserId = extractUserIdOrThrow(apiToken)
+        val hasStoredIdentity = storedApiToken != null ||
+            storedBackendCookie != null ||
+            appStorage.hasApplicationQualifiedId()
+
+        if (hasStoredIdentity) {
+            validateApiTokenForStoredApp(
+                extractedUserId,
+                storedApiToken,
+                storedBackendCookie,
+                appStorage
+            )
+        }
+
         if (storedApiToken == null && storedBackendCookie == null) {
             logger.info(
                 "No API Token found. Storing API token in AppStorage. " +
@@ -145,7 +160,6 @@ class WireAppSdk(
                 "No API token found, but backend cookie exists. " +
                     "Migrating received API token into AppStorage."
             )
-            validateApiTokenForStoredApp(apiToken, appStorage)
             appStorage.saveApiToken(apiToken)
             logger.info(
                 "Received API token is stored in AppStorage. " +
@@ -159,7 +173,6 @@ class WireAppSdk(
             )
 
             if (apiToken != storedApiToken) {
-                validateApiTokenForStoredApp(apiToken, appStorage)
                 appStorage.saveApiToken(apiToken)
                 appStorage.saveBackendCookie(apiToken)
                 logger.info(
@@ -173,7 +186,9 @@ class WireAppSdk(
     }
 
     private fun validateApiTokenForStoredApp(
-        apiToken: String,
+        tokenUserId: UUID,
+        storedApiToken: String?,
+        storedBackendCookie: String?,
         appStorage: AppStorage
     ) {
         logger.info(
@@ -181,10 +196,8 @@ class WireAppSdk(
                 "Comparing received API token userId against stored App userId."
         )
 
-        val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
-        val extractedUserId = ApiTokenUtils.extractUserId(apiToken)
-
-        extractedUserId?.let { tokenUserId ->
+        if (appStorage.hasApplicationQualifiedId()) {
+            val storedApplicationQualifiedId = appStorage.getApplicationQualifiedId()
             if (!storedApplicationQualifiedId.hasSameUserId(tokenUserId)) {
                 throw WireException.InvalidParameter(
                     """
@@ -196,9 +209,19 @@ class WireAppSdk(
                     "Received API token userId matches stored App userId."
                 )
             }
-        } ?: throw WireException.InvalidParameter(
-            "Received API token doesn't contain a valid userId."
-        )
+            return
+        }
+
+        val storedUserId = getStoredUserId(storedApiToken, storedBackendCookie)
+
+        if (storedUserId != tokenUserId) {
+            throw WireException.InvalidParameter(
+                "Received API token userId does not match stored App userId. " +
+                    "Clear SDK storage before using a token for another app."
+            )
+        }
+
+        logger.info("Received API token userId matches stored App userId.")
     }
 
     /**
@@ -385,3 +408,19 @@ class WireAppSdk(
         const val DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT_MS = 20_000L
     }
 }
+
+private fun extractUserIdOrThrow(apiToken: String): UUID =
+    ApiTokenUtils.extractUserId(apiToken)
+        ?: throw WireException.InvalidParameter(
+            "Received API token doesn't contain a valid userId."
+        )
+
+private fun getStoredUserId(
+    storedApiToken: String?,
+    storedBackendCookie: String?
+): UUID =
+    listOfNotNull(storedBackendCookie, storedApiToken)
+        .firstNotNullOfOrNull(ApiTokenUtils::extractUserId)
+        ?: throw WireException.InvalidParameter(
+            "Stored credentials don't contain a valid userId."
+        )

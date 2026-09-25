@@ -210,7 +210,8 @@ object TestUtils {
         return ConversationMemberSelf(qualifiedId, conversationRole)
     }
 
-    private const val API_TOKEN = "dummyToken"
+    private const val API_TOKEN =
+        "signature.v=1.k=1.d=1792763405.t=u.l=.u=b82c3381-37b0-4545-b555-ca32a3a093d0.r=33da446"
     private const val API_HOST = "http://localhost:8086"
     val CRYPTOGRAPHY_STORAGE_KEY = "myDummyPasswordOfRandom32BytesCH".toByteArray()
     private val MLS_PUBLIC_KEYS_RESPONSE =
