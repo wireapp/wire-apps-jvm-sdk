@@ -67,6 +67,7 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
         httpClient.post("/$basePath/${conversationId.domain}/${conversationId.id}/typing") {
             setBody(TypingEventData(status))
             contentType(ContentType.Application.Json)
+            // Stale typing events should not be replayed after server or network failures.
             retry { noRetry() }
         }
     }

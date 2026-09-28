@@ -74,12 +74,19 @@ for the API and Java/Kotlin examples.
 Use the application manager to show that your app is preparing a response. Kotlin callers use `sendTypingIndicatorSuspending`; Java callers use `sendTypingIndicator`:
 
 ```kotlin
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
+
 val manager = sdk.getApplicationManager()
 manager.sendTypingIndicatorSuspending(conversationId, TypingStatus.STARTED)
 try {
     // Prepare and send the response.
 } finally {
-    manager.sendTypingIndicatorSuspending(conversationId, TypingStatus.STOPPED)
+    withContext(NonCancellable) {
+        runCatching {
+            manager.sendTypingIndicatorSuspending(conversationId, TypingStatus.STOPPED)
+        }.onFailure { logger.warn("Could not clear typing indicator", it) }
+    }
 }
 ```
 
@@ -93,7 +100,7 @@ try {
 }
 ```
 
-Import `TypingStatus` from `com.wire.sdk.model.http.conversation`. Each call sends one event without automatic refresh or retries. For longer operations, resend `STARTED` periodically (for example, every 8 seconds). Stop any refresh and wait for an in-flight refresh to finish before sending `STOPPED`. The app must be a member of the conversation.
+Import `TypingStatus` from `com.wire.sdk.model.http.conversation`. The Kotlin example assumes an application logger named `logger`. Each call sends one event without automatic refresh or retries, including on network failures. A lost `STOPPED` event clears when receiving clients time out the indicator. For longer operations, resend `STARTED` periodically (for example, every 8 seconds as a conservative interval). Stop any refresh and wait for an in-flight refresh to finish before sending `STOPPED`. The app must be a member of the conversation.
 
 ## Build the project
 

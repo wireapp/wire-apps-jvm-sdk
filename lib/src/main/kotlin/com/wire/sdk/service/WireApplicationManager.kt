@@ -226,8 +226,9 @@ class WireApplicationManager internal constructor(
 
     /**
      * Sends a typing status to the other members of a conversation.
-     * Each call sends one event and is not retried. Call with [TypingStatus.STOPPED]
-     * when work finishes or is cancelled.
+     * Each call sends one event and is not retried, including on network failures.
+     * A lost event clears when receiving clients time out the indicator.
+     * Call with [TypingStatus.STOPPED] when work finishes or is cancelled.
      *
      * Blocking method for Java interoperability.
      *
@@ -244,6 +245,7 @@ class WireApplicationManager internal constructor(
 
     /**
      * Suspending variant of [sendTypingIndicator] for Kotlin consumers.
+     * Send [TypingStatus.STOPPED] from a NonCancellable context during cancellation.
      *
      * @param conversationId The qualified ID of a conversation the app belongs to.
      * @param status Whether the app started or stopped typing.
