@@ -24,10 +24,13 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationsResponse
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.SubconversationResponse
+import com.wire.sdk.model.http.conversation.TypingEventData
+import com.wire.sdk.model.http.conversation.TypingStatus
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.utils.Mls
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.retry
 import io.ktor.client.request.accept
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -55,6 +58,17 @@ internal class ConversationsApiClient(private val httpClient: HttpClient) {
         return httpClient.get(
             "/$basePath/${conversationId.domain}/${conversationId.id}"
         ).body<ConversationResponse>()
+    }
+
+    suspend fun sendTypingStatus(
+        conversationId: QualifiedId,
+        status: TypingStatus
+    ) {
+        httpClient.post("/$basePath/${conversationId.domain}/${conversationId.id}/typing") {
+            setBody(TypingEventData(status))
+            contentType(ContentType.Application.Json)
+            retry { noRetry() }
+        }
     }
 
     suspend fun createGroupConversation(

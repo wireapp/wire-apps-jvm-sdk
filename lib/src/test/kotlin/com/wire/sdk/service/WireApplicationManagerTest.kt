@@ -38,6 +38,7 @@ import com.wire.sdk.model.UserType
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.conversation.TypingStatus
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
@@ -64,6 +65,37 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class WireApplicationManagerTest {
+    @Test
+    fun sendTypingIndicatorDelegatesFromBlockingAndSuspendingMethods() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val conversationService = mockk<ConversationService> {
+                coEvery { sendTypingStatus(conversationId, any()) } returns Unit
+            }
+            val manager = WireApplicationManager(
+                teamStorage = mockk(),
+                backendClient = mockk(),
+                userService = mockk(),
+                mlsApiClient = mockk(),
+                assetsApiClient = mockk(),
+                cryptoClient = mockk(),
+                mlsFallbackStrategy = mockk(),
+                conversationService = conversationService,
+                appStorage = mockk(),
+                subconversationService = mockk()
+            )
+
+            manager.sendTypingIndicatorSuspending(conversationId, TypingStatus.STARTED)
+            manager.sendTypingIndicator(conversationId, TypingStatus.STOPPED)
+
+            coVerify(exactly = 1) {
+                conversationService.sendTypingStatus(conversationId, TypingStatus.STARTED)
+            }
+            coVerify(exactly = 1) {
+                conversationService.sendTypingStatus(conversationId, TypingStatus.STOPPED)
+            }
+        }
+
     @AfterEach
     fun tearDownMocks() {
         unmockkObject(ProtobufSerializer)

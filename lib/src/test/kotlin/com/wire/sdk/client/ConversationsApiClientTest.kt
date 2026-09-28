@@ -20,12 +20,24 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
+import com.wire.sdk.model.http.conversation.TypingStatus
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.http.HttpMethod
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class ConversationsApiClientTest {
     private fun apiClient(
@@ -57,6 +69,57 @@ class ConversationsApiClientTest {
             apiClient(CONVERSATION_RESPONSE_JSON) { capturedMethod = it.method }
                 .getConversation(CONVERSATION_ID)
             assertEquals(HttpMethod.Get, capturedMethod)
+        }
+
+    @Test
+    fun `sendTypingStatus posts each status to the qualified conversation`() =
+        runTest {
+            for (status in TypingStatus.entries) {
+                var capturedPath: String? = null
+                var capturedMethod: HttpMethod? = null
+                var capturedBody: String? = null
+                apiClient("") {
+                    capturedPath = it.url.encodedPath
+                    capturedMethod = it.method
+                    capturedBody = (it.body as TextContent).text
+                }.sendTypingStatus(CONVERSATION_ID, status)
+
+                assertEquals(
+                    "/conversations/${CONVERSATION_ID.domain}/${CONVERSATION_ID.id}/typing",
+                    capturedPath
+                )
+                assertEquals(HttpMethod.Post, capturedMethod)
+                assertEquals("{\"status\":\"${status.name.lowercase()}\"}", capturedBody)
+            }
+        }
+
+    @Test
+    fun `sendTypingStatus does not retry a server error`() =
+        runTest {
+            var requestCount = 0
+            val httpClient = HttpClient(MockEngine) {
+                expectSuccess = true
+                install(ContentNegotiation) { json(Json) }
+                install(HttpRequestRetry) { retryOnServerErrors(maxRetries = 2) }
+                engine {
+                    addHandler {
+                        requestCount++
+                        respond("", HttpStatusCode.ServiceUnavailable)
+                    }
+                }
+            }
+
+            try {
+                assertFailsWith<ServerResponseException> {
+                    ConversationsApiClient(httpClient).sendTypingStatus(
+                        CONVERSATION_ID,
+                        TypingStatus.STARTED
+                    )
+                }
+                assertEquals(1, requestCount)
+            } finally {
+                httpClient.close()
+            }
         }
 
     @Test

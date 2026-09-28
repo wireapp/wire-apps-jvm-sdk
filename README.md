@@ -69,6 +69,32 @@ Apps can use their own AVS integration with the SDK's signaling, conference MLS 
 epoch callbacks, and calling HTTP operations. See [Calling integration](docs/calling.md)
 for the API and Java/Kotlin examples.
 
+## Typing indicator
+
+Use the application manager to show that your app is preparing a response. Kotlin callers use `sendTypingIndicatorSuspending`; Java callers use `sendTypingIndicator`:
+
+```kotlin
+val manager = sdk.getApplicationManager()
+manager.sendTypingIndicatorSuspending(conversationId, TypingStatus.STARTED)
+try {
+    // Prepare and send the response.
+} finally {
+    manager.sendTypingIndicatorSuspending(conversationId, TypingStatus.STOPPED)
+}
+```
+
+```java
+WireApplicationManager manager = sdk.getApplicationManager();
+manager.sendTypingIndicator(conversationId, TypingStatus.STARTED);
+try {
+    // Prepare and send the response.
+} finally {
+    manager.sendTypingIndicator(conversationId, TypingStatus.STOPPED);
+}
+```
+
+Import `TypingStatus` from `com.wire.sdk.model.http.conversation`. Each call sends one event without automatic refresh or retries. For longer operations, resend `STARTED` periodically (for example, every 8 seconds). Stop any refresh and wait for an in-flight refresh to finish before sending `STOPPED`. The app must be a member of the conversation.
+
 ## Build the project
 
 ```shell

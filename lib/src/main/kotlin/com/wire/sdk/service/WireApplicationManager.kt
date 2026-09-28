@@ -35,6 +35,7 @@ import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.conversation.TypingStatus
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
@@ -221,6 +222,38 @@ class WireApplicationManager internal constructor(
             }
         }
         return preparedMessage.id
+    }
+
+    /**
+     * Sends a typing status to the other members of a conversation.
+     * Each call sends one event and is not retried. Call with [TypingStatus.STOPPED]
+     * when work finishes or is cancelled.
+     *
+     * Blocking method for Java interoperability.
+     *
+     * @param conversationId The qualified ID of a conversation the app belongs to.
+     * @param status Whether the app started or stopped typing.
+     */
+    @Throws(WireException::class)
+    fun sendTypingIndicator(
+        conversationId: QualifiedId,
+        status: TypingStatus
+    ) {
+        runBlocking { sendTypingIndicatorSuspending(conversationId, status) }
+    }
+
+    /**
+     * Suspending variant of [sendTypingIndicator] for Kotlin consumers.
+     *
+     * @param conversationId The qualified ID of a conversation the app belongs to.
+     * @param status Whether the app started or stopped typing.
+     */
+    @Throws(WireException::class)
+    suspend fun sendTypingIndicatorSuspending(
+        conversationId: QualifiedId,
+        status: TypingStatus
+    ) {
+        conversationService.sendTypingStatus(conversationId, status)
     }
 
     private fun prepareMessageForSending(
