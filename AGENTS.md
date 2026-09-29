@@ -85,7 +85,7 @@ Operational details that matter when modifying these APIs:
 - `WireAppSdk.stopListening()` stops the listener.
 - `WireAppSdk.getApplicationManager()` returns the `WireApplicationManager` used for backend operations.
 - `WireApplicationManager` intentionally exposes both blocking methods for Java consumers and suspending methods for Kotlin consumers.
-- `WireApplicationManager.sendTypingIndicator` and `sendTypingIndicatorSuspending` send one typing status event; callers refresh `STARTED` during long work and send `STOPPED` when done.
+- `WireApplicationManager.processWithTypingIndicator` and `processWithTypingIndicatorSuspending` manage typing status, refreshes, and cleanup around caller work.
 - `WireEventsHandler` consumers typically extend `WireEventsHandlerDefault` or `WireEventsHandlerSuspending` rather than implementing lower-level behavior directly.
 - Event handlers can use their `manager` property to send follow-up actions and responses.
 

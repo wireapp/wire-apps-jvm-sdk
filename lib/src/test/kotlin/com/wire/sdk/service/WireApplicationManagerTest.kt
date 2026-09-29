@@ -52,6 +52,10 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.unmockkObject
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
@@ -60,45 +64,143 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.koin.core.error.InstanceCreationException
 import java.util.UUID
+import java.util.concurrent.Callable
 import kotlin.io.encoding.Base64
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class WireApplicationManagerTest {
-    @Test
-    fun sendTypingIndicatorDelegatesFromBlockingAndSuspendingMethods() =
-        runTest {
-            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
-            val conversationService = mockk<ConversationService> {
-                coEvery { sendTypingStatus(conversationId, any()) } returns Unit
-            }
-            val manager = WireApplicationManager(
-                teamStorage = mockk(),
-                backendClient = mockk(),
-                userService = mockk(),
-                mlsApiClient = mockk(),
-                assetsApiClient = mockk(),
-                cryptoClient = mockk(),
-                mlsFallbackStrategy = mockk(),
-                conversationService = conversationService,
-                appStorage = mockk(),
-                subconversationService = mockk()
-            )
-
-            manager.sendTypingIndicatorSuspending(conversationId, TypingStatus.STARTED)
-            manager.sendTypingIndicator(conversationId, TypingStatus.STOPPED)
-
-            coVerify(exactly = 1) {
-                conversationService.sendTypingStatus(conversationId, TypingStatus.STARTED)
-            }
-            coVerify(exactly = 1) {
-                conversationService.sendTypingStatus(conversationId, TypingStatus.STOPPED)
-            }
-        }
-
     @AfterEach
     fun tearDownMocks() {
         unmockkObject(ProtobufSerializer)
+    }
+
+    private fun typingManager(conversationService: ConversationService) =
+        WireApplicationManager(
+            teamStorage = mockk(),
+            backendClient = mockk(),
+            userService = mockk(),
+            mlsApiClient = mockk(),
+            assetsApiClient = mockk(),
+            cryptoClient = mockk(),
+            mlsFallbackStrategy = mockk(),
+            conversationService = conversationService,
+            appStorage = mockk(),
+            subconversationService = mockk()
+        )
+
+    @Test
+    fun processWithTypingIndicatorSuspendingReturnsWorkResultAndStops() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val statuses = mutableListOf<TypingStatus>()
+            val service = mockk<ConversationService> {
+                coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
+                    statuses += secondArg<TypingStatus>()
+                }
+            }
+
+            val manager = typingManager(service)
+            val result = manager.processWithTypingIndicatorSuspending(conversationId) {
+                "done"
+            }
+
+            assertEquals("done", result)
+            assertEquals(listOf(TypingStatus.STARTED, TypingStatus.STOPPED), statuses)
+        }
+
+    @Test
+    fun processWithTypingIndicatorSuspendingRefreshesDuringLongWork() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val statuses = mutableListOf<TypingStatus>()
+            val service = mockk<ConversationService> {
+                coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
+                    statuses += secondArg<TypingStatus>()
+                }
+            }
+
+            typingManager(service).processWithTypingIndicatorSuspending(conversationId) {
+                delay(16_100)
+            }
+
+            assertEquals(
+                listOf(
+                    TypingStatus.STARTED,
+                    TypingStatus.STARTED,
+                    TypingStatus.STARTED,
+                    TypingStatus.STOPPED
+                ),
+                statuses
+            )
+        }
+
+    @Test
+    fun processWithTypingIndicatorSuspendingPreservesWorkFailure() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val statuses = mutableListOf<TypingStatus>()
+            val service = mockk<ConversationService> {
+                coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
+                    val status = secondArg<TypingStatus>()
+                    statuses.add(status)
+                    if (status == TypingStatus.STOPPED) error("stop failed")
+                }
+            }
+
+            val error = assertFailsWith<IllegalArgumentException> {
+                typingManager(service).processWithTypingIndicatorSuspending(conversationId) {
+                    throw IllegalArgumentException("work failed")
+                }
+            }
+
+            assertEquals("work failed", error.message)
+            assertEquals(listOf(TypingStatus.STARTED, TypingStatus.STOPPED), statuses)
+        }
+
+    @Test
+    fun processWithTypingIndicatorSuspendingStopsAfterCancellation() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val statuses = mutableListOf<TypingStatus>()
+            val service = mockk<ConversationService> {
+                coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
+                    statuses += secondArg<TypingStatus>()
+                }
+            }
+            val manager = typingManager(service)
+
+            val operation = launch {
+                manager.processWithTypingIndicatorSuspending(conversationId) {
+                    delay(100_000)
+                }
+            }
+            yield()
+            operation.cancelAndJoin()
+
+            assertEquals(listOf(TypingStatus.STARTED, TypingStatus.STOPPED), statuses)
+        }
+
+    @Test
+    fun processWithTypingIndicatorBlockingReturnsWorkResult() {
+        val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+        val statuses = mutableListOf<TypingStatus>()
+        val service = mockk<ConversationService> {
+            coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
+                statuses += secondArg<TypingStatus>()
+            }
+        }
+
+        val result = typingManager(service).processWithTypingIndicator(
+            conversationId,
+            Callable {
+                42
+            }
+        )
+
+        assertEquals(42, result)
+        assertEquals(listOf(TypingStatus.STARTED, TypingStatus.STOPPED), statuses)
     }
 
     @Test
