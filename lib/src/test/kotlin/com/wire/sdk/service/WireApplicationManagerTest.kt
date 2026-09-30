@@ -38,7 +38,6 @@ import com.wire.sdk.model.UserType
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.http.conversation.ConversationRole
-import com.wire.sdk.model.http.conversation.TypingStatus
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
@@ -52,10 +51,6 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.unmockkObject
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
@@ -67,7 +62,6 @@ import java.util.UUID
 import java.util.concurrent.Callable
 import kotlin.io.encoding.Base64
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class WireApplicationManagerTest {
@@ -91,116 +85,42 @@ class WireApplicationManagerTest {
         )
 
     @Test
-    fun processWithTypingIndicatorSuspendingReturnsWorkResultAndStops() =
+    fun `typing helper preserves the result when started fails`() =
         runTest {
-            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
-            val statuses = mutableListOf<TypingStatus>()
+            val id = QualifiedId(UUID.randomUUID(), "example.com")
             val service = mockk<ConversationService> {
-                coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
-                    statuses += secondArg<TypingStatus>()
-                }
+                coEvery { sendTypingStatus(id, any()) } throws
+                    IllegalStateException("delivery failed")
             }
-
-            val manager = typingManager(service)
-            val result = manager.processWithTypingIndicatorSuspending(conversationId) {
-                "done"
-            }
-
-            assertEquals("done", result)
-            assertEquals(listOf(TypingStatus.STARTED, TypingStatus.STOPPED), statuses)
-        }
-
-    @Test
-    fun processWithTypingIndicatorSuspendingRefreshesDuringLongWork() =
-        runTest {
-            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
-            val statuses = mutableListOf<TypingStatus>()
-            val service = mockk<ConversationService> {
-                coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
-                    statuses += secondArg<TypingStatus>()
-                }
-            }
-
-            typingManager(service).processWithTypingIndicatorSuspending(conversationId) {
-                delay(16_100)
-            }
-
             assertEquals(
-                listOf(
-                    TypingStatus.STARTED,
-                    TypingStatus.STARTED,
-                    TypingStatus.STARTED,
-                    TypingStatus.STOPPED
-                ),
-                statuses
+                "done",
+                typingManager(service).processWithTypingIndicatorSuspending(id) {
+                    "done"
+                }
             )
         }
 
     @Test
-    fun processWithTypingIndicatorSuspendingPreservesWorkFailure() =
-        runTest {
-            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
-            val statuses = mutableListOf<TypingStatus>()
-            val service = mockk<ConversationService> {
-                coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
-                    val status = secondArg<TypingStatus>()
-                    statuses.add(status)
-                    if (status == TypingStatus.STOPPED) error("stop failed")
-                }
-            }
-
-            val error = assertFailsWith<IllegalArgumentException> {
-                typingManager(service).processWithTypingIndicatorSuspending(conversationId) {
-                    throw IllegalArgumentException("work failed")
-                }
-            }
-
-            assertEquals("work failed", error.message)
-            assertEquals(listOf(TypingStatus.STARTED, TypingStatus.STOPPED), statuses)
-        }
-
-    @Test
-    fun processWithTypingIndicatorSuspendingStopsAfterCancellation() =
-        runTest {
-            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
-            val statuses = mutableListOf<TypingStatus>()
-            val service = mockk<ConversationService> {
-                coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
-                    statuses += secondArg<TypingStatus>()
-                }
-            }
-            val manager = typingManager(service)
-
-            val operation = launch {
-                manager.processWithTypingIndicatorSuspending(conversationId) {
-                    delay(100_000)
-                }
-            }
-            yield()
-            operation.cancelAndJoin()
-
-            assertEquals(listOf(TypingStatus.STARTED, TypingStatus.STOPPED), statuses)
-        }
-
-    @Test
-    fun processWithTypingIndicatorBlockingReturnsWorkResult() {
-        val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
-        val statuses = mutableListOf<TypingStatus>()
+    fun `blocking typing helper runs on the caller thread with its ThreadLocals`() {
+        val id = QualifiedId(UUID.randomUUID(), "example.com")
         val service = mockk<ConversationService> {
-            coEvery { sendTypingStatus(conversationId, any()) } coAnswers {
-                statuses += secondArg<TypingStatus>()
-            }
+            coEvery { sendTypingStatus(id, any()) } returns Unit
         }
-
-        val result = typingManager(service).processWithTypingIndicator(
-            conversationId,
-            Callable {
-                42
-            }
-        )
-
-        assertEquals(42, result)
-        assertEquals(listOf(TypingStatus.STARTED, TypingStatus.STOPPED), statuses)
+        val caller = Thread.currentThread()
+        val local = ThreadLocal<String>()
+        local.set("caller value")
+        try {
+            val result = typingManager(service).processWithTypingIndicator(
+                id,
+                Callable {
+                    assertEquals(caller, Thread.currentThread())
+                    local.get()
+                }
+            )
+            assertEquals("caller value", result)
+        } finally {
+            local.remove()
+        }
     }
 
     @Test

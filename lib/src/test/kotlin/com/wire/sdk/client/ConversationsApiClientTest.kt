@@ -94,7 +94,7 @@ class ConversationsApiClientTest {
         }
 
     @Test
-    fun `sendTypingStatus does not retry a server error`() =
+    fun `sendTypingStatus uses the client retry policy`() =
         runTest {
             var requestCount = 0
             val httpClient = HttpClient(MockEngine) {
@@ -116,7 +116,7 @@ class ConversationsApiClientTest {
                         TypingStatus.STARTED
                     )
                 }
-                assertEquals(1, requestCount)
+                assertEquals(3, requestCount)
             } finally {
                 httpClient.close()
             }

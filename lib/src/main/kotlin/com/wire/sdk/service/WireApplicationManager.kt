@@ -35,7 +35,6 @@ import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
-import com.wire.sdk.model.http.conversation.TypingStatus
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
@@ -43,15 +42,7 @@ import com.wire.sdk.service.conversation.ConversationService
 import com.wire.sdk.utils.AESDecrypt
 import com.wire.sdk.utils.AESEncrypt
 import com.wire.sdk.utils.MAX_DATA_SIZE
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
@@ -80,9 +71,7 @@ class WireApplicationManager internal constructor(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    private companion object {
-        const val TYPING_REFRESH_INTERVAL_MILLIS = 8_000L
-    }
+    private val typingIndicator = TypingIndicatorController(conversationService::sendTypingStatus)
 
     private val appQualifiedId: QualifiedId by lazy {
         appStorage.getApplicationQualifiedId()
@@ -238,65 +227,48 @@ class WireApplicationManager internal constructor(
     }
 
     /**
-     * Runs [process] while showing a typing indicator. STARTED is refreshed every eight seconds.
-     * STOPPED is sent after the last refresh, even if [process] fails.
-     * Typing delivery failures are logged and do not replace the result of [process].
+     * Runs [process] immediately on the caller's thread while typing is sent in the background.
+     * Overlapping work in this conversation shares one indicator, refreshed every 30 seconds
+     * for at most five minutes. The last operation schedules STOPPED after pending typing requests.
+     * Requests have a five-second timeout; delivery failures are logged. Returning the result
+     * never waits for typing requests, including STOPPED.
      *
-     * Blocking variant for Java consumers.
+     * Blocking variant for Java consumers. Caller ThreadLocals are preserved.
      * @param conversationId The qualified ID of a conversation the app belongs to.
      * @param process Work to perform while typing is shown.
      */
+    @Throws(Exception::class)
     fun <T> processWithTypingIndicator(
         conversationId: QualifiedId,
         process: Callable<T>
-    ): T =
-        runBlocking {
-            processWithTypingIndicatorSuspending(conversationId) {
-                withContext(Dispatchers.IO) { process.call() }
-            }
+    ): T {
+        val release = typingIndicator.acquire(conversationId)
+        try {
+            return process.call()
+        } finally {
+            release()
         }
+    }
 
     /**
      * Suspending variant of [processWithTypingIndicator] for Kotlin consumers.
-     * STARTED is refreshed every eight seconds. Refreshes finish before STOPPED is sent.
-     * Cancellation and failures in [process] trigger cleanup without masking the original failure.
+     * Cancellation of [process] schedules bounded STOPPED cleanup in a NonCancellable context
+     * independently of the caller. The process result or failure is returned without waiting
+     * for that cleanup. The five-minute typing limit does not cancel [process].
      * @param conversationId The qualified ID of a conversation the app belongs to.
      * @param process Work to perform while typing is shown.
      */
     suspend fun <T> processWithTypingIndicatorSuspending(
         conversationId: QualifiedId,
         process: suspend () -> T
-    ): T =
-        coroutineScope {
-            @Suppress("TooGenericExceptionCaught")
-            suspend fun sendStatus(status: TypingStatus) {
-                try {
-                    conversationService.sendTypingStatus(conversationId, status)
-                } catch (exception: CancellationException) {
-                    if (!currentCoroutineContext().isActive) throw exception
-                    logger.warn("Could not send typing status {}", status, exception)
-                } catch (exception: Exception) {
-                    logger.warn("Could not send typing status {}", status, exception)
-                }
-            }
-
-            try {
-                sendStatus(TypingStatus.STARTED)
-                val refreshJob = launch {
-                    while (true) {
-                        delay(TYPING_REFRESH_INTERVAL_MILLIS)
-                        sendStatus(TypingStatus.STARTED)
-                    }
-                }
-                try {
-                    process()
-                } finally {
-                    withContext(NonCancellable) { refreshJob.cancelAndJoin() }
-                }
-            } finally {
-                withContext(NonCancellable) { sendStatus(TypingStatus.STOPPED) }
-            }
+    ): T {
+        val release = typingIndicator.acquire(conversationId)
+        try {
+            return process()
+        } finally {
+            release()
         }
+    }
 
     private fun prepareMessageForSending(
         conversation: ConversationEntity,
