@@ -26,8 +26,8 @@ plugins {
     id("app.cash.sqldelight") version "2.3.2"
     id("com.google.protobuf") version "0.10.0"
 
-    // Maven Central
-    id("com.vanniktech.maven.publish") version "0.37.0"
+    // Maven publishing
+    id("maven-publish")
 }
 
 group = "com.wire"
@@ -158,68 +158,69 @@ protobuf {
     }
 }
 
-mavenPublishing {
-    publishToMavenCentral()
-
-    /**
-     * Skip signing publication only when a skipping parameter is available
-     *
-     * Usage:
-     * ./gradlew publishToMavenLocal -PskipSigning=true
-     */
-    if (findProperty("skipSigning") != "true") {
-        signAllPublications()
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            groupId = "com.wire"
+            artifactId = "wire-apps-jvm-sdk"
+            version = Versions.SDK_VERSION
+            pom {
+                name = "Wire Apps JVM SDK"
+                description =
+                    "SDK for Wire third-party applications written in Kotlin, supporting JVM languages."
+                inceptionYear = "2025"
+                url = "https://github.com/wireapp/wire-apps-jvm-sdk"
+                licenses {
+                    license {
+                        name = "The GNU General Public License v3.0"
+                        url = "https://www.gnu.org/licenses/gpl-3.0.en.html"
+                        distribution = "https://www.gnu.org/licenses/gpl-3.0.en.html"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "alexandreferris"
+                        name = "Alexandre Ferris"
+                        url = "https://github.com/alexandreferris"
+                        organization = "Wire Germany GmbH"
+                        organizationUrl = "https://wire.com/"
+                    }
+                    developer {
+                        id = "spoonman01"
+                        name = "Luca Rospocher"
+                        url = "https://github.com/spoonman01"
+                        organization = "Wire Germany GmbH"
+                        organizationUrl = "https://wire.com/"
+                    }
+                    developer {
+                        id = "MarianKijewski"
+                        name = "Marian Kijewski"
+                        url = "https://github.com/MarianKijewski"
+                        organization = "Wire Germany GmbH"
+                        organizationUrl = "https://wire.com/"
+                    }
+                    developer {
+                        id = "bbaarriiss"
+                        name = "Baris Alis"
+                        url = "https://github.com/bbaarriiss"
+                        organization = "Wire Germany GmbH"
+                        organizationUrl = "https://wire.com/"
+                    }
+                }
+                scm {
+                    url = "https://github.com/wireapp/wire-apps-jvm-sdk"
+                    connection = "scm:git:git://github.com/wireapp/wire-apps-jvm-sdk.git"
+                    developerConnection =
+                        "scm:git:ssh://git@github.com:wireapp/wire-apps-jvm-sdk.git"
+                }
+            }
+        }
     }
-
-    coordinates(group.toString(), artifactId, version.toString())
-
-    pom {
-        name = "Wire Apps JVM SDK"
-        description =
-            "SDK for Wire third-party applications written in Kotlin, supporting JVM languages."
-        inceptionYear = "2025"
-        url = "https://github.com/wireapp/wire-apps-jvm-sdk"
-        licenses {
-            license {
-                name = "The GNU General Public License v3.0"
-                url = "https://www.gnu.org/licenses/gpl-3.0.en.html"
-                distribution = "https://www.gnu.org/licenses/gpl-3.0.en.html"
-            }
-        }
-        developers {
-            developer {
-                id = "alexandreferris"
-                name = "Alexandre Ferris"
-                url = "https://github.com/alexandreferris"
-                organization = "Wire Germany GmbH"
-                organizationUrl = "https://wire.com/"
-            }
-            developer {
-                id = "spoonman01"
-                name = "Luca Rospocher"
-                url = "https://github.com/spoonman01"
-                organization = "Wire Germany GmbH"
-                organizationUrl = "https://wire.com/"
-            }
-            developer {
-                id = "MarianKijewski"
-                name = "Marian Kijewski"
-                url = "https://github.com/MarianKijewski"
-                organization = "Wire Germany GmbH"
-                organizationUrl = "https://wire.com/"
-            }
-            developer {
-                id = "bbaarriiss"
-                name = "Baris Alis"
-                url = "https://github.com/bbaarriiss"
-                organization = "Wire Germany GmbH"
-                organizationUrl = "https://wire.com/"
-            }
-        }
-        scm {
-            url = "https://github.com/wireapp/wire-apps-jvm-sdk"
-            connection = "scm:git:git://github.com/wireapp/wire-apps-jvm-sdk.git"
-            developerConnection = "scm:git:ssh://git@github.com:wireapp/wire-apps-jvm-sdk.git"
+    repositories {
+        maven {
+            name = "localMaven"
+            url = uri("${rootProject.layout.buildDirectory.get()}/maven-publish")
         }
     }
 }
