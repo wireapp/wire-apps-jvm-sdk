@@ -59,7 +59,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.wire:wire-apps-jvm-sdk:0.0.1")
+    implementation("com.wire:wire-apps-jvm-sdk:0.3.0")
 }
 ```
 
@@ -75,7 +75,7 @@ dependencies {
 <dependency>
     <groupId>com.wire</groupId>
     <artifactId>wire-apps-jvm-sdk</artifactId>
-    <version>0.0.1</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 

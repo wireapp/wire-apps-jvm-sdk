@@ -22,6 +22,18 @@ jobs:
       - name: Build
         run: |
           ./gradlew build --info
+      # Publish to the staging dir and assert the artifact lands at the
+      # correct coordinates (com/wire/wire-apps-jvm-sdk/<version>/pom).
+      # Catches publication/coordinate regressions at PR time instead of
+      # release time, without uploading anything.
+      - name: Publication check
+        run: |
+          set -euo pipefail
+          rm -rf build/maven-publish
+          ./gradlew :lib:publishMavenPublicationToWireStagingRepository -PskipSigning=true --no-configuration-cache
+          POM="$(find build/maven-publish/com/wire/wire-apps-jvm-sdk -name 'wire-apps-jvm-sdk-*.pom' | head -1)"
+          test -n "$POM" || { echo "error: no POM published under com/wire/wire-apps-jvm-sdk" >&2; exit 1; }
+          echo "Publication check passed: $POM"
       - name: Store reports
         if: failure()
         uses: actions/upload-artifact@v7

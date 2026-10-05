@@ -71,7 +71,7 @@ dependencies {
     api(kotlin("stdlib"))
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
-    implementation(
+    compileOnly(
         files(rootProject.projectDir.resolve("buildSrc/build/classes/kotlin/main"))
     )
     implementation(platform("io.insert-koin:koin-bom:4.2.2"))
