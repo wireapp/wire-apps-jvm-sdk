@@ -33,7 +33,7 @@ plugins {
 
 group = "com.wire"
 version = Versions.SDK_VERSION
-val artifactId = "wire-apps-jvm-sdk"
+val sdkArtifactId = "wire-apps-jvm-sdk"
 
 repositories {
     google()
@@ -165,7 +165,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
-            artifactId = artifactId
+            artifactId = sdkArtifactId
             pom {
                 name = "Wire Apps JVM SDK"
                 description =
