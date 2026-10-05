@@ -44,11 +44,20 @@ For information about usage and onboarding refer to [Sdk Documentation](https://
 * Access to the file system to store cryptographic keys and data
 
 ## Import with
-The latest release is avaliable at [Maven Central](https://central.sonatype.com/artifact/com.wire/wire-apps-jvm-sdk).
+The latest release is available from Wire's Maven repository at [https://maven.wire.com](https://maven.wire.com/com/wire/wire-apps-jvm-sdk/). 
+
+Previous versions were available on Maven Central.
 
 ### Gradle
 
 ```kotlin
+
+repositories {
+    maven {
+        url = uri("https://maven.wire.com")
+    }
+}
+
 dependencies {
     implementation("com.wire:wire-apps-jvm-sdk:0.0.1")
 }
@@ -56,6 +65,13 @@ dependencies {
 
 ### Maven
 ```xml
+<repositories>
+    <repository>
+        <id>wire</id>
+        <url>https://maven.wire.com</url>
+    </repository>
+</repositories>
+
 <dependency>
     <groupId>com.wire</groupId>
     <artifactId>wire-apps-jvm-sdk</artifactId>
