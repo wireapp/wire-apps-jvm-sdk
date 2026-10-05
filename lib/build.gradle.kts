@@ -28,6 +28,7 @@ plugins {
 
     // Maven publishing
     id("maven-publish")
+    id("signing")
 }
 
 group = "com.wire"
@@ -224,6 +225,32 @@ publishing {
             name = "localMaven"
             url = uri("${rootProject.layout.buildDirectory.get()}/maven-publish")
         }
+    }
+}
+
+/**
+ * Sign all publications, unless skipping is explicitly requested.
+ *
+ * Usage:
+ * ./gradlew publishToMavenLocal -PskipSigning=true
+ *
+ * Key material can be provided in memory via project properties
+ * (set as env vars in CI with the ORG_GRADLE_PROJECT_ prefix):
+ * - signingInMemoryKeyId
+ * - signingInMemoryKeyPassword
+ * - signingInMemoryKey
+ */
+signing {
+    if (findProperty("skipSigning") != "true") {
+        val signingKeyId = findProperty("signingInMemoryKeyId") as String?
+        val signingKey = findProperty("signingInMemoryKey") as String?
+        val signingPassword = findProperty("signingInMemoryKeyPassword") as String?
+        if (signingKey != null && signingPassword != null) {
+            useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+        }
+        sign(publishing.publications["maven"])
+    } else {
+        isRequired = false
     }
 }
 
