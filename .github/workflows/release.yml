@@ -19,18 +19,27 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::093205192929:role/gh-actions-maven-publish-wire-apps-jvm-sdk
+          aws-region: us-east-1
+
+      # Seed the publish dir with the current repository state so Gradle
+      # reads and merges the existing maven-metadata.xml instead of
+      # overwriting the bucket's version history with a fresh one.
+      # || true tolerates the first release, when the S3 prefix is empty.
+      - name: Seed publish dir from S3
+        run: |
+          set -euo pipefail
+          aws s3 sync s3://maven-wire-com/com/wire/wire-apps-jvm-sdk/ build/maven-publish/com/wire/wire-apps-jvm-sdk/ --no-progress || true
+
       - name: Publish artifacts
         run: ./gradlew :lib:publishMavenPublicationToLocalMavenRepository --no-configuration-cache --info
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
-        with:
-          role-to-assume: arn:aws:iam::093205192929:role/gh-actions-maven-publish-wire-apps-jvm-sdk
-          aws-region: us-east-1
 
       - name: Sync artifacts to S3
         run: aws s3 sync build/maven-publish/ s3://maven-wire-com/ --no-progress
