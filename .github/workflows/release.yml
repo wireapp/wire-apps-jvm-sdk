@@ -35,14 +35,19 @@ jobs:
           aws s3 sync s3://maven-wire-com/com/wire/wire-apps-jvm-sdk/ build/maven-publish/com/wire/wire-apps-jvm-sdk/ --no-progress || true
 
       - name: Publish artifacts
-        run: ./gradlew :lib:publishMavenPublicationToLocalMavenRepository --no-configuration-cache --info
+        run: ./gradlew :lib:publishMavenPublicationToWireStagingRepository --no-configuration-cache --info
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
 
+      # Assert the publish dir is non-empty: catches a Gradle/workflow
+      # path coupling break before sync silently uploads nothing.
       - name: Sync artifacts to S3
-        run: aws s3 sync build/maven-publish/ s3://maven-wire-com/ --no-progress
+        run: |
+          set -euo pipefail
+          test -n "$(find build/maven-publish -type f)" || { echo "error: build/maven-publish contains no artifacts" >&2; exit 1; }
+          aws s3 sync build/maven-publish/ s3://maven-wire-com/ --no-progress
 
       - name: Update README.md with new version
         continue-on-error: true

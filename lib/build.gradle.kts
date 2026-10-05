@@ -165,9 +165,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
-            groupId = "com.wire"
-            artifactId = "wire-apps-jvm-sdk"
-            version = Versions.SDK_VERSION
+            artifactId = artifactId
             pom {
                 name = "Wire Apps JVM SDK"
                 description =
@@ -222,8 +220,8 @@ publishing {
     }
     repositories {
         maven {
-            name = "localMaven"
-            url = uri("${rootProject.layout.buildDirectory.get()}/maven-publish")
+            name = "wireStaging"
+            url = rootProject.layout.buildDirectory.dir("maven-publish").get().asFile.toURI()
         }
     }
 }
