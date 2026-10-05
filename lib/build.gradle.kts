@@ -41,7 +41,7 @@ repositories {
 
 val ktorVersion = "3.5.2"
 val sqlDelightVersion = "2.4.0"
-val logbookVersion = "4.1.0"
+val logbookVersion = "4.2.0"
 val coreCryptoVersion = "10.5.2"
 val ktorModules = listOf(
     "io.ktor:ktor-client-core",
@@ -94,7 +94,7 @@ dependencies {
     implementation("org.zalando:logbook-json:$logbookVersion")
     implementation("com.google.protobuf:protobuf-kotlin:4.33.5")
     implementation("com.google.protobuf:protobuf-gradle-plugin:0.10.0")
-    implementation("com.github.ben-manes.caffeine:caffeine:3.2.4")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.3.0")
     implementation("io.ktor:ktor-client-auth:$ktorVersion")
 
     testImplementation(kotlin("test"))
