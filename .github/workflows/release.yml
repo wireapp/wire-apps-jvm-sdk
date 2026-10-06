@@ -43,11 +43,14 @@ jobs:
 
       # Assert the publish dir is non-empty: catches a Gradle/workflow
       # path coupling break before sync silently uploads nothing.
+      # The metadata checksums (*maven-metadata.xml.*) are dropped — the
+      # merged metadata is served fresh by the repo; its checksums are
+      # optional and would grow stale relative to the merged file.
       - name: Sync artifacts to S3
         run: |
           set -euo pipefail
           test -n "$(find build/maven-publish -type f)" || { echo "error: build/maven-publish contains no artifacts" >&2; exit 1; }
-          aws s3 sync build/maven-publish/ s3://maven-wire-com/ --no-progress
+          aws s3 sync build/maven-publish/ s3://maven-wire-com/ --no-progress --exclude "*maven-metadata.xml.*"
 
       - name: Update README.md with new version
         continue-on-error: true
