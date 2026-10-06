@@ -5,7 +5,9 @@ on:
     types: [published]
 
 permissions:
+  id-token: write
   contents: write
+  pull-requests: write
 
 jobs:
   publish:
@@ -16,14 +18,44 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-      - name: Publish to MavenCentral
-        run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache --info
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::093205192929:role/gh-actions-maven-publish-wire-apps-jvm-sdk
+          aws-region: us-east-1
+
+      # Seed the publish dir with the current repository state so Gradle
+      # reads and merges the existing maven-metadata.xml instead of
+      # overwriting the bucket's version history with a fresh one.
+      # An empty (first-release) prefix is a no-op that exits 0.
+      - name: Seed publish dir from S3
+        run: |
+          set -euo pipefail
+          aws s3 sync s3://maven-wire-com/com/wire/wire-apps-jvm-sdk/ build/maven-publish/com/wire/wire-apps-jvm-sdk/ --no-progress
+
+      - name: Publish artifacts
+        run: ./gradlew :lib:publishMavenPublicationToWireStagingRepository --no-configuration-cache --info
         env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
+
+      # Assert Gradle actually published this release's version directory:
+      # since seeding populates old versions into the publish dir, a plain
+      # non-empty check would be vacuous. Also note below: the metadata
+      # checksums (*maven-metadata.xml.*) are dropped — the merged
+      # metadata is served fresh by the repo; its checksums are optional
+      # and would grow stale relative to the merged file.
+      - name: Sync artifacts to S3
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.release.tag_name }}"
+          test -d "build/maven-publish/com/wire/wire-apps-jvm-sdk/${VERSION}" || {
+            echo "error: no artifacts published for com.wire:wire-apps-jvm-sdk:${VERSION}" >&2
+            exit 1
+          }
+          aws s3 sync build/maven-publish/ s3://maven-wire-com/ --no-progress --exclude "*maven-metadata.xml.*"
 
       - name: Update README.md with new version
         continue-on-error: true
