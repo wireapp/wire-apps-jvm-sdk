@@ -59,6 +59,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.koin.core.error.InstanceCreationException
 import java.util.UUID
+import java.util.concurrent.Callable
 import kotlin.io.encoding.Base64
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -67,6 +68,59 @@ class WireApplicationManagerTest {
     @AfterEach
     fun tearDownMocks() {
         unmockkObject(ProtobufSerializer)
+    }
+
+    private fun typingManager(conversationService: ConversationService) =
+        WireApplicationManager(
+            teamStorage = mockk(),
+            backendClient = mockk(),
+            userService = mockk(),
+            mlsApiClient = mockk(),
+            assetsApiClient = mockk(),
+            cryptoClient = mockk(),
+            mlsFallbackStrategy = mockk(),
+            conversationService = conversationService,
+            appStorage = mockk(),
+            subconversationService = mockk()
+        )
+
+    @Test
+    fun `typing helper preserves the result when started fails`() =
+        runTest {
+            val id = QualifiedId(UUID.randomUUID(), "example.com")
+            val service = mockk<ConversationService> {
+                coEvery { sendTypingStatus(id, any()) } throws
+                    IllegalStateException("delivery failed")
+            }
+            assertEquals(
+                "done",
+                typingManager(service).processWithTypingIndicatorSuspending(id) {
+                    "done"
+                }
+            )
+        }
+
+    @Test
+    fun `blocking typing helper runs on the caller thread with its ThreadLocals`() {
+        val id = QualifiedId(UUID.randomUUID(), "example.com")
+        val service = mockk<ConversationService> {
+            coEvery { sendTypingStatus(id, any()) } returns Unit
+        }
+        val caller = Thread.currentThread()
+        val local = ThreadLocal<String>()
+        local.set("caller value")
+        try {
+            val result = typingManager(service).processWithTypingIndicator(
+                id,
+                Callable {
+                    assertEquals(caller, Thread.currentThread())
+                    local.get()
+                }
+            )
+            assertEquals("caller value", result)
+        } finally {
+            local.remove()
+        }
     }
 
     @Test
