@@ -38,6 +38,7 @@ import com.wire.sdk.model.UserType
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.WireUser
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
@@ -367,6 +368,91 @@ class WireApplicationManagerTest {
                 IsolatedKoinContext.koinApp.koin.get<WireApplicationManager>()
             }
             assertTrue(exception.hasCause<WireException.InvalidParameter>())
+        }
+
+    @Test
+    fun `read and delivered receipts are not sent when receipts are disabled`() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val conversation = ConversationEntity(
+                id = conversationId,
+                name = "test",
+                teamId = TeamId(UUID.randomUUID()),
+                mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray()),
+                type = ConversationEntity.Type.GROUP,
+                receiptMode = ReceiptMode.DISABLED
+            )
+            val conversationService = mockk<ConversationService> {
+                coEvery { getConversationById(conversationId) } returns conversation
+            }
+            val cryptoClient = mockk<CryptoClient>(relaxed = true)
+            val mlsApiClient = mockk<MlsApiClient>(relaxed = true)
+            val manager = WireApplicationManager(
+                teamStorage = mockk(),
+                backendClient = mockk(),
+                userService = mockk(),
+                mlsApiClient = mlsApiClient,
+                assetsApiClient = mockk(),
+                cryptoClient = cryptoClient,
+                mlsFallbackStrategy = mockk(),
+                conversationService = conversationService,
+                appStorage = mockk(),
+                subconversationService = mockk(relaxed = true)
+            )
+
+            WireMessage.Receipt.Type.entries.forEach { type ->
+                val receipt = WireMessage.Receipt.create(conversationId, type)
+                assertEquals(receipt.id, manager.sendMessageSuspending(receipt))
+            }
+
+            coVerify(exactly = 0) { cryptoClient.encryptMls(any(), any()) }
+            coVerify(exactly = 0) { mlsApiClient.sendMessage(any()) }
+        }
+
+    @Test
+    fun `receipt is sent when receipts are enabled`() =
+        runTest {
+            val conversationId = QualifiedId(UUID.randomUUID(), "example.com")
+            val mlsGroupId = ConversationId(UUID.randomUUID().toString().toByteArray())
+            val conversationService = mockk<ConversationService> {
+                coEvery { getConversationById(conversationId) } returns ConversationEntity(
+                    id = conversationId,
+                    name = "test",
+                    teamId = TeamId(UUID.randomUUID()),
+                    mlsGroupId = mlsGroupId,
+                    type = ConversationEntity.Type.GROUP,
+                    receiptMode = ReceiptMode.ENABLED
+                )
+            }
+            val cryptoClient = mockk<CryptoClient> {
+                coEvery { encryptMls(mlsGroupId, any()) } returns byteArrayOf(1, 2, 3)
+            }
+            val mlsApiClient = mockk<MlsApiClient> {
+                coEvery { sendMessage(any()) } returns Unit
+            }
+            val manager = WireApplicationManager(
+                teamStorage = mockk(),
+                backendClient = mockk(),
+                userService = mockk(),
+                mlsApiClient = mlsApiClient,
+                assetsApiClient = mockk(),
+                cryptoClient = cryptoClient,
+                mlsFallbackStrategy = mockk(),
+                conversationService = conversationService,
+                appStorage = mockk(),
+                subconversationService = mockk(relaxed = true)
+            )
+
+            manager.sendMessageSuspending(
+                WireMessage.Receipt.create(
+                    conversationId = conversationId,
+                    type = WireMessage.Receipt.Type.READ,
+                    messages = listOf(UUID.randomUUID().toString())
+                )
+            )
+
+            coVerify(exactly = 1) { cryptoClient.encryptMls(mlsGroupId, any()) }
+            coVerify(exactly = 1) { mlsApiClient.sendMessage(any()) }
         }
 
     @Test

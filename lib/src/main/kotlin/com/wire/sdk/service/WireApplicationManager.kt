@@ -35,6 +35,7 @@ import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
@@ -156,6 +157,8 @@ class WireApplicationManager internal constructor(
      * Blocking method for Java interoperability
      *
      * @param message The text of the message to be sent.
+     * If this is a READ or DELIVERED receipt and receipts are disabled for the conversation, the
+     * receipt is not transmitted and its message ID is returned.
      * @throws WireException.EntityNotFound If the conversation cannot be found.
      * @return the id of the message sent, useful to edit/delete it later.
      */
@@ -177,6 +180,8 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers.
      *
      * @param message The text of the message to be sent.
+     * If this is a READ or DELIVERED receipt and receipts are disabled for the conversation, the
+     * receipt is not transmitted and its message ID is returned.
      * @throws WireException.EntityNotFound If the conversation cannot be found.
      * @return the id of the message sent, useful to edit/delete it later.
      */
@@ -184,6 +189,15 @@ class WireApplicationManager internal constructor(
         val conversation = conversationService.getConversationById(
             conversationId = message.conversationId
         )
+
+        if (message is WireMessage.Receipt && conversation.receiptMode == ReceiptMode.DISABLED) {
+            logger.debug(
+                "Skipping {} receipt because receipts are disabled for conversation {}",
+                message.type,
+                conversation.id
+            )
+            return message.id
+        }
 
         val preparedMessage = prepareMessageForSending(
             conversation = conversation,

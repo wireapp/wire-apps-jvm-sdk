@@ -270,6 +270,18 @@ internal class EventsRouter internal constructor(
                 processMessageTimerUpdateDTO(event)
             }
 
+            is EventContentDTO.Conversation.ReceiptModeUpdateDTO -> {
+                logger.info(
+                    "Updating receipt mode to {} for conversation {}",
+                    event.data.receiptMode,
+                    event.qualifiedConversation
+                )
+                conversationService.updateReceiptMode(
+                    conversationId = event.qualifiedConversation,
+                    receiptMode = event.data.receiptMode
+                )
+            }
+
             is EventContentDTO.Conversation.MlsReset -> {
                 logger.info("MLS reset event received for: ${event.qualifiedConversation}")
                 conversationService.resetMlsConversation(

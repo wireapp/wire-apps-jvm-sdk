@@ -49,6 +49,7 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.KeyPackage
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.ConversationStorage
@@ -58,6 +59,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
@@ -1848,6 +1850,68 @@ class ConversationServiceTest {
             coVerify(exactly = 0) { cryptoClient.wipeConversation(any()) }
             verify(exactly = 1) { conversationStorage.delete(any()) }
         }
+
+    @Test
+    fun `saving conversation persists receipt mode only for team conversations`() {
+        val savedConversations = mutableListOf<ConversationEntity>()
+        val conversationStorage = mockk<ConversationStorage> {
+            every { save(capture(savedConversations)) } returns Unit
+            every { saveMembers(any(), any()) } returns Unit
+        }
+        val service = conversationService(conversationStorage)
+
+        service.saveConversationWithMembers(
+            qualifiedConversation = CONVERSATION_ID,
+            conversationResponse = CONVERSATION_RESPONSE.copy(receiptMode = ReceiptMode.ENABLED)
+        )
+        service.saveConversationWithMembers(
+            qualifiedConversation = CONVERSATION_ID,
+            conversationResponse = CONVERSATION_RESPONSE.copy(
+                teamId = null,
+                receiptMode = ReceiptMode.ENABLED
+            )
+        )
+
+        assertEquals(ReceiptMode.ENABLED, savedConversations[0].receiptMode)
+        assertEquals(ReceiptMode.DISABLED, savedConversations[1].receiptMode)
+    }
+
+    @Test
+    fun `receipt mode update is forced to disabled for non-team conversation`() =
+        runTest {
+            val conversation = ConversationEntity(
+                id = CONVERSATION_ID,
+                name = "Non-team conversation",
+                teamId = null,
+                mlsGroupId = CONVERSATION_MLS_GROUP_ID,
+                type = ConversationEntity.Type.GROUP
+            )
+            val updatedMode = slot<ReceiptMode>()
+            val conversationStorage = mockk<ConversationStorage> {
+                every { getById(CONVERSATION_ID) } returns conversation
+                every { updateReceiptMode(CONVERSATION_ID, capture(updatedMode)) } returns Unit
+            }
+
+            conversationService(conversationStorage).updateReceiptMode(
+                conversationId = CONVERSATION_ID,
+                receiptMode = ReceiptMode.ENABLED
+            )
+
+            assertEquals(ReceiptMode.DISABLED, updatedMode.captured)
+        }
+
+    private fun conversationService(conversationStorage: ConversationStorage) =
+        ConversationService(
+            backendClient = mockk(),
+            usersApiClient = mockk(),
+            conversationsApiClient = mockk(),
+            oneToOneConversationsApiClient = mockk(),
+            teamsApiClient = mockk(),
+            mlsApiClient = mockk(),
+            conversationStorage = conversationStorage,
+            appStorage = mockk(),
+            cryptoClient = mockk()
+        )
 
     private companion object {
         const val BACKEND_DOMAIN = "wire.com"

@@ -25,6 +25,7 @@ import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.WireMessage
 import com.wire.sdk.model.http.EventContentDTO
 import com.wire.sdk.model.http.EventResponse
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.utils.KtxSerializer
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -110,6 +111,17 @@ class WireEventsTest {
         assertIs<EventContentDTO.Conversation.MlsReset>(payload)
         assertEquals("oldGroupIdBase64==", payload.data.groupId)
         assertEquals("newGroupIdBase64==", payload.data.newGroupId)
+    }
+
+    @Test
+    fun whenDeserializingReceiptModeUpdateThenItShouldMapCorrectly() {
+        val event = KtxSerializer.json.decodeFromString<EventResponse>(
+            DUMMY_RECEIPT_MODE_UPDATE_EVENT_RESPONSE
+        )
+
+        val payload = event.payload?.first()
+        assertIs<EventContentDTO.Conversation.ReceiptModeUpdateDTO>(payload)
+        assertEquals(ReceiptMode.ENABLED, payload.data.receiptMode)
     }
 
     @Test
@@ -241,6 +253,27 @@ class WireEventsTest {
                       "time": "2024-10-07T13:23:10.386Z",
                       "team": "95d52e20-8428-4619-9a81-dbc2298a3f28",
                       "type": "conversation.create"
+                    }
+                  ]
+                }
+            """
+
+        private val DUMMY_RECEIPT_MODE_UPDATE_EVENT_RESPONSE =
+            """{
+                  "id": "4c2c48f6-84af-11ef-8001-860acb7b851a",
+                  "payload": [
+                    {
+                      "qualified_conversation": {
+                        "domain": "${CONVERSATION_ID.domain}",
+                        "id": "${CONVERSATION_ID.id}"
+                      },
+                      "qualified_from": {
+                        "domain": "anta.wire.link",
+                        "id": "95d52e20-8428-4619-9a81-dbc2298a3f28"
+                      },
+                      "time": "2024-10-07T13:23:10.386Z",
+                      "data": { "receipt_mode": 2 },
+                      "type": "conversation.receipt-mode-update"
                     }
                   ]
                 }

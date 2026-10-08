@@ -21,6 +21,7 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRoleChange
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
 import com.wire.sdk.model.http.conversation.MemberLeaveEventData
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.model.http.conversation.TypingEventData
 import com.wire.sdk.utils.UUIDSerializer
 import kotlinx.serialization.SerialName
@@ -152,6 +153,15 @@ sealed class EventContentDTO {
         ) : Conversation()
 
         @Serializable
+        @SerialName("conversation.receipt-mode-update")
+        data class ReceiptModeUpdateDTO(
+            @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
+            @SerialName("qualified_from") override val qualifiedFrom: QualifiedId,
+            @SerialName("time") override val time: Instant,
+            @SerialName("data") override val data: ReceiptModeUpdateEventData
+        ) : Conversation()
+
+        @Serializable
         @SerialName("conversation.mls-reset")
         data class MlsReset(
             @SerialName("qualified_conversation") override val qualifiedConversation: QualifiedId,
@@ -173,6 +183,11 @@ sealed class EventContentDTO {
     @Serializable
     data class MessageTimerUpdateEventData(
         @SerialName("message_timer") val messageTimer: Long?
+    )
+
+    @Serializable
+    data class ReceiptModeUpdateEventData(
+        @SerialName("receipt_mode") val receiptMode: ReceiptMode = ReceiptMode.DISABLED
     )
 
     @Serializable
