@@ -390,12 +390,13 @@ internal class ConversationService internal constructor(
         receiptMode: ReceiptMode
     ) {
         val conversation = getConversationById(conversationId)
-        val effectiveReceiptMode = if (conversation.teamId == null) {
-            ReceiptMode.DISABLED
-        } else {
-            receiptMode
-        }
-        conversationStorage.updateReceiptMode(conversation.id, effectiveReceiptMode)
+        conversationStorage.updateReceiptMode(
+            conversationId = conversation.id,
+            receiptMode = effectiveReceiptMode(
+                isTeamConversation = conversation.teamId != null,
+                receiptMode = receiptMode
+            )
+        )
     }
 
     private suspend fun claimKeyPackages(
@@ -454,11 +455,10 @@ internal class ConversationService internal constructor(
                 teamId = conversationResponse.teamId?.let { TeamId(it) },
                 type = ConversationEntity.Type.fromApi(value = conversationResponse.type),
                 messageTimer = conversationResponse.messageTimer,
-                receiptMode = if (conversationResponse.teamId == null) {
-                    ReceiptMode.DISABLED
-                } else {
-                    conversationResponse.receiptMode
-                }
+                receiptMode = effectiveReceiptMode(
+                    isTeamConversation = conversationResponse.teamId != null,
+                    receiptMode = conversationResponse.receiptMode
+                )
             )
 
         val members = (
@@ -479,6 +479,11 @@ internal class ConversationService internal constructor(
 
         return Pair(conversationEntity, members)
     }
+
+    private fun effectiveReceiptMode(
+        isTeamConversation: Boolean,
+        receiptMode: ReceiptMode
+    ): ReceiptMode = if (isTeamConversation) receiptMode else ReceiptMode.DISABLED
 
     fun saveMembers(
         conversationId: QualifiedId,

@@ -157,6 +157,8 @@ class WireApplicationManager internal constructor(
      * Blocking method for Java interoperability
      *
      * @param message The text of the message to be sent.
+     * If this is a READ or DELIVERED receipt and receipts are disabled for the conversation, the
+     * receipt is not transmitted and its message ID is returned.
      * @throws WireException.EntityNotFound If the conversation cannot be found.
      * @return the id of the message sent, useful to edit/delete it later.
      */
@@ -178,6 +180,8 @@ class WireApplicationManager internal constructor(
      * Suspending method for Kotlin consumers.
      *
      * @param message The text of the message to be sent.
+     * If this is a READ or DELIVERED receipt and receipts are disabled for the conversation, the
+     * receipt is not transmitted and its message ID is returned.
      * @throws WireException.EntityNotFound If the conversation cannot be found.
      * @return the id of the message sent, useful to edit/delete it later.
      */
@@ -187,7 +191,7 @@ class WireApplicationManager internal constructor(
         )
 
         if (message is WireMessage.Receipt && conversation.receiptMode == ReceiptMode.DISABLED) {
-            logger.warn(
+            logger.debug(
                 "Skipping {} receipt because receipts are disabled for conversation {}",
                 message.type,
                 conversation.id

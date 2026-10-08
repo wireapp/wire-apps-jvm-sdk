@@ -31,12 +31,11 @@ class ConversationSqlLiteStorageTest {
     @Test
     fun `receipt mode is persisted and updated`() {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
-        AppsSdkDatabase.Schema.create(driver)
-        val storage = ConversationSqlLiteStorage(AppsSdkDatabase(driver))
-        val conversationId = QualifiedId(UUID.randomUUID(), "wire.test")
-
-        storage.save(
-            ConversationEntity(
+        try {
+            AppsSdkDatabase.Schema.create(driver)
+            val storage = ConversationSqlLiteStorage(AppsSdkDatabase(driver))
+            val conversationId = QualifiedId(UUID.randomUUID(), "wire.test")
+            val conversation = ConversationEntity(
                 id = conversationId,
                 name = "Test conversation",
                 teamId = TeamId(UUID.randomUUID()),
@@ -44,13 +43,17 @@ class ConversationSqlLiteStorageTest {
                 type = ConversationEntity.Type.GROUP,
                 receiptMode = ReceiptMode.ENABLED
             )
-        )
 
-        assertEquals(ReceiptMode.ENABLED, storage.getById(conversationId)?.receiptMode)
+            storage.save(conversation)
+            assertEquals(ReceiptMode.ENABLED, storage.getById(conversationId)?.receiptMode)
 
-        storage.updateReceiptMode(conversationId, ReceiptMode.DISABLED)
+            storage.save(conversation.copy(receiptMode = ReceiptMode.DISABLED))
+            assertEquals(ReceiptMode.DISABLED, storage.getById(conversationId)?.receiptMode)
 
-        assertEquals(ReceiptMode.DISABLED, storage.getById(conversationId)?.receiptMode)
-        driver.close()
+            storage.updateReceiptMode(conversationId, ReceiptMode.ENABLED)
+            assertEquals(ReceiptMode.ENABLED, storage.getById(conversationId)?.receiptMode)
+        } finally {
+            driver.close()
+        }
     }
 }
