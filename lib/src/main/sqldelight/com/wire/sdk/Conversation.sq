@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS conversation (
   creation_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   type TEXT NOT NULL,
   message_timer INTEGER,
+  receipt_mode INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (id, domain)
 );
 
@@ -25,13 +26,18 @@ FROM conversation
 WHERE type = 'ONE_TO_ONE' AND name = ?;
 
 insert:
-INSERT INTO conversation(id, domain, name, team_id, mls_group_id, type, message_timer)
-VALUES (?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT(id, domain) DO UPDATE SET name=excluded.name, team_id=excluded.team_id, mls_group_id=excluded.mls_group_id, type=excluded.type, message_timer=excluded.message_timer;
+INSERT INTO conversation(id, domain, name, team_id, mls_group_id, type, message_timer, receipt_mode)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id, domain) DO UPDATE SET name=excluded.name, team_id=excluded.team_id, mls_group_id=excluded.mls_group_id, type=excluded.type, message_timer=excluded.message_timer, receipt_mode=excluded.receipt_mode;
 
 updateMessageTimer:
 UPDATE conversation
 SET message_timer = ?
+WHERE id = ? AND domain = ?;
+
+updateReceiptMode:
+UPDATE conversation
+SET receipt_mode = ?
 WHERE id = ? AND domain = ?;
 
 delete:

@@ -46,6 +46,7 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.KeyPackage
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.conversation.getDecodedMlsGroupId
 import com.wire.sdk.model.http.conversation.getRemovalKey
@@ -384,6 +385,19 @@ internal class ConversationService internal constructor(
         }
     }
 
+    suspend fun updateReceiptMode(
+        conversationId: QualifiedId,
+        receiptMode: ReceiptMode
+    ) {
+        val conversation = getConversationById(conversationId)
+        val effectiveReceiptMode = if (conversation.teamId == null) {
+            ReceiptMode.DISABLED
+        } else {
+            receiptMode
+        }
+        conversationStorage.updateReceiptMode(conversation.id, effectiveReceiptMode)
+    }
+
     private suspend fun claimKeyPackages(
         userIds: List<QualifiedId>,
         cipherSuiteCode: Int
@@ -439,7 +453,12 @@ internal class ConversationService internal constructor(
                 mlsGroupId = conversationResponse.getDecodedMlsGroupId(),
                 teamId = conversationResponse.teamId?.let { TeamId(it) },
                 type = ConversationEntity.Type.fromApi(value = conversationResponse.type),
-                messageTimer = conversationResponse.messageTimer
+                messageTimer = conversationResponse.messageTimer,
+                receiptMode = if (conversationResponse.teamId == null) {
+                    ReceiptMode.DISABLED
+                } else {
+                    conversationResponse.receiptMode
+                }
             )
 
         val members = (

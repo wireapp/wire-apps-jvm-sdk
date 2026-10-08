@@ -42,6 +42,7 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.Member
 import com.wire.sdk.model.http.conversation.MemberJoinEventData
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
 import com.wire.sdk.service.conversation.ConversationService
@@ -655,6 +656,44 @@ class EventsRouterConcurrencyTest {
                 )
             }
 
+            eventsRouter.close()
+        }
+
+    @Test
+    fun `receipt mode update event updates the conversation`() =
+        runTest {
+            val conversationId = QualifiedId(id = UUID.randomUUID(), domain = "wire.test")
+            val conversationService = mockk<ConversationService>()
+            coEvery { conversationService.updateReceiptMode(any(), any()) } returns Unit
+            val eventsRouter = createEventsRouter(
+                conversationService = conversationService,
+                dispatcher = StandardTestDispatcher(testScheduler)
+            )
+
+            eventsRouter.route(
+                EventResponse(
+                    id = UUID.randomUUID().toString(),
+                    payload = listOf(
+                        EventContentDTO.Conversation.ReceiptModeUpdateDTO(
+                            qualifiedConversation = conversationId,
+                            qualifiedFrom = QualifiedId(UUID.randomUUID(), "wire.test"),
+                            time = Clock.System.now(),
+                            data = EventContentDTO.ReceiptModeUpdateEventData(
+                                receiptMode = ReceiptMode.DISABLED
+                            )
+                        )
+                    )
+                )
+            )
+
+            testScheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                conversationService.updateReceiptMode(
+                    conversationId = conversationId,
+                    receiptMode = ReceiptMode.DISABLED
+                )
+            }
             eventsRouter.close()
         }
 

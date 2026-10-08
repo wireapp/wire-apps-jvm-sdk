@@ -85,6 +85,9 @@ Operational details that matter when modifying these APIs:
 - `WireAppSdk.stopListening()` stops the listener.
 - `WireAppSdk.getApplicationManager()` returns the `WireApplicationManager` used for backend operations.
 - `WireApplicationManager` intentionally exposes both blocking methods for Java consumers and suspending methods for Kotlin consumers.
+- `WireApplicationManager` does not send `READ` or `DELIVERED` receipt messages when the
+  conversation receipt mode is disabled. Missing, null, or zero receipt modes and all non-team
+  conversations are treated as disabled.
 - `WireEventsHandler` consumers typically extend `WireEventsHandlerDefault` or `WireEventsHandlerSuspending` rather than implementing lower-level behavior directly.
 - Event handlers can use their `manager` property to send follow-up actions and responses.
 

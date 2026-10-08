@@ -19,6 +19,11 @@ package com.wire.sdk.model.http.conversation
 import com.wire.sdk.model.CryptoProtocol
 import com.wire.sdk.model.QualifiedId
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 import org.junit.jupiter.api.Test
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -111,4 +116,61 @@ class ConversationsResponseTest {
         assertEquals(a.hashCode(), b.hashCode())
         assertEquals(a.toString(), b.toString())
     }
+
+    @Test
+    fun `receipt mode defaults to disabled when missing or null`() {
+        val conversation = conversationResponse()
+        val fields = json.encodeToJsonElement(conversation).let { it as JsonObject }.toMutableMap()
+
+        fields.remove("receipt_mode")
+        assertEquals(
+            ReceiptMode.DISABLED,
+            json.decodeFromJsonElement<ConversationResponse>(JsonObject(fields)).receiptMode
+        )
+
+        fields["receipt_mode"] = JsonNull
+        assertEquals(
+            ReceiptMode.DISABLED,
+            json.decodeFromJsonElement<ConversationResponse>(JsonObject(fields)).receiptMode
+        )
+    }
+
+    @Test
+    fun `receipt mode treats zero as disabled and positive values as enabled`() {
+        val fields = json.encodeToJsonElement(conversationResponse())
+            .let { it as JsonObject }
+            .toMutableMap()
+
+        fields["receipt_mode"] = JsonPrimitive(0)
+        assertEquals(
+            ReceiptMode.DISABLED,
+            json.decodeFromJsonElement<ConversationResponse>(JsonObject(fields)).receiptMode
+        )
+
+        listOf(1, 42).forEach { value ->
+            fields["receipt_mode"] = JsonPrimitive(value)
+            assertEquals(
+                ReceiptMode.ENABLED,
+                json.decodeFromJsonElement<ConversationResponse>(JsonObject(fields)).receiptMode
+            )
+        }
+    }
+
+    private fun conversationResponse() =
+        ConversationResponse(
+            id = QualifiedId(UUID.randomUUID(), "example.com"),
+            teamId = UUID.randomUUID(),
+            groupId = null,
+            name = "test",
+            epoch = 1L,
+            protocol = CryptoProtocol.MLS,
+            members = ConversationMembers(
+                self = ConversationMemberSelf(
+                    QualifiedId(UUID.randomUUID(), "example.com"),
+                    ConversationRole.ADMIN
+                ),
+                others = emptyList()
+            ),
+            type = ConversationResponse.Type.GROUP
+        )
 }

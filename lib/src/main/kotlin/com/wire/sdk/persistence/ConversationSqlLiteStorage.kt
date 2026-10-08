@@ -26,6 +26,7 @@ import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
 import com.wire.sdk.model.TeamId
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import java.util.Base64
 import java.util.UUID
 
@@ -43,7 +44,8 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
                 Base64.getEncoder().encodeToString(conversation.mlsGroupId.copyBytes()),
             team_id = conversation.teamId?.value?.toString(),
             type = conversation.type.name,
-            message_timer = conversation.messageTimer
+            message_timer = conversation.messageTimer,
+            receipt_mode = conversation.receiptMode.value.toLong()
         )
     }
 
@@ -79,6 +81,17 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
     ) {
         conversationQueries.updateMessageTimer(
             message_timer = messageTimer,
+            id = conversationId.id.toString(),
+            domain = conversationId.domain
+        )
+    }
+
+    override fun updateReceiptMode(
+        conversationId: QualifiedId,
+        receiptMode: ReceiptMode
+    ) {
+        conversationQueries.updateReceiptMode(
+            receipt_mode = receiptMode.value.toLong(),
             id = conversationId.id.toString(),
             domain = conversationId.domain
         )
@@ -146,7 +159,8 @@ internal class ConversationSqlLiteStorage(db: AppsSdkDatabase) : ConversationSto
             teamId = conv.team_id?.let { TeamId(UUID.fromString(it)) },
             mlsGroupId = ConversationId(Base64.getDecoder().decode(conv.mls_group_id)),
             type = ConversationEntity.Type.fromString(value = conv.type),
-            messageTimer = conv.message_timer
+            messageTimer = conv.message_timer,
+            receiptMode = if (conv.receipt_mode > 0) ReceiptMode.ENABLED else ReceiptMode.DISABLED
         )
 
     private fun conversationMemberMapper(member: Conversation_member) =

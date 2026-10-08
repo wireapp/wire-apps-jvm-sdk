@@ -35,6 +35,7 @@ import com.wire.sdk.model.calling.SubconversationEpochInfo
 import com.wire.sdk.model.conversation.AddMembersToConversationResult
 import com.wire.sdk.model.http.ApiVersionResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
+import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.model.protobuf.ProtobufSerializer
 import com.wire.sdk.persistence.AppStorage
 import com.wire.sdk.persistence.TeamStorage
@@ -184,6 +185,15 @@ class WireApplicationManager internal constructor(
         val conversation = conversationService.getConversationById(
             conversationId = message.conversationId
         )
+
+        if (message is WireMessage.Receipt && conversation.receiptMode == ReceiptMode.DISABLED) {
+            logger.warn(
+                "Skipping {} receipt because receipts are disabled for conversation {}",
+                message.type,
+                conversation.id
+            )
+            return message.id
+        }
 
         val preparedMessage = prepareMessageForSending(
             conversation = conversation,
