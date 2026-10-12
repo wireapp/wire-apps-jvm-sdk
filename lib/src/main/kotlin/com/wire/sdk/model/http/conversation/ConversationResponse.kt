@@ -48,9 +48,7 @@ data class ConversationResponse(
     @SerialName("public_keys")
     val publicKeys: MlsPublicKeysResponse? = null,
     @SerialName("message_timer")
-    val messageTimer: Long? = null,
-    @SerialName("receipt_mode")
-    val receiptMode: ReceiptMode = ReceiptMode.DISABLED
+    val messageTimer: Long? = null
 ) {
     @Serializable
     enum class Type {

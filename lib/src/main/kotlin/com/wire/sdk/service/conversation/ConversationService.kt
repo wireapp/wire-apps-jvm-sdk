@@ -46,7 +46,6 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.KeyPackage
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
-import com.wire.sdk.model.http.conversation.ReceiptMode
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.conversation.getDecodedMlsGroupId
 import com.wire.sdk.model.http.conversation.getRemovalKey
@@ -385,20 +384,6 @@ internal class ConversationService internal constructor(
         }
     }
 
-    suspend fun updateReceiptMode(
-        conversationId: QualifiedId,
-        receiptMode: ReceiptMode
-    ) {
-        val conversation = getConversationById(conversationId)
-        conversationStorage.updateReceiptMode(
-            conversationId = conversation.id,
-            receiptMode = effectiveReceiptMode(
-                isTeamConversation = conversation.teamId != null,
-                receiptMode = receiptMode
-            )
-        )
-    }
-
     private suspend fun claimKeyPackages(
         userIds: List<QualifiedId>,
         cipherSuiteCode: Int
@@ -454,11 +439,7 @@ internal class ConversationService internal constructor(
                 mlsGroupId = conversationResponse.getDecodedMlsGroupId(),
                 teamId = conversationResponse.teamId?.let { TeamId(it) },
                 type = ConversationEntity.Type.fromApi(value = conversationResponse.type),
-                messageTimer = conversationResponse.messageTimer,
-                receiptMode = effectiveReceiptMode(
-                    isTeamConversation = conversationResponse.teamId != null,
-                    receiptMode = conversationResponse.receiptMode
-                )
+                messageTimer = conversationResponse.messageTimer
             )
 
         val members = (
@@ -479,11 +460,6 @@ internal class ConversationService internal constructor(
 
         return Pair(conversationEntity, members)
     }
-
-    private fun effectiveReceiptMode(
-        isTeamConversation: Boolean,
-        receiptMode: ReceiptMode
-    ): ReceiptMode = if (isTeamConversation) receiptMode else ReceiptMode.DISABLED
 
     fun saveMembers(
         conversationId: QualifiedId,

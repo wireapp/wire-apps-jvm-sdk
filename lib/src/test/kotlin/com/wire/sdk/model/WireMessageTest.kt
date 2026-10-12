@@ -384,43 +384,6 @@ class WireMessageTest {
     }
 
     @Test
-    fun `Receipt create sets correct type and messageIds`() {
-        val msgIds = listOf("id-1", "id-2")
-        val receipt = WireMessage.Receipt.create(
-            conversationId = conversationId,
-            type = WireMessage.Receipt.Type.READ,
-            messages = msgIds
-        )
-
-        assertEquals(WireMessage.Receipt.Type.READ, receipt.type)
-        assertEquals(msgIds, receipt.messageIds)
-    }
-
-    @Test
-    fun `Receipt create defaults to empty messageIds`() {
-        val receipt = WireMessage.Receipt.create(
-            conversationId = conversationId,
-            type = WireMessage.Receipt.Type.DELIVERED
-        )
-
-        assertTrue(receipt.messageIds.isEmpty())
-    }
-
-    @Test
-    fun `Receipt create assigns a random UUID`() {
-        val first = WireMessage.Receipt.create(
-            conversationId = conversationId,
-            type = WireMessage.Receipt.Type.READ
-        )
-        val second = WireMessage.Receipt.create(
-            conversationId = conversationId,
-            type = WireMessage.Receipt.Type.READ
-        )
-
-        assertNotEquals(first.id, second.id)
-    }
-
-    @Test
     fun `TextEdited create sets replacingMessageId and new content`() {
         val originalId = UUID.randomUUID()
         val edited = WireMessage.TextEdited.create(

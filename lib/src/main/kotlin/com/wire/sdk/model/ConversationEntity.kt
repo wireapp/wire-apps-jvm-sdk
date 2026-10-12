@@ -17,7 +17,6 @@ package com.wire.sdk.model
 
 import com.wire.crypto.ConversationId
 import com.wire.sdk.model.http.conversation.ConversationResponse
-import com.wire.sdk.model.http.conversation.ReceiptMode
 
 @JvmRecord
 internal data class ConversationEntity(
@@ -26,8 +25,7 @@ internal data class ConversationEntity(
     val teamId: TeamId?,
     val mlsGroupId: ConversationId,
     val type: Type,
-    val messageTimer: Long? = null,
-    val receiptMode: ReceiptMode = ReceiptMode.DISABLED
+    val messageTimer: Long? = null
 ) {
     enum class Type {
         GROUP,

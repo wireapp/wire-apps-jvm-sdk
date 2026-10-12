@@ -18,7 +18,6 @@ package com.wire.sdk.persistence
 import com.wire.sdk.model.ConversationEntity
 import com.wire.sdk.model.ConversationMember
 import com.wire.sdk.model.QualifiedId
-import com.wire.sdk.model.http.conversation.ReceiptMode
 
 @Suppress("TooManyFunctions")
 internal interface ConversationStorage {
@@ -43,11 +42,6 @@ internal interface ConversationStorage {
     fun updateMessageTimer(
         conversationId: QualifiedId,
         messageTimer: Long?
-    )
-
-    fun updateReceiptMode(
-        conversationId: QualifiedId,
-        receiptMode: ReceiptMode
     )
 
     fun getAll(): List<ConversationEntity>

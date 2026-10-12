@@ -270,18 +270,6 @@ internal class EventsRouter internal constructor(
                 processMessageTimerUpdateDTO(event)
             }
 
-            is EventContentDTO.Conversation.ReceiptModeUpdateDTO -> {
-                logger.info(
-                    "Updating receipt mode to {} for conversation {}",
-                    event.data.receiptMode,
-                    event.qualifiedConversation
-                )
-                conversationService.updateReceiptMode(
-                    conversationId = event.qualifiedConversation,
-                    receiptMode = event.data.receiptMode
-                )
-            }
-
             is EventContentDTO.Conversation.MlsReset -> {
                 logger.info("MLS reset event received for: ${event.qualifiedConversation}")
                 conversationService.resetMlsConversation(
@@ -354,7 +342,6 @@ internal class EventsRouter internal constructor(
                     is WireMessage.Location ->
                         wireEventsHandler.onLocationMessageReceived(wireMessage)
                     is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
-                    is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
                     is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
                     is WireMessage.Reaction ->
                         wireEventsHandler.onMessageReactionReceived(wireMessage)
@@ -383,7 +370,6 @@ internal class EventsRouter internal constructor(
                     is WireMessage.Location ->
                         wireEventsHandler.onLocationMessageReceived(wireMessage)
                     is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
-                    is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
                     is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
                     is WireMessage.Reaction ->
                         wireEventsHandler.onMessageReactionReceived(wireMessage)
