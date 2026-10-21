@@ -241,13 +241,6 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
             originalMessage = wireMessage
         )
 
-        // Sending a Read Receipt for the received message
-        val receipt = WireMessage.Receipt.create(
-            conversationId = wireMessage.conversationId,
-            type = WireMessage.Receipt.Type.READ,
-            messages = listOf(wireMessage.id.toString())
-        )
-
         // Add a reaction emoji to the received message
         val reaction = WireMessage.Reaction.create(
             originalMessage = wireMessage,
@@ -255,7 +248,6 @@ class SampleEventsHandler : WireEventsHandlerSuspending() {
         )
 
         manager.sendMessageSuspending(message = message)
-        manager.sendMessageSuspending(message = receipt)
         manager.sendMessageSuspending(message = reaction)
     }
 

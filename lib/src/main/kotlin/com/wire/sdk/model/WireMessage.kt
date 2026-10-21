@@ -492,47 +492,6 @@ sealed interface WireMessage {
     }
 
     @JvmRecord
-    data class Receipt(
-        override val id: UUID,
-        override val conversationId: QualifiedId,
-        override val sender: QualifiedId,
-        val type: Type,
-        val messageIds: List<String>
-    ) : WireMessage {
-        enum class Type {
-            DELIVERED,
-            READ
-        }
-
-        companion object {
-            /**
-             * Creates a basic Receipt message.
-             *
-             * @param conversationId The qualified ID of the conversation
-             * @param type The type of receipt (DELIVERED or READ)
-             * @param messages The related message IDs
-             * @return A new Receipt message with a random UUID
-             */
-            @JvmStatic
-            fun create(
-                conversationId: QualifiedId,
-                type: Type,
-                messages: List<String> = emptyList()
-            ): Receipt =
-                Receipt(
-                    id = UUID.randomUUID(),
-                    conversationId = conversationId,
-                    sender = QualifiedId(
-                        id = UUID.randomUUID(),
-                        domain = UUID.randomUUID().toString()
-                    ),
-                    type = type,
-                    messageIds = messages
-                )
-        }
-    }
-
-    @JvmRecord
     @ConsistentCopyVisibility
     data class TextEdited @JvmOverloads internal constructor(
         override val id: UUID,

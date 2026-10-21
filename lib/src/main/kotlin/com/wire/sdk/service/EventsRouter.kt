@@ -342,7 +342,6 @@ internal class EventsRouter internal constructor(
                     is WireMessage.Location ->
                         wireEventsHandler.onLocationMessageReceived(wireMessage)
                     is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
-                    is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
                     is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
                     is WireMessage.Reaction ->
                         wireEventsHandler.onMessageReactionReceived(wireMessage)
@@ -371,7 +370,6 @@ internal class EventsRouter internal constructor(
                     is WireMessage.Location ->
                         wireEventsHandler.onLocationMessageReceived(wireMessage)
                     is WireMessage.Deleted -> wireEventsHandler.onMessageDeleted(wireMessage)
-                    is WireMessage.Receipt -> wireEventsHandler.onMessageDelivered(wireMessage)
                     is WireMessage.TextEdited -> wireEventsHandler.onTextMessageEdited(wireMessage)
                     is WireMessage.Reaction ->
                         wireEventsHandler.onMessageReactionReceived(wireMessage)

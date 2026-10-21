@@ -24,7 +24,6 @@ import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.ButtonAction
 import com.wire.integrations.protobuf.messages.Messages.ButtonActionConfirmation
 import com.wire.integrations.protobuf.messages.Messages.Composite
-import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.Ephemeral
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import com.wire.integrations.protobuf.messages.Messages.InCallEmoji
@@ -59,7 +58,6 @@ object ProtobufSerializer {
             is WireMessage.Ping -> packPing(wireMessage, genericMessage)
             is WireMessage.Location -> packLocation(wireMessage, genericMessage)
             is WireMessage.Deleted -> packDeleted(wireMessage, genericMessage)
-            is WireMessage.Receipt -> packReceipt(wireMessage, genericMessage)
             is WireMessage.TextEdited -> packTextEdited(wireMessage, genericMessage)
             is WireMessage.CompositeEdited -> packCompositeEdited(wireMessage, genericMessage)
             is WireMessage.Reaction -> packReaction(wireMessage, genericMessage)
@@ -315,25 +313,6 @@ object ProtobufSerializer {
                 MessageDelete
                     .newBuilder()
                     .setMessageId(wireMessage.messageId.toString())
-                    .build()
-            )
-
-    private fun packReceipt(
-        wireMessage: WireMessage.Receipt,
-        genericMessage: GenericMessage.Builder
-    ): GenericMessage.Builder =
-        genericMessage
-            .setConfirmation(
-                Confirmation
-                    .newBuilder()
-                    .setType(
-                        when (wireMessage.type) {
-                            WireMessage.Receipt.Type.DELIVERED -> Confirmation.Type.DELIVERED
-                            WireMessage.Receipt.Type.READ -> Confirmation.Type.READ
-                        }
-                    )
-                    .setFirstMessageId(wireMessage.messageIds.first())
-                    .addAllMoreMessageIds(wireMessage.messageIds.drop(1))
                     .build()
             )
 

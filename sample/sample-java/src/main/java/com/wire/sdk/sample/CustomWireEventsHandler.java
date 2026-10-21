@@ -60,16 +60,6 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
 
 
         // ___ Case-3: Normal text message
-
-        // Send read receipt
-        final var readReceipt = WireMessage.Receipt.create(
-                wireMessage.conversationId(),
-                WireMessage.Receipt.Type.READ,
-                List.of(wireMessage.id().toString())
-        );
-        getManager().sendMessage(readReceipt);
-
-
         // Send reaction
         final var reaction = WireMessage.Reaction.create(
                 wireMessage,
@@ -127,11 +117,6 @@ public class CustomWireEventsHandler extends WireEventsHandlerDefault {
     @Override
     public void onMessageDeleted(WireMessage.Deleted deletedMessage) {
         super.onMessageDeleted(deletedMessage);
-    }
-
-    @Override
-    public void onMessageDelivered(@NotNull WireMessage.Receipt deliveredMessage) {
-        super.onMessageDelivered(deliveredMessage);
     }
 
     @Override

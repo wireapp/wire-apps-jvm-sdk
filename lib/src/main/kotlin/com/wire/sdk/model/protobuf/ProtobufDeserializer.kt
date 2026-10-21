@@ -21,7 +21,6 @@ import com.wire.sdk.model.WireMessage
 import com.wire.sdk.utils.obfuscateId
 import com.wire.integrations.protobuf.messages.Messages
 import com.wire.integrations.protobuf.messages.Messages.Composite
-import com.wire.integrations.protobuf.messages.Messages.Confirmation
 import com.wire.integrations.protobuf.messages.Messages.GenericMessage
 import java.util.UUID
 import kotlin.time.Instant
@@ -91,12 +90,6 @@ object ProtobufDeserializer {
             )
 
             genericMessage.hasDeleted() -> unpackDeletedMessage(
-                genericMessage = genericMessage,
-                conversationId = conversationId,
-                sender = sender
-            )
-
-            genericMessage.hasConfirmation() -> unpackReceipt(
                 genericMessage = genericMessage,
                 conversationId = conversationId,
                 sender = sender
@@ -371,30 +364,6 @@ object ProtobufDeserializer {
             sender = sender,
             messageId = UUID.fromString(genericMessage.deleted.messageId)
         )
-
-    private fun unpackReceipt(
-        genericMessage: GenericMessage,
-        conversationId: QualifiedId,
-        sender: QualifiedId
-    ): WireMessage =
-        when (val type = genericMessage.confirmation.type) {
-            Confirmation.Type.DELIVERED -> WireMessage.Receipt.Type.DELIVERED
-            Confirmation.Type.READ -> WireMessage.Receipt.Type.READ
-            else -> {
-                logger.warn("Unrecognised receipt type received = ${type.number}:${type.name}")
-                null
-            }
-        }?.let { type ->
-            WireMessage.Receipt(
-                id = UUID.fromString(genericMessage.messageId),
-                conversationId = conversationId,
-                sender = sender,
-                type = type,
-                messageIds =
-                    listOf(genericMessage.confirmation.firstMessageId) +
-                        genericMessage.confirmation.moreMessageIdsList
-            )
-        } ?: WireMessage.Ignored
 
     private fun unpackEdited(
         genericMessage: GenericMessage,
