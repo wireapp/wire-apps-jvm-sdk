@@ -41,21 +41,28 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_KEY_CONTENTS }}
 
-      # Assert Gradle actually published this release's version directory:
-      # since seeding populates old versions into the publish dir, a plain
-      # non-empty check would be vacuous. Also note below: the metadata
-      # checksums (*maven-metadata.xml.*) are dropped — the merged
-      # metadata is served fresh by the repo; its checksums are optional
-      # and would grow stale relative to the merged file.
-      - name: Sync artifacts to S3
+      # Upload immutable release artifacts first and update the mutable
+      # Maven metadata only after every artifact upload succeeds. Metadata
+      # checksums are intentionally omitted because they cannot be overwritten.
+      - name: Upload artifacts to S3
         run: |
           set -euo pipefail
           VERSION="${{ github.event.release.tag_name }}"
-          test -d "build/maven-publish/com/wire/wire-apps-jvm-sdk/${VERSION}" || {
+          ARTIFACT_ROOT="build/maven-publish/com/wire/wire-apps-jvm-sdk"
+          test -d "${ARTIFACT_ROOT}/${VERSION}" || {
             echo "error: no artifacts published for com.wire:wire-apps-jvm-sdk:${VERSION}" >&2
             exit 1
           }
-          aws s3 sync build/maven-publish/ s3://maven-wire-com/ --no-progress --exclude "*maven-metadata.xml.*"
+          aws s3 cp \
+            "${ARTIFACT_ROOT}/${VERSION}/" \
+            "s3://maven-wire-com/com/wire/wire-apps-jvm-sdk/${VERSION}/" \
+            --recursive \
+            --no-overwrite \
+            --no-progress
+          aws s3 cp \
+            "${ARTIFACT_ROOT}/maven-metadata.xml" \
+            "s3://maven-wire-com/com/wire/wire-apps-jvm-sdk/maven-metadata.xml" \
+            --no-progress
 
       - name: Update README.md with new version
         continue-on-error: true
