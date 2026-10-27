@@ -46,6 +46,7 @@ import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.CreateConversationRequest
 import com.wire.sdk.model.http.conversation.KeyPackage
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
+import com.wire.sdk.model.http.conversation.TypingStatus
 import com.wire.sdk.model.http.conversation.UpdateConversationMemberRoleRequest
 import com.wire.sdk.model.http.conversation.getDecodedMlsGroupId
 import com.wire.sdk.model.http.conversation.getRemovalKey
@@ -80,6 +81,13 @@ internal class ConversationService internal constructor(
     private fun getApplicationQualifiedId(): QualifiedId = appQualifiedId
 
     private fun getApplicationTeamId(): TeamId = appTeamId
+
+    suspend fun sendTypingStatus(
+        conversationId: QualifiedId,
+        status: TypingStatus
+    ) {
+        conversationsApiClient.sendTypingStatus(conversationId, status)
+    }
 
     /**
      * Creates a Group Conversation where currently the only admin is the App

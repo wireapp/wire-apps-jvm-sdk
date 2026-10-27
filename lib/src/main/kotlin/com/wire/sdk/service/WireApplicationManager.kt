@@ -48,6 +48,7 @@ import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.util.UUID
+import java.util.concurrent.Callable
 import javax.imageio.ImageIO
 
 /**
@@ -69,6 +70,8 @@ class WireApplicationManager internal constructor(
     private val subconversationService: SubconversationService
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private val typingIndicator = TypingIndicatorController(conversationService::sendTypingStatus)
 
     private val appQualifiedId: QualifiedId by lazy {
         appStorage.getApplicationQualifiedId()
@@ -221,6 +224,50 @@ class WireApplicationManager internal constructor(
             }
         }
         return preparedMessage.id
+    }
+
+    /**
+     * Runs [process] immediately on the caller's thread while typing is sent in the background.
+     * Overlapping work in this conversation shares one indicator, refreshed every 30 seconds
+     * for at most five minutes. The last operation schedules STOPPED after pending typing requests.
+     * Requests have a five-second timeout; delivery failures are logged. Returning the result
+     * never waits for typing requests, including STOPPED.
+     *
+     * Blocking variant for Java consumers. Caller ThreadLocals are preserved.
+     * @param conversationId The qualified ID of a conversation the app belongs to.
+     * @param process Work to perform while typing is shown.
+     */
+    @Throws(Exception::class)
+    fun <T> processWithTypingIndicator(
+        conversationId: QualifiedId,
+        process: Callable<T>
+    ): T {
+        val release = typingIndicator.acquire(conversationId)
+        try {
+            return process.call()
+        } finally {
+            release()
+        }
+    }
+
+    /**
+     * Suspending variant of [processWithTypingIndicator] for Kotlin consumers.
+     * Cancellation of [process] schedules bounded STOPPED cleanup in a NonCancellable context
+     * independently of the caller. The process result or failure is returned without waiting
+     * for that cleanup. The five-minute typing limit does not cancel [process].
+     * @param conversationId The qualified ID of a conversation the app belongs to.
+     * @param process Work to perform while typing is shown.
+     */
+    suspend fun <T> processWithTypingIndicatorSuspending(
+        conversationId: QualifiedId,
+        process: suspend () -> T
+    ): T {
+        val release = typingIndicator.acquire(conversationId)
+        try {
+            return process()
+        } finally {
+            release()
+        }
     }
 
     private fun prepareMessageForSending(
