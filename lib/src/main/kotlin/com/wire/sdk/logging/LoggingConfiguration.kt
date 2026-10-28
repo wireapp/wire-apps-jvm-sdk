@@ -23,6 +23,7 @@ import org.zalando.logbook.core.HeaderFilters
 import org.zalando.logbook.core.QueryFilters
 import org.zalando.logbook.json.JsonBodyFilters
 import org.zalando.logbook.json.JsonHttpLogFormatter
+import org.zalando.logbook.BodyFilter
 
 internal object LoggingConfiguration {
     private const val OBFUSCATION_VALUE = "****"
@@ -76,9 +77,12 @@ internal object LoggingConfiguration {
             QueryFilters.replaceQuery({ key -> key in sensitiveQueryParams }, OBFUSCATION_VALUE)
         )
         .bodyFilter(
-            JsonBodyFilters.replaceJsonStringProperty(
-                sensitiveBodyParams,
-                OBFUSCATION_VALUE
+            BodyFilter.merge(
+                JsonBodyFilters.replaceJsonStringProperty(
+                    sensitiveBodyParams,
+                    OBFUSCATION_VALUE
+                ),
+                mlsBodyFilter()
             )
         )
         .sink(
