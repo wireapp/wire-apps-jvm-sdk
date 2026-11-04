@@ -48,6 +48,7 @@ import com.wire.sdk.model.http.conversation.ConversationResponse
 import com.wire.sdk.model.http.conversation.ConversationRole
 import com.wire.sdk.model.http.conversation.KeyPackage
 import com.wire.sdk.model.http.conversation.MlsPublicKeysResponse
+import com.wire.sdk.model.http.conversation.TypingStatus
 import com.wire.sdk.model.http.conversation.OneToOneConversationResponse
 import com.wire.sdk.model.http.user.UserClientResponse
 import com.wire.sdk.persistence.AppStorage
@@ -69,6 +70,31 @@ import org.junit.jupiter.api.BeforeAll
 import kotlin.io.encoding.Base64
 
 class ConversationServiceTest {
+    @Test
+    fun sendTypingStatusDelegatesToApiClient() =
+        runTest {
+            val conversationsApiClient = mockk<ConversationsApiClient> {
+                coEvery { sendTypingStatus(CONVERSATION_ID, TypingStatus.STARTED) } returns Unit
+            }
+            val service = ConversationService(
+                backendClient = mockk(),
+                usersApiClient = mockk(),
+                conversationsApiClient = conversationsApiClient,
+                oneToOneConversationsApiClient = mockk(),
+                teamsApiClient = mockk(),
+                mlsApiClient = mockk(),
+                conversationStorage = mockk(),
+                appStorage = mockk(),
+                cryptoClient = mockk()
+            )
+
+            service.sendTypingStatus(CONVERSATION_ID, TypingStatus.STARTED)
+
+            coVerify(exactly = 1) {
+                conversationsApiClient.sendTypingStatus(CONVERSATION_ID, TypingStatus.STARTED)
+            }
+        }
+
     @Test
     fun whenEstablishingConversationsAndShouldRejoinConversationIsFalseThenSkip() =
         runTest {
