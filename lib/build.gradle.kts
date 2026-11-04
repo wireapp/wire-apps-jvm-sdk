@@ -69,7 +69,7 @@ dependencies {
 
     // Kotlin stdlib and serialization are required for Java consumers
     api(kotlin("stdlib"))
-    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
 
     compileOnly(
         files(rootProject.projectDir.resolve("buildSrc/build/classes/kotlin/main"))
@@ -102,7 +102,7 @@ dependencies {
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
     testImplementation("io.insert-koin:koin-test-junit5")
     testImplementation("io.mockk:mockk:1.14.11")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.12.0")
     testImplementation("org.wiremock:wiremock:3.13.2")
 }
 
