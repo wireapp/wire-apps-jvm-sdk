@@ -43,7 +43,7 @@ repositories {
 val ktorVersion = "3.5.2"
 val sqlDelightVersion = "2.4.1"
 val logbookVersion = "4.2.0"
-val coreCryptoVersion = "10.5.3"
+val coreCryptoVersion = "10.5.4"
 val ktorModules = listOf(
     "io.ktor:ktor-client-core",
     "io.ktor:ktor-client-cio",
