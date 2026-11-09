@@ -17,21 +17,16 @@
 package com.wire.sdk.logging
 
 import org.zalando.logbook.BodyFilter
-
-private const val MLS_PLACEHOLDER = "<mls binary payload>"
-private const val MLS_CONTENT_TYPE = "message/mls"
+import com.wire.sdk.utils.Mls
 
 /**
  * Creates a Logbook [BodyFilter] that replaces the body of mls
  * messages with a placeholder.
  */
-fun mlsBodyFilter(): BodyFilter {
+fun mlsBodyFilter(obfuscationValue: String): BodyFilter {
+    val mlsTypeStr = Mls.toString()
     return BodyFilter { contentType, body ->
-        val type = contentType ?: ""
-        if (type.contains(MLS_CONTENT_TYPE, ignoreCase = true)) {
-            MLS_PLACEHOLDER
-        } else {
-            body
-        }
+        body.takeIf { contentType?.contains(mlsTypeStr, ignoreCase = true) != true }
+            ?: obfuscationValue
     }
 }

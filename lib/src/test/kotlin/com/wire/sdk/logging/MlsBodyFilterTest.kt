@@ -19,8 +19,10 @@ package com.wire.sdk.logging
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+private const val OBFUSCATION_VALUE = "****"
+
 class MlsBodyFilterTest {
-    private val filter = mlsBodyFilter()
+    private val filter = mlsBodyFilter(OBFUSCATION_VALUE)
 
     @Test
     fun `should replace body when content type is message mls`() {
@@ -29,7 +31,7 @@ class MlsBodyFilterTest {
 
         val result = filter.filter(contentType, originalBody)
 
-        assertEquals("<mls binary payload>", result)
+        assertEquals(OBFUSCATION_VALUE, result)
     }
 
     @Test
@@ -39,7 +41,7 @@ class MlsBodyFilterTest {
 
         val result = filter.filter(contentType, originalBody)
 
-        assertEquals("<mls binary payload>", result)
+        assertEquals(OBFUSCATION_VALUE, result)
     }
 
     @Test

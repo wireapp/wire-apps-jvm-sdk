@@ -82,7 +82,7 @@ internal object LoggingConfiguration {
                     sensitiveBodyParams,
                     OBFUSCATION_VALUE
                 ),
-                mlsBodyFilter()
+                mlsBodyFilter(OBFUSCATION_VALUE)
             )
         )
         .sink(
