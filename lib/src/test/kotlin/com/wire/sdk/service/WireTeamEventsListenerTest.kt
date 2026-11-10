@@ -269,7 +269,32 @@ class WireTeamEventsListenerTest {
         }
 
     @Test
-    fun protocolExceptionInvokesOnDisconnectedAndThrowsInterruptedException() =
+    fun temporaryProtocolExceptionIsHandledGracefully() =
+        runTest {
+            // Arrange
+            val backendClient = mockk<BackendClient>()
+            val notificationsApiClient = mockk<NotificationsApiClient>()
+            val eventsRouter = mockk<EventsRouter>()
+            val appStorage = mockk<AppStorage>()
+
+            coEvery { backendClient.connectWebSocket(any()) } throws
+                ProtocolException("502 Bad Gateway")
+
+            val listener =
+                WireTeamEventsListener(
+                    backendClient,
+                    notificationsApiClient,
+                    eventsRouter,
+                    appStorage
+                )
+
+            // Act and Assert
+            // Should not throw exception
+            listener.connect()
+        }
+
+    @Test
+    fun fatalProtocolExceptionIsRethrown() =
         runTest {
             // Arrange
             val backendClient = mockk<BackendClient>()
@@ -278,7 +303,7 @@ class WireTeamEventsListenerTest {
             val appStorage = mockk<AppStorage>()
             val mockConnectionListener = mockk<BackendConnectionListener>()
 
-            val expectedErrorMessage = "Error connecting to WebSocket or establishing MLS client"
+            val expectedErrorMessage = "Some non temporary protocol error"
 
             // Stub the listener behaviors
             coEvery { mockConnectionListener.onDisconnected() } just Runs

@@ -172,6 +172,14 @@ internal fun createHttpClient(
     authTokenManager: AuthTokenManager
 ): HttpClient {
     return HttpClient(OkHttp) {
+        // OkHttp needs ping interval set in engine
+        engine {
+            config {
+                pingInterval(
+                    java.time.Duration.ofMillis(WEBSOCKET_PING_INTERVAL_MILLIS)
+                )
+            }
+        }
         expectSuccess = true
         HttpResponseValidator {
             handleResponseExceptionWithRequest { exception, _ ->
@@ -194,7 +202,6 @@ internal fun createHttpClient(
 
         install(WebSockets) {
             contentConverter = KotlinxWebsocketSerializationConverter(Json)
-            pingIntervalMillis = WEBSOCKET_PING_INTERVAL_MILLIS
         }
 
         // Add headers for client and version

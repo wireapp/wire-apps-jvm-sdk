@@ -46,6 +46,16 @@ internal class WireTeamEventsListener internal constructor(
     private var backendConnectionListener: BackendConnectionListener? = null
     private val processedEventIds = Collections.synchronizedSet(mutableSetOf<String>())
 
+    private fun handleFatalError(
+        message: String?,
+        exception: Exception
+    ): Nothing {
+        val error = message ?: "Error connecting to WebSocket or establishing MLS client"
+        logger.error(error, exception)
+        backendConnectionListener?.onDisconnected()
+        throw InterruptedException(error)
+    }
+
     /**
      * Keeps the webSocket connection open and listens for incoming events, while handling errors
      */
@@ -86,23 +96,29 @@ internal class WireTeamEventsListener internal constructor(
                     exception
                 )
                 is ProtocolException -> {
-                    val error = exception.message
-                        ?: "Error connecting to WebSocket or establishing MLS client"
-                    logger.error(error, exception)
-                    backendConnectionListener?.onDisconnected()
-                    throw InterruptedException(error)
+                    val message = exception.message.orEmpty()
+
+                    // Detect transient/temporary server errors (502, 503, 504)
+                    val isTemporaryServerError = message.contains("502") ||
+                        message.contains("503") ||
+                        message.contains("504")
+
+                    // Swallow temporary errors gracefully
+                    if (isTemporaryServerError) {
+                        logger.warn(
+                            "Temporary protocol error detected ($message), closing gracefully",
+                            exception
+                        )
+                        // Non-recoverable protocol error
+                    } else {
+                        handleFatalError(exception.message, exception)
+                    }
                 }
                 is IOException -> logger.error(
                     "WebSocket IO issue, log exception but close gracefully",
                     exception
                 )
-                else -> {
-                    val error = exception.message
-                        ?: "Error connecting to WebSocket or establishing MLS client"
-                    logger.error(error, exception)
-                    backendConnectionListener?.onDisconnected()
-                    throw InterruptedException(error)
-                }
+                else -> handleFatalError(exception.message, exception)
             }
         }
     }
