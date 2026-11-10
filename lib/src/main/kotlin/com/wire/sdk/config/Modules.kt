@@ -62,7 +62,7 @@ import com.wire.sdk.utils.obfuscateClientId
 import com.wire.sdk.utils.obfuscateId
 import com.wire.sdk.utils.xprotobuf
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpResponseValidator
 import io.ktor.client.plugins.ResponseException
@@ -171,7 +171,7 @@ internal fun createHttpClient(
     apiHost: String,
     authTokenManager: AuthTokenManager
 ): HttpClient {
-    return HttpClient(CIO) {
+    return HttpClient(OkHttp) {
         expectSuccess = true
         HttpResponseValidator {
             handleResponseExceptionWithRequest { exception, _ ->

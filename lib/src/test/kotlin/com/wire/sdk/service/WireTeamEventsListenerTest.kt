@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.net.ProtocolException
 import java.util.UUID
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -265,6 +266,45 @@ class WireTeamEventsListenerTest {
             // Clean up
             wireMockServer.stop()
             IsolatedKoinContext.stop()
+        }
+
+    @Test
+    fun protocolExceptionInvokesOnDisconnectedAndThrowsInterruptedException() =
+        runTest {
+            // Arrange
+            val backendClient = mockk<BackendClient>()
+            val notificationsApiClient = mockk<NotificationsApiClient>()
+            val eventsRouter = mockk<EventsRouter>()
+            val appStorage = mockk<AppStorage>()
+            val mockConnectionListener = mockk<BackendConnectionListener>()
+
+            val expectedErrorMessage = "Error connecting to WebSocket or establishing MLS client"
+
+            // Stub the listener behaviors
+            coEvery { mockConnectionListener.onDisconnected() } just Runs
+
+            // Force connectWebSocket to throw ProtocolException
+            coEvery { backendClient.connectWebSocket(any()) } throws
+                ProtocolException(expectedErrorMessage)
+
+            val listener = WireTeamEventsListener(
+                backendClient,
+                notificationsApiClient,
+                eventsRouter,
+                appStorage
+            )
+            listener.setBackendConnectionListener(mockConnectionListener)
+
+            // Act & Assert
+            val exception = assertThrows<InterruptedException> {
+                listener.connect()
+            }
+
+            // Verify the correct message was passed into the rethrown InterruptedException
+            assert(exception.message == expectedErrorMessage)
+
+            // Verify that the disconnected callback was triggered
+            coVerify(exactly = 1) { mockConnectionListener.onDisconnected() }
         }
 
     private fun encodeEvent(event: EventResponse): String = KtxSerializer.json.encodeToString(event)
