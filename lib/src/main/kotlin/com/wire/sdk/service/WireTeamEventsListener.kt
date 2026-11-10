@@ -98,13 +98,8 @@ internal class WireTeamEventsListener internal constructor(
                 is ProtocolException -> {
                     val message = exception.message.orEmpty()
 
-                    // Detect transient/temporary server errors (502, 503, 504)
-                    val isTemporaryServerError = message.contains("502") ||
-                        message.contains("503") ||
-                        message.contains("504")
-
                     // Swallow temporary errors gracefully
-                    if (isTemporaryServerError) {
+                    if (TEMPORARY_SERVER_ERRORS.any(message::contains)) {
                         logger.warn(
                             "Temporary protocol error detected ($message), closing gracefully",
                             exception
@@ -212,5 +207,9 @@ internal class WireTeamEventsListener internal constructor(
         } catch (e: Exception) {
             logger.error("Error processing event: $event", e)
         }
+    }
+
+    companion object {
+        private val TEMPORARY_SERVER_ERRORS = setOf("502", "503", "504")
     }
 }
