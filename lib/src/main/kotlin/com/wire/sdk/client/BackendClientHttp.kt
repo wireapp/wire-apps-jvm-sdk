@@ -24,8 +24,11 @@ import com.wire.sdk.persistence.AppStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import io.ktor.client.plugins.websocket.wss
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.get
+import io.ktor.http.encodedPath
+import io.ktor.http.takeFrom
+import io.ktor.http.URLProtocol
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import org.slf4j.LoggerFactory
@@ -52,11 +55,17 @@ internal class BackendClientHttp(
     ) {
         logger.info("Connecting to the webSocket, waiting for events")
 
-        httpClient.wss(
-            host = IsolatedKoinContext.getApiHost().replace("https://", "")
-                .replace("-https", "-ssl"),
-            path = "/await",
+        httpClient.webSocket(
             request = {
+                url {
+                    takeFrom(IsolatedKoinContext.getApiHost())
+                    protocol = when (protocol) {
+                        URLProtocol.HTTP -> URLProtocol.WS
+                        else -> URLProtocol.WSS
+                    }
+                    host = host.replace("-https", "-ssl")
+                    encodedPath = "/await"
+                }
                 appStorage.getDeviceId()?.let { url.parameters.append(CLIENT_QUERY_KEY, it) }
             }
         ) {
