@@ -59,7 +59,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.wire:wire-apps-jvm-sdk:0.3.0")
+    implementation("com.wire:wire-apps-jvm-sdk:0.4.0")
 }
 ```
 
