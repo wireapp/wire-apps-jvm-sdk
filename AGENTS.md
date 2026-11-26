@@ -168,6 +168,9 @@ When adding SDK functionality, keep these placement rules in mind:
 - Ktlint excludes generated code.
 - Static analysis is enforced with Detekt using `config/detekt/detekt.yml`.
 - CI runs `ktlintCheck`, `detekt`, and `build` on pull requests.
+- Claude PR reviews use the `ANTHROPIC_API_KEY` Actions secret in addition to the Claude GitHub App.
+  Failed reviews print the final error from `claude-execution-output.json` in the
+  `Show Claude failure details` step; full conversation logging remains disabled.
 
 ### Generated sources and schemas
 
